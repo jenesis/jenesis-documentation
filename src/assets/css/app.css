@@ -1,8 +1,8 @@
 /*
  * app.css - the jenesis console design system, layered over the vendored Pico.css.
  *
- * This is the shared visual base for both consoles (the free repository console and the enterprise console that
- * extends it): a small set of design tokens (a type scale, a spacing scale, radii and a status palette) plus a
+ * This is the visual base for the jenesis repository console: a small set of design tokens (a type scale, a
+ * spacing scale, radii and a status palette) plus a
  * documented component set (page header, generic list/table, card, form-field-with-help, empty state, badge).
  *
  * It is *additive* over Pico: it never overrides a Pico rule wholesale, it only defines --app-* tokens and .app-*
