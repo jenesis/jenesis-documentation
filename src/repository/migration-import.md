@@ -1,5 +1,5 @@
 ---
-order: 14
+order: 10
 title: Migration & import
 description: Moving a repository's contents in from an incumbent manager - the import-source capability that reads a foreign repository and the per-format importer that writes it, the Nexus, Artifactory and Jenesis connectors, the built-in Maven, OCI/Docker and raw importers, the /api/assets export that lets you leave again, and the settings that trigger and configure a migration.
 ---
@@ -39,9 +39,9 @@ asset is **never downloaded**, so an unsupported format costs no bandwidth.
 
 <div class="note">
   Because an importer writes through the format's normal publish primitives, an imported artifact passes
-  through the same publication pipeline as a fresh upload - so the <a
-  href="/repository/compliance-gate/">compliance gate</a> screens what you migrate in, exactly as it screens
-  what you publish.
+  through the same publication pipeline as a fresh upload - so a
+  <a href="/repository/architecture/">publication screen</a> sees what you migrate in exactly as it sees what
+  you publish.
 </div>
 
 <div class="warning">

@@ -1,5 +1,5 @@
 ---
-order: 12
+order: 9
 title: Rate limiting & usage tracking
 description: Pacing and watching the traffic the credential model lets in - the rate-limiter capability that sheds a tenant's excess requests with 429 before they reach the repository and its in-memory token-bucket implementation, the usage-tracking capability that stamps each credential's last use and count off the request path and its batching worker, and the deployment default, per-tenant ceiling and switch that tune them.
 ---

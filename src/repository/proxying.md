@@ -89,9 +89,9 @@ A routing plug-in defines, per repository, whether it is a plain hosted store or
   aggregating front door over its members (hosted and proxy alike).
 
 Reads are routed; **writes are not** - a publish to a group lands in its designated push-target member, on
-the normal write path. And routing changes *where* bytes come from, not *what* is allowed: a routed read
-still passes through the compliance gate, so a withheld or policy-denied path stays
-a `404` whether it was served directly, pulled through a proxy, or found in a group member.
+the normal write path. And routing changes *where* bytes come from, not *what* is allowed: a routed read is
+screened exactly as a direct one is, so a withheld path stays a `404` whether it was served directly, pulled
+through a proxy, or found in a group member.
 
 <div class="note">
   The free single-tenant server binds the <strong>no-routing</strong> default: every repository is a plain
@@ -148,5 +148,6 @@ lowering it trades a little more upstream traffic for faster pickup of a just-pu
 shields a rate-limited upstream from a build tool's probing at the cost of a longer wait before a new
 artifact is seen.
 
-The next chapter, **The compliance gate**, is the screen every one of these paths passes through - including
-the proxy leg - before an artifact is served or a publish is committed.
+Every one of these paths - the direct read, the proxy leg, the group hop - passes through the same
+[publication screen](/repository/architecture/) before an artifact is served, so a screen a deployment
+installs governs what a proxy pulls in exactly as it governs what a client publishes.

@@ -1,5 +1,5 @@
 ---
-order: 11
+order: 8
 title: Multi-tenancy & authentication
 description: One server, many isolated tenants, and every request identified by a key. The tenant-directory and authentication capabilities, the fixed- vs. multi-tenant routing and the key/OIDC/SAML/SCIM mechanisms that implement them, the deployment-wide read-only mode, and the settings that switch enforcement on.
 ---

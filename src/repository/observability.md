@@ -1,5 +1,5 @@
 ---
-order: 15
+order: 11
 title: Observability
 description: How the repository reports on itself - one instrumentation point that feeds logs, metrics and traces at once; the Micrometer naming convention and the tags it keeps off your meters; the Actuator and Prometheus endpoints; and the OTLP tracing you switch on with two settings.
 ---
@@ -162,7 +162,7 @@ several sweeps - or that disagrees about something which must be identical, like
 generation or where a pointer resolves, is **diverged**, and that is a problem to act on.
 
 It **detects and reports; it never blocks a request**. A divergence surfaces three ways: as a
-[security-posture](/repository/provenance/) advisory naming the node and the fix, as metrics
+security-posture advisory naming the node and the fix, as metrics
 (`jenesis.consistency.nodes`, `jenesis.consistency.diverged`) with a matching health check, and as a
 **Consistency** panel in the console.
 
