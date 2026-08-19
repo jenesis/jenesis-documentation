@@ -1,5 +1,5 @@
 ---
-order: 9
+order: 10
 title: Supply-chain features
 description: Build-time supply-chain support - generating a CycloneDX SBOM, checking dependency licences against a policy, scanning for known vulnerabilities, and hardening the whole build.
 ---
@@ -159,9 +159,9 @@ The SBOM, licence, and vulnerability checks all describe the closure they resolv
 that closure trustworthy in the first place: Jenesis pins every dependency by version *and* by the `SHA-256`
 checksum of the jar, and verifies each download against its pin. A coordinate whose bytes do not match its
 recorded checksum is rejected outright - exactly what happens if a repository serves a swapped or compromised
-artifact. *[Dependencies](/tool/dependencies/)* covers how to record pins with the `pin` selector and how
-`-Djenesis.dependency.pin=strict` requires them; a hardened supply chain layers the checks above on top of a
-fully pinned, strict build.
+artifact. *[Pinning & bills of materials](/tool/pinning/)* covers how to record pins, how
+`-Djenesis.dependency.pin=strict` requires them, and how to refresh a frozen closure deliberately. A hardened
+supply chain layers the checks above on top of a fully pinned, strict build.
 
 ### Why strict pinning matters
 
@@ -172,27 +172,6 @@ pinning closes it** - any dependency a POM newly adds arrives as a coordinate wi
 rejects, so a manipulated POM cannot quietly pull in an unverified artifact. This is why strict pinning is
 recommended for builds in unsecured environments and for releases.
 
-### Refreshing pins on a trusted machine
-
-Pins freeze the closure, so a pinned project never picks up a newer version on its own. To deliberately refresh
-them, run `pin` with the enforcement turned off:
-
-```bash
-java -Djenesis.dependency.pin=ignore build/jenesis/Project.java pin
-```
-
-`ignore` drops every existing pin: versions float to the latest the repository offers and the recorded
-checksums are not consulted. `pin` then re-resolves that fresh closure and rewrites each `pom.xml` (or
-`module-info.java`) with the new versions and freshly computed checksums.
-
-<div class="warning">
-  This step <em>establishes</em> trust rather than enforcing it: because it bypasses checksum verification
-  while it resolves, it re-blesses whatever the repository currently serves - a swapped artifact would be
-  written in as an accepted pin just the same. Run it only on a <strong>trusted machine</strong> against a
-  <strong>trusted repository</strong>, review the resulting diff, and commit it. Every subsequent build then
-  enforces the new pins against the artifacts you just vetted.
-</div>
-
 <div class="tip">
   Four runnable projects cover this chapter:
   <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-12-sbom">demo-12</a> emits an SBOM,
@@ -200,6 +179,6 @@ checksums are not consulted. `pin` then re-resolves that fresh closure and rewri
   permissive-only licence policy,
   <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-14-vulnerabilities">demo-14</a> catches
   Log4Shell in a pinned <code>log4j-core</code>, and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-39-supply-chain-security">demo-39</a> proves
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-42-supply-chain-security">demo-42</a> proves
   the pinning guarantees by getting them wrong on purpose. See <a href="/tool/demos/">Demos</a>.
 </div>

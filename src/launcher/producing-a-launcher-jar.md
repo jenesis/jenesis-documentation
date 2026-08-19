@@ -11,7 +11,7 @@ manifest entries that make `java -jar app.jar` start the launcher.
 
 ## Turning it on
 
-The launcher jar is one of the build tool's [packaging options](/tool/packaging-and-distribution/). Enable it
+The launcher jar is one of the build tool's [packaging options](/tool/packaging/). Enable it
 by setting `launcher=true` in a `packaging.properties` file in the [configuration
 location](/tool/configuration/):
 
@@ -46,7 +46,7 @@ place here:
    when the application is modular, the class-path order, and (when present) `agentClass`.
 
 <div class="note">
-  This is the same content a <a href="/tool/packaging-and-distribution/">bundle</a> holds - the exploded
+  This is the same content a <a href="/tool/packaging/">bundle</a> holds - the exploded
   <code>classpath/</code> and <code>modulepath/</code> subfolders and an <code>application.properties</code>.
   The launcher jar folds it into a single runnable jar with the launcher shaded in, so it needs no launch
   script; a bundle keeps the files separate for you to drop onto a JRE base.
@@ -104,7 +104,7 @@ the build captures the resolved order for you; the key itself is documented in t
 ## The launcher is pinned like any dependency
 
 The Jenesis Launcher is resolved as a normal dependency, in its own `launcher` group, and is
-[pinned](/tool/dependencies/) like every other artifact the build uses. The exact launcher bytes shaded into
+[pinned](/tool/pinning/) like every other artifact the build uses. The exact launcher bytes shaded into
 your jar are therefore verified, and the produced jar stays reproducible - the same sources yield the same
 bytes.
 

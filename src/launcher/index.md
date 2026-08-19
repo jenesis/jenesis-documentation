@@ -23,7 +23,7 @@ Because every class is then a direct entry of the outer jar, the launcher reads 
 
 <div class="note">
   The launcher is produced by the Jenesis build tool's packaging step. If you have not read the build tool's
-  <a href="/tool/packaging-and-distribution/">Packaging &amp; distribution chapter</a> yet, start there - this section explains what the resulting jar does
+  <a href="/tool/packaging/">Packaging chapter</a> yet, start there - this section explains what the resulting jar does
   and how it does it.
 </div>
 

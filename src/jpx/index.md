@@ -18,7 +18,8 @@ That resolves the JUnit console launcher and its dependencies, installs them, an
 
 jpx is a command of its own, installed separately from the [Jenesis build tool](/tool/). In a project
 that embeds Jenesis as source, it also runs with nothing but a JDK: `java build/jenesis/Jpx.java
-<target>`.
+<target>`. The same three steps - resolve, install, launch - are a public API, so a program of your own can
+run a published module too.
 
 ## What's in this section
 
@@ -28,4 +29,12 @@ that embeds Jenesis as source, it also runs with nothing but a JDK: `java build/
 3. **Installation & caching** - where installs live, and what makes an install safe to reuse.
 4. **Isolation & verification** - running the launched program in a container and pinning it to a
    trusted digest.
-5. **Reference** - every flag and the usage screen.
+5. **Using jpx from Java** - the same resolve, install, and launch sequence as an API.
+6. **Reference** - every flag and the usage screen.
+
+<div class="tip">
+  Prefer to read it running? The
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-46-jpx">jpx demo</a> is a single file that
+  installs the JUnit console launcher, names it once as a module and once as a coordinate, and verifies both
+  against a digest before launching them.
+</div>

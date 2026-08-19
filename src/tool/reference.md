@@ -1,5 +1,5 @@
 ---
-order: 13
+order: 15
 title: Reference
 description: A lookup for the command line - targets and selectors - a grouped table of every configuration key with its default, and the built-in steps a selector can name.
 ---
@@ -44,14 +44,16 @@ property). The top-level targets the shipped layouts register:
 | Target | What it runs |
 | --- | --- |
 | `build` | Compile, check, test, and package every module (the default). |
-| `stage` | Materialise the release tree under `target/stage/…` (see *[Packaging &amp; distribution](/tool/packaging-and-distribution/)*). |
+| `stage` | Materialise the release tree under `target/stage/…` (see *[Packaging](/tool/packaging/)*). |
 | `export` | Publish the staged tree - into the local Maven repository (`maven`), the local module repository (`modular`), or both. |
-| `pin` | Rewrite every `pom.xml` / `module-info.java` so the transitive closure is pinned at source (see *[Dependencies](/tool/dependencies/)*). |
+| `release` | Hand the staged tree to a configured release tool; a dry run unless told otherwise (see *[Publishing](/tool/publishing/)*). |
+| `pin` | Rewrite every `pom.xml` / `module-info.java` so the transitive closure is pinned at source (see *[Pinning &amp; bills of materials](/tool/pinning/)*). |
 | `dependencies` | Print each module's resolved dependency graph with licences. |
 | `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata at the project root. |
 | `help` | Print the human usage screen. |
 | `skill` | Print an agent-oriented briefing of the same material. |
 | `metadata` | Refresh the metadata module outputs without building artifacts. |
+| `properties` | Print the active `-Djenesis.*` system properties, sorted by key. |
 
 ## Selectors
 
@@ -123,6 +125,7 @@ variable as a fallback. Defaults apply when the key is unset.
 | `jenesis.test.parallel` | `false` | Run tests in parallel where the framework supports it. |
 | `jenesis.test.reporting` | `false` | Emit Open Test Reporting XML under `reports/tests/`. |
 | `jenesis.test.incremental` | *(off)* | Run only the tests a change can reach; the value names the digest algorithm. |
+| `jenesis.test.force` | `false` | Run the tests even when nothing changed and the recorded scope already covers the request. |
 | `jenesis.stage.tests` | `false` | Include test-variant artifacts when staging. |
 | `jenesis.sbom.cyclonedx` | `true` | Emit a CycloneDX SBOM; set `false` to skip it. |
 | `jenesis.compliance` | `true` | Run the licence and vulnerability checks; `false` skips both. |
@@ -136,7 +139,7 @@ variable as a fallback. Defaults apply when the key is unset.
 
 The quality and packaging *files* these keys gate (`checkstyle.xml`, `packaging.properties`, and the like)
 are covered in *[Code quality &amp; testing](/tool/code-quality-and-testing/)*, *[Supply-chain
-features](/tool/supply-chain/)*, and *[Packaging &amp; distribution](/tool/packaging-and-distribution/)*.
+features](/tool/supply-chain/)*, and *[Packaging](/tool/packaging/)*.
 
 ### Dependencies & pinning
 
@@ -147,6 +150,8 @@ features](/tool/supply-chain/)*, and *[Packaging &amp; distribution](/tool/packa
 | `jenesis.pin.checksum` | `true` | Whether `pin` writes SHA checksums alongside versions. |
 | `jenesis.platform.<token>` | *(detected)* | Add (`=true`) or remove (`=false`) a platform token used to select guarded pins. |
 | `jenesis.project.digest` | `SHA-256` | Digest algorithm the `pin` step uses to checksum artifacts. |
+| `jenesis.resolver.maven` | `maven` | Maven version strategy: `maven`, `closest`, `latest`, or `release`. |
+| `jenesis.resolver.module` | `first` | What happens when two module descriptors record different versions: `first`, `fail`, or `ignore`. |
 
 ### Repositories
 
@@ -161,6 +166,8 @@ features](/tool/supply-chain/)*, and *[Packaging &amp; distribution](/tool/packa
 | `jenesis.repository.insecure` | `false` | Permit plaintext (`http://`) fetches. |
 | `jenesis.repository.retries` | `2` | Retries for a transient fetch failure (`0` disables). |
 | `jenesis.repository.backoff` | `125` | Initial retry wait in milliseconds, doubling each attempt. |
+| `jenesis.repository.connect.timeout` | *(set)* | Connect timeout for a repository fetch, as an ISO-8601 duration. |
+| `jenesis.repository.read.timeout` | *(set)* | Read timeout for a repository fetch, as an ISO-8601 duration. |
 
 ### Caching
 
@@ -187,6 +194,17 @@ features](/tool/supply-chain/)*, and *[Packaging &amp; distribution](/tool/packa
 | `jenesis.execute.docker` | `false` | Run the launched program in a container. |
 | `jenesis.execute.docker.image` / `.mount` / `.env` | *(as above)* | The run-side equivalents. |
 
+### Releasing
+
+Read by the `release` target - see *[Publishing](/tool/publishing/)*.
+
+| Key | Default | Effect |
+| --- | --- | --- |
+| `jenesis.jreleaser.config` | *(discovered)* | The release-tool configuration file; must exist when named. |
+| `jenesis.jreleaser.dryRun` | `true` | Perform every local phase and skip every remote one; `false` publishes. |
+| `jenesis.jreleaser.executable` | `jreleaser` | The executable to locate. |
+| `jenesis.jreleaser.command` | `full-release` | The subcommand to run. |
+
 ### Output & the execution engine
 
 | Key | Default | Effect |
@@ -199,9 +217,12 @@ features](/tool/supply-chain/)*, and *[Packaging &amp; distribution](/tool/packa
 | `jenesis.print.fetch` | `false` | Print a `[FETCHED]` line per downloaded artifact. |
 | `jenesis.print.cache` | `false` | Print `[LOADED]`/`[STORED]` lines for the shared cache. |
 | `jenesis.print.checksum` | `false` | Append input/output checksums under each `[EXECUTED]` line. |
+| `jenesis.print.jreleaser` | `false` | Stream the release tool's output. |
+| `jenesis.tree.format` | `full` | The `dependencies` tree rendering: `full` or `compact`. |
 | `jenesis.executor.digest` | `MD5` | Digest for the per-file content and per-step config hashes. |
 | `jenesis.executor.timeout` | `PT0S` | ISO-8601 per-step timeout; `PT0S` disables it. |
 | `jenesis.executor.rebuild` | `false` | Delete `target/` first, forcing a full rebuild. |
+| `jenesis.executor.aggregate` | `false` | Let independent step failures aggregate into one report instead of failing at the first. |
 | `jenesis.process.factory` | `tool` | How JDK tool steps launch: `tool` (in-process) or `fork`. |
 | `JAVA_HOME` (env) | *(from `java.home`)* | Locates the JDK binaries when the runtime is not a JDK. |
 
@@ -232,7 +253,7 @@ in the linked chapter.
 
 ### Packaging
 
-Wired by keys in `packaging.properties` - see *[Packaging &amp; distribution](/tool/packaging-and-distribution/)*.
+Wired by keys in `packaging.properties` - see *[Packaging](/tool/packaging/)*.
 
 | Step | Produces |
 | --- | --- |
@@ -241,12 +262,31 @@ Wired by keys in `packaging.properties` - see *[Packaging &amp; distribution](/t
 | `jpackage` | A native installer or self-contained app image. |
 | `bundle` | A self-contained `bundle.zip` of the application. |
 | `launcher` | A single executable launcher jar (see *[Launcher](/launcher/)*). |
+| `docker` | A container build context - a `Dockerfile` and the jars it copies. |
 | `native-image` | A GraalVM native executable. |
+| `modules` | The dependency closure rewritten into explicit named modules (from `modules.properties`). |
 
 ### Top level
 
-The `build`, `stage`, `export`, and `pin` modules are the top-level targets in the table above; each layout
-wires the `maven` and/or `modular` staging and export sub-steps under them.
+The `build`, `stage`, `export`, `release`, and `pin` modules are the top-level targets in the table above;
+each layout wires the `maven` and/or `modular` staging and export sub-steps under them.
+
+## Source declarations
+
+Everything a module declares about its build is a Javadoc tag on `module-info.java` - or, in the `maven`
+layout, the POM equivalent named beside it. This is the whole vocabulary:
+
+| Tag | Declares | Chapter |
+| --- | --- | --- |
+| `@jenesis.release <N>` | The Java release to compile against (`maven.compiler.release` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
+| `@jenesis.main <class>` | The module's entry point (`<mainClass>` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
+| `@jenesis.test <module>` | Marks this module as the test module of another. | *[Building &amp; running](/tool/building-and-running/)* |
+| `@jenesis.plugin [<compiler>] <token>` | An annotation processor, or a compiler plugin for a named compiler. | *[Other JVM languages](/tool/other-jvm-languages/)* |
+| `@jenesis.attach <token> [<options>]` | A library to attach as a Java agent (`<!--jenesis.attach-->` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
+| `@jenesis.exclude <module> <group>/<artifact>…` | Transitives to prune from a requirement (`<exclusions>` in a POM). | *[Dependencies](/tool/dependencies/)* |
+| `@jenesis.alias <module> <group>/<artifact>` | A module name for an artifact that has none. | *[Dependencies](/tool/dependencies/)* |
+| `@jenesis.pin <token> <version> [<algorithm>/<hash>]` | An exact version and checksum (`<!--jenesis.pin-->` / `<dependencyManagement>` in a POM). | *[Pinning &amp; bills of materials](/tool/pinning/)* |
+| `@jenesis.bom <token> [<version> [<algorithm>/<hash>]]` | A bill of materials to import. | *[Pinning &amp; bills of materials](/tool/pinning/)* |
 
 <div class="tip">
   Every feature named here has a runnable example. Browse the full set on the
