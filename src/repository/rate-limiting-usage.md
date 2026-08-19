@@ -64,10 +64,11 @@ caller - including the shared anonymous bucket. Unset, or `0`, means no limit at
 
 
 <div class="tip">
-  Watch <code>jenesis.ratelimit.rejected</code> - a counter of requests shed with <code>429</code>, tagged
-  by the tenant whose bucket they metered against (<code>anonymous</code> for keyless traffic). A flood
-  shows up already attributed, and a persistent trickle usually means one client deserves a ceiling - or a
-  tenant - of its own.
+  A shed request is recorded with the bucket it metered against (<code>anonymous</code> for keyless
+  traffic), so a flood arrives already attributed and a persistent trickle usually means one client
+  deserves a ceiling of its own. <code>jenesis.ratelimit.buckets</code> gauges how many buckets are live,
+  and the <code>jenesis.ratelimit.limiter</code> health check reports whether the limiter itself is
+  working.
 </div>
 
 ## Usage tracking
@@ -106,8 +107,8 @@ only the unflushed tail - which an informational counter can bear. A clean shutd
   The worker reports itself on <code>/actuator/health</code> under the <code>workers</code> contributor:
   <code>enabled</code>, <code>alive</code>, and <code>droppedEvents</code>. An enabled worker whose thread
   has died turns health <code>DOWN</code> - a silent worker death is the failure worth paging on - while
-  queue drops stay a detail and a meter (<code>jenesis.worker.dropped</code>, tagged
-  <code>worker=key-usage</code>): back-pressure, not an outage.
+  queue drops stay a detail and a meter (<code>jenesis.usage.dropped</code>, beside
+  <code>jenesis.usage.tracked</code>): back-pressure, not an outage.
 </div>
 
 ## Settings

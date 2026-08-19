@@ -105,14 +105,15 @@ well.
 ## The installed-capabilities view
 
 Alongside the per-repository settings, the console surfaces **what the server itself is running**:
-which formats, storage backend, compliance screens, importers, and authentication mechanisms are
-installed on this deployment. This is the operator's answer to "is the OSV feed actually on?" or "does
-this server have the S3 backend?" - read straight from the running process rather than inferred from
-configuration files.
+which formats, storage backend, importers, screens and authentication mechanisms are installed on this
+deployment. This is the operator's answer to "does this server have the S3 backend?" or "which importers
+can I migrate with?" - read straight from the running process rather than inferred from configuration
+files.
 
 The view is organised the way the server itself is: an **SPI catalog**, grouped by the *seam* - the
 plug-in point from [Architecture](/repository/architecture/) - with the installed implementations that
-provide each listed beneath it. It is pure discovery over the running process's Java Module System graph,
+provide each listed beneath it, each under its own mark where the plug-in ships one and a generated one
+where it does not. It is pure discovery over the running process's Java Module System graph,
 the same `provides` declarations the server loads plug-ins from, so what you read here is what the
 dispatcher actually discovered - and it reads no artifact data to say so.
 
