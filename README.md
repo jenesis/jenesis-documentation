@@ -1,5 +1,7 @@
 # Jenesis documentation
 
+![deploy](https://github.com/raphw/jenesis-documentation/actions/workflows/deploy.yml/badge.svg)
+
 > ### [Jenesis](https://jenesis.build) - a modern Java build tool
 > _Java-native config, plugin-free, with `module-info.java` treated as a feature, not an afterthought._
 
@@ -29,7 +31,8 @@ passes - publishes to GitHub Pages. A broken link fails the deploy, so run `npm 
   `<section>.json` sets the shared layout and menu title.
 - `src/_includes/` - the page shell (`base.njk`) and the documentation layout with the sidebar (`docs.njk`).
 - `src/_data/` - `demos.js` (the demo index, kept in step with `raphw/jenesis`'s `demo/`) and `release.js`
-  (the version shown on the landing page).
+  (which repository each landing-page tile takes its version from - the version itself is read from the
+  GitHub API at page load, never committed, so a tile shows no version rather than a stale one).
 - `src/assets/` - CSS (`pico.min.css`, `app.css`, `docs.css`), the logos and font, and the small theme and
   navigation scripts.
 
