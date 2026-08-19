@@ -1,5 +1,5 @@
 ---
-order: 16
+order: 12
 title: The console
 description: Using the web console - signing in, browsing repositories and artifacts, reading a repository's settings, the installed-capabilities view, the theme switch, and how the console scopes itself to a tenant.
 ---
@@ -79,15 +79,14 @@ reads the repository's own listing rather than knowing about Maven, npm, or OCI 
   guarded against <code>..</code> traversal.
 </div>
 
-Browse shows **exactly what a `GET` would serve** - no more. The review subtree where the
-[compliance gate](/repository/compliance-gate/) holds quarantined artifacts is never listed and never
-navigable, so a reader with browse access cannot enumerate the paths or sizes of withheld artifacts; the
-**Download asset listing** export honours the same rule.
+Browse shows **exactly what a `GET` would serve** - no more. Where a publication screen has withheld an
+artifact, its path is never listed and never navigable, so a reader with browse access cannot enumerate the
+paths or sizes of withheld artifacts; the **Download asset listing** export honours the same rule.
 
 ## Reading a repository's settings
 
 The console lets you **view a repository and its configuration** - which format it serves, its
-upstreams, its quota, and the compliance and other settings that apply to it. Each setting is shown
+upstreams, its quota, and the other settings that apply to it. Each setting is shown
 with its current value and a short inline explanation, so you can read how a repository behaves without
 cross-referencing a settings table.
 
@@ -98,10 +97,9 @@ Two cues on the settings view are worth knowing:
 - A setting that has been **changed from its default** is marked as such, so the values you have
   deliberately set stand out from the ones left at their defaults.
 
-Status is shown the same way throughout the console: an artifact carries a badge such as **passed**,
-**quarantined**, or **signed**, and - because colour is never the only signal - the badge always spells
-the state out in words as well. Those states come from the
-[compliance gate](/repository/compliance-gate/) and [provenance](/repository/provenance/) chapters.
+Status is shown the same way throughout the console: where a plug-in gives an artifact a state, it carries a
+badge, and - because colour is never the only signal - the badge always spells that state out in words as
+well.
 
 ## The installed-capabilities view
 

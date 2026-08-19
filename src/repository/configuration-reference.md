@@ -1,5 +1,5 @@
 ---
-order: 17
+order: 13
 title: Configuration reference
 description: Every setting the repository reads, in one place - grouped by the chapter that explains it, with its default and what it changes. Server startup properties, per-repository dials, the management endpoints, and the one-off import fields.
 ---
@@ -156,109 +156,7 @@ Per-format system properties, read at startup. See [Proxying & groups](/reposito
 
 ---
 
-## The compliance gate
-
-Per-repository dials - edit live, or pin from above. The verdict knobs and `deny-list` are
-**tenant-overridable**. See [The compliance gate](/repository/compliance-gate/).
-
-### Licence
-
-| Key | Default | What it sets |
-|-----|---------|--------------|
-| `license-allowed` | *(empty)* | Comma-separated allowed licence tokens (SPDX id, name, URL or category); empty allows any identified licence. |
-| `license-denied` | *(empty)* | Comma-separated forbidden tokens; a match is rejected. Deny wins over allow. |
-| `license-unknown` | `QUARANTINE` | Verdict for an unidentifiable or undeclared licence. |
-
-### Vulnerabilities & malware
-
-| Key | Default | What it sets |
-|-----|---------|--------------|
-| `vulnerability-threshold` | `NONE` | Fail at or above this CVSS band: `NONE` (off) / `LOW` / `MEDIUM` / `HIGH` / `CRITICAL`. |
-| `malware-action` | `QUARANTINE` | Verdict for a package a feed marks malicious. |
-| `kev-action` | `QUARANTINE` | Verdict for a known-exploited CVE, applied regardless of CVSS band. |
-| `immaturity-hold-days` | `0` | Quarantine proxied artifacts an upstream published within this many days (proxy path only); `0` disables. |
-
-### Deny-list & version floor
-
-| Key | Default | What it sets |
-|-----|---------|--------------|
-| `deny-list` | *(empty)* | Coordinates always refused: `group:artifact`, `group:artifact:version`, or `group:*`. |
-| `version-floor` | *(empty)* | Minimum-version rules, one per coordinate or `group:*` (e.g. `org.apache.logging.log4j:log4j-core >= 2.17.0`). |
-| `version-floor-action` | `REJECT` | Verdict for a coordinate below its floor. |
-
-### Advisory feeds
-
-Each feed is off until enabled; its endpoint has a default you rarely change.
-
-| Key | Default | What it sets |
-|-----|---------|--------------|
-| `osv` | `false` | Enable the OSV feed (CVSS-scored vulns and `MAL-` advisories). |
-| `github` | `false` | Enable the GitHub Advisory Database (GHSA). |
-| `openssf` | `false` | Enable the OpenSSF malicious-packages dataset only. |
-| `kev` | `false` | Enable the CISA KEV known-exploited catalogue. |
-| `epss` | `false` | Enable FIRST EPSS exploitation-probability scores (a ranking signal). |
-| `<feed>-endpoint` | *(each feed's public endpoint)* | Override a feed's URL - `osv-endpoint`, `github-endpoint`, and so on - to point at a mirror or internal proxy. |
-| `github-token` | *(none)* | Optional token for a higher GHSA rate limit. |
-
----
-
-## Provenance
-
-Per-repository settings. Provenance is off until you name a signer.
-See [Provenance](/repository/provenance/).
-
-| Key | Default | What it sets |
-|-----|---------|--------------|
-| `provenance-signer` | *(the one configured)* | Which signer runs when more than one is configured. |
-| `signing-key-path` | *(none)* | PEM RSA private key for keyed signing; unset means no keyed signer. |
-| `keyless-fulcio-url` | *(none)* | Fulcio CA that mints short-lived certificates; setting it enables keyless signing. |
-| `keyless-identity-token` | *(none)* | A static OIDC identity token for the Fulcio exchange. |
-| `keyless-identity-token-path` | *(none)* | A file holding the OIDC token, re-read on each exchange. |
-| `keyless-identity-token-env` | *(none)* | An environment variable holding the OIDC token (the ambient-CI path). |
-| `keyless-rekor-url` | *(none)* | Rekor transparency log for keyless attestations; unset serves them without a log entry. |
-
----
-
-## Search & inventory
-
-Per-repository settings; each capability is off until enabled.
-See [Search & inventory](/repository/search-inventory/).
-
-| Key | Default | What it sets |
-|-----|---------|--------------|
-| `search-index` | `false` | Build the background Lucene index of published coordinates (adds licence facets). |
-| `search-index-interval` | `PT10M` | How often the search sweep rebuilds the index. |
-| `index` | `false` | Publish the incremental, resumable index (chunks + descriptor). |
-| `index-interval` | `P1D` | How often a new index chunk is published. |
-| `index-max-chunk` | `8388608` | Maximum compressed bytes of one chunk before it rotates (8 MiB). |
-| `index-rebase-interval` | `P7D` | How often a full-snapshot rebase resets the chunk chain for fresh consumers. |
-
----
-
 ## Maintenance
-
-Per-repository settings; every pass is off until you enable it.
-See [Maintenance](/repository/maintenance/).
-
-| Key | Default | What it sets |
-|-----|---------|--------------|
-| `scheduled-cleanup` | `false` | Run the retention/cleanup sweep on a timer (the on-demand endpoint works either way). |
-| `cleanup-interval` | `PT1H` | How often the cleanup sweep runs. |
-| `cleanup-lease` | `PT10M` | Time-to-live of the single-writer maintenance lease keeping a mutating sweep on one node. |
-| `keep-last` | `0` | Retention: keep the N newest versions per coordinate; `0` = no count cap. |
-| `max-age` | *(none)* | Retention: evict versions older than this duration. |
-| `prerelease-expiry` | *(none)* | Retention: expire prereleases older than this duration (releases unaffected). |
-| `not-downloaded-for` | *(none)* | Retention: evict versions not downloaded within this duration. |
-| `scheduled-scan` | `false` | Re-scan every repository against the advisory feeds on a timer. |
-| `scan-interval-millis` | `3600000` | How often the scheduled re-scan runs (a plain millisecond count - one hour). |
-| `kev-auto-hold` | `true` | Whether the `kev-enforce` pass retroactively quarantines an already-published artifact once its CVE reaches the KEV catalogue. |
-| `dependents-index` | `false` | Build the reverse-dependency ("who depends on X") index in the background. |
-| `dependents-interval` | `PT1H` | How often the dependents sweep runs. |
-
-The console's volume-reclaim target is set with two management-level keys - `jenesis.ui.min-free-bytes`
-and `jenesis.ui.min-free-percent` (the free-space floor a super-admin's reclaim aims for).
-
-### The artifact walk & garbage collection
 
 Startup system properties, **spelled in full as written** (they are not `jenesis.repository.`-prefixed
 repository dials). The implementation selections - `jenesis.repository.walk` and `jenesis.repository.gc` -
@@ -305,31 +203,6 @@ See [Rate limiting & usage tracking](/repository/rate-limiting-usage/).
 
 A tenant's own rate ceiling is per-tenant data set through the management surface
 (`PUT /api/rate-limit`), not a startup property.
-
----
-
-## Publish-through forwarding
-
-Per-repository settings; `forward-targets` is **tenant-overridable**.
-See [Publish-through forwarding](/repository/publish-through-forwarding/).
-
-| Key | Default | What it sets |
-|-----|---------|--------------|
-| `forwarding` | `false` | Forward accepted publishes to the configured targets on the background drain. |
-| `forward-targets` | *(empty)* | Targets, one per line or `;`-separated: `<repository> <base-url> [transport]` (`*` = every repository; transport defaults to `replay`). |
-| `forwarding-interval` | `PT1M` | How often the outbox is drained. |
-| `forwarding-attempts` | `5` | How many times a failing forward is retried before it is parked. |
-| `forwarding-marker` | `jenesis` | The value of the `X-Jenesis-Forwarded` loop-guard header. |
-
-### Central Portal transport
-
-Surfaced when the `forwarding-central` module is installed.
-
-| Key | Default | What it sets |
-|-----|---------|--------------|
-| `central-portal-publishing-type` | `automatic` | `automatic` releases once Central validates; `user-managed` stops at `VALIDATED` for a manual release. |
-| `central-portal-poll-interval` | `PT5S` | How long the drain waits between polls of a deployment's state. |
-| `central-portal-poll-timeout` | `PT10M` | How long one delivery waits for a terminal state before the drain retries it later. |
 
 ---
 

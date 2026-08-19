@@ -11,10 +11,9 @@ the **pinning** that guarantees the bytes you build are the bytes you vetted. No
 build script - each turns on from a convention, over the same resolved dependency graph.
 
 <div class="note">
-  This is about hardening <em>your own</em> build. The <a href="/repository/">Jenesis Repository</a> has a
-  separate, serving-side <a href="/repository/compliance-gate/">compliance gate</a> that screens artifacts as
-  they are published; that is a different product with its own documentation section. Here, everything runs
-  inside your build, against the dependencies you resolve.
+  This is about hardening <em>your own</em> build. The <a href="/repository/">Jenesis Repository</a> screens
+  on the serving side instead, as artifacts are published and proxied; that is a different product with its
+  own documentation section. Here, everything runs inside your build, against the dependencies you resolve.
 </div>
 
 ## Software bill of materials
