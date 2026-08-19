@@ -125,15 +125,15 @@ refused-imports state, never a failed boot). See
 Pull-through is on out of the box. Each proxy-capable format declares its **canonical public upstream** -
 Maven Central for the Maven layout, Docker Hub for OCI, the public registry for npm - and mirrors it with
 nothing to configure. A format that declares no canonical upstream (one whose ecosystem has no single
-public registry) is served hosted-only until you name one. Two properties adjust this:
+public registry) is served hosted-only until you name one:
 
 ```bash
--Djenesis.repository.proxy-enabled=false                           # serve every format hosted-only
 -Djenesis.repository.proxy.maven=https://mirror.example.com/maven/ # override one format's upstream
 ```
 
-`proxy-enabled` is the deployment-wide switch; the per-format `proxy.<format>` key, keyed by the format's
-name, points a format at a different upstream - or gives one to a format that declares none.
+The per-format `proxy.<format>` key, keyed by the format's name, points a format at a different upstream - or
+gives one to a format that declares none. To serve every format hosted-only, switch the fetcher itself off
+with `jenesis.repository.http=false`: with no fetcher there is nothing to pull through.
 
 ### The negative-cache window
 
@@ -147,6 +147,10 @@ Leave it at the default unless an upstream publishes very frequently and you nee
 lowering it trades a little more upstream traffic for faster pickup of a just-published artifact; raising it
 shields a rate-limited upstream from a build tool's probing at the cost of a longer wait before a new
 artifact is seen.
+
+One more setting bounds a single fetch rather than the cache: `-Djenesis.proxy.request-timeout` (ISO-8601 or
+plain seconds, one minute by default) caps how long the fetcher waits on an upstream before giving up, so a
+slow or hanging registry cannot hold a request open indefinitely.
 
 Every one of these paths - the direct read, the proxy leg, the group hop - passes through the same
 [publication screen](/repository/architecture/) before an artifact is served, so a screen a deployment

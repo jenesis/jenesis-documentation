@@ -53,7 +53,7 @@ asset is **never downloaded**, so an unsupported format costs no bandwidth.
 
 ## Implementations - the connectors (read half)
 
-Three source connectors ship, each keyed by a stable **source name** you pass when you trigger the import.
+Five source connectors ship, each keyed by a stable **source name** you pass when you trigger the import.
 That name is also the connector's toggle: an installed connector is removed from the accepted `source`
 values with `jenesis.repository.<name>=false` (`jenesis.repository.nexus=false`), degrading exactly like a
 missing module - see
@@ -78,6 +78,20 @@ package type**, so you name the ecosystem format when you start the migration.
   The same <code>artifactory</code> migration therefore works unchanged against both a Pro and a free
   Artifactory.
 </div>
+
+### Maven
+
+The `maven` connector reads **any** server that publishes the Maven layout over plain HTTP - a Nexus, an
+Artifactory, an nginx autoindex, a static bucket - without using a vendor API at all. It stacks enumeration
+strategies by what the server offers, walking a directory listing where one exists, and it skips
+`maven-metadata.xml` and checksum sidecars because the target regenerates them. Reach for it when the source
+is a plain repository, or when a vendor connector's API is not available to you.
+
+### Format index
+
+The `index` connector walks a format's **own published index** - the mirror-style enumeration an ecosystem
+already offers - and reports each asset under that format's name, so the orchestrator routes it to the right
+importer. It migrates whatever the installed formats can enumerate, with no vendor involved.
 
 ### Jenesis
 
@@ -165,7 +179,7 @@ needs and ignores the rest.
 
 | Field | Required | Meaning |
 |-------|----------|---------|
-| `source` | yes | The connector name - `nexus`, `artifactory`, or `jenesis`. |
+| `source` | yes | The connector name - `maven`, `index`, `nexus`, `artifactory`, or `jenesis`. |
 | `url` | yes | The incumbent's base URL. |
 | `repository` | yes | The source repository to walk. |
 | `format` | for `artifactory` | The ecosystem format of a single-package-type source. A per-asset source (Nexus, Jenesis) reports it itself and needs none. |

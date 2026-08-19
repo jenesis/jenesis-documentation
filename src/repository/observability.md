@@ -77,7 +77,7 @@ curl -H "Jenesis-Repository-Key: $KEY" 'https://repo.example.com/api/logs?level=
 ```
 
 The console surfaces the same thing as a **Logs** panel. It is a bounded ring, never a file re-read, so it
-costs a fixed amount of memory and cannot grow: `jenesis.repository.logs.buffer` sets how many entries it
+costs a fixed amount of memory and cannot grow: `jenesis.repository.logs-buffer` sets how many entries it
 holds. Reading it is authorised like every other read.
 
 ## Metrics
@@ -141,6 +141,25 @@ line now carries the trace id, a warning in your logs links straight to the trac
   standing default. Lower <code>management.tracing.sampling.probability</code> to a small fraction once
   you are done, or leave tracing off entirely and rely on metrics and logs.
 </div>
+
+## Security posture
+
+Metrics tell you how the server is behaving; the **security posture** tells you how it is *configured*. Each
+module reports advisories about its own settings - a pure function of configuration, so reading it never
+changes anything - and the server collects them at `GET /api/posture` and on a console panel.
+
+```bash
+curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/api/posture
+```
+
+Each advisory carries an id, a severity, what is unsafe about the setting and what to do instead - so a
+deployment running open (`jenesis.auth.open`), one seeding demo data into a writable space
+(`jenesis.demo.writable`), one whose console accepts a wildcard origin (`jenesis.console.wildcard`) or whose
+import edge will follow a private address (`jenesis.importer.ssrf`) says so out loud, at boot and on every
+read of the endpoint.
+
+A module that is absent, or switched off, reports nothing - so the posture is a picture of what this
+deployment actually runs rather than a checklist of everything the product could do.
 
 ## Running more than one node
 
