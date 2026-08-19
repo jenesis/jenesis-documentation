@@ -122,7 +122,7 @@ SPRING_PROFILES_ACTIVE=dev JENESIS_STORE_ROOT=/var/lib/jenesis-repository \
 <div class="warning">
   The <code>dev</code> profile and its <code>admin</code>/<code>admin</code> login are for local use only.
   Real deployments authenticate over OIDC and per-tenant keys - covered in the
-  <strong>Multi-tenancy &amp; authentication</strong> chapter.
+  <strong>Authentication &amp; access</strong> chapter.
 </div>
 
 <div class="tip">

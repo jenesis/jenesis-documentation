@@ -4,7 +4,7 @@ title: Rate limiting & usage tracking
 description: Pacing and watching the traffic the credential model lets in - the rate-limiter capability that sheds a tenant's excess requests with 429 before they reach the repository and its in-memory token-bucket implementation, the usage-tracking capability that stamps each credential's last use and count off the request path and its batching worker, and the deployment default, per-tenant ceiling and switch that tune them.
 ---
 
-[Multi-tenancy & authentication](/repository/multi-tenancy-auth/) established *who* a request is: an
+[Authentication & access](/repository/authentication/) established *who* a request is: an
 enforcing deployment reads every request's credential, and the key carries its own tenant. This chapter is
 about the two dials that watch that traffic. **Rate limiting** paces it - a tenant over its ceiling is shed
 with `429` before the request costs any other tenant anything. **Usage tracking** records it - each
@@ -97,7 +97,7 @@ supplied by a `KeyUsageTrackerProvider` module discovered at start-up. With no m
 records, and the health surface reports the worker as **off** - absence is visible, not silent.
 
 Only the key's **SHA-256 hash** travels through the tracker - consistent with the credential model, which
-[never stores a secret](/repository/multi-tenancy-auth/), only its hash.
+[never stores a secret](/repository/authentication/), only its hash.
 
 ### The implementation - the batching worker
 
@@ -129,6 +129,6 @@ Both startup properties, read once when the server boots:
 | `jenesis.repository.track-key-usage` | `false` | Record each credential's last use, source address and use count on the batching worker. |
 
 A tenant's own ceiling is per-tenant data set through `PUT /api/rate-limit` above, not a startup property -
-the same pattern as its quota in *Multi-tenancy & authentication*. And as everywhere, absence degrades
+the same pattern as its quota in *Authentication & access*. And as everywhere, absence degrades
 gracefully: a deployment without the rate-limiting module never limits, and one without the usage module
 records nothing and says so on health.

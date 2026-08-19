@@ -78,7 +78,7 @@ rather than rebuilt. Spring's relaxed binding makes every key an environment var
 |---------------|---------|---------------|
 | `jenesis.repository.store` | `filesystem` | The storage backend: `filesystem`, `s3`, `gcs`, `azure-blob`. See [Storage](/repository/storage/). |
 | `jenesis.repository.fetcher` | *(first enabled - `http`)* | The upstream HTTP fetcher every proxy and import shares. See [Proxying & groups](/repository/proxying/). |
-| `jenesis.repository.token-exchange` | *(first enabled - `oidc`)* | The OIDC token-exchange implementation behind `/api/token`. See [Multi-tenancy & authentication](/repository/multi-tenancy-auth/). |
+| `jenesis.repository.token-exchange` | *(first enabled - `oidc`)* | The OIDC token-exchange implementation behind `/api/token`. See [Authentication & access](/repository/authentication/). |
 | `jenesis.repository.tenants` | *(first enabled)* | The tenant-directory implementation (`store-tenants` in the standard image). |
 | `jenesis.repository.rate-limiter` | *(first enabled - `token-bucket`)* | The rate-limiter implementation. See [Rate limiting & usage tracking](/repository/rate-limiting-usage/). |
 | `jenesis.repository.key-usage` | *(first enabled - `batching`)* | The credential usage-tracker implementation. |
@@ -105,7 +105,7 @@ See [Getting started](/repository/getting-started/) and [Storage](/repository/st
 
 The tenant and repository of the fixed artifact space are `jenesis.repository.tenant` and
 `jenesis.repository.repository`, both defaulting to `default` - see
-[Multi-tenancy & authentication](/repository/multi-tenancy-auth/) below.
+[Authentication & access](/repository/authentication/) below.
 
 ### Cloud store credentials
 
@@ -172,22 +172,21 @@ are in the selection-key table above. See [Maintenance](/repository/maintenance/
 
 ---
 
-## Multi-tenancy & authentication
+## Authentication & access
 
 Wire-gating system properties, read at startup before any tenant configuration.
-See [Multi-tenancy & authentication](/repository/multi-tenancy-auth/).
+See [Authentication & access](/repository/authentication/).
 
 | Key | Default | What it sets |
 |-----|---------|--------------|
 | `auth` | `false` | Enforce the credential model. `false` leaves the server **open** - every request allowed. |
 | `read-only` | `false` | Deployment-wide read-only mode: every write - external or internal - is refused with `403`, all reads work normally. Advertised at `GET /api/capabilities`. |
-| `tenant` | `default` | The tenant of the fixed artifact space a single-tenant deployment serves. Multi-tenant routing reads it from the key instead. |
-| `repository` | `default` | The repository of that fixed space. Multi-tenant routing reads it from the request path instead. |
+| `tenant` | `default` | The tenant half of the one artifact space this deployment serves. |
+| `repository` | `default` | The repository half of that space. |
 | `jenesis.repository.anonymous-rights` | *(unset - no rights)* | Rights a keyless caller is granted under an enforcing deployment. Blank grants nothing, so anonymous access is strictly opt-in. |
 
-Finer controls - credential lifetime **policy** (a 90-day default, a hard ceiling, a rotation overlap of
-about a week), OIDC **trusts** (roughly an hour's minted-key TTL), custom **roles**, per-tenant **quota**
-and **rate limit** - are per-tenant data set through the management surface, not startup properties.
+Finer controls - credential lifetime **policy**, OIDC **trusts**, custom **roles**, the **quota** and the
+**rate limit** - are data set through the management surface, not startup properties.
 
 ---
 

@@ -152,7 +152,7 @@ Every capability in this section is one of these seams. This is where each plugs
 | Pull-through proxying and group repositories | Proxying & groups |
 | Publication screens and after-commit observers | *(this chapter)* |
 | Shared artifact walk and garbage collection | Maintenance |
-| Tenant directory and auth mechanisms | Multi-tenancy & authentication |
+| Authentication mechanisms | Authentication & access |
 | Rate limiter and usage tracker | Rate limiting & usage tracking |
 | Import sources and importers | Migration & import |
 | Console panels | The console |
