@@ -13,18 +13,21 @@ description: The Jenesis product family - a Java-native build tool, module runne
       documentation.
     </p>
     <p class="landing-release">
-      <a class="landing-release__version" href="{{ release.releaseUrl }}">
-        Latest release <strong data-latest-version>{{ release.version }}</strong>
-      </a>
       <code class="landing-release__install">{{ release.install }}</code>
     </p>
   </section>
 
   <div class="project-grid">
     {% for s in sections %}
+      {% set component = release.components[s.key] %}
       <a class="project-card" href="{{ s.url }}">
         <img src="/assets/logos/light/{{ s.logo }}.svg" alt="" data-logo="{{ s.logo }}">
-        <span class="project-card__name">{{ s.title }}</span>
+        <span class="project-card__head">
+          <span class="project-card__name">{{ s.title }}</span>
+          {% if component %}
+            <span class="project-card__version" data-release-repo="{{ component.repo }}" hidden></span>
+          {% endif %}
+        </span>
         <p class="project-card__tagline">{{ s.tagline }}</p>
       </a>
     {% endfor %}

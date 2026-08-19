@@ -1,9 +1,16 @@
-// The current Jenesis build-tool release shown on the landing page. `version` is the build-time fallback
-// (kept fresh by assets/js/version.js, which reads the latest tag from the GitHub API at page load); the
-// release URL is a permalink GitHub always redirects to the newest release, so the link never goes stale.
+// Which repository each landing-page tile takes its release from. No version is committed here on purpose:
+// assets/js/version.js reads the newest release tag from the GitHub API at page load, and a tile whose
+// lookup does not answer stays hidden rather than showing a number that may since have been superseded.
+//
+// The build tool and jpx ship in the same artifact and therefore share a repository - the refresh fetches
+// each distinct repository once.
 export default {
-  version: "v0.10.5",
-  releaseUrl: "https://github.com/raphw/jenesis/releases/latest",
-  apiUrl: "https://api.github.com/repos/raphw/jenesis/releases/latest",
   install: "curl -fsSL https://get.jenesis.build | bash",
+  components: {
+    tool: { repo: "raphw/jenesis" },
+    jpx: { repo: "raphw/jenesis" },
+    launcher: { repo: "raphw/jenesis-launcher" },
+    modules: { repo: "raphw/jenesis-modules" },
+    repository: { repo: "raphw/jenesis-repository" },
+  },
 };
