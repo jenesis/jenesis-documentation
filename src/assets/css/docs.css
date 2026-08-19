@@ -85,20 +85,26 @@ body { --pico-line-height: 1.6; }
 .landing-hero { text-align: center; padding: var(--app-space-6) 0; }
 .landing-hero h1 { font-size: var(--app-font-size-2xl); margin-bottom: var(--app-space-3); }
 .landing-hero p { max-width: 40rem; margin: 0 auto; color: var(--pico-muted-color); font-size: var(--app-font-size-lg); }
-.landing-release {
+/* Selector carries `.landing-hero` so the margin wins against the hero's own paragraph rule above. */
+.landing-hero .landing-release {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
-  gap: var(--app-space-3); margin-top: var(--app-space-5); font-size: var(--app-font-size-sm);
+  gap: var(--app-space-3); margin: calc(var(--app-space-6) + var(--app-space-2)) auto 0;
 }
+/* The install line closes the hero, so it is set as a line of type rather than as a boxed code sample: no
+   frame to compete with the tiles below, and the logo's amber to tie it to the mark in the header. */
 .landing-release__install {
-  background: var(--pico-code-background-color); border: 1px solid var(--pico-muted-border-color);
-  border-radius: var(--app-radius-md); padding: var(--app-space-1) var(--app-space-3); font-size: var(--app-font-size-sm);
+  background: none; border: 0; padding: 0;
+  color: var(--app-brand-amber); font-size: var(--app-font-size-base);
 }
 
+/* The tools are peers, so every tile is the same width whatever row it lands in - a fixed track rather than
+   a fraction of the row, and a row that does not fill up is centred instead of left ragged. */
 .project-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  display: flex; flex-wrap: wrap; justify-content: center;
   gap: var(--app-space-4); margin-top: var(--app-space-6);
 }
 .project-card {
+  flex: 0 1 18rem;
   display: flex; flex-direction: column; gap: var(--app-space-3);
   padding: var(--app-space-5); text-decoration: none; color: inherit;
   border: 1px solid var(--pico-muted-border-color); border-radius: var(--app-radius-lg);
@@ -194,6 +200,10 @@ body { --pico-line-height: 1.6; }
 .demo-item span { color: var(--pico-muted-color); font-size: var(--app-font-size-sm); }
 @media (max-width: 40rem) {
   .demo-item { grid-template-columns: 1fr; gap: 0; }
+  .project-card { flex-basis: 100%; }
+  /* The install line is one command, so it stays on one line: it scales with the viewport instead of
+     breaking after the pipe. */
+  .landing-release__install { font-size: min(var(--app-font-size-sm), 3.3vw); white-space: nowrap; }
 }
 
 .docs-pager {
