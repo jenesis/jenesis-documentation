@@ -33,9 +33,21 @@ jpx org.junit.platform.console                  # by module name
 jpx org.junit.platform:junit-platform-console   # by Maven coordinate
 ```
 
+The name decides more than where jpx looks for what to run: it decides how the program is run.
+
+- **A module name runs as a module.** Every jar of the closure that describes one is placed on the module
+  path, any jar that does not on the class path, and the entry point starts as `java -m <module>/<main-class>`
+  does.
+- **A Maven coordinate runs on the class path.** A `<groupId>:<artifactId>` pair names an artifact rather
+  than a module, so its closure is placed on the class path in full and its main class is named directly.
+
+Named either way, the two install the same jars and verify against the same digest; what differs is the paths
+the [descriptor](/jpx/installation/) records.
+
 With `--modular`, jpx resolves purely over module names, following each module's `requires` with no POM
-involved at all - so every dependency must itself be a named module. For that reason it applies only to a
-module name; a Maven coordinate is refused rather than resolved another way.
+involved at all - so every dependency must itself be a named module - and places every jar of the closure on
+the module path. For that reason it applies only to a module name; a Maven coordinate is refused rather than
+resolved another way.
 
 Either form reaches the same repositories a build does, and in the same order: your own local exports under
 `~/.jenesis/` and `~/.m2/` first, then the public ones. So a module you just published locally is runnable

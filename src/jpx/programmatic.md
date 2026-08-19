@@ -28,7 +28,7 @@ launcher next to `Project.java` can call it with nothing resolved at all.
 Both halves of a `jpx` invocation are one call each: install the target, launch what it installed.
 
 ```java
-Jpx jpx = new Jpx(false);
+Jpx jpx = new Jpx(PathPlacement.INFERRED);
 int status = jpx.install("org.junit.platform.console@6.1.3").launch(List.of("--version"));
 ```
 
@@ -38,10 +38,13 @@ described earlier, reusing an existing install when there is one, and returns an
 on the folder it landed in. A malformed target throws `IllegalArgumentException` rather than resolving
 something unexpected.
 
-The constructor's flag is `--modular`: `false` resolves a module name through its published coordinates, and
-`true` resolves purely over module descriptors. It belongs to the instance rather than to the call, because
-it decides which repository and resolver that instance carries - so one `Jpx` answers one way, consistently,
-for every target you hand it.
+The constructor's argument is the placement, and it is what `--modular` selects: `PathPlacement.INFERRED`
+resolves a module name through its published coordinates and places each jar as it describes a module, while
+`PathPlacement.MODULE_PATH` resolves purely over module descriptors and places every jar of the closure on the
+module path. It belongs to the instance rather than to the call, because it also decides which repository and
+resolver that instance carries - so one `Jpx` answers one way, consistently, for every target you hand it. A
+Maven coordinate is the one target it does not govern: it names an artifact rather than a module, and runs on
+the class path whichever placement the instance was built with.
 
 `launch` starts a `java` process with the installed paths and entry point, inherits the current process's
 streams, waits for it, and returns the child's exit code. The single-argument form uses the installation's
@@ -80,9 +83,11 @@ String digest = descriptor.getProperty("checksum");     // the SHA-256 over all 
 Path folder = installation.folder();
 ```
 
-The `modulepath` and `classpath` entries are comma-separated file names, relative to that folder. A target
-with no entry point at all is a legitimate install - `mainClass` is simply absent, and `launch` then fails
-unless you name a class yourself.
+The `modulepath` and `classpath` entries are comma-separated file names, relative to that folder. Which of
+the two a jar lands in follows from how the target was named: a module name is placed jar by jar as each
+describes a module, a Maven coordinate on the class path in full - so `mainModule` is absent for a coordinate,
+as it is for a module name whose jars declare none. A target with no entry point at all is a legitimate
+install too - `mainClass` is simply absent, and `launch` then fails unless you name a class yourself.
 
 To find an install that is already on disk without resolving anything, ask for the newest one by name:
 
@@ -146,24 +151,41 @@ try {
 
 ## Choosing where things come from
 
-`Jpx` is a record of four values - the storage folder, the repositories, the resolvers, and the hash
-function - and each constructor leaves the rest at their defaults. A storage folder of your own keeps installs
-out of `~/.jenesis/jpx`, which is what a test, a sandboxed tool, or a demo wants:
+`Jpx` is a record of five values - the storage folder, the repositories, the resolvers, the hash function,
+and the placement - and it has two constructors. The short one takes a placement and fills the rest in the way
+the command does, installing under `~/.jenesis/jpx`:
 
 ```java
-Jpx jpx = new Jpx(Path.of("target", "jpx"));          // resolve by published coordinates
-Jpx modular = new Jpx(Path.of("target", "jpx"), true); // resolve over module descriptors
+Jpx jpx = new Jpx(PathPlacement.INFERRED);        // resolve by published coordinates
+Jpx modular = new Jpx(PathPlacement.MODULE_PATH); // resolve over module descriptors
 ```
 
-The full constructor replaces the repositories and resolvers as well - the way to resolve from a private
-mirror, or from a local folder with no network at all:
+`PathPlacement.CLASS_PATH` is the third value, and the one a Maven coordinate runs under however the instance
+was built.
+
+Anything else names all five. A storage folder of your own keeps installs out of `~/.jenesis/jpx`, which is
+what a test, a sandboxed tool, or a demo wants - and it arrives together with the repositories and resolvers
+that go with it, here the defaults spelled out:
+
+```java
+MavenPomResolver maven = new MavenPomResolver();
+Repository modules = JenesisModuleRepository.of(JenesisRepository.Scope.ARTIFACT);
+Jpx jpx = new Jpx(Path.of("target", "jpx"),
+        Map.of("maven", MavenDefaultRepository.of(), "module", modules),
+        Map.<String, Resolver>of("maven", maven, "module", new MavenModuleResolver("maven", maven, modules)),
+        new HashDigestFunction("SHA-256"),
+        PathPlacement.INFERRED);
+```
+
+Replacing them is the way to resolve from a private mirror, or from a local folder with no network at all:
 
 ```java
 URI mirror = URI.create("https://nexus.example.com/maven2/");
 Jpx jpx = new Jpx(storage,
         Map.of("maven", new MavenDefaultRepository(mirror, local, Map.of("SHA256", mirror), _ -> { }, token)),
         Map.of("maven", new MavenPomResolver()),
-        new HashDigestFunction("SHA-256"));
+        new HashDigestFunction("SHA-256"),
+        PathPlacement.INFERRED);
 ```
 
 Repositories are keyed by the kind of coordinate they serve - `maven` for Maven coordinates and `module` for
@@ -173,8 +195,8 @@ missing entry fails rather than silently reaching the public default.
 <div class="note">
   The defaults are not hard-coded either: they are built from the same environment the build tool reads, so
   <code>MAVEN_REPOSITORY_URI</code> and <code>JENESIS_REPOSITORY_URI</code> - and their token and local-folder
-  companions - already redirect a plain <code>new Jpx(false)</code> at a mirror. Construct the repositories
-  yourself when the choice has to come from your program rather than from its environment.
+  companions - already redirect a plain <code>new Jpx(PathPlacement.INFERRED)</code> at a mirror. Construct
+  the repositories yourself when the choice has to come from your program rather than from its environment.
 </div>
 
 <div class="tip">
