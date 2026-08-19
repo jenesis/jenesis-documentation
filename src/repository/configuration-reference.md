@@ -285,6 +285,7 @@ See [Multi-tenancy & authentication](/repository/multi-tenancy-auth/).
 | `read-only` | `false` | Deployment-wide read-only mode: every write - external or internal - is refused with `403`, all reads work normally. Advertised at `GET /api/capabilities`. |
 | `tenant` | `default` | The tenant of the fixed artifact space a single-tenant deployment serves. Multi-tenant routing reads it from the key instead. |
 | `repository` | `default` | The repository of that fixed space. Multi-tenant routing reads it from the request path instead. |
+| `jenesis.repository.anonymous-rights` | *(unset - no rights)* | Rights a keyless caller is granted under an enforcing deployment. Blank grants nothing, so anonymous access is strictly opt-in. |
 
 Finer controls - credential lifetime **policy** (a 90-day default, a hard ceiling, a rotation overlap of
 about a week), OIDC **trusts** (roughly an hour's minted-key TTL), custom **roles**, per-tenant **quota**
@@ -353,6 +354,32 @@ An installed connector is also switchable off by name - `jenesis.repository.nexu
 `nexus` from the accepted `source` values, per the **Feature toggles & implementation selection**
 section above.
 
+One startup property guards the edge itself, since a migration is walked with the upstream credentials
+attached:
+
+| Key | Default | What it sets |
+|-----|---------|--------------|
+| `jenesis.repository.block-private-import-hosts` | `true` | Refuse a migration URL that is plaintext `http`, or whose host resolves to a private or loopback address. |
+| `jenesis.repository.batch-upload` | `false` | Accept a zip carrying `X-Jenesis-Explode: zip` and explode it into one publish per entry. |
+| `jenesis.repository.demo` | `false` | Seed a completely empty repository with real artifacts on first boot; refuses a non-empty one. |
+
+---
+
+## Multi-node consistency
+
+Read at startup, except the dials, which are runtime-tunable. Off by default: a single node writes nothing.
+See [Observability](/repository/observability/).
+
+| Key | Default | What it sets |
+|-----|---------|--------------|
+| `jenesis.consistency.enabled` | `false` | Publish this node's fingerprint and compare it against the others. Per node, not a shared setting. |
+| `jenesis.consistency.node-id` | *(generated)* | This node's identity in the comparison. Per node. |
+| `jenesis.consistency.heartbeat` | *(sweep interval)* | Milliseconds between fingerprint publishes. |
+| `jenesis.consistency.sweep-interval` | | Milliseconds between consistency sweeps. |
+| `jenesis.consistency.sweep-intervals` | | How many frozen sweeps before a live-but-frozen node is reported stuck. |
+| `jenesis.consistency.staleness-window` | | Milliseconds a node may lag and still count as benign lag. |
+| `jenesis.consistency.dead-after` | | Milliseconds after a node's last heartbeat before it is treated as dead and no longer compared. |
+
 ---
 
 ## Observability
@@ -368,6 +395,7 @@ variables, or in the deployment's configuration. See [Observability](/repository
 | `logging.level.build.jenesis.observation` | `INFO` | Verbosity of the one-line-per-operation observation log; raise to `WARN` for failures only. |
 | `management.tracing.sampling.probability` | `0.0` | Fraction of operations traced (`1.0` = all); needs a tracing bridge on the module path. |
 | `management.otlp.tracing.endpoint` | *(unset)* | Where to export spans over OTLP; unset exports nothing even when sampling is above zero. |
+| `jenesis.repository.logs.buffer` | `1000` | How many recent log entries the in-memory ring behind `GET /api/logs` and the console's **Logs** panel keeps. |
 
 ---
 

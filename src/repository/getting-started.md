@@ -125,6 +125,13 @@ SPRING_PROFILES_ACTIVE=dev JENESIS_STORE_ROOT=/var/lib/jenesis-repository \
   <strong>Multi-tenancy &amp; authentication</strong> chapter.
 </div>
 
+<div class="tip">
+  A brand-new server is empty, which makes it hard to judge. Start it with
+  <code>-Djenesis.repository.demo=true</code> and it seeds itself with real artifacts in the background,
+  pulled through the normal proxy path. It refuses a repository that already holds anything, so it can never
+  touch a real one.
+</div>
+
 ## Publish a Maven artifact
 
 The Maven layout is served under **`/repository/maven/`**, so that URL is a drop-in Maven repository for
