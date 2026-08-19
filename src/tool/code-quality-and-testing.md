@@ -1,5 +1,5 @@
 ---
-order: 7
+order: 8
 title: Code quality & testing
 description: The linters, formatters, coverage, test selection and mutation testing Jenesis runs for you - each turned on by dropping its config file in place, no build script and no plugin to register.
 ---
@@ -121,6 +121,33 @@ line by line. JaCoCo, like every tool here, resolves in its own group (`jacoco`)
   Set <code>-Djenesis.observe.jacoco=false</code> to suppress it even when the file is present.
 </div>
 
+## Narrowing a test run
+
+While you are chasing one failure, running the whole suite each time is noise. Two properties narrow what the
+test step executes:
+
+```bash
+java -Djenesis.test.filter='calc.*Test#addsTwo' build/jenesis/Project.java
+java -Djenesis.test.tag='!(slow)' build/jenesis/Project.java
+```
+
+`jenesis.test.filter` takes a comma-separated list of `<classRegex>[#<method>]` entries and runs only what
+matches. `jenesis.test.tag` selects by the tags or groups your test framework already understands, including
+its exclusion syntax.
+
+A narrowed run is still the same step, so its result is remembered together with **what it covered**. A later
+run is skipped only when nothing changed *and* that recorded scope covers what is being asked for now - so
+asking for something the last run did not execute runs the tests again, and anything the comparison cannot
+decide runs them too, because a skipped test is not a passed test.
+
+<div class="tip">
+  To run the tests when nothing at all has changed - a flaky test, a debugging session - pass
+  <code>-Djenesis.test.force</code>. It drops the comparison for that run only. Narrowing belongs on a
+  developer machine, though: a build that populates a
+  <a href="/tool/build-performance-and-isolation/">shared cache</a> should run the full suite, or a narrowed
+  result can be served to someone asking for more.
+</div>
+
 ## Running only the tests a change affects
 
 Jenesis already skips a module's whole test step when none of that module's inputs changed. **Test selection**
@@ -169,12 +196,27 @@ project's own resolved `junit-platform`, so it always lines up with the test fra
 lands under `reports/pitest/`, and `-Djenesis.mutate.pitest=false` suppresses the run while keeping the file in
 place.
 
+## Seeing every failure at once
+
+A multi-module build fans out: each module's tests are their own branch of the graph, and those branches run
+concurrently. By default the run reports the **first** failure and stops there, which is what you want when one
+broken module means the rest is moot. When you would rather see the whole picture - a CI run, or a change that
+touches every module - let the failures aggregate:
+
+```bash
+java -Djenesis.executor.aggregate=true build/jenesis/Project.java
+```
+
+Every independent branch then runs to completion and the build fails once, reporting every module that broke
+rather than stopping at the first. A step whose input failed is still skipped either way: only *independent*
+failures aggregate.
+
 ## Pinning the tool chain
 
 Every tool above floats a `RELEASE` version in its own dependency group, so the first build downloads the
 latest and later builds reuse the cache. When you want a reproducible, checksum-verified tool chain, run
 `java build/jenesis/Project.java pin` - it records each resolved tool jar with its SHA-256 exactly as it pins
-your compilers and dependencies (see *[Dependencies](/tool/dependencies/)*). Some closures are large (PMD's CLI bundle alone pulls in
+your compilers and dependencies (see *[Pinning & bills of materials](/tool/pinning/)*). Some closures are large (PMD's CLI bundle alone pulls in
 well over a hundred artifacts), which is why the demos leave them floating for readability.
 
 <div class="tip">

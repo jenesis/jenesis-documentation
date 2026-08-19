@@ -1,5 +1,5 @@
 ---
-order: 11
+order: 13
 title: Build performance & isolation
 description: Confine the build and the program it launches inside a throwaway Docker container, and share step outputs across builds, machines, and CI through the build cache.
 ---
@@ -16,7 +16,7 @@ A build runs untrusted code even when you customise nothing. The stock pipeline 
 runs later, all with the full rights of whoever started the build. A single compromised dependency (a malicious
 release, a hijacked account, a typo-squatted coordinate) executes with those same rights.
 
-[Pinning](/tool/dependencies/) guarantees you get the exact bytes you vetted rather than a silently swapped
+[Pinning](/tool/pinning/) guarantees you get the exact bytes you vetted rather than a silently swapped
 artifact - but it guarantees *what* runs, not that what runs is safe. Docker addresses the other half: it
 confines what that code can reach when it executes, so even a malicious dependency cannot read your host secrets
 or write outside the sandbox.
@@ -205,11 +205,8 @@ so the file may be omitted entirely:
 | `read` | `true` | serve cache reads; `read=false` makes every lookup a miss |
 | `write` | `true` | populate the cache; `write=false` serves reads but never writes, evicts, or touches |
 
-Eviction is by file timestamp, performed on write; `touch` keeps recently-read entries fresh so the count caps
-(`steps`, `versions`) and the byte cap (`size`) approximate an LRU. `ttl` adds an age dimension: a store also
-dispatches a background sweep that drops every entry idle longer than the duration, even while the caps have
-room. `compressed` trades the hard-linked reads of the folder format for a packed, transport-friendly layout,
-approaching the shape a remote cache server stores.
+Eviction runs on write and goes by file timestamp, which `touch` keeps fresh on every read - so the three caps
+(`steps`, `versions`, `size`) approximate an LRU, and `ttl` adds an age dimension on top of them.
 
 <div class="tip">
   <code>read</code> and <code>write</code> are the typical CI split: a privileged job builds with the defaults
@@ -220,9 +217,9 @@ approaching the shape a remote cache server stores.
 
 <div class="tip">
   Two runnable projects cover this chapter:
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-38-docker-isolation">demo-38</a> leaks a
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-41-docker-isolation">demo-41</a> leaks a
   credentials file and an environment secret on the host, then confines both the build and the launched program
   with Docker, and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-42-build-cache">demo-42</a> serves a forced full
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-45-build-cache">demo-45</a> serves a forced full
   rebuild entirely from the build cache. See <a href="/tool/demos/">Demos</a>.
 </div>

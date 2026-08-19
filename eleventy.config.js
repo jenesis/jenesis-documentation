@@ -16,7 +16,7 @@ export default function (eleventy) {
   for (const section of ["tool", "jpx", "launcher", "modules", "repository"]) {
     eleventy.addCollection(section, (api) =>
       api
-        .getFilteredByGlob(`src/${section}/**/*.md`)
+        .getFilteredByGlob([`src/${section}/**/*.md`, `src/${section}/**/*.njk`])
         .sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0))
     );
   }

@@ -36,13 +36,15 @@ The chapters build up from zero knowledge:
 2. **Getting started** - install via SDKMAN, build an example, and read the `Project.java` model.
 3. **Core concepts** - build steps, the build graph, layouts, and the module-system specifics.
 4. **Configuration** - `jenesis.properties`, per-module configuration, and profiles.
-5. **Building & running** - compile, annotation processing, test, `Execute`, and watch mode.
-6. **Dependencies** - resolution, strict pinning, module-name lookup, and exclusions.
-7. **Code quality & testing** - formatting, coverage, test selection, and mutation testing.
-8. **Other JVM languages** - Kotlin, Scala, and Groovy.
-9. **Supply-chain features** - SBOM, dependency licensing, and vulnerability scanning.
-10. **Packaging & distribution** - executables, bundles, jlink/jpackage, native images, launcher jars.
-11. **Build performance & isolation** - Docker isolation and the build cache.
-12. **Extending the build** - custom assemblers and build definitions.
-13. **Reference** - the command line, configuration keys, and the built-in steps.
-14. **Demos** - a runnable example project for every feature.
+5. **Building & running** - compile, annotation processing, test, `Execute`, agents, and watch mode.
+6. **Dependencies** - resolution, module-name lookup, exclusions, and module aliases.
+7. **Pinning & bills of materials** - exact versions and checksums in your sources, shared and enforced.
+8. **Code quality & testing** - formatting, coverage, test selection, and mutation testing.
+9. **Other JVM languages** - Kotlin, Scala, and Groovy.
+10. **Supply-chain features** - SBOM, dependency licensing, and vulnerability scanning.
+11. **Packaging** - executables, bundles, jlink/jpackage, container contexts, native images, launcher jars.
+12. **Publishing** - staging a release bundle, publishing it, and driving a release tool.
+13. **Build performance & isolation** - Docker isolation and the build cache.
+14. **Extending the build** - custom assemblers and build definitions.
+15. **Reference** - the command line, configuration keys, and the built-in steps.
+16. **Demos** - a runnable example project for every feature.

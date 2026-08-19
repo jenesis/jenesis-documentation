@@ -1,5 +1,5 @@
 ---
-order: 8
+order: 9
 title: Other JVM languages
 description: Compiling Kotlin, Scala and Groovy - alone or mixed with Java in one module - the compile order that decides which packages you can export, the standard-library dependency each needs, their code-quality tools, and enabling a Kotlin or Scala compiler plugin.
 ---
@@ -84,7 +84,7 @@ is locked independently of the standard library your module ships against, so pi
 for your code can never downgrade the `kotlinc` that compiles it.
 
 The compilers float a latest version by default. Run the `pin` step to record each resolved compiler jar with its
-version and SHA-256, exactly as it pins your Java compilers and dependencies (see *[Dependencies](/tool/dependencies/)*):
+version and SHA-256, exactly as it pins your Java compilers and dependencies (see *[Pinning & bills of materials](/tool/pinning/)*):
 
 ```bash
 java build/jenesis/Project.java pin

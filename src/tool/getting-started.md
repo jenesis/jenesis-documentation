@@ -49,9 +49,9 @@ run from a project root.
   copy. In that mode you can only tune the build through system properties, not custom build code.
 </div>
 
-The SDK also ships companion scripts: `jenesis-version` and `jenesis-validate` check that a project's
-embedded `build/jenesis/` matches the installed version, and `jenesis-switch` moves the current shell to the
-version a project records.
+The SDK also ships companion scripts: `jenesis-exec` runs a module's `main` the way `jenesis` runs the build,
+`jenesis-version` and `jenesis-validate` check that a project's embedded `build/jenesis/` matches the installed
+version, and `jenesis-switch` moves the current shell to the version a project records.
 
 ### curl bootstrap
 
@@ -68,10 +68,13 @@ branch: `curl -fsSL https://get.jenesis.build | bash -s -- main`.
 ### Git submodule
 
 Most explicit, and the most reproducible: the pinned submodule commit is the anchor, so a fresh clone plus
-`git submodule update --init` is the entire setup, with no separate install step.
+`git submodule update --init --depth 1` is the entire setup, with no separate install step. Jenesis is read at
+its pinned commit and its history is never browsed from your project, so record the submodule as shallow and
+every fresh checkout stays cheap:
 
 ```bash
-git submodule add https://github.com/raphw/jenesis.git .jenesis
+git submodule add --depth 1 https://github.com/raphw/jenesis.git .jenesis
+git config -f .gitmodules submodule..jenesis.shallow true
 ln -s ../.jenesis/sources/build/jenesis build/jenesis
 java build/jenesis/Project.java
 ```
