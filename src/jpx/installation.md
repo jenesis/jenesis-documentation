@@ -28,6 +28,11 @@ and as a coordinate installs twice, side by side - the second under
 `org.junit.platform--junit-platform-console@6.1.3`, since a folder name cannot carry the coordinate's colon.
 The jars, and therefore the digest, are the same.
 
+The paths are not. The `modulepath` above is what a module name produces - each jar placed as it describes a
+module - while the coordinate's descriptor lists those same jars as a `classpath` and records no `mainModule`,
+because a coordinate names an artifact rather than a module. [Choosing a target](/jpx/targets/) covers the
+distinction.
+
 This is also what makes an unpinned target fast: the most recently installed version is preferred over a
 fresh resolution, so only the first run pays for a download - see
 [Choosing a target](/jpx/targets/).

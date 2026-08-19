@@ -9,7 +9,7 @@ The whole surface of jpx is one target and a handful of flags. The target gramma
 
 | Flag | What it does |
 | --- | --- |
-| `--modular` | Resolve purely over module descriptors, walking `requires` clauses like the [`modular` layout](/tool/core-concepts/) - every module must be explicitly named. |
+| `--modular` | Resolve purely over module descriptors, walking `requires` clauses like the [`modular` layout](/tool/core-concepts/) - every module must be explicitly named - and place every jar on the module path. |
 | `--docker[=<image>]` | Run the launched process in a container while resolution and installation stay on the host. An empty value is the same as naming no image. |
 | `--hash=<prefix>` | Verify the installed jars against a known digest before launching. At least 32 hex characters, with or without a leading `SHA-256/`. |
 | `--help` | Print the usage screen and exit. |
@@ -31,9 +31,8 @@ Every flag has a counterpart in the API, which [Using jpx from Java](/jpx/progra
 
 | Call | What it does |
 | --- | --- |
-| `new Jpx(modular)` | The default wiring: installs under `~/.jenesis/jpx`; `modular` is `--modular`. |
-| `new Jpx(storage[, modular])` | The same, with installs under a folder of your choosing. |
-| `new Jpx(storage, repositories, resolvers, hashFunction)` | Full control over where artifacts come from and how they are digested. |
+| `new Jpx(placement)` | The command line's wiring: installs under `~/.jenesis/jpx`; `PathPlacement.MODULE_PATH` is `--modular`, `PathPlacement.INFERRED` the default. |
+| `new Jpx(storage, repositories, resolvers, hashFunction, placement)` | The record itself: where installs land, where artifacts come from, how they are digested, and how a module name's jars are placed. |
 | `jpx.install(target)` | Resolve and install `<name>[@<version>][/<main-class>]`, returning an `Installation`. |
 | `Jpx.Command.parse(target)` / `jpx.install(command)` | The same, with the target's three parts in hand. |
 | `jpx.latestInstalled(name)` | The newest install of a name already on disk, without resolving anything. |
