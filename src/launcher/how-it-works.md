@@ -88,6 +88,25 @@ only way to add these modules at run time, and the right one: they stay real nam
 mean in practice - and the pitfalls they create - is the subject of
 [*Running & troubleshooting*](/launcher/running-and-troubleshooting/).
 
+### A jar that names no module
+
+One case cannot be derived at all: a dependency that declares neither a `module-info` nor an
+`Automatic-Module-Name`. A build gives such a jar a name by [aliasing](/tool/dependencies/) it - which works
+by renaming the file, since an automatic module's name comes from its file name - but inside a bundle the
+file has been renamed again, to encode its coordinate, so the name would be lost.
+
+So the name travels in the manifest instead. The module that declared the alias records it:
+
+```
+Jenesis-Aliases: org.kohsuke.args4j=args4j/args4j
+```
+
+Each entry maps a module name onto the `<groupId>/<artifactId>` it applies to, matched against the coordinate
+encoded in the bundled jar's file name. The launcher then offers that jar as an automatic module under the
+declared name, so a `requires` and a qualified `opens` naming it both resolve inside the layer, exactly as
+written. Only a jar with no identity of its own is considered - a jar that names itself keeps its own name -
+and two names claimed for one jar is an error rather than a choice the launcher makes for you.
+
 ## Reading the bundle on demand
 
 Because every class and resource is a direct entry of the outer jar, the launcher never merges anything into

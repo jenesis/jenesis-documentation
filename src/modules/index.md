@@ -48,3 +48,5 @@ URL shapes are the whole contract, so a mirror that serves the same shapes is a 
 4. **How the catalogue is produced** - a short, non-code overview: Maven Central is scanned regularly, each
    artifact's real module name is read, and named vs. automatic modules are distinguished. Background, for
    trust - not required to use the service.
+5. **Crawling it yourself** - the crawler is a program you can run against a repository of your own, and the
+   companion tools that repair, extend, and report on the catalogue it produces.
