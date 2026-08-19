@@ -31,7 +31,7 @@ just these primitives over an object namespace:
   cleanup never scans a whole tree. `exists`, `size`, and `delete` round out the set.
 
 That is the whole contract. Because it is this narrow, the same content-addressed publication path,
-multi-tenancy, and console work identically whether the bytes land on a disk or in a cloud bucket - the
+authorization, and console work identically whether the bytes land on a disk or in a cloud bucket - the
 layers above the store never learn which backend answered.
 
 <div class="note">

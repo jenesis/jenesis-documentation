@@ -99,7 +99,7 @@ It supports monolithic **and** chunked blob uploads, manifests addressed by tag 
 kept in a sidecar so a pull returns it verbatim), `tags/list`, and `HEAD` existence checks. The fit is
 unusually clean because an OCI blob is addressed by its `sha256:` digest - **exactly the content-addressed
 `blobs/<hex>` key** the store already uses - so image layers, configs, and manifests dedupe against
-everything else and inherit the same multi-tenancy, authorization, storage, and console as a Maven artifact,
+everything else and inherit the same authorization, storage, and console as a Maven artifact,
 for free. It can also run as a pull-through mirror of an upstream registry (see **Proxying & groups**).
 
 ### Generic files - raw
@@ -114,7 +114,7 @@ OCI (see **Migration & import**).
 Because a format is just a discovered module over the shared store, extending the server to a new ecosystem -
 npm, PyPI, NuGet, Cargo, Gem, and the rest - is **adding one more format module to the path**, grouped by the
 same three shapes above (a coordinate layout, a registry protocol, or a generic file store). It inherits the
-content-addressed storage, multi-tenancy, authorization, and console untouched. There is no central table of
+content-addressed storage, authorization, and console untouched. There is no central table of
 formats to edit and no core to fork; the set of format modules on a deployment's path is the full list of
 what it speaks.
 
