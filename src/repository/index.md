@@ -5,9 +5,9 @@ description: What Jenesis Repository is, the principles behind it, and the path 
 ---
 
 **Jenesis Repository is an artifact repository built from discovered plug-ins over a thin core.** It hosts
-and proxies many package formats (Maven, npm, PyPI, Docker/OCI, and more), screens what passes through a
-supply-chain gate, and persists everything through a single storage abstraction - with **no database**: the
-store (a filesystem, S3, GCS, or Azure) is the only durable state.
+and proxies the Maven layout, the Jenesis module layout, OCI/Docker and raw artifacts - a format is a module
+on the path, so what it speaks is what you install - and persists everything through a single storage
+abstraction, with **no database**: the store (a filesystem, S3, GCS, or Azure) is the only durable state.
 
 ## The principles
 
@@ -18,8 +18,9 @@ back to them:
   path - only small metadata is ever parsed whole.
 - **Persist only through the store.** Every durable thing - a blob, an index, a counter, a config document -
   is an object written through the storage abstraction. There is no second database.
-- **A thin core with pluggable SPIs.** Each capability (a format, a storage backend, a gate policy, an auth
-  mechanism) is a `ServiceLoader`-discovered module. The core knows the seam, not the implementation.
+- **A thin core with pluggable SPIs.** Each capability (a format, a storage backend, an importer, a
+  publication screen) is a `ServiceLoader`-discovered module. The core knows the seam, not the
+  implementation.
 - **Optional modules degrade gracefully.** A capability that is not installed simply isn't there; the surface
   that needed it reports so, and the rest keeps working.
 - **Read-first, libraries over hand-rolled.** Work is pre-computed on write or in a background sweep so reads
@@ -48,16 +49,11 @@ Because the system *is* its capabilities, every capability chapter follows the s
 4. **Storage** - the `ArtifactStore` SPI, then the filesystem, S3, GCS, and Azure backends.
 5. **Formats** - the format SPIs, then the built-in Maven, module, OCI/Docker and raw layouts.
 6. **Proxying & groups** - the fetcher SPI, pull-through caching, and group repositories.
-7. **The compliance gate** - the publication-interceptor and policy SPIs, then licence, vulnerability, and
-   malware screening.
-8. **Provenance** - the signer SPI, then keyless (Sigstore) signing and attestation.
-9. **Search & inventory** - the search SPI, then the index and licence inventory.
-10. **Maintenance** - the sweep SPI, then cleanup, retention, scanning, garbage collection, and reclamation.
-11. **Multi-tenancy & authentication** - the tenants and auth SPIs, then key, OIDC, SAML, and SCIM.
-12. **Rate limiting & usage tracking** - the limiter and usage-tracker SPIs, then the token bucket and the
-    batching worker.
-13. **Publish-through forwarding** - the transport SPI and its implementations.
-14. **Migration & import** - the import-source SPI, then the Nexus, Artifactory, and Jenesis connectors.
-15. **Observability** - metrics and tracing.
-16. **The console** - signing in, browsing, and reading a deployment's capabilities.
-17. **Configuration reference** - every setting in one place.
+7. **Maintenance** - the resumable artifact walk, and the opt-in garbage collector that rides it.
+8. **Multi-tenancy & authentication** - the tenants and auth SPIs, then keys, OIDC, and read-only mode.
+9. **Rate limiting & usage tracking** - the limiter and usage-tracker SPIs, then the token bucket and the
+   batching worker.
+10. **Migration & import** - the import-source SPI, then the Nexus, Artifactory, and Jenesis connectors.
+11. **Observability** - logs, metrics, tracing, and the multi-node consistency check.
+12. **The console** - signing in, browsing, and reading a deployment's capabilities.
+13. **Configuration reference** - every setting in one place.

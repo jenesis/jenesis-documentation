@@ -111,20 +111,21 @@ S3, and Azure backends; for now, know that there is exactly one store and everyt
 
 ## The publication path
 
-The one flow worth learning in full is what happens when an upload commits - because the compliance gate,
-provenance, forwarding, and observability all hang off it. An accepted publish takes four steps, in order:
+The one flow worth learning in full is what happens when an upload commits - because screening, observation
+and everything a plug-in hangs off the publish path attach to it. An accepted publish takes four steps, in
+order:
 
 1. **The blob is stored, content-addressed, first.** The request body streams through the digest into
    `blobs/<sha256>`. At this point the bytes exist but nothing points at them - the artifact is not yet
    visible under any path.
-2. **The gate screens it.** An ordered chain of screens reads the **neutral descriptor** the format emits
+2. **It is screened.** An ordered chain of screens reads the **neutral descriptor** the format emits
    (its coordinate, version, and metadata - never the format's own layout) and each returns a verdict:
    **`ACCEPT`**, **`QUARANTINE`**, or **`REJECT`**. The publish is routed by the strongest disposition any
    screen returned.
 3. **The pointer is linked.** On accept, a pointer links the request path to the stored blob. *Now* the
    artifact is served. A quarantined or rejected publish never gets this link, so its bytes are never served.
 4. **After-commit observers run.** Only once an accepted artifact is linked and serving are the observer
-   hooks notified - the seam that forwarding, webhooks, replication, and scan hand-offs ride. An observer has
+   hooks notified - the seam a webhook, a replication feed or a hand-off to another system rides. An observer has
    **no say in the verdict** and its failure is logged and contained, so it can never fail the upload.
    Removal is symmetric: when a version is unpublished or evicted, the same observers are notified once per
    removed pointer - contained the same way, never blocking the removal - so a derived view learns about
@@ -137,9 +138,8 @@ provenance, forwarding, and observability all hang off it. An accepted publish t
 </div>
 
 Because screens and observers are plug-ins, **the core ships neither** - so out of the box every upload is
-accepted and served exactly as it arrives. A deployment that wants a compliance gate or a forwarder plugs it
-in at these two seams. The **compliance gate** and **provenance** chapters are entirely about step 2 and
-step 4.
+accepted and served exactly as it arrives. A deployment that wants an artifact screened before it is served,
+or wants to be told once one is, plugs a module in at these two seams; nothing about the core changes.
 
 ## The map
 
@@ -148,16 +148,12 @@ Every capability in this section is one of these seams. This is where each plugs
 | Seam | Chapter |
 |------|---------|
 | Storage backend | Storage |
-| Package format (Maven, module, OCI, npm, …) | Formats |
+| Package format (Maven, module, OCI, raw) | Formats |
 | Pull-through proxying and group repositories | Proxying & groups |
-| Publication screening and gate policy | The compliance gate |
-| Provenance signing and attestation | Provenance |
-| Search index and licence inventory | Search & inventory |
-| Background maintenance tasks | Maintenance |
+| Publication screens and after-commit observers | *(this chapter)* |
 | Shared artifact walk and garbage collection | Maintenance |
 | Tenant directory and auth mechanisms | Multi-tenancy & authentication |
 | Rate limiter and usage tracker | Rate limiting & usage tracking |
-| Publish-through forwarding | Publish-through forwarding |
 | Import sources and importers | Migration & import |
 | Console panels | The console |
 
