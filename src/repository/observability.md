@@ -66,6 +66,20 @@ logging.level.build.jenesis.observation=WARN
 When tracing is enabled, each of these lines also carries the current **trace and span ids**, so you
 can pivot straight from a log entry to the full trace.
 
+### Reading the recent ones without shell access
+
+You do not always have the log file to hand - a container that ships its output elsewhere, or a colleague
+diagnosing a publish from the console. The server keeps its **last 1000 entries in memory** and serves them
+at `GET /api/logs`, filtered by `level`, searched with `q`, and tailed with a `since` cursor:
+
+```bash
+curl -H "Jenesis-Repository-Key: $KEY" 'https://repo.example.com/api/logs?level=WARN&q=publish'
+```
+
+The console surfaces the same thing as a **Logs** panel. It is a bounded ring, never a file re-read, so it
+costs a fixed amount of memory and cannot grow: `jenesis.repository.logs.buffer` sets how many entries it
+holds. Reading it is authorised like every other read.
+
 ## Metrics
 
 Metrics are exposed through Spring Boot Actuator. By default the server publishes three Actuator
@@ -126,6 +140,45 @@ line now carries the trace id, a warning in your logs links straight to the trac
   Sampling at <code>1.0</code> traces every request - right for a short investigation, expensive as a
   standing default. Lower <code>management.tracing.sampling.probability</code> to a small fraction once
   you are done, or leave tracing off entirely and rely on metrics and logs.
+</div>
+
+## Running more than one node
+
+Several server nodes over one shared store are **eventually consistent by design**: each derives its own
+indexes from the store, so at any instant one may be slightly behind another. That is normal and harmless -
+what matters is telling it apart from a node that has stopped catching up.
+
+Each node therefore publishes a small **fingerprint** of its derived state on a heartbeat - its cursor, its
+config generation, a few counters and a sampled set of pointers - and `GET /api/consistency` compares the
+fingerprints of the nodes currently alive:
+
+```bash
+curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/api/consistency
+```
+
+The comparison distinguishes two things. A node that is **behind but still advancing** inside the staleness
+window is benign lag, and is reported as such. A node that is **alive but frozen** - its cursor unmoved for
+several sweeps - or that disagrees about something which must be identical, like the configuration
+generation or where a pointer resolves, is **diverged**, and that is a problem to act on.
+
+It **detects and reports; it never blocks a request**. A divergence surfaces three ways: as a
+[security-posture](/repository/provenance/) advisory naming the node and the fix, as metrics
+(`jenesis.consistency.nodes`, `jenesis.consistency.diverged`) with a matching health check, and as a
+**Consistency** panel in the console.
+
+<div class="note">
+  Off by default, because a single node has nothing to compare itself against and would only write
+  heartbeats into an otherwise clean store. A multi-node deployment sets
+  <code>jenesis.consistency.enabled=true</code> and gives each node its own
+  <code>jenesis.consistency.node-id</code> - both per node rather than shared, since they describe the
+  instance rather than the deployment. It degrades cleanly: one node reports no divergence rather than a
+  false positive.
+</div>
+
+<div class="tip">
+  This is what makes the per-instance caveat on the metrics above safe to rely on. The numbers a node
+  reports are its own, so a fleet reading one node's metrics sees one node's view - the consistency check
+  is how you learn whether that view is representative.
 </div>
 
 ## Settings

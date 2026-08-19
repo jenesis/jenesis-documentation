@@ -122,6 +122,22 @@ That is exactly what the `jenesis` connector consumes, so one instance can be en
 another - but the format is plain enough for any tool of your own. Getting your data out is never the paid
 feature.
 
+## Loading an archive in one request
+
+A migration walks a live repository. When what you have is a *directory of artifacts* instead - a backup, an
+air-gapped hand-off, the output of somebody else's export - a single request can carry it. With
+`jenesis.repository.batch-upload=true`, a `PUT` whose body is a zip and which carries
+`X-Jenesis-Explode: zip` is exploded into **one publish per entry**:
+
+```bash
+curl -X PUT -H "Jenesis-Repository-Key: $KEY" -H "X-Jenesis-Explode: zip"      --data-binary @artifacts.zip https://repo.example.com/default/
+```
+
+Each member travels its own format's normal publish path, so nothing about it is a shortcut: the same layout
+writer runs, and the same publication screen sees every entry. The response is a per-entry manifest saying
+what landed. It is off by default, capped by entry count, and refuses a path that would escape the target
+namespace.
+
 ## Triggering a migration
 
 You start a migration on a running server with a single request; it runs in the **background** and returns a

@@ -194,6 +194,26 @@ Whichever mechanism denies a request, the server records the failure by **mechan
 `saml`) and outcome, exposed as a metric so a dashboard can watch authentication health across all of them at
 once.
 
+## Letting a keyless caller read
+
+An enforcing deployment refuses a request that carries no credential. Where a repository is meant to be
+readable by anyone - a public mirror, an open-source project's own artifacts - one setting grants a keyless
+caller a named set of rights:
+
+```properties
+jenesis.repository.anonymous-rights=repository:read
+```
+
+It is **strictly opt-in and blank by default**, so an enforcing deployment stays closed until somebody says
+otherwise, and what is granted is spelled out rather than implied - anonymous read is a different decision
+from anonymous write, and each is named.
+
+<div class="note">
+  This is not the same as leaving the wire open. An open deployment (<code>auth=false</code>) allows every
+  request and identifies nobody; an enforcing deployment with anonymous rights still authenticates every
+  caller that <em>does</em> present a key, and grants the unauthenticated ones exactly the listed rights.
+</div>
+
 ## Read-only mode
 
 Authentication decides *who* may write; a second, deployment-wide switch removes writing altogether.
