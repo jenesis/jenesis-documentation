@@ -17,8 +17,8 @@ numbers are. The front door is the **module summary**; every other report is lin
 
 [`SUMMARY.md`](https://github.com/raphw/jenesis-modules/blob/main/data/SUMMARY.md) is the coverage report
 for all of Maven Central. Its opening **Totals** table is the headline: in a recent crawl it counted about
-**17.7 million** artifacts scanned, of which **1.6 million** are modular - **342 737** named and **1.26
-million** automatic - spread across **40 118** distinct module names and **5 134** publishing groupIds.
+**18.2 million** artifacts scanned, of which **1.65 million** are modular - **357 151** named and **1.30
+million** automatic - spread across **41 377** distinct module names and **5 328** publishing groupIds.
 
 Two terms recur throughout, and the split matters:
 
@@ -43,7 +43,7 @@ Coverage across the whole catalogue understates what you actually meet in practi
 a very long tail of artifacts almost nothing depends on. The **top-modules** reports fix that by ranking the
 ~1000 **most depended-on** artifacts of a given year and showing how many of them ship a module. There is one
 report per year - [2019](https://github.com/raphw/jenesis-modules/blob/main/data/top/2019.md) through
-[2024](https://github.com/raphw/jenesis-modules/blob/main/data/top/2024.md) - so you can watch adoption move
+[2025](https://github.com/raphw/jenesis-modules/blob/main/data/top/2025.md) - so you can watch adoption move
 over time.
 
 Each report opens with two summary tables - **by artifact** and **by groupId** - counted in three columns:

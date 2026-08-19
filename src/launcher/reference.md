@@ -144,6 +144,7 @@ the rest appear only when the bundle carries agents.
 | `Agent-Class` | `build.jenesis.launcher.LauncherAgent` (or a unique trampoline) | An agent bundle attached dynamically at run time. |
 | `Can-Redefine-Classes` | `true` | Grants the bundled agents class-redefinition capability. |
 | `Can-Retransform-Classes` | `true` | Grants the bundled agents class-retransformation capability. |
+| `Jenesis-Aliases` | `<module>=<groupId>/<artifactId>[,…]` | A bundled jar that declares no module identity of its own is offered as an automatic module under the named module name (see [*How it works*](/launcher/how-it-works/)). |
 
 Agent capabilities are read from this same manifest, so `Can-Redefine-Classes` / `Can-Retransform-Classes`
 are added when a bundled agent needs them. The build tool sets whichever of these the bundle requires; the
