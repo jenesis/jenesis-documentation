@@ -41,8 +41,9 @@ page with a confirmation.
 
 The console is a single page built from **panels**. Each capability the deployment runs contributes
 its own panel - a labelled entry in the top navigation and a card of content below it - and the page
-stitches whichever panels are present into one tabbed view. The core server always ships the **browse**
-panel; other panels appear as their capabilities are installed.
+stitches whichever panels are present into one tabbed view. The core ships five: **Browse**, the
+**installed capabilities** catalogue, **Observability**, **Logs** and **Consistency**, with a **Posture**
+panel beside them; other panels appear as their capabilities are installed.
 
 That is the first useful thing the console tells you: **it shows only what is actually installed.** A
 format, a storage backend, or an authentication mechanism that is not on this server's module path

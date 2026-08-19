@@ -78,8 +78,7 @@ rather than rebuilt. Spring's relaxed binding makes every key an environment var
 |---------------|---------|---------------|
 | `jenesis.repository.store` | `filesystem` | The storage backend: `filesystem`, `s3`, `gcs`, `azure-blob`. See [Storage](/repository/storage/). |
 | `jenesis.repository.fetcher` | *(first enabled - `http`)* | The upstream HTTP fetcher every proxy and import shares. See [Proxying & groups](/repository/proxying/). |
-| `jenesis.repository.token-exchange` | *(first enabled - `oidc`)* | The OIDC token-exchange implementation behind `/api/token`. See [Authentication & access](/repository/authentication/). |
-| `jenesis.repository.tenants` | *(first enabled)* | The tenant-directory implementation (`store-tenants` in the standard image). |
+| `jenesis.repository.token-exchange` | *(first enabled - `oidc`)* | Which token-exchange implementation validates a workload's identity token. See [Authentication & access](/repository/authentication/). |
 | `jenesis.repository.rate-limiter` | *(first enabled - `token-bucket`)* | The rate-limiter implementation. See [Rate limiting & usage tracking](/repository/rate-limiting-usage/). |
 | `jenesis.repository.key-usage` | *(first enabled - `batching`)* | The credential usage-tracker implementation. |
 | `jenesis.repository.retention` | *(first enabled - `cleaner`)* | The retention engine behind the cleanup and retention endpoints. See [Maintenance](/repository/maintenance/). |
@@ -150,9 +149,9 @@ Per-format system properties, read at startup. See [Proxying & groups](/reposito
 
 | Key | Default | What it sets |
 |-----|---------|--------------|
-| `jenesis.repository.proxy-enabled` | `true` | The pull-through switch for the whole deployment; `false` serves every format hosted-only. |
 | `jenesis.repository.proxy.<format>` | *(the format's canonical upstream)* | Overrides the upstream URL a proxy-capable format mirrors, keyed by its name (`proxy.maven` → Maven Central, `proxy.oci` → Docker Hub). A format that declares no canonical upstream stays hosted-only until named here. |
 | `jenesis.repository.proxy-miss-ttl` | `60s` | How long a definite upstream `404` is remembered in the negative cache; `0` disables it. |
+| `jenesis.proxy.request-timeout` | `PT1M` | How long one upstream fetch may take before it is abandoned (ISO-8601 or plain seconds). |
 
 ---
 
@@ -179,7 +178,7 @@ See [Authentication & access](/repository/authentication/).
 
 | Key | Default | What it sets |
 |-----|---------|--------------|
-| `auth` | `false` | Enforce the credential model. `false` leaves the server **open** - every request allowed. |
+| `auth` | `true` | Enforce the credential model. `false` leaves the server **open** - every request allowed - and raises the `jenesis.auth.open` posture advisory. |
 | `read-only` | `false` | Deployment-wide read-only mode: every write - external or internal - is refused with `403`, all reads work normally. Advertised at `GET /api/capabilities`. |
 | `tenant` | `default` | The tenant half of the one artifact space this deployment serves. |
 | `repository` | `default` | The repository half of that space. |
@@ -200,8 +199,8 @@ See [Rate limiting & usage tracking](/repository/rate-limiting-usage/).
 | `jenesis.repository.rate-limit` | *(unset - no limit)* | Deployment-default request ceiling in permits per minute, metered per tenant; excess sheds with `429` and a `Retry-After`. Actuator probes are never throttled. |
 | `jenesis.repository.track-key-usage` | `false` | Record each credential's last use, source address and use count on the batching worker. |
 
-A tenant's own rate ceiling is per-tenant data set through the management surface
-(`PUT /api/rate-limit`), not a startup property.
+The ceiling covers every caller, including the shared anonymous bucket; the Actuator probes are never
+throttled.
 
 ---
 
@@ -212,7 +211,7 @@ See [Migration & import](/repository/migration-import/).
 
 | Field | Required | What it sets |
 |-------|----------|--------------|
-| `source` | yes | Connector name: `nexus`, `artifactory`, or `jenesis` (whichever are on the path). |
+| `source` | yes | Connector name: `maven`, `index`, `nexus`, `artifactory`, or `jenesis` (whichever are on the path). |
 | `url` | yes | The incumbent's base URL. |
 | `repository` | yes | The source repository to walk. |
 | `format` | for `artifactory` | The single package type of the source (`maven2`, `docker`, `raw`); Nexus and Jenesis report it per asset. |
@@ -233,6 +232,7 @@ attached:
 |-----|---------|--------------|
 | `jenesis.repository.block-private-import-hosts` | `true` | Refuse a migration URL that is plaintext `http`, or whose host resolves to a private or loopback address. |
 | `jenesis.repository.batch-upload` | `false` | Accept a zip carrying `X-Jenesis-Explode: zip` and explode it into one publish per entry. |
+| `jenesis.repository.batch-upload-max-entries` | `10000` | How many entries one exploded archive may carry. |
 | `jenesis.repository.demo` | `false` | Seed a completely empty repository with real artifacts on first boot; refuses a non-empty one. |
 
 ---
@@ -267,7 +267,7 @@ variables, or in the deployment's configuration. See [Observability](/repository
 | `logging.level.build.jenesis.observation` | `INFO` | Verbosity of the one-line-per-operation observation log; raise to `WARN` for failures only. |
 | `management.tracing.sampling.probability` | `0.0` | Fraction of operations traced (`1.0` = all); needs a tracing bridge on the module path. |
 | `management.otlp.tracing.endpoint` | *(unset)* | Where to export spans over OTLP; unset exports nothing even when sampling is above zero. |
-| `jenesis.repository.logs.buffer` | `1000` | How many recent log entries the in-memory ring behind `GET /api/logs` and the console's **Logs** panel keeps. |
+| `jenesis.repository.logs-buffer` | `1000` | How many recent log entries the in-memory ring behind `GET /api/logs` and the console's **Logs** panel keeps. |
 
 ---
 
