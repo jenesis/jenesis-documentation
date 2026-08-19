@@ -35,7 +35,12 @@ jpx org.junit.platform:junit-platform-console   # by Maven coordinate
 
 With `--modular`, jpx resolves purely over module names, following each module's `requires` with no POM
 involved at all - so every dependency must itself be a named module. For that reason it applies only to a
-module name, not to a Maven coordinate.
+module name; a Maven coordinate is refused rather than resolved another way.
+
+Either form reaches the same repositories a build does, and in the same order: your own local exports under
+`~/.jenesis/` and `~/.m2/` first, then the public ones. So a module you just published locally is runnable
+immediately, and `JENESIS_REPOSITORY_URI` and `MAVEN_REPOSITORY_URI` point jpx at a mirror or an internal
+repository exactly as they point a build.
 
 ## The version - which release
 

@@ -1,12 +1,13 @@
 ---
 order: 6
 title: Dependencies
-description: Declaring dependencies in each layout; how they resolve over the Maven and module repositories; version negotiation; Maven exclusions; and strict pinning with SHA-256 checksums in your sources.
+description: Declaring dependencies in each layout, how they resolve over the Maven and module repositories, which version wins a conflict, pruning an unwanted transitive, and giving a nameless library a module name.
 ---
 
 Every non-trivial build pulls in libraries. This chapter is about where you declare them, how Jenesis turns
-each declaration into a downloaded jar, and - because a build is only as trustworthy as the bytes it pulls -
-how to **pin** every one of those jars to an exact version *and* checksum, recorded in your own sources.
+each declaration into a downloaded jar, which version it settles on when two paths disagree, and the two
+tags that let you correct a closure you do not control - dropping a transitive you do not want, and naming a
+library that arrives without a module name of its own.
 
 ## Declaring a dependency
 
@@ -88,9 +89,12 @@ java build/jenesis/Project.java dependencies
 ```
 
 Each node shows the version every parent requested, the **negotiated** version inline when it differs
-(`[1,2] -> 2`), the scope, and the dependency's licence (`{Apache-2.0}`). A per-module *Resolved dependencies*
-list and a licence summary follow the tree. It is the fastest way to answer "why is this version on my class
-path?" before you pin anything.
+(`[1,2] -> 2`), the scope, the dependency's licence (`{Apache-2.0}`), and `local` for a module built inside
+this project rather than fetched. A per-module *Resolved dependencies* list and a licence summary follow the
+tree. It is the fastest way to answer "why is this version on my class path?" before you pin anything.
+
+For a large closure, `-Djenesis.tree.format=compact` prints each dependency once instead of at every place it
+is reached - the shape to skim when you only want the set, not the paths through it.
 
 ## Version negotiation
 
@@ -106,10 +110,36 @@ To override the negotiated result, declare the version you want directly - a `<v
 `<dependencyManagement>` entry) in Maven, or a **pin** in a modular project (below). A declared version always
 beats what negotiation would have chosen.
 
-## Excluding a transitive (Maven only)
+### Choosing a different strategy
 
-A Maven dependency can drag in a transitive you do not want. Prune it with an `<exclusions>` block, exactly as
-in Maven - the excluded artifact never reaches the class path, tests included:
+Each repository's rule is the sensible default, and each is selectable when you want another. On the Maven
+side, `-Djenesis.resolver.maven` takes four values:
+
+| Value | Rule |
+| --- | --- |
+| `maven` | *(the default)* Maven's own: declared versions, ranges and `RELEASE`/`LATEST` resolved from repository metadata, nearest-wins on a conflict, with ranges intersected when one competes. |
+| `closest` | The same minus the range arbitration - the nearest declaration simply stands, and no metadata is fetched to settle a conflict. |
+| `latest` / `release` | Ignore every declared version and take the `<latest>` or `<release>` entry of each coordinate's metadata. |
+
+On the module side, `-Djenesis.resolver.module` decides what happens when two compiled `module-info` files
+record different versions of the same requirement: `first` (the default) keeps the one nearest the roots,
+`fail` reports the disagreement instead of discarding one, and `ignore` keeps no compiled version at all.
+
+<div class="warning">
+  <code>latest</code> and <code>release</code> are <strong>upgrade probes, not build modes</strong>. They
+  override pinned versions too, so the checksum recorded beside a pin no longer describes the artifact that
+  resolves and stops applying - under strict pinning the build then fails. Use them to find out what an
+  upgrade would pull in, then record the result with <code>pin</code>.
+</div>
+
+## Excluding a transitive
+
+A dependency can drag in a transitive you do not want. Pruning it is a Maven mechanism - an exclusion tells
+the resolver to skip a subtree of a POM - so it is available wherever a POM is read: in the `maven` layout,
+and in the default `modular_to_maven` layout, whose `requires` resolve through Maven.
+
+In a `pom.xml` it is an `<exclusions>` block, exactly as in Maven - the excluded artifact never reaches the
+class path, tests included:
 
 ```xml
 <dependency>
@@ -125,91 +155,77 @@ in Maven - the excluded artifact never reaches the class path, tests included:
 </dependency>
 ```
 
-There is no modular equivalent, and there is nothing to add. A module only ever sees what its
-`module-info.java` `requires`, so an unwanted transitive cannot silently appear on the module path in the first
-place. Exclusions are therefore a Maven-layout feature only.
-
-## Pinning: exact versions and checksums
-
-By default a resolved version can still drift - a `RELEASE` selector or an unpinned range resolves to whatever
-is newest today. **Pinning** freezes the entire transitive closure: every dependency records both an exact
-version *and* the SHA-256 checksum of the jar, in your own committed sources. A later build that resolves a jar
-whose bytes do not match the recorded checksum **fails** - so the build is resistant to a supply-chain swap at
-the coordinate you already trusted.
-
-### Recording the pins
-
-You do not write pins by hand. The `pin` selector resolves the closure, hashes each jar, and rewrites your
-sources with the result:
-
-```bash
-java build/jenesis/Project.java pin
-```
-
-`pin` is opt-in - it is not part of the default `build` - and it writes back into your project tree rather than
-under `target/`. In a **modular** project it adds a `@jenesis.pin` tag per dependency on the module
-declaration; in a **`pom.xml`** project it fills a `<dependencyManagement>` block, tagging each entry with a
-`<!--Checksum/…-->` comment. Commit the result and the pin set travels with the project.
-
-A pin in `module-info.java` reads:
+A `module-info.java` states the same thing as a tag, since it has no `<dependencies>` block to hang it on:
 
 ```java
 /**
- * @jenesis.pin com.fasterxml.jackson.databind 2.18.2 SHA-256/8f2b...c41
+ * @jenesis.exclude org.apache.commons.text org.apache.commons/commons-lang3
  */
-module demo.app {
-    requires com.fasterxml.jackson.databind;
+module demo.sample {
+    requires org.apache.commons.text;
 }
 ```
 
-The grammar is `@jenesis.pin <group>/<repository>/<coordinate> <version> [<algorithm>/<hash>]`, with two
-shorthands for a project's own dependencies (the `main` group):
+One line names the module to prune and any number of `<groupId>/<artifactId>` targets, and repeated lines for
+the same module add up, so a growing list of upstream mistakes stays readable. A target is an artifact, never
+one of its variants, so it carries no version, type, or classifier. Excluding from a module the declaration
+does not `requires` is an error rather than a silent no-op - it is a typo in every case that matters.
 
-| You write | Means |
-| --- | --- |
-| `com.fasterxml.jackson.databind` | a module name - `main/module/…` |
-| `org.slf4j/slf4j-api` | a Maven `groupId/artifactId` - `main/maven/…` |
-| `main/maven/org.foo/bar/jar/native` | a coordinate with a type or classifier, written in full |
-
-A module project can therefore pin a plain Maven transitive it pulls in (say a non-modular library behind a
-named module) with the `groupId/artifactId` form, even though its own dependencies resolve through the module
-repository. The same `@jenesis.pin` grammar - including a `:<classifier>` qualifier and a trailing `[<guard>]`
-platform guard - is covered in *Core concepts*; here it is enough that `pin` writes and refreshes these lines
-for you.
-
-<div class="tip">
-  Re-run <code>pin</code> whenever you change a dependency; it refreshes the versions and checksums from the
-  new closure and drops entries that no longer resolve. To record versions without checksums, pass
-  <code>-Djenesis.pin.checksum=false</code>. The digest defaults to SHA-256 and is set with
-  <code>-Djenesis.project.digest=&lt;algorithm&gt;</code>.
-</div>
-
-### Enforcing the pins
-
-How strictly the recorded pins are enforced is controlled by one property,
-`-Djenesis.dependency.pin`:
-
-| `-Djenesis.dependency.pin` | Versions | Checksums |
-| --- | --- | --- |
-| *(unset - the default)* | honoured where pinned | verified where a pin carries one; a dependency with no checksum is allowed |
-| `strict` | honoured | **required** - any third-party dependency without a pinned checksum fails the build |
-| `versions` | honoured | not verified |
-| `ignore` | float freely | not verified |
-
-The default already validates every checksum you have recorded - a mismatch always fails the build. **Strict**
-mode goes further and refuses to build at all until *nothing* is left unpinned, which is what you want in CI
-once a project is fully pinned: run `pin`, commit, then build under `-Djenesis.dependency.pin=strict` so no new
-un-vetted artifact can slip in unnoticed.
+Either way the artifact takes the whole subtree it pulled in with it, and because it never enters the resolved
+closure there is nothing left to leak: it is off the compile and test paths, absent from the generated POM, and
+absent from the bill of materials and the compliance reports, which is the honest answer - the build genuinely
+never fetched it.
 
 <div class="note">
-  First-party artifacts built within the project are exempt from the strict checksum requirement - only
-  third-party jars pulled from a repository must be pinned. So a multi-module project's own modules never need
-  a checksum to satisfy strict mode.
+  The strict <code>modular</code> layout is the one place this does not apply. Resolution there matches module
+  descriptors and never reads a POM, so there is no transitive POM dependency to prune and the tag is rejected
+  rather than ignored. Nothing is lost: a module only ever sees what it <code>requires</code>.
 </div>
 
+## Naming a library that has no module name
+
+Some libraries still ship as a plain jar: no `module-info`, and not even an `Automatic-Module-Name`. On the
+module path such a jar becomes an automatic module named after its *file*, which changes with the file and so
+cannot be `requires`d reliably. An **alias** gives one a name your project chooses:
+
+```java
+/**
+ * @jenesis.alias org.kohsuke.args4j args4j/args4j
+ */
+module demo.cli {
+    requires org.kohsuke.args4j;
+
+    opens demo.cli to org.kohsuke.args4j;
+}
+```
+
+The tag maps a module name onto a `<groupId>/<artifactId>` the resolved closure already contains, and the name
+is then a module name like any other - the `opens` above is what lets args4j set the annotated fields by
+reflection. Nothing is synthesized and no jar is rewritten: the artifact is placed under the aliased file name,
+which is exactly the name the JDK derives an automatic module from, so a pinned checksum keeps describing the
+bytes on the command line.
+
+Two rules keep an alias predictable. It carries **no version** - the version comes from a pin, a bill of
+materials, or the closure the alias names, and is stated in one place only. And it only ever *renames*: a jar
+that already declares a `module-info` or an `Automatic-Module-Name` is rejected, because it is addressable
+under that name already. An alias also travels: a project that depends on a module which declared one inherits
+the name without redeclaring it.
+
 <div class="tip">
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-26-maven-exclusions">demo-26</a> excludes a
-  transitive (<code>commons-lang3</code>) from a Maven dependency and ships <strong>already pinned</strong> -
-  its <code>&lt;dependencyManagement&gt;</code> holds the resolved closure with SHA-256 checksums, and the
-  excluded library is absent from it. It is a runnable project - see <a href="/tool/demos/">Demos</a>.
+  An alias does not have to be something you <code>requires</code> yourself. Naming a transitive dependency
+  the project never mentions is enough to make it a module every other module can require - which is how a
+  closure of plain jars is brought onto the module path one deliberate name at a time.
+</div>
+
+Aliases are a `modular_to_maven` feature: they reach an artifact by its Maven coordinate, which the strict
+`modular` layout does not use.
+
+<div class="tip">
+  Two runnable projects cover this chapter:
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-27-maven-exclusions">demo-27</a> excludes
+  Commons Lang from Commons Text and proves with a test that it is gone - in a POM, with the tag form beside
+  it; and
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-31-module-alias">demo-31</a> gives args4j -
+  a library with no module identity at all - a name of its own and opens a package to it. Each is a runnable
+  project - see <a href="/tool/demos/">Demos</a>.
 </div>

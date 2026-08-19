@@ -1,13 +1,12 @@
 ---
 order: 3
 title: Core concepts
-description: Build steps, the build graph, the four layouts, the module-system specifics, and how Jenesis decides what to rebuild.
+description: Build steps, the build graph, the layouts that shape a project into one, and how Jenesis decides what to rebuild.
 ---
 
-*[Getting started](/tool/getting-started/)* ran a build and toured `Project.java`. This chapter opens the box: what a build actually
-*is*, how Jenesis shapes your project into one, the module-system details it handles for you, and the rule
-that decides - on every run - what recompiles and what is reused. Everything here is machinery you rely on
-rather than write; the chapters after this one put it to work.
+*[Getting started](/tool/getting-started/)* ran a build and toured `Project.java`. This chapter opens the box:
+what a build actually *is*, how Jenesis shapes your project into one, and the rule that decides - on every
+run - what recompiles and what is reused. Three ideas, and everything later in this section rests on them.
 
 ## A build is a graph of steps
 
@@ -87,6 +86,13 @@ four values in full.
 `auto` resolves to `maven` when it finds a root `pom.xml`, and otherwise to `modular_to_maven` when it finds a
 `module-info.java`. It never chooses `modular` for you - you ask for it explicitly.
 
+<div class="note">
+  Discovery walks the project tree, so a repository that holds more than one project needs a way to say where
+  one stops. An empty <strong><code>.jenesis.skip</code></strong> file marks a subtree as none of this build's
+  business - the scan does not descend into it. That is how a sample project, a plug-in, or a vendored build
+  can sit inside a repository without being built as part of it.
+</div>
+
 ### maven vs. the two modular layouts
 
 `maven` is the classic path: Jenesis reads the declarative parts of your `pom.xml` (coordinates, dependencies,
@@ -104,18 +110,11 @@ how a `requires` is satisfied:
   no Maven coordinates anywhere, and emits **only the modular jar - no `pom.xml`**. Every dependency resolved
   this way is a named module, so the closure is provably consumable on the module path.
 
-The trade-off is what makes `modular` opt-in: resolving by module name restricts you to libraries published as
-proper **named** modules. A library that ships only as an *automatic* module (a plain jar whose module name is
-inferred from its filename or `Automatic-Module-Name`) has no stable name to resolve against, so it cannot be
-`requires`d under `modular` - though it works fine under `modular_to_maven`, which reaches it by coordinate.
-That is exactly why `auto` never selects `modular` for you.
-
-<div class="tip">
-  Reach for <code>modular</code> when your artifacts are only ever consumed as Java modules and you want a
-  build that is provably module-path-clean and free of Maven. Keep the default <code>modular_to_maven</code>
-  when you also want a <code>pom.xml</code> - to publish to Maven Central, or to depend on libraries available
-  only as Maven coordinates or automatic modules.
-</div>
+That difference is why `auto` picks `modular_to_maven`: reaching dependencies by coordinate makes it open to
+everything already published, including a library that carries no module name of its own. `modular` gives you
+more in return for asking more of the ecosystem - every dependency resolves as a named module, so the closure
+is provably module-path-consumable and no Maven coordinate appears anywhere - which is why you select it
+deliberately rather than having it selected for you.
 
 You can force a layout for one run with a system property, or record it in a project file (covered in
 *[Configuration](/tool/configuration/)*):
@@ -145,107 +144,6 @@ main/compile (module-sources)
 maven/org.slf4j/slf4j-api 2.0.16 [compile] (module org.slf4j)
 ```
 
-## Module-system specifics
-
-Because Jenesis carries a real module graph rather than a flattened class path, it understands several
-module-system features directly. You enable each with a small marker in source; the build does the rest.
-
-### Multi-release jars
-
-One jar can carry different bytecode for different Java versions, and the JVM loads the copy matching its own
-version at launch. Jenesis builds this from a source convention: anything under
-`sources/META-INF/versions/<N>/` is a **version overlay**, compiled in its own pass with `--release <N>` and
-written to `META-INF/versions/<N>/` inside the jar. When an overlay is produced, the jar's manifest is marked
-`Multi-Release: true` - the flag that tells the JVM to consult the versioned directory.
-
-```
-sources/
-├── module-info.java                           @jenesis.release 21
-├── sample/Platform.java                        the Java 21 baseline
-└── META-INF/versions/25/sample/Platform.java   the Java 25 override
-```
-
-Here the `@jenesis.release 21` tag pins the main compile to Java 21, and the overlay class is compiled a second
-time at release 25. The resulting jar runs the baseline on a Java 21 runtime and the overridden class on Java 25 -
-one artifact, two implementations, selected by the JVM.
-
-### Module classifiers
-
-Some artifacts publish several jars under one coordinate, distinguished by a *classifier*: same module name,
-different bytes. On the module path a module name has exactly one artifact, so Jenesis treats the classifier as
-a **value on the pin**, not part of the coordinate - selected with a leading-colon qualifier
-`:<classifier>[:<version>]`:
-
-```java
-/**
- * @jenesis.pin mutiny.zero :jdk-flow:0.4.3 SHA-256/0556f076...
- */
-module demo.classifier {
-    requires mutiny.zero;
-}
-```
-
-The pin stays keyed by the bare module name, so it applies wherever the module appears in the closure -
-directly or transitively - and only one variant of a module name can ever be present, mirroring the module
-path's own uniqueness rule. The module repository serves the variant under a fused filename
-(`mutiny.zero/0.4.3/mutiny.zero-jdk-flow.jar`), redirecting to the classified Maven artifact.
-
-<div class="warning">
-  Classifier pins resolve through the <strong>module</strong> repository only, so they need the
-  <code>modular</code> layout. The <code>modular_to_maven</code> layout translates modules into Maven
-  coordinates and rejects them, because a classified artifact shares its coordinate's POM - there is no
-  per-classifier POM to translate through.
-</div>
-
-### Platform guards
-
-Where a classifier commits one variant, a **platform guard** declares several and lets the build pick one per
-machine. Each pin line may end with a bracketed guard, and the line whose guard matches the active platform
-wins:
-
-```java
-/**
- * @jenesis.pin org.openjfx.javafx.base :linux:21.0.3 SHA-256/...
- * @jenesis.pin org.openjfx.javafx.base :win:21.0.3 SHA-256/... [windows]
- * @jenesis.pin org.openjfx.javafx.base :mac-aarch64:21.0.3 SHA-256/... [macos,aarch64]
- */
-```
-
-The active platform is a set of **tokens** that starts from the detected operating system and chipset - one of
-`windows`/`linux`/`macos` plus one of `x86_64`/`aarch64`. A `-Djenesis.platform.<token>=true` flag adds a
-token and `-Djenesis.platform.<token>=false` removes a detected one, so
-`-Djenesis.platform.linux=false -Djenesis.platform.windows=true` cross-resolves a Windows closure from a Linux
-host, and free-form tokens (`fips`, `musl`) cover custom build flavours. A guard matches when *all* its tokens
-are in the active set; the most specific match wins, an unguarded line is the fallback, two equally specific
-matches fail the build, and an unmatched guard with no fallback leaves the module unpinned.
-
-The same `[<guard>]` suffix works on the `<!--jenesis.pin ... -->` comment block in a `pom.xml`, where it
-selects the version of a (typically transitive) coordinate per platform. Every variant stays committed in
-source with its own checksum, so the build is reproducible from the repository alone on any machine - selection
-only decides *which* checksum-validated line applies. Full pin grammar and strict pinning are covered in
-*[Dependencies](/tool/dependencies/)*.
-
-### Internal and external build modules
-
-Sometimes the build itself needs an extra pass - a code generator, a source preprocessor - packaged as a
-reusable plugin rather than inline steps. Jenesis loads such a plugin as a **build module**, obtained two ways:
-
-- an **internal** build module is compiled from local source in its own project folder, and
-- an **external** build module is resolved from a repository coordinate as a published artifact.
-
-Both are the same plugin; only where it comes from differs. A build module is a named Java module that
-`provides` a build-executor service, and Jenesis discovers it through that declaration - so **the plugin itself
-must be a named (explicit) module.** Its own *dependencies* are not restricted that way: a module layer admits
-automatic modules too, so a build module can depend on non-modular libraries resolved by Maven coordinate.
-
-<div class="note">
-  A build module brings its own copy of the Jenesis build API, usually a different version from the one running
-  the build. Jenesis loads each build module into its own <code>ModuleLayer</code> with its own class loader and
-  bridges calls across the boundary, so the two copies never clash and a plugin can pin a different Jenesis
-  version - as long as the API it uses lines up. Wiring these plugins into a build is the subject of
-  <em>Extending the build</em>.
-</div>
-
 ## Incremental change detection
 
 The last core concept is the one you feel on every run: Jenesis only redoes work that actually changed. In
@@ -263,12 +161,10 @@ its inputs. So a step re-runs when its inputs change **or when its own configura
 knob on a step (say a test filter) alters its serialized form, its hash changes, and it re-runs, even though not
 one input byte moved.
 
-<div class="warning">
-  The flip side is the same fact: what invalidates a step is its serialized <em>state</em>, so changing a
-  step's <em>logic</em> without changing its serialized fields will <strong>not</strong> invalidate the cache.
-  For the built-in steps this is invisible. It becomes a rule you must respect only when you write your own step
-  - the knobs that should trigger a rebuild have to live in serialized fields. <em>Extending the build</em>
-  covers that in full.
+<div class="note">
+  For the built-in steps this is invisible - they are written so that every knob worth rebuilding for is part
+  of that serialized state. It becomes a rule you have to respect only when you write a step of your own,
+  which <em>Extending the build</em> covers in full.
 </div>
 
 Selectors are deliberately *not* part of the hash - they only gate which steps get scheduled. So a step that
@@ -276,20 +172,9 @@ runs under a selector produces exactly the output a full build would have, and a
 cache as expected.
 
 <div class="tip">
-  The core concepts here are exercised end to end by
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-02-java-modular">demo-02</a> and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-04-java-modular-multi">demo-04</a> (modular
-  layouts and the module graph),
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-27-module-layout">demo-27</a> (the pure
-  <code>modular</code> layout),
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-08-java-multi-release">demo-08</a>
-  (multi-release jars),
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-28-module-classifier">demo-28</a> (module
-  classifiers),
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-29-platform-guard">demo-29</a> and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-30-platform-guard-pom">demo-30</a> (platform
-  guards), and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-33-internal-module">demo-33</a> /
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-34-external-module">demo-34</a> (internal and
-  external build modules). Each is a runnable project - see <a href="/tool/demos/">Demos</a>.
+  Two runnable projects show this chapter end to end:
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-04-java-modular-multi">demo-04</a> builds a
+  multi-module modular project and prints its module graph, and
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-29-module-layout">demo-29</a> is the same
+  shape of project under the pure <code>modular</code> layout. See <a href="/tool/demos/">Demos</a>.
 </div>

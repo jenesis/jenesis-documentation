@@ -1,5 +1,5 @@
 ---
-order: 12
+order: 14
 title: Extending the build
 description: Write your own build step, add it to the stock pipeline through a custom assembler, or wire the whole graph by hand - and the serialized-state rule a custom step must respect.
 ---
@@ -9,8 +9,9 @@ wires the conventional compile/jar/test flow, and you configure it by choosing a
 This chapter is for the build that needs something the templates *do not* model - a preprocessing pass, a
 code-generation step, a bespoke packaging step, an unusual dependency wiring.
 
-There are three levels of control, from least to most custom. All three share one primitive - the build
-step - so start there.
+There are three levels of control, from least to most custom - wrap the stock assembler, drive the toolchain
+from your own launcher, or wire the graph by hand - plus the question of where an extension lives once more
+than one project wants it. All of them share one primitive, the build step, so start there.
 
 ## Writing a build step
 
@@ -136,6 +137,25 @@ points at `preprocess`. `javac`, the jar step, and the tests all consume the tra
 of the build is untouched. Any pass that produces a `sources/` tree - template expansion, code generation,
 licence-header stamping - fits the same shape.
 
+## Packaging the extension as a plug-in
+
+A wrapper written next to `Project.java` belongs to one project. When the same pass - a code generator, a
+source preprocessor - should serve several, package it as a **build module**: a named Java module that
+`provides` a build-executor service, which Jenesis discovers through that declaration alone.
+
+A build module comes from one of two places, and nothing else about it differs:
+
+- an **internal** build module is compiled from local source in its own project folder, and
+- an **external** build module is resolved from a repository coordinate, like any published artifact.
+
+<div class="note">
+  A plug-in usually carries a different version of the Jenesis build API than the build running it. Each build
+  module is therefore loaded into its own <code>ModuleLayer</code> with its own class loader, and calls are
+  bridged across the boundary - so the two copies never clash and a plug-in may pin its own Jenesis version,
+  as long as the API it uses lines up. The plug-in itself must be an explicit named module; its
+  <em>dependencies</em> need not be, since a module layer admits automatic modules too.
+</div>
+
 ## Reusing the toolchain from your own launcher
 
 When you want your own `main` but still the stock compile/jar/test flow, skip `Project` and call the
@@ -182,13 +202,16 @@ There is no phase lifecycle to fit into: a build is just steps wired to steps, a
 yourself.
 
 <div class="tip">
-  Four runnable projects cover this chapter:
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-31-custom-assembler">demo-31</a> wraps the
+  Six runnable projects cover this chapter:
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-34-custom-assembler">demo-34</a> wraps the
   assembler to preprocess sources before they compile,
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-35-custom-maven">demo-35</a> and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-36-custom-modular">demo-36</a> drive a
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-36-internal-module">demo-36</a> and
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-37-external-module">demo-37</a> move that
+  same pass into a build module - one compiled from local source, one resolved as a published coordinate,
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-38-custom-maven">demo-38</a> and
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-39-custom-modular">demo-39</a> drive a
   multi-module Maven and modular build from a convenience <code>make</code>, and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-37-custom-build">demo-37</a> wires a
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-40-custom-build">demo-40</a> wires a
   code-generating graph entirely by hand on the <code>BuildExecutor</code> API. See
   <a href="/tool/demos/">Demos</a>.
 </div>

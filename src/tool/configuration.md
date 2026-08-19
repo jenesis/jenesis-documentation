@@ -53,11 +53,18 @@ What these folders can hold - presence activates, contents configure:
 - **Code quality**: `checkstyle.xml`, `pmd.xml`, `spotbugs-exclude.xml`, `detekt.yml`, `codenarc.xml`,
   `scalastyle-config.xml`.
 - **Formatting**: `javaformat.properties`, `.editorconfig`, `.scalafmt.conf`.
-- **Packaging and output**: `packaging.properties`, `sbom.properties`, `bom.properties`.
+- **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`.
 - **Compliance**: `licensing.properties`, `vulnerability.properties`, `spdx.properties`.
 - **Test observability**: `jacoco.properties`, `graal.properties`, `pitest.properties`.
 - **Forked-tool arguments**: `process-<command>.properties` - extra flags for `javac`, `kotlinc`, `jar`, and
   the like (see *[Building & running](/tool/building-and-running/)*).
+
+<div class="note">
+  One kind of file is looked up in its own list of locations rather than these: a
+  <code>pin-&lt;name&gt;.properties</code> bill of materials, whose locations are named by
+  <code>jenesis.project.boms</code> and default to the configuration folders above. They are deliberately
+  <em>not</em> profile-resolved, so no profile can swap a project's pinned versions out from under it.
+</div>
 
 Each of these is the subject of a later chapter; here the point is only *where* they go and that a file's mere
 presence switches its feature on.

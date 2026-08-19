@@ -62,6 +62,23 @@ module demo.app {
 A `pom.xml` project sets the same thing through its usual `maven.compiler.release` / `<release>`
 configuration.
 
+### One jar, several Java versions
+
+A jar can also carry different bytecode for different Java versions, with the JVM loading the copy that
+matches its own version at launch. You get one from a source convention: anything under
+`sources/META-INF/versions/<N>/` is compiled in its own pass with `--release <N>`.
+
+```
+sources/
+├── module-info.java                           @jenesis.release 21
+├── sample/Platform.java                        the Java 21 baseline
+└── META-INF/versions/25/sample/Platform.java   the Java 25 override
+```
+
+The jar that comes out runs the baseline on a Java 21 runtime and the override on Java 25 - one artifact, two
+implementations, selected by the JVM. Nothing else is needed: producing an overlay is what marks the jar
+`Multi-Release: true`, the flag that tells the JVM to look in the versioned directory at all.
+
 ### Source and API-documentation jars
 
 A normal `build` produces just the binary jar. Two flags add the companion artifacts a repository like Maven
@@ -122,7 +139,7 @@ module demo.annotations {
 
 Jenesis resolves the processor, places it on `javac`'s **processor path** (`--processor-module-path`), and the
 compiler runs it. The version is pinned the usual way - the `pin` step writes back the `@jenesis.pin` line for
-you (dependencies and pinning are covered in *[Dependencies](/tool/dependencies/)*).
+you (pinning is covered in *[Pinning & bills of materials](/tool/pinning/)*).
 
 <div class="warning">
   Processors are run <strong>only from what you declare</strong>. A dependency that happens to bundle a
@@ -186,6 +203,53 @@ java -Djenesis.execute.module=tools \
   current project is the job of <a href="/jpx/">jpx</a>.
 </div>
 
+## Attaching a Java agent
+
+Some libraries have to run as a `-javaagent` rather than be called through an API - a tracer that instruments
+classes as they load, a mocking library that redefines them. A `@jenesis.attach` tag on the module declaration
+adds one to the `java` commands that module owns: its test run, and the `Execute` run of its `@jenesis.main`.
+
+```java
+/**
+ * @jenesis.main demo.agents.Application
+ * @jenesis.attach io.opentelemetry.javaagent/opentelemetry-javaagent
+ */
+module demo.agents {
+    exports demo.agents;
+}
+```
+
+The token is a module name or a `<groupId>/<artifactId>`, and everything after it is passed to the agent
+verbatim as its option string. There is no version slot: the version comes from a dependency you already
+declare, from a pin, or floats to the latest without one. A `pom.xml` project declares the same lines in a
+project-level `<!--jenesis.attach ... -->` comment block.
+
+One tag covers both shapes an agent takes. The OpenTelemetry agent above is **agent-only**: required by
+nothing, compiled against nothing, never on a compile or runtime path - attached, and that is all. Mockito is
+the other shape, a **dependency that also attaches**, named by a `requires` *and* by an attach declaration;
+both resolve to the identical artifact, so the jar on the module path and the jar passed as `-javaagent:` are
+the same file.
+
+An attachment belongs to the module that declares it and never propagates to a dependent, so a test module
+attaches to its own test run:
+
+```java
+/**
+ * @jenesis.test demo.agents
+ * @jenesis.attach org.mockito
+ */
+open module demo.agents.test {
+    requires demo.agents;
+    requires org.mockito;
+}
+```
+
+<div class="note">
+  The resolved jar has to carry a <code>Premain-Class</code> manifest attribute - that is what makes it an
+  agent - and the build says so with a clear error before the launch rather than letting the JVM fail. Agents
+  are ordinary dependencies otherwise: they resolve, pin, and appear in the bill of materials like any other.
+</div>
+
 ## Watch mode
 
 While you are editing, keep the build process alive and let it rebuild on every save. Set
@@ -216,8 +280,13 @@ change can reach - a development-loop optimisation covered in *[Code quality & t
   <code>pom.xml</code> app with <code>&lt;mainClass&gt;</code>) and
   <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-06-java-modular-executable">demo-06</a> (a
   modular app with <code>@jenesis.main</code>);
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-08-java-multi-release">demo-08</a> builds a
+  multi-release jar with a Java 25 override of one class;
   <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-09-javac-arguments">demo-09</a> hands
-  <code>javac</code> a <code>-parameters</code> flag through <code>process-javac.properties</code>; and
+  <code>javac</code> a <code>-parameters</code> flag through <code>process-javac.properties</code>;
   <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-10-annotations">demo-10</a> runs an annotation
-  processor (Immutables). Each is a runnable project - see <a href="/tool/demos/">Demos</a>.
+  processor (Immutables); and
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-26-agents">demo-26</a> attaches Mockito to
+  its tests and the OpenTelemetry agent to its application run. Each is a runnable project - see
+  <a href="/tool/demos/">Demos</a>.
 </div>
