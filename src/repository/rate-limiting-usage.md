@@ -59,18 +59,9 @@ usage tracker's seam mirrors it as `jenesis.repository.key-usage` (`batching`). 
 
 ### The ceiling
 
-Two levels set the number, and the more specific wins:
+The ceiling is the `jenesis.repository.rate-limit` startup property, in permits per minute, covering every
+caller - including the shared anonymous bucket. Unset, or `0`, means no limit at all.
 
-- The **deployment default** - the `jenesis.repository.rate-limit` startup property, in permits per
-  minute, covering every tenant (and the anonymous bucket) that has no ceiling of its own. Unset means no
-  limit.
-- A **per-tenant ceiling** - per-tenant data held in the store, like the tenant's quota: set through the
-  management surface, not a startup property.
-
-| Endpoint | Does |
-|----------|------|
-| `GET /api/rate-limit` | The calling tenant's own ceiling in permits per minute; `0` means it falls back to the deployment default. |
-| `PUT /api/rate-limit` | Set (`{"permitsPerMinute": 600}`) or clear (`{"permitsPerMinute": 0}`) the tenant's ceiling. The change is recorded to the audit trail as `rate-limit.set`. |
 
 <div class="tip">
   Watch <code>jenesis.ratelimit.rejected</code> - a counter of requests shed with <code>429</code>, tagged
@@ -128,7 +119,6 @@ Both startup properties, read once when the server boots:
 | `jenesis.repository.rate-limit` | *(unset - no limit)* | Deployment-default request ceiling in permits per minute, metered per tenant; excess sheds with `429` and a `Retry-After`. Actuator probes are never throttled. |
 | `jenesis.repository.track-key-usage` | `false` | Record each credential's last use, source address and use count on the batching worker. |
 
-A tenant's own ceiling is per-tenant data set through `PUT /api/rate-limit` above, not a startup property -
 the same pattern as its quota in *Authentication & access*. And as everywhere, absence degrades
 gracefully: a deployment without the rate-limiting module never limits, and one without the usage module
 records nothing and says so on health.

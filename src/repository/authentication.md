@@ -10,14 +10,18 @@ that is reachable by anyone else needs the other thing: every request **identifi
 the server runs open until you enforce it, and the mechanism that enforces it is a module rather than a
 different binary.
 
-By default a fresh server is **open**: no key is required and every request is allowed. Turning on
-enforcement (`jenesis.repository.auth=true`) flips it to **deny-by-default** - the machine-to-machine artifact
-API is keyed by a header, with no browser session, no CSRF and no HTTP Basic in the way.
+A fresh server **enforces**: every request is authorised against a per-credential key, and one that carries
+none is refused. The machine-to-machine artifact API is keyed by a header, with no browser session, no CSRF
+and no HTTP Basic in the way.
+
+Running **open** is the opt-out, not the default - `jenesis.repository.auth=false` (env
+`JENESIS_REPOSITORY_AUTH=false`) allows every request and identifies nobody.
 
 <div class="warning">
-  Until you set <code>jenesis.repository.auth=true</code>, the server accepts <strong>every</strong> request,
-  keyed or not. That is the right default for a laptop or a trusted network, and the wrong one for anything
-  reachable. Enable enforcement before you expose the server.
+  Opening the wire is never silent. <code>auth=false</code> raises the <code>jenesis.auth.open</code>
+  security-posture advisory, logged once at boot and shown on the console and at
+  <code>GET /api/posture</code>, so a deployment that is open says so wherever an operator looks. It is the
+  right setting for a laptop; it is the wrong one for anything reachable.
 </div>
 
 ## The capabilities
@@ -218,19 +222,17 @@ configuration is read.
 
 | Key | Default | Meaning |
 |-----|---------|---------|
-| `auth` | `false` | Enforce the credential model. `false` leaves the server **open** - every request allowed. |
+| `auth` | `true` | Enforce the credential model. `false` leaves the server **open** - every request allowed - and raises a security-posture advisory. |
 | `read-only` | `false` | Refuse every write - external or internal - with `403`, while all reads work normally. Advertised at `GET /api/capabilities`. |
 | `tenant` | `default` | The tenant half of the one artifact space this deployment serves. |
 | `repository` | `default` | The repository half of that space. |
 
 Beyond these, the finer-grained controls are **per-tenant data** held in the store - credential lifetime
 **policy** (default and ceiling), OIDC **trusts**, custom **roles**, and a tenant's **quota** and
-**[rate limit](/repository/rate-limiting-usage/)** - set through the management surface of a deployment
-that installs it, not through a startup property.
-Installing the OIDC module (`source/oidc`) enables token exchange; installing a tenant-directory module enables
-more than the one configured tenant. A plain server without those runs enforcing, single-tenant, and
-key-only - which is a complete, safe deployment on its own. Both are also configuration-switchable
-where installed: `jenesis.repository.oidc=false` turns the token exchange off exactly like the
-missing module (`/api/token` answers `501`), and the exclusive seams select by name -
-`jenesis.repository.token-exchange=oidc`, `jenesis.repository.tenants=store-tenants` - per
+**[rate limit](/repository/rate-limiting-usage/)**.
+
+Installing the OIDC module enables token exchange; a server without it runs enforcing and key-only, which is
+a complete and safe deployment on its own. Where the module is installed it stays configuration-switchable -
+`jenesis.repository.oidc=false` turns the exchange off exactly as removing the module would, and
+`jenesis.repository.token-exchange` selects among implementations by name, per
 [Feature toggles & implementation selection](/repository/configuration-reference/).
