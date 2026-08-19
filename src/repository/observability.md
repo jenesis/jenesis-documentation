@@ -34,7 +34,7 @@ and Tomcat meters keep their own.
 
 Each observation carries the **repository** and **tenant** it ran under. These are recorded as
 **high-cardinality key-values**: they ride along on logs and trace spans, where you want to filter by
-them, but they are deliberately **kept off the metric tags**. A busy multi-tenant deployment can hold
+them, but they are deliberately **kept off the metric tags**. A busy deployment can hold
 thousands of repositories, and turning each into a metric dimension would multiply your time series
 past what a metrics backend can hold.
 

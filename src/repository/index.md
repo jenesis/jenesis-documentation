@@ -50,7 +50,7 @@ Because the system *is* its capabilities, every capability chapter follows the s
 5. **Formats** - the format SPIs, then the built-in Maven, module, OCI/Docker and raw layouts.
 6. **Proxying & groups** - the fetcher SPI, pull-through caching, and group repositories.
 7. **Maintenance** - the resumable artifact walk, and the opt-in garbage collector that rides it.
-8. **Multi-tenancy & authentication** - the tenants and auth SPIs, then keys, OIDC, and read-only mode.
+8. **Authentication & access** - the authentication seam, then keys and their grants, OIDC, anonymous read, and read-only mode.
 9. **Rate limiting & usage tracking** - the limiter and usage-tracker SPIs, then the token bucket and the
    batching worker.
 10. **Migration & import** - the import-source SPI, then the Nexus, Artifactory, and Jenesis connectors.

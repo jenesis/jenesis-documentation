@@ -1,13 +1,13 @@
 ---
 order: 8
-title: Multi-tenancy & authentication
-description: One server, many isolated tenants, and every request identified by a key. The tenant-directory and authentication capabilities, the fixed- vs. multi-tenant routing and the key/OIDC/SAML/SCIM mechanisms that implement them, the deployment-wide read-only mode, and the settings that switch enforcement on.
+title: Authentication & access
+description: Identifying every request and deciding what it may do - the authentication seam, the key credential model and its grants, OIDC token exchange and console sign-in, anonymous read, the deployment-wide read-only mode, and the settings that switch enforcement on.
 ---
 
-Everything so far assumed a single, open repository. A real deployment serves **many teams from one server**,
-keeps their artifacts apart, and lets in only requests that carry a valid credential. Both of those -
-**who a request belongs to** and **whether it is allowed** - are capabilities the repository discovers, so a
-plain free server runs open and single-tenant, and a larger deployment adds tenancy and enforcement without a
+Everything so far assumed an open repository - one that answers any request that reaches it. A deployment
+that is reachable by anyone else needs the other thing: every request **identified**, and every operation
+**checked** against what that identity may do. Authentication is a discovered capability like the rest, so
+the server runs open until you enforce it, and the mechanism that enforces it is a module rather than a
 different binary.
 
 By default a fresh server is **open**: no key is required and every request is allowed. Turning on
@@ -22,28 +22,17 @@ API is keyed by a header, with no browser session, no CSRF and no HTTP Basic in 
 
 ## The capabilities
 
-### The tenant directory
+### The artifact space
 
-A **tenant** is a top-level owner of artifact spaces. Every object the repository stores lives under a
-`<tenant>/<repository>/…` scope (introduced in [Storage](/repository/storage/)), so isolating one team from
-another is just a different top-level scope - no separate database, no second deployment.
+The server serves **one artifact space**, named by `jenesis.repository.tenant` and
+`jenesis.repository.repository` - both `default` unless you set them. Every request resolves to it: artifacts
+under the `/repository/…` prefix, which is stripped so a format sees its own `/maven/`, `/raw/` … path, and
+the OCI registry at `/v2/`, where the Docker protocol pins it.
 
-**Which tenants exist, and the lifecycle to add one, is a discovered capability.** With no tenant-directory
-module installed, the directory is exactly the **one configured tenant** (`jenesis.repository.tenant`,
-`default` unless set) and it cannot grow. A multi-tenant edition installs a directory backed by the store,
-whose tenants are the top-level scopes themselves, and can create new ones on demand.
-
-The server reports whether the capability is present, so a console or API offers **tenant management only when
-a directory module is installed** - a plain server never shows a control it cannot honour. The important
-consequence is that both shapes share **one store layout**: switching a deployment between single- and
-multi-tenant is a configuration change, and the data is found where it was left.
-
-<div class="note">
-  A multi-node deployment folds the resolved <strong>tenant set</strong> - what the tenant-directory
-  <code>TenantsProvider</code> seam reports - into the consistency fingerprint each node publishes. So two
-  nodes wired to <em>different</em> tenant sets are flagged as a configuration mismatch, not mistaken for one
-  node merely lagging the other. A single-tenant deployment - the one configured tenant - is unaffected.
-</div>
+The two names look like more than they are. Objects are stored under a `<tenant>/<repository>/…` scope
+(introduced in [Storage](/repository/storage/)), so a space is addressed the same way whether a deployment
+serves one or routes to many - which is why the settings carry a tenant even when there is only ever one, and
+why data stays where it was left if a deployment's routing is later replaced.
 
 ### The authentication seam
 
@@ -53,28 +42,13 @@ composition seam. Two things plug into that seam:
 - **Token exchange** - a discovered mechanism that trades a workload's identity token for a short-lived key,
   so a CI job never stores a static secret. With none installed, the exchange endpoint reports the feature is
   not installed rather than failing closed.
-- **Richer sign-in and directory mechanisms** - a multi-tenant edition layers console **OIDC/SAML** login and
-  **SCIM** user/group provisioning over the same baseline chain, reusing the key model and rate limiter rather
-  than forking them.
+- **Console sign-in** - OAuth2 / OIDC login for people, layered over the same baseline chain and resolving to
+  the same key model, rather than a second identity system beside it.
 
 So the always-present mechanism is **key authentication**; the others are capabilities a deployment adds. The
 sections below take each in turn.
 
 ## Implementations
-
-### Fixed-tenant vs. multi-tenant routing
-
-Every request is resolved to a `(tenant, repository)` space by a **routing** the deployment picks:
-
-- **Fixed-tenant routing** (the free default) sends every request to the one configured space -
-  `jenesis.repository.tenant` / `jenesis.repository.repository`, each `default`. Artifacts are served under
-  the `/repository/…` prefix (stripped so a format sees its own `/maven/`, `/raw/` … path); the OCI `/v2/`
-  registry stays at the host root where the Docker protocol pins it.
-- **Multi-tenant routing** (an edition) reads the **tenant from the request's key** - the key carries its own
-  tenant, so resolution stays stateless - and the **repository from the first path segment**, then strips that
-  segment from the path a format sees.
-
-Both address the same `<tenant>/<repository>/…` layout, which is why the switch is configuration only.
 
 ### Key authentication
 
@@ -90,7 +64,7 @@ jenk_<tenant>.<secret><checksum>
 
 - the **`jenk_` prefix** and the trailing **CRC checksum** let a secret scanner recognise a leaked Jenesis key
   and validate it offline, and let the server reject a malformed or truncated key with **no store lookup**;
-- the **tenant travels in the key**, so a multi-tenant deployment resolves the owner without a directory read;
+- the **owner travels in the key**, so a request is attributed without a directory read;
 - only the key's **SHA-256 hash is ever stored** - never the secret itself.
 
 #### Grants: scopes and rights
@@ -175,13 +149,12 @@ worth this much, for this long.*
   nothing to rotate, nothing to leak.
 </div>
 
-### Console sign-in: OIDC, SAML and SCIM
+### Console sign-in
 
-The mechanisms above authenticate **machines**. **People** sign in to the [console](/repository/console/) over
-OAuth2 / **OIDC** - or, in a multi-tenant edition, **SAML** - and a directory can push users and groups in over
-**SCIM**, mapping group membership to the roles above. These sign-in and provisioning mechanisms are edition
-capabilities that plug into the same authentication seam and resolve to the same credential model, so a
-person's console rights and a token's API rights are one grant system.
+The mechanisms above authenticate **machines**. **People** sign in to the
+[console](/repository/console/) over OAuth2 / OIDC, through the same authentication seam and resolving to the
+same credential model - so a person's console rights and a token's API rights are one grant system rather
+than two.
 
 <div class="note">
   For a <strong>local run</strong>, the <code>dev</code> profile
@@ -190,9 +163,8 @@ person's console rights and a token's API rights are one grant system.
   <a href="/repository/getting-started/">Getting started</a>. It is for local use only.
 </div>
 
-Whichever mechanism denies a request, the server records the failure by **mechanism** (`key`, `oidc` or
-`saml`) and outcome, exposed as a metric so a dashboard can watch authentication health across all of them at
-once.
+Whichever mechanism denies a request, the server records the failure by **mechanism** and outcome, exposed as
+a metric so a dashboard can watch authentication health across all of them at once.
 
 ## Letting a keyless caller read
 
@@ -248,8 +220,8 @@ configuration is read.
 |-----|---------|---------|
 | `auth` | `false` | Enforce the credential model. `false` leaves the server **open** - every request allowed. |
 | `read-only` | `false` | Refuse every write - external or internal - with `403`, while all reads work normally. Advertised at `GET /api/capabilities`. |
-| `tenant` | `default` | The tenant of the fixed artifact space a single-tenant deployment serves. A multi-tenant routing ignores it and reads the tenant from the key. |
-| `repository` | `default` | The repository of that fixed space. A multi-tenant routing reads the repository from the request path instead. |
+| `tenant` | `default` | The tenant half of the one artifact space this deployment serves. |
+| `repository` | `default` | The repository half of that space. |
 
 Beyond these, the finer-grained controls are **per-tenant data** held in the store - credential lifetime
 **policy** (default and ceiling), OIDC **trusts**, custom **roles**, and a tenant's **quota** and

@@ -20,7 +20,7 @@ on how the deployment is set up.
 - **A real deployment** authenticates over **OAuth2 / OIDC**. The sign-in page shows one button per
   configured identity provider; you pick yours and complete the login with your organisation's
   account. Configuring those providers is the subject of the
-  [Multi-tenancy & authentication](/repository/multi-tenancy-auth/) chapter.
+  [Authentication & access](/repository/authentication/) chapter.
 - **A local run** can use the built-in `dev` profile, which swaps in an `admin` / `admin` form login
   so you can open the console without wiring up an identity provider first:
 
@@ -51,7 +51,7 @@ you never have to read the startup log to find out. If a server is running with 
 page says so plainly rather than showing a blank screen.
 
 The console also reflects the deployment's mode. On a server running in
-[read-only mode](/repository/multi-tenancy-auth/), every console page carries a **read-only banner**, so
+[read-only mode](/repository/authentication/), every console page carries a **read-only banner**, so
 nobody wonders why a write was refused - the page itself says the deployment does not accept them.
 
 ## Browsing repositories and artifacts
@@ -129,7 +129,7 @@ When the deployment has a **tenant directory** installed, the console additional
 **tenant management** - the screens to see and administer tenants - and the views become explicitly
 scoped to the tenant you are working in. A server without a tenant directory offers no such screens at
 all; the capability simply is not there. Tenancy modes and how tenants are administered are covered in
-the [Multi-tenancy & authentication](/repository/multi-tenancy-auth/) chapter.
+the [Authentication & access](/repository/authentication/) chapter.
 
 ## Theme and accessibility
 
