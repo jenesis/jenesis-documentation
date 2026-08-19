@@ -26,7 +26,7 @@ with the settings at the end of this chapter.
 ### The naming convention
 
 Observations are named `jenesis.<area>.<signal>` - for example `jenesis.proxy.fetch` for a
-pull-through cache leg, or `jenesis.auth.failures` for a denied sign-in. When you scan a metrics or
+pull-through cache leg, or `jenesis.gc.collected` for reclaimed objects. When you scan a metrics or
 trace backend, everything the repository itself raises sits under the `jenesis.` prefix; the Spring
 and Tomcat meters keep their own.
 
@@ -97,14 +97,29 @@ endpoints, over the same HTTP port as the repository:
   orchestrator think the server is down.
 </div>
 
-Two meters worth watching from day one:
+Beyond the per-operation timers, each capability publishes the few numbers that describe its own state:
 
-- **`jenesis.proxy.fetch`** - one timer per pull-through leg, tagged by `format` and `outcome`. Chart
-  the `miss` and `negative` rates to see how much load your [proxying](/repository/proxying/) is
-  actually shedding upstream.
-- **`jenesis.auth.failures`** - a running count of denied sign-ins, tagged by mechanism
-  (`key` / `oidc` / `saml`) and HTTP status (`401` / `403`). A spike here is your first sign of a
-  misconfigured client or a credential-stuffing attempt.
+| Meter | Reports |
+|-------|---------|
+| `jenesis.proxy.fetch` | One timer per pull-through leg, tagged by format and outcome. Chart the miss rate to see how much load [proxying](/repository/proxying/) sheds upstream. |
+| `jenesis.proxy.revalidation.entries` | Index bodies held for conditional revalidation, a bounded gauge. |
+| `jenesis.quota.capacity` | The storage ceiling, against which stored bytes are measured. |
+| `jenesis.ratelimit.buckets` | How many rate-limit buckets are live. |
+| `jenesis.usage.tracked` / `.dropped` | Credential uses recorded, and uses shed because the tracking queue was full. |
+| `jenesis.walk.resumes` | How often an artifact walk resumed a segment rather than starting one. |
+| `jenesis.gc.condemned` / `.collected` | Objects marked unreferenced, and objects actually reclaimed. |
+| `jenesis.consistency.nodes` / `.diverged` | Live nodes compared, and how many are diverged rather than lagging. |
+
+Health checks sit beside them under `/actuator/health`: `jenesis.proxy.negativecache`,
+`jenesis.proxy.revalidation`, `jenesis.ratelimit.limiter`, `jenesis.usage.worker` and
+`jenesis.consistency.divergence` each report whether their own machinery is doing its job.
+
+<div class="note">
+  Authentication failures and shed requests are <em>recorded</em> by the components that refuse them -
+  tagged by mechanism and outcome, and by the bucket a request metered against - but the core registers no
+  meter of its own for them. A deployment that wants them charted surfaces them through whatever metrics
+  layer it installs, which is why they are absent from the table above.
+</div>
 
 ### Prometheus
 
