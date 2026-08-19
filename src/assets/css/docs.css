@@ -89,12 +89,6 @@ body { --pico-line-height: 1.6; }
   display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
   gap: var(--app-space-3); margin-top: var(--app-space-5); font-size: var(--app-font-size-sm);
 }
-.landing-release__version {
-  text-decoration: none; padding: var(--app-space-1) var(--app-space-3);
-  border: 1px solid var(--pico-muted-border-color); border-radius: 999px; color: var(--pico-muted-color);
-}
-.landing-release__version:hover { border-color: var(--pico-primary); color: var(--pico-primary); }
-.landing-release__version strong { color: var(--pico-primary); }
 .landing-release__install {
   background: var(--pico-code-background-color); border: 1px solid var(--pico-muted-border-color);
   border-radius: var(--app-radius-md); padding: var(--app-space-1) var(--app-space-3); font-size: var(--app-font-size-sm);
@@ -112,7 +106,18 @@ body { --pico-line-height: 1.6; }
 }
 .project-card:hover { border-color: var(--pico-primary); transform: translateY(-2px); }
 .project-card img { width: 2.5rem; height: 2.5rem; }
+.project-card__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--app-space-2); }
 .project-card__name { font-family: "Archivo", var(--pico-font-family); font-weight: 800; font-size: var(--app-font-size-lg); }
+/* Each tile carries its own component's release - the tools version independently, so one figure for the
+   family would be wrong. Deliberately small and muted: it is a footnote on the tile, not its headline. The
+   chip ships empty and hidden; version.js reveals it once it has read the real tag, so a tile shows no
+   version rather than a possibly stale one. */
+.project-card__version[hidden] { display: none; }
+.project-card__version {
+  font-size: var(--app-font-size-xs); color: var(--pico-muted-color); white-space: nowrap;
+  border: 1px solid var(--pico-muted-border-color); border-radius: 999px;
+  padding: 0 var(--app-space-2);
+}
 .project-card__tagline { color: var(--pico-muted-color); font-size: var(--app-font-size-sm); margin: 0; }
 
 .landing-mission { margin-top: var(--app-space-6); padding-top: var(--app-space-6); }
