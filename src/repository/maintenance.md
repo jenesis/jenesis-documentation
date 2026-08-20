@@ -79,6 +79,32 @@ The walk and collector read **startup keys, spelled in full** (they are not per-
 | `jenreg.gc.stride` | `20000` | Checkpoint stride of the collector's own walk passes. |
 | `jenreg.gc.grace` | *(none)* | Optional ISO-8601 wall-clock floor on the condemn-to-collect grace, on top of the one-pass gap. Set it so a blob is never reclaimed until it has carried its condemned marker at least this long - a guard for when several nodes collect, or a node re-collects after a lease expiry, and generations advance faster than the collection interval. |
 
+## Retention - deciding what stops being served
+
+Garbage collection reclaims what nothing points at. **Retention** is the separate question of what should stop
+being pointed at: keep the last *n* versions of a coordinate, expire prereleases after a while, drop what
+nobody has downloaded in months.
+
+It is its own capability, selected by `jenreg.retention`, and like the collector it is a module rather than a
+flag. **With no retention engine installed, the cleanup and retention endpoints answer `501` and say so** -
+the routes exist, and they decline rather than pretending to hold a policy nobody will act on.
+
+A repository's policy is read and written per repository:
+
+```bash
+curl "$JENREG/repository/releases/admin/retention"
+
+curl -X PUT "$JENREG/repository/releases/admin/retention?keepLast=10&maxAge=P180D"
+```
+
+The policy is carried as **query parameters, not a JSON body** - `keepLast`, `maxAge`, `prereleaseExpiry` and
+`notDownloadedFor`, each optional. A `PUT` that carries a JSON body instead succeeds and changes nothing, so
+read the policy back after writing it.
+
+`notDownloadedFor` needs download counts to mean anything, and those come from the download-tracking
+capability: without it every artifact looks equally untouched, so keep that dial in mind before you set an
+expiry that depends on it.
+
 ## Settings
 
 The walk's dials are runtime-tunable; garbage collection is off until you turn it on.
