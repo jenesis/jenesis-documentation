@@ -30,14 +30,14 @@ module:
 ```bash
 git clone https://github.com/raphw/jenesis-repository.git
 cd jenesis-repository
-java build/jenesis/Project.java build
+java build/jenesis/Project.java
 ```
 
 <div class="note">
   The server is built with Jenesis the same way any project is - the same <code>Project.java</code>,
   selectors, and module syntax the <a href="/tool/getting-started/">tool section</a> covers. To build just
   one backend and its dependencies you name its module, for example
-  <code>java build/jenesis/Project.java +source+store+s3 build</code>.
+  <code>java build/jenesis/Project.java +source+store+s3</code>.
 </div>
 
 ## Run it on the filesystem
