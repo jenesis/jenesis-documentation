@@ -14,11 +14,11 @@ A fresh server **enforces**: every request is authorised against a per-credentia
 none is refused. The machine-to-machine artifact API is keyed by a header, with no browser session, no CSRF
 and no HTTP Basic in the way.
 
-Running **open** is the opt-out, not the default - `jenesis.repository.auth=false` (env
-`JENESIS_REPOSITORY_AUTH=false`) allows every request and identifies nobody.
+Running **open** is the opt-out, not the default - `jenreg.auth=false` (env
+`JENREG_AUTH=false`) allows every request and identifies nobody.
 
 <div class="warning">
-  Opening the wire is never silent. <code>auth=false</code> raises the <code>jenesis.auth.open</code>
+  Opening the wire is never silent. <code>auth=false</code> raises the <code>jenreg.auth.open</code>
   security-posture advisory, logged once at boot and shown on the console and at
   <code>GET /api/posture</code>, so a deployment that is open says so wherever an operator looks. It is the
   right setting for a laptop; it is the wrong one for anything reachable.
@@ -28,8 +28,8 @@ Running **open** is the opt-out, not the default - `jenesis.repository.auth=fals
 
 ### The artifact space
 
-The server serves **one artifact space**, named by `jenesis.repository.tenant` and
-`jenesis.repository.repository` - both `default` unless you set them. Every request resolves to it: artifacts
+The server serves **one artifact space**, named by `jenreg.tenant` and
+`jenreg.repository` - both `default` unless you set them. Every request resolves to it: artifacts
 under the `/repository/…` prefix, which is stripped so a format sees its own `/maven/`, `/raw/` … path, and
 the OCI registry at `/v2/`, where the Docker protocol pins it.
 
@@ -177,7 +177,7 @@ readable by anyone - a public mirror, an open-source project's own artifacts - o
 caller a named set of rights:
 
 ```properties
-jenesis.repository.anonymous-rights=repository:read
+jenreg.anonymous-rights=repository:read
 ```
 
 It is **strictly opt-in and blank by default**, so an enforcing deployment stays closed until somebody says
@@ -193,7 +193,7 @@ from anonymous write, and each is named.
 ## Read-only mode
 
 Authentication decides *who* may write; a second, deployment-wide switch removes writing altogether.
-**Read-only mode** (`jenesis.repository.read-only=true`, env `JENESIS_REPOSITORY_READ_ONLY`, off by default)
+**Read-only mode** (`jenreg.read-only=true`, env `JENREG_READ_ONLY`, off by default)
 refuses **every** write with `403` - a hosted publish, an import, every mutating admin action - while browse,
 download, search and all read APIs work normally.
 
@@ -217,7 +217,7 @@ wire is credential-gated, at a capability endpoint - `GET /api/capabilities` ans
 ## Settings
 
 Authentication and tenancy are pinned from above the store - an environment variable or a
-`-Djenesis.repository.<key>=…` system property - since they decide how the wire is gated before any tenant
+`-Djenreg.<key>=…` system property - since they decide how the wire is gated before any tenant
 configuration is read.
 
 | Key | Default | Meaning |
@@ -233,6 +233,6 @@ Beyond these, the finer-grained controls are **per-tenant data** held in the sto
 
 Installing the OIDC module enables token exchange; a server without it runs enforcing and key-only, which is
 a complete and safe deployment on its own. Where the module is installed it stays configuration-switchable -
-`jenesis.repository.oidc=false` turns the exchange off exactly as removing the module would, and
-`jenesis.repository.token-exchange` selects among implementations by name, per
+`jenreg.oidc=false` turns the exchange off exactly as removing the module would, and
+`jenreg.token-exchange` selects among implementations by name, per
 [Feature toggles & implementation selection](/repository/configuration-reference/).

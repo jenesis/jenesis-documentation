@@ -7,8 +7,8 @@ description: Moving a repository's contents in from an incumbent manager - the i
 You do not adopt a repository by hand-copying artifacts into it. When you move off an incumbent manager -
 Sonatype Nexus, JFrog Artifactory, or another Jenesis instance - you point Jenesis at the old server and it
 walks the source, streaming each artifact into its own store and regenerating its own indexes as it goes. And
-because getting your data *out* is never the paid feature, the same store exposes a plain export surface that
-another tool can drain - so a migration runs in both directions.
+the same store exposes a plain export surface that another tool can drain, so a migration runs in both
+directions.
 
 ## The capability - two SPIs meet in the store
 
@@ -55,7 +55,7 @@ asset is **never downloaded**, so an unsupported format costs no bandwidth.
 
 Five source connectors ship, each keyed by a stable **source name** you pass when you trigger the import.
 That name is also the connector's toggle: an installed connector is removed from the accepted `source`
-values with `jenesis.repository.<name>=false` (`jenesis.repository.nexus=false`), degrading exactly like a
+values with `jenreg.<name>=false` (`jenreg.nexus=false`), degrading exactly like a
 missing module - see
 [Feature toggles & implementation selection](/repository/configuration-reference/).
 
@@ -133,14 +133,14 @@ coordinate from the owning layout, and a `cursor` for the next page (`null` at t
 like the rest of the wire.
 
 That is exactly what the `jenesis` connector consumes, so one instance can be enumerated and drained by
-another - but the format is plain enough for any tool of your own. Getting your data out is never the paid
-feature.
+another - but the format is plain enough for any tool of your own. Getting your data out is always a
+supported operation, not an afterthought.
 
 ## Loading an archive in one request
 
 A migration walks a live repository. When what you have is a *directory of artifacts* instead - a backup, an
 air-gapped hand-off, the output of somebody else's export - a single request can carry it. With
-`jenesis.repository.batch-upload=true`, a `PUT` whose body is a zip and which carries
+`jenreg.batch-upload=true`, a `PUT` whose body is a zip and which carries
 `X-Jenesis-Explode: zip` is exploded into **one publish per entry**:
 
 ```bash

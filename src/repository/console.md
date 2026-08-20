@@ -25,7 +25,7 @@ on how the deployment is set up.
   so you can open the console without wiring up an identity provider first:
 
 ```bash
-SPRING_PROFILES_ACTIVE=dev JENESIS_STORE_ROOT=/var/lib/jenesis-repository \
+SPRING_PROFILES_ACTIVE=dev JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
   java -Djenesis.execute.module=source+server build/jenesis/Execute.java
 ```
 
@@ -72,7 +72,7 @@ reads the repository's own listing rather than knowing about Maven, npm, or OCI 
 - A **Download asset listing** action streams the repository's full inventory - every published path with
   its size and SHA-256, read straight from the pointer tree. It is the console face of the `GET /api/assets`
   export covered in [Migration & import](/repository/migration-import/), so getting your data out is one
-  click, never the paid feature.
+  click.
 
 <div class="note">
   Because browse reads the published pointer tree and never opens a stored blob, it is cheap even on a
@@ -83,6 +83,29 @@ reads the repository's own listing rather than knowing about Maven, npm, or OCI 
 Browse shows **exactly what a `GET` would serve** - no more. Where a publication screen has withheld an
 artifact, its path is never listed and never navigable, so a reader with browse access cannot enumerate the
 paths or sizes of withheld artifacts; the **Download asset listing** export honours the same rule.
+
+A hold covers an artifact's **checksum and signature sidecars** along with the artifact. A `.sha1`, `.md5`,
+`.sha256`, `.sha512`, `.asc` or `.sig` beside a withheld file is withheld too - which matters more than it
+first sounds, because a checksum *is* the digest of the bytes being withheld, and a folder still listing one
+would publish both the digest and the fact that the version exists.
+
+## Finding an artifact
+
+Browse answers "what is in this repository"; **search** answers "where is the thing I can name". It matches
+two ways at once, and unions the results:
+
+- **By coordinate** - the name, version and licence facets a package carries. This is the right index for
+  anything with a coordinate: a Maven `group:artifact`, an npm package, a crate, a gem.
+- **By published path** - the served path itself. A raw upload has no coordinate at all; its path *is* its
+  address, so an installer put there is findable by the name somebody typed rather than only by browsing to
+  the folder it sits in.
+
+Both halves answer the same way whether or not this deployment has a search index installed, which is the
+point: a registry with an index and one without must not disagree about what exists.
+
+The path half is a bounded read - it examines a capped number of entries and returns a capped number of hits -
+and it reports that it stopped rather than presenting a clamped list as the whole answer. It is screened at
+every level, so a withheld artifact is no more findable here than it is in a listing.
 
 ## Reading a repository's settings
 

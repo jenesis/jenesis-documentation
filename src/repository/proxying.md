@@ -72,6 +72,18 @@ Distribution **bearer-token handshake** the protocol requires, resolves **multi-
 **verifies each fetched blob by its digest** before storing it. Because an OCI `sha256:` digest *is* the
 content-addressed store key, a mirrored layer dedupes against everything else the repository holds.
 
+### Verifying what an upstream sent
+
+Digest verification is not only an OCI privilege. Where a format's own index **declares** the digest of an
+artifact, the proxy holds the fetched bytes to that declaration before storing them: Debian's `Packages`
+index carries a `SHA256` for every `.deb` in the pool, so a pool fetch is checked against the digest the
+index published and a mismatch is refused rather than cached.
+
+That distinction matters because the alternative is worse than a failed download. A proxy that caches
+whatever the upstream returned turns one bad response - a corrupted mirror, a tampered hop - into a durable
+local artifact that every later client is served from, and the verification that would have caught it never
+runs again. Refusing at the point of fetch keeps a bad byte from becoming the repository's own answer.
+
 ## Group repositories & routing
 
 Pull-through above is configured **per format, deployment-wide**: the Maven format has one upstream, the OCI
@@ -114,8 +126,8 @@ java build/jenesis/Project.java +source+proxy build   # the HTTP fetcher and its
 
 With no fetcher module present the server still runs - it just serves only what it holds and refuses
 imports. An *installed* fetcher can be switched off the same way every discovered implementation can
-- `jenesis.repository.http=false` degrades it exactly like the missing module - and the fetcher is an
-exclusive seam, so `jenesis.repository.fetcher=<name>` selects among installed implementations
+- `jenreg.http=false` degrades it exactly like the missing module - and the fetcher is an
+exclusive seam, so `jenreg.fetcher=<name>` selects among installed implementations
 (unset picks the first enabled one; a selection naming an uninstalled fetcher degrades to the same
 refused-imports state, never a failed boot). See
 [Feature toggles & implementation selection](/repository/configuration-reference/).
@@ -128,19 +140,19 @@ nothing to configure. A format that declares no canonical upstream (one whose ec
 public registry) is served hosted-only until you name one:
 
 ```bash
--Djenesis.repository.proxy.maven=https://mirror.example.com/maven/ # override one format's upstream
+-Djenreg.proxy.maven=https://mirror.example.com/maven/ # override one format's upstream
 ```
 
 The per-format `proxy.<format>` key, keyed by the format's name, points a format at a different upstream - or
 gives one to a format that declares none. To serve every format hosted-only, switch the fetcher itself off
-with `jenesis.repository.http=false`: with no fetcher there is nothing to pull through.
+with `jenreg.http=false`: with no fetcher there is nothing to pull through.
 
 ### The negative-cache window
 
 How long a definite upstream `404` is remembered is one setting; `0` disables the negative cache entirely:
 
 ```bash
--Djenesis.repository.proxy-miss-ttl=60s   # default one minute; PT90S / 5m / 0 also accepted
+-Djenreg.proxy-miss-ttl=60s   # default one minute; PT90S / 5m / 0 also accepted
 ```
 
 Leave it at the default unless an upstream publishes very frequently and you need a miss re-checked sooner -
@@ -148,7 +160,7 @@ lowering it trades a little more upstream traffic for faster pickup of a just-pu
 shields a rate-limited upstream from a build tool's probing at the cost of a longer wait before a new
 artifact is seen.
 
-One more setting bounds a single fetch rather than the cache: `-Djenesis.proxy.request-timeout` (ISO-8601 or
+One more setting bounds a single fetch rather than the cache: `-Djenreg.proxy.request-timeout` (ISO-8601 or
 plain seconds, one minute by default) caps how long the fetcher waits on an upstream before giving up, so a
 slow or hanging registry cannot hold a request open indefinitely.
 
