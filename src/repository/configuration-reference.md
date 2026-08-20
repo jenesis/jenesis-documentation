@@ -15,9 +15,9 @@ There are only a few ways a value reaches the server, and the table columns belo
 applies:
 
 - **Server startup - an environment variable or a system property.** Cloud credentials and the store
-  root are environment variables (`JENESIS_*`); everything wire-level is a `-Djenesis.repository.<key>=…`
+  root are environment variables (`JENESIS_*`); everything wire-level is a `-Djenreg.<key>=…`
   system property. The tables use the **short key** (`quota`, `auth`, `license-allowed`); the full system
-  property prepends `jenesis.repository.` to it.
+  property prepends `jenreg.` to it.
 - **Per repository - the console settings screen or the settings API.** Most gate, provenance, search
   and maintenance dials are *repository* settings you edit live; the change takes effect on the next
   request, no restart.
@@ -27,7 +27,7 @@ applies:
 Where a key is both a repository dial *and* pinnable from above, the two meet with a clear rule:
 
 <div class="note">
-  A value pinned at startup (env var or <code>-Djenesis.repository.&lt;key&gt;=…</code>) <strong>wins over
+  A value pinned at startup (env var or <code>-Djenreg.&lt;key&gt;=…</code>) <strong>wins over
   any stored per-repository edit.</strong> Pin the policy you want a deployment to hold to; leave the rest
   for a repository - or a tenant, where the key is tenant-overridable - to set for itself.
 </div>
@@ -56,37 +56,37 @@ module is trimmed by configuration instead of rebuilt.
 Startup keys, read at `ServiceLoader` discovery - the convention every discovered implementation
 follows, so an image carrying every module (the all-in-one image) is shaped with `docker run -e`
 rather than rebuilt. Spring's relaxed binding makes every key an environment variable:
-`jenesis.repository.maven` is `JENESIS_REPOSITORY_MAVEN`, `jenesis.repository.store` is
-`JENESIS_REPOSITORY_STORE`.
+`jenreg.maven` is `JENREG_MAVEN`, `jenreg.store` is
+`JENREG_STORE`.
 
 - **A parallel implementation** (a format, an import source, a feed - many active at once) toggles by
-  its name: `jenesis.repository.<feature>=true|false`. **Unset means enabled**; only an explicit
+  its name: `jenreg.<feature>=true|false`. **Unset means enabled**; only an explicit
   `false` disables, and a disabled implementation is simply not activated at discovery - it degrades
-  exactly like a missing module (`jenesis.repository.maven=false` removes the Maven layout, and its
+  exactly like a missing module (`jenreg.maven=false` removes the Maven layout, and its
   importer with it). The advisory feeds are the deliberate exception: each stays **opt-in**
   (`osv=true`, …), so an unconfigured deployment consults no external API.
 - **An exclusive seam** (one active implementation) selects by name with
-  `jenesis.repository.<spi>=<feature>`; unset picks the noted default or the first enabled
+  `jenreg.<spi>=<feature>`; unset picks the noted default or the first enabled
   implementation in discovery order, and a selection naming an uninstalled implementation degrades to
   the documented `501` rather than failing the boot.
 - **Required-config self-disable:** an implementation that cannot run without a key (a credential, a
   bucket) disables itself when that key is unset and logs one line naming the missing keys and the
-  `jenesis.repository.<feature>=false` switch that silences it. The selected **store** is the one
+  `jenreg.<feature>=false` switch that silences it. The selected **store** is the one
   exception - it fails loudly, because silently falling back would persist against the wrong backend.
 
 | Selection key | Default | Chooses among |
 |---------------|---------|---------------|
-| `jenesis.repository.store` | `filesystem` | The storage backend: `filesystem`, `s3`, `gcs`, `azure-blob`. See [Storage](/repository/storage/). |
-| `jenesis.repository.fetcher` | *(first enabled - `http`)* | The upstream HTTP fetcher every proxy and import shares. See [Proxying & groups](/repository/proxying/). |
-| `jenesis.repository.token-exchange` | *(first enabled - `oidc`)* | Which token-exchange implementation validates a workload's identity token. See [Authentication & access](/repository/authentication/). |
-| `jenesis.repository.rate-limiter` | *(first enabled - `token-bucket`)* | The rate-limiter implementation. See [Rate limiting & usage tracking](/repository/rate-limiting-usage/). |
-| `jenesis.repository.key-usage` | *(first enabled - `batching`)* | The credential usage-tracker implementation. |
-| `jenesis.repository.retention` | *(first enabled - `cleaner`)* | The retention engine behind the cleanup and retention endpoints. See [Maintenance](/repository/maintenance/). |
-| `jenesis.repository.walk` | *(first enabled - `store`)* | The artifact-walk implementation store-sweeping passes enumerate through. See [Maintenance](/repository/maintenance/). |
-| `jenesis.repository.gc` | *(none installed - nothing reclaimed)* | The garbage collector (`mark-sweep` is the shipped implementation); with none installed or selected no content blob is ever reclaimed. See [Maintenance](/repository/maintenance/). |
+| `jenreg.store` | `filesystem` | The storage backend: `filesystem`, `s3`, `gcs`, `azure-blob`. See [Storage](/repository/storage/). |
+| `jenreg.fetcher` | *(first enabled - `http`)* | The upstream HTTP fetcher every proxy and import shares. See [Proxying & groups](/repository/proxying/). |
+| `jenreg.token-exchange` | *(first enabled - `oidc`)* | Which token-exchange implementation validates a workload's identity token. See [Authentication & access](/repository/authentication/). |
+| `jenreg.rate-limiter` | *(first enabled - `token-bucket`)* | The rate-limiter implementation. See [Rate limiting & usage tracking](/repository/rate-limiting-usage/). |
+| `jenreg.key-usage` | *(first enabled - `batching`)* | The credential usage-tracker implementation. |
+| `jenreg.retention` | *(first enabled - `cleaner`)* | The retention engine behind the cleanup and retention endpoints. See [Maintenance](/repository/maintenance/). |
+| `jenreg.walk` | *(first enabled - `store`)* | The artifact-walk implementation store-sweeping passes enumerate through. See [Maintenance](/repository/maintenance/). |
+| `jenreg.gc` | *(none installed - nothing reclaimed)* | The garbage collector (`mark-sweep` is the shipped implementation); with none installed or selected no content blob is ever reclaimed. See [Maintenance](/repository/maintenance/). |
 
 An implementation's *own* settings keep their documented keys - the tables below and
-`JENESIS_AWS_BUCKET`-style credentials - the toggle only decides whether it activates.
+`JENREG_S3_BUCKET`-style credentials - the toggle only decides whether it activates.
 
 ---
 
@@ -97,13 +97,13 @@ See [Getting started](/repository/getting-started/) and [Storage](/repository/st
 
 | Key | Default | What it sets |
 |-----|---------|--------------|
-| `JENESIS_STORE_ROOT` | *(required for filesystem)* | Root directory of the filesystem store. |
-| `jenesis.repository.store` | *(filesystem)* | Storage backend: unset = filesystem, `s3`, `gcs`, or `azure-blob`. |
-| `jenesis.repository.quota` | *(unset - no cap)* | Storage cap; a new artifact is refused with `507` once stored blob bytes reach it. Byte count or `K`/`M`/`G`/`T`. |
+| `JENREG_FILESYSTEM_ROOT` | *(required for filesystem)* | Root directory of the filesystem store. |
+| `jenreg.store` | *(filesystem)* | Storage backend: unset = filesystem, `s3`, `gcs`, or `azure-blob`. |
+| `jenreg.quota` | *(unset - no cap)* | Storage cap; a new artifact is refused with `507` once stored blob bytes reach it. Byte count or `K`/`M`/`G`/`T`. |
 | `SPRING_PROFILES_ACTIVE` | *(none)* | Set to `dev` for the built-in `admin`/`admin` form login on a local run - never in production. |
 
-The tenant and repository of the fixed artifact space are `jenesis.repository.tenant` and
-`jenesis.repository.repository`, both defaulting to `default` - see
+The tenant and repository of the fixed artifact space are `jenreg.tenant` and
+`jenreg.repository`, both defaulting to `default` - see
 [Authentication & access](/repository/authentication/) below.
 
 ### Cloud store credentials
@@ -112,16 +112,16 @@ Read only by the backend you select. See [Storage](/repository/storage/).
 
 | Key | Default | What it sets |
 |-----|---------|--------------|
-| `JENESIS_AWS_BUCKET` | *(required for `s3`)* | Bucket for the S3-compatible backend. |
-| `JENESIS_AWS_ENDPOINT` | *(AWS)* | Custom endpoint for a non-AWS S3 store (GCS, MinIO, Ceph). |
-| `JENESIS_AWS_ACCESS_KEY_ID` | *(AWS chain)* | Explicit S3 access key; set together with the secret key, else the standard AWS credential chain is used. |
-| `JENESIS_AWS_SECRET_ACCESS_KEY` | *(AWS chain)* | Explicit S3 secret key; set together with the access key. |
-| `JENESIS_GCS_BUCKET` | *(required for `gcs`)* | Bucket for the native Google Cloud Storage backend. |
-| `JENESIS_GCS_ACCESS_KEY_ID` | *(required for `gcs`)* | GCS HMAC access key (Cloud Storage → Settings → Interoperability); set with the secret. |
-| `JENESIS_GCS_SECRET_ACCESS_KEY` | *(required for `gcs`)* | GCS HMAC secret key; set with the access key. |
-| `JENESIS_GCS_ENDPOINT` / `JENESIS_GCS_REGION` | *(GCS defaults)* | Custom endpoint / region for the GCS backend. |
-| `JENESIS_AZURE_CONNECTION_STRING` | *(required for `azure-blob`)* | Azure account connection string. |
-| `JENESIS_AZURE_CONTAINER` | *(default container)* | Azure Blob container to use. |
+| `JENREG_S3_BUCKET` | *(required for `s3`)* | Bucket for the S3-compatible backend. |
+| `JENREG_S3_ENDPOINT` | *(AWS)* | Custom endpoint for a non-AWS S3 store (GCS, MinIO, Ceph). |
+| `JENREG_S3_ACCESS_KEY_ID` | *(AWS chain)* | Explicit S3 access key; set together with the secret key, else the standard AWS credential chain is used. |
+| `JENREG_S3_SECRET_ACCESS_KEY` | *(AWS chain)* | Explicit S3 secret key; set together with the access key. |
+| `JENREG_GCS_BUCKET` | *(required for `gcs`)* | Bucket for the native Google Cloud Storage backend. |
+| `JENREG_GCS_ACCESS_KEY_ID` | *(required for `gcs`)* | GCS HMAC access key (Cloud Storage → Settings → Interoperability); set with the secret. |
+| `JENREG_GCS_SECRET_ACCESS_KEY` | *(required for `gcs`)* | GCS HMAC secret key; set with the access key. |
+| `JENREG_GCS_ENDPOINT` / `JENREG_GCS_REGION` | *(GCS defaults)* | Custom endpoint / region for the GCS backend. |
+| `JENREG_AZURE_BLOB_CONNECTION_STRING` | *(required for `azure-blob`)* | Azure account connection string. |
+| `JENREG_AZURE_BLOB_CONTAINER` | *(default container)* | Azure Blob container to use. |
 
 <div class="tip">
   Pointing a build at the server is not a repository setting - it is a client knob:
@@ -138,8 +138,8 @@ System property, read at startup. See [Formats](/repository/formats/).
 
 | Key | Default | What it sets |
 |-----|---------|--------------|
-| `jenesis.repository.<format>` | *(enabled)* | Toggle an installed format by its name (`maven`, `jenesis`, `oci`, `raw`, …); `false` degrades it exactly like a missing module - its paths unclaim, and its importer skips. |
-| `jenesis.repository.maven-metadata-compute` | `false` | Compute `maven-metadata.xml` on read from stored version folders instead of serving the published bytes verbatim. |
+| `jenreg.<format>` | *(enabled)* | Toggle an installed format by its name (`maven`, `jenesis`, `oci`, `raw`, …); `false` degrades it exactly like a missing module - its paths unclaim, and its importer skips. |
+| `jenreg.maven-metadata-compute` | `false` | Compute `maven-metadata.xml` on read from stored version folders instead of serving the published bytes verbatim. |
 
 ---
 
@@ -149,25 +149,25 @@ Per-format system properties, read at startup. See [Proxying & groups](/reposito
 
 | Key | Default | What it sets |
 |-----|---------|--------------|
-| `jenesis.repository.proxy.<format>` | *(the format's canonical upstream)* | Overrides the upstream URL a proxy-capable format mirrors, keyed by its name (`proxy.maven` → Maven Central, `proxy.oci` → Docker Hub). A format that declares no canonical upstream stays hosted-only until named here. |
-| `jenesis.repository.proxy-miss-ttl` | `60s` | How long a definite upstream `404` is remembered in the negative cache; `0` disables it. |
-| `jenesis.proxy.request-timeout` | `PT1M` | How long one upstream fetch may take before it is abandoned (ISO-8601 or plain seconds). |
+| `jenreg.proxy.<format>` | *(the format's canonical upstream)* | Overrides the upstream URL a proxy-capable format mirrors, keyed by its name (`proxy.maven` → Maven Central, `proxy.oci` → Docker Hub). A format that declares no canonical upstream stays hosted-only until named here. |
+| `jenreg.proxy-miss-ttl` | `60s` | How long a definite upstream `404` is remembered in the negative cache; `0` disables it. |
+| `jenreg.proxy.request-timeout` | `PT1M` | How long one upstream fetch may take before it is abandoned (ISO-8601 or plain seconds). |
 
 ---
 
 ## Maintenance
 
-Startup system properties, **spelled in full as written** (they are not `jenesis.repository.`-prefixed
-repository dials). The implementation selections - `jenesis.repository.walk` and `jenesis.repository.gc` -
+Startup system properties, **spelled in full as written** (they are not `jenreg.`-prefixed
+repository dials). The implementation selections - `jenreg.walk` and `jenreg.gc` -
 are in the selection-key table above. See [Maintenance](/repository/maintenance/).
 
 | Key | Default | What it sets |
 |-----|---------|--------------|
-| `jenesis.walk.checkpoint` | `1000` | Keys visited between durable cursor commits of a walk segment. |
-| `jenesis.walk.segments` | `32` | Target number of ranges a walk pass is split into across nodes. |
-| `jenesis.walk.ttl` | `900` | Seconds before a dead node's segment claim expires and its segment resumes elsewhere (a plain second count). |
-| `jenesis.gc.stride` | `20000` | Checkpoint stride of the garbage collector's own walk passes. |
-| `jenesis.gc.grace` | *(none)* | Optional ISO-8601 wall-clock floor on the condemn-to-collect grace, on top of the one-pass generation gap - a blob is not reclaimed until its condemned marker is at least this old, so fast generation turnover across nodes cannot shorten the grace. |
+| `jenreg.walk.checkpoint` | `1000` | Keys visited between durable cursor commits of a walk segment. |
+| `jenreg.walk.segments` | `32` | Target number of ranges a walk pass is split into across nodes. |
+| `jenreg.walk.ttl` | `900` | Seconds before a dead node's segment claim expires and its segment resumes elsewhere (a plain second count). |
+| `jenreg.gc.stride` | `20000` | Checkpoint stride of the garbage collector's own walk passes. |
+| `jenreg.gc.grace` | *(none)* | Optional ISO-8601 wall-clock floor on the condemn-to-collect grace, on top of the one-pass generation gap - a blob is not reclaimed until its condemned marker is at least this old, so fast generation turnover across nodes cannot shorten the grace. |
 
 ---
 
@@ -178,11 +178,11 @@ See [Authentication & access](/repository/authentication/).
 
 | Key | Default | What it sets |
 |-----|---------|--------------|
-| `auth` | `true` | Enforce the credential model. `false` leaves the server **open** - every request allowed - and raises the `jenesis.auth.open` posture advisory. |
+| `auth` | `true` | Enforce the credential model. `false` leaves the server **open** - every request allowed - and raises the `jenreg.auth.open` posture advisory. |
 | `read-only` | `false` | Deployment-wide read-only mode: every write - external or internal - is refused with `403`, all reads work normally. Advertised at `GET /api/capabilities`. |
 | `tenant` | `default` | The tenant half of the one artifact space this deployment serves. |
 | `repository` | `default` | The repository half of that space. |
-| `jenesis.repository.anonymous-rights` | *(unset - no rights)* | Rights a keyless caller is granted under an enforcing deployment. Blank grants nothing, so anonymous access is strictly opt-in. |
+| `jenreg.anonymous-rights` | *(unset - no rights)* | Rights a keyless caller is granted under an enforcing deployment. Blank grants nothing, so anonymous access is strictly opt-in. |
 
 Finer controls - credential lifetime **policy**, OIDC **trusts**, custom **roles**, the **quota** and the
 **rate limit** - are data set through the management surface, not startup properties.
@@ -196,8 +196,8 @@ See [Rate limiting & usage tracking](/repository/rate-limiting-usage/).
 
 | Key | Default | What it sets |
 |-----|---------|--------------|
-| `jenesis.repository.rate-limit` | *(unset - no limit)* | Deployment-default request ceiling in permits per minute, metered per tenant; excess sheds with `429` and a `Retry-After`. Actuator probes are never throttled. |
-| `jenesis.repository.track-key-usage` | `false` | Record each credential's last use, source address and use count on the batching worker. |
+| `jenreg.rate-limit` | *(unset - no limit)* | Deployment-default request ceiling in permits per minute, metered per tenant; excess sheds with `429` and a `Retry-After`. Actuator probes are never throttled. |
+| `jenreg.track-key-usage` | `false` | Record each credential's last use, source address and use count on the batching worker. |
 
 The ceiling covers every caller, including the shared anonymous bucket; the Actuator probes are never
 throttled.
@@ -221,7 +221,7 @@ See [Migration & import](/repository/migration-import/).
 The Maven importer honours the same `maven-metadata-compute` opt-in as the Maven format: with it on, a
 source `maven-metadata.xml` is dropped and regenerated from the imported version folders.
 
-An installed connector is also switchable off by name - `jenesis.repository.nexus=false` removes
+An installed connector is also switchable off by name - `jenreg.nexus=false` removes
 `nexus` from the accepted `source` values, per the **Feature toggles & implementation selection**
 section above.
 
@@ -230,10 +230,10 @@ attached:
 
 | Key | Default | What it sets |
 |-----|---------|--------------|
-| `jenesis.repository.block-private-import-hosts` | `true` | Refuse a migration URL that is plaintext `http`, or whose host resolves to a private or loopback address. |
-| `jenesis.repository.batch-upload` | `false` | Accept a zip carrying `X-Jenesis-Explode: zip` and explode it into one publish per entry. |
-| `jenesis.repository.batch-upload-max-entries` | `10000` | How many entries one exploded archive may carry. |
-| `jenesis.repository.demo` | `false` | Seed a completely empty repository with real artifacts on first boot; refuses a non-empty one. |
+| `jenreg.block-private-import-hosts` | `true` | Refuse a migration URL that is plaintext `http`, or whose host resolves to a private or loopback address. |
+| `jenreg.batch-upload` | `false` | Accept a zip carrying `X-Jenesis-Explode: zip` and explode it into one publish per entry. |
+| `jenreg.batch-upload-max-entries` | `10000` | How many entries one exploded archive may carry. |
+| `jenreg.demo` | `false` | Seed a completely empty repository with real artifacts on first boot; refuses a non-empty one. |
 
 ---
 
@@ -244,13 +244,13 @@ See [Observability](/repository/observability/).
 
 | Key | Default | What it sets |
 |-----|---------|--------------|
-| `jenesis.consistency.enabled` | `false` | Publish this node's fingerprint and compare it against the others. Per node, not a shared setting. |
-| `jenesis.consistency.node-id` | *(generated)* | This node's identity in the comparison. Per node. |
-| `jenesis.consistency.heartbeat` | *(sweep interval)* | Milliseconds between fingerprint publishes. |
-| `jenesis.consistency.sweep-interval` | | Milliseconds between consistency sweeps. |
-| `jenesis.consistency.sweep-intervals` | | How many frozen sweeps before a live-but-frozen node is reported stuck. |
-| `jenesis.consistency.staleness-window` | | Milliseconds a node may lag and still count as benign lag. |
-| `jenesis.consistency.dead-after` | | Milliseconds after a node's last heartbeat before it is treated as dead and no longer compared. |
+| `jenreg.consistency.enabled` | `false` | Publish this node's fingerprint and compare it against the others. Per node, not a shared setting. |
+| `jenreg.consistency.node-id` | *(generated)* | This node's identity in the comparison. Per node. |
+| `jenreg.consistency.heartbeat` | *(sweep interval)* | Milliseconds between fingerprint publishes. |
+| `jenreg.consistency.sweep-interval` | | Milliseconds between consistency sweeps. |
+| `jenreg.consistency.sweep-intervals` | | How many frozen sweeps before a live-but-frozen node is reported stuck. |
+| `jenreg.consistency.staleness-window` | | Milliseconds a node may lag and still count as benign lag. |
+| `jenreg.consistency.dead-after` | | Milliseconds after a node's last heartbeat before it is treated as dead and no longer compared. |
 
 ---
 
@@ -267,14 +267,14 @@ variables, or in the deployment's configuration. See [Observability](/repository
 | `logging.level.build.jenesis.observation` | `INFO` | Verbosity of the one-line-per-operation observation log; raise to `WARN` for failures only. |
 | `management.tracing.sampling.probability` | `0.0` | Fraction of operations traced (`1.0` = all); needs a tracing bridge on the module path. |
 | `management.otlp.tracing.endpoint` | *(unset)* | Where to export spans over OTLP; unset exports nothing even when sampling is above zero. |
-| `jenesis.repository.logs-buffer` | `1000` | How many recent log entries the in-memory ring behind `GET /api/logs` and the console's **Logs** panel keeps. |
+| `jenreg.logs-buffer` | `1000` | How many recent log entries the in-memory ring behind `GET /api/logs` and the console's **Logs** panel keeps. |
 
 ---
 
 ## The console
 
 The console reads no settings of its own beyond the server ones already listed - `SPRING_PROFILES_ACTIVE=dev`
-for the local `admin`/`admin` login, and the `jenesis.ui.*` reclaim target under
+for the local `admin`/`admin` login, and the `jenreg.ui.*` reclaim target under
 [Maintenance](/repository/maintenance/). See [The console](/repository/console/).
 
 <div class="note">

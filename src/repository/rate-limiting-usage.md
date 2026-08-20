@@ -52,22 +52,22 @@ The bucket is **per process**. In a replicated deployment each node meters indep
 ceiling is the configured rate times the node count - the usual, cheap trade for keeping a coordination
 service off the hot path. A front door that pins a tenant to one node keeps the number exact; a
 coordinated limiter for exact global metering would be another module behind the same seam - it is an
-exclusive one, selected with `jenesis.repository.rate-limiter` (`token-bucket` is the shipped
-implementation, and `jenesis.repository.token-bucket=false` stands it down like a missing module); the
-usage tracker's seam mirrors it as `jenesis.repository.key-usage` (`batching`). See
+exclusive one, selected with `jenreg.rate-limiter` (`token-bucket` is the shipped
+implementation, and `jenreg.token-bucket=false` stands it down like a missing module); the
+usage tracker's seam mirrors it as `jenreg.key-usage` (`batching`). See
 [Feature toggles & implementation selection](/repository/configuration-reference/).
 
 ### The ceiling
 
-The ceiling is the `jenesis.repository.rate-limit` startup property, in permits per minute, covering every
+The ceiling is the `jenreg.rate-limit` startup property, in permits per minute, covering every
 caller - including the shared anonymous bucket. Unset, or `0`, means no limit at all.
 
 
 <div class="tip">
   A shed request is recorded with the bucket it metered against (<code>anonymous</code> for keyless
   traffic), so a flood arrives already attributed and a persistent trickle usually means one client
-  deserves a ceiling of its own. <code>jenesis.ratelimit.buckets</code> gauges how many buckets are live,
-  and the <code>jenesis.ratelimit.limiter</code> health check reports whether the limiter itself is
+  deserves a ceiling of its own. <code>jenreg.ratelimit.buckets</code> gauges how many buckets are live,
+  and the <code>jenreg.ratelimit.limiter</code> health check reports whether the limiter itself is
   working.
 </div>
 
@@ -107,8 +107,8 @@ only the unflushed tail - which an informational counter can bear. A clean shutd
   The worker reports itself on <code>/actuator/health</code> under the <code>workers</code> contributor:
   <code>enabled</code>, <code>alive</code>, and <code>droppedEvents</code>. An enabled worker whose thread
   has died turns health <code>DOWN</code> - a silent worker death is the failure worth paging on - while
-  queue drops stay a detail and a meter (<code>jenesis.usage.dropped</code>, beside
-  <code>jenesis.usage.tracked</code>): back-pressure, not an outage.
+  queue drops stay a detail and a meter (<code>jenreg.usage.dropped</code>, beside
+  <code>jenreg.usage.tracked</code>): back-pressure, not an outage.
 </div>
 
 ## Settings
@@ -117,8 +117,8 @@ Both startup properties, read once when the server boots:
 
 | Key | Default | Meaning |
 |-----|---------|---------|
-| `jenesis.repository.rate-limit` | *(unset - no limit)* | Deployment-default request ceiling in permits per minute, metered per tenant; excess sheds with `429` and a `Retry-After`. Actuator probes are never throttled. |
-| `jenesis.repository.track-key-usage` | `false` | Record each credential's last use, source address and use count on the batching worker. |
+| `jenreg.rate-limit` | *(unset - no limit)* | Deployment-default request ceiling in permits per minute, metered per tenant; excess sheds with `429` and a `Retry-After`. Actuator probes are never throttled. |
+| `jenreg.track-key-usage` | `false` | Record each credential's last use, source address and use count on the batching worker. |
 
 the same pattern as its quota in *Authentication & access*. And as everywhere, absence degrades
 gracefully: a deployment without the rate-limiting module never limits, and one without the usage module

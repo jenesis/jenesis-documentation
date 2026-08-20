@@ -43,10 +43,10 @@ java build/jenesis/Project.java build
 ## Run it on the filesystem
 
 Start the server and point it at a directory. The **filesystem backend is the default**, so you select
-nothing - you just tell it where to keep its data with `JENESIS_STORE_ROOT`:
+nothing - you just tell it where to keep its data with `JENREG_FILESYSTEM_ROOT`:
 
 ```bash
-JENESIS_STORE_ROOT=/var/lib/jenesis-repository \
+JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
   java -Djenesis.execute.module=source+server build/jenesis/Execute.java
 ```
 
@@ -64,7 +64,7 @@ Inside the store, every artifact lives under a `<tenant>/<repository>/…` space
 so a fresh deployment writes under `default/default/`:
 
 ```bash
--Djenesis.repository.tenant=default -Djenesis.repository.repository=default   # the defaults
+-Djenreg.tenant=default -Djenreg.repository=default   # the defaults
 ```
 
 Blobs are **content-addressed** - identical bytes are stored once, so a re-deploy of unchanged content
@@ -89,14 +89,14 @@ docker run -p 8080:8080 -v jenesis-data:/data jenesis-repository:free
 
 The store defaults to the filesystem under `/data` (mount a volume there), and the server listens on
 port 8080 - the same running repository as above. Everything on board is **on until configured off**, and
-because every `jenesis.repository.*` key is also an environment variable, the image is shaped with
+because every `jenreg.*` key is also an environment variable, the image is shaped with
 `docker run -e` rather than rebuilt:
 
 ```bash
 # disable the Maven layout; select the S3 backend
 docker run -p 8080:8080 \
-  -e JENESIS_REPOSITORY_MAVEN=false \
-  -e JENESIS_REPOSITORY_STORE=s3 -e JENESIS_AWS_BUCKET=my-artifacts \
+  -e JENREG_MAVEN=false \
+  -e JENREG_STORE=s3 -e JENREG_S3_BUCKET=my-artifacts \
   jenesis-repository:free
 ```
 
@@ -115,7 +115,7 @@ Sign-in is OAuth2 / OIDC. For a **local run**, start with the `dev` profile, whi
 `admin` / `admin` form login so you can sign in without configuring an identity provider:
 
 ```bash
-SPRING_PROFILES_ACTIVE=dev JENESIS_STORE_ROOT=/var/lib/jenesis-repository \
+SPRING_PROFILES_ACTIVE=dev JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
   java -Djenesis.execute.module=source+server build/jenesis/Execute.java
 ```
 
@@ -127,7 +127,7 @@ SPRING_PROFILES_ACTIVE=dev JENESIS_STORE_ROOT=/var/lib/jenesis-repository \
 
 <div class="tip">
   A brand-new server is empty, which makes it hard to judge. Start it with
-  <code>-Djenesis.repository.demo=true</code> and it seeds itself with real artifacts in the background,
+  <code>-Djenreg.demo=true</code> and it seeds itself with real artifacts in the background,
   pulled through the normal proxy path. It refuses a repository that already holds anything, so it can never
   touch a real one.
 </div>

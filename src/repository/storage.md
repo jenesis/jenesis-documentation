@@ -50,11 +50,11 @@ The filesystem backend keeps blobs under a mounted root directory. It is the bac
 back to when you name none**, so the getting-started run needed no selection at all - only a path:
 
 ```bash
-JENESIS_STORE_ROOT=/var/lib/jenesis-repository \
+JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
   java -Djenesis.execute.module=source+server build/jenesis/Execute.java
 ```
 
-Point `JENESIS_STORE_ROOT` at durable, backed-up storage - a mounted volume, an NFS share - and the server
+Point `JENREG_FILESYSTEM_ROOT` at durable, backed-up storage - a mounted volume, an NFS share - and the server
 is complete. It is the right choice for a single instance or a local run; the cloud backends are what you
 reach for to run stateless and horizontally scaled.
 
@@ -65,15 +65,15 @@ The S3 backend (AWS SDK v2) stores every object in an S3-compatible bucket. Sele
 serverless, because the durable state lives in the bucket, not the instance.
 
 ```bash
--Djenesis.repository.store=s3            # select the backend
-JENESIS_AWS_BUCKET=my-artifacts          # the bucket to use
+-Djenreg.store=s3            # select the backend
+JENREG_S3_BUCKET=my-artifacts          # the bucket to use
 ```
 
 The same backend serves any S3-compatible store - **Google Cloud Storage, MinIO, Ceph** - by pointing it at
 a custom endpoint:
 
 ```bash
-JENESIS_AWS_ENDPOINT=https://storage.googleapis.com   # or a self-hosted MinIO/Ceph URL
+JENREG_S3_ENDPOINT=https://storage.googleapis.com   # or a self-hosted MinIO/Ceph URL
 ```
 
 The object **ETag is the version token**, so `writeVersioned` becomes a true cross-node compare-and-set over
@@ -91,10 +91,10 @@ signing GCS does not decode. It authenticates with an HMAC key pair (Cloud Stora
 Interoperability):
 
 ```bash
--Djenesis.repository.store=gcs
-JENESIS_GCS_BUCKET=my-artifacts
-JENESIS_GCS_ACCESS_KEY_ID=...            # the HMAC pair
-JENESIS_GCS_SECRET_ACCESS_KEY=...
+-Djenreg.store=gcs
+JENREG_GCS_BUCKET=my-artifacts
+JENREG_GCS_ACCESS_KEY_ID=...            # the HMAC pair
+JENREG_GCS_SECRET_ACCESS_KEY=...
 ```
 
 The plain S3 backend pointed at `storage.googleapis.com` (above) still works; the native backend is
@@ -108,8 +108,8 @@ like the S3 backend for scaling and coordination - the blob **ETag is the versio
 writes.
 
 ```bash
--Djenesis.repository.store=azure-blob
-JENESIS_AZURE_CONNECTION_STRING=...      # the account connection string
+-Djenreg.store=azure-blob
+JENREG_AZURE_BLOB_CONNECTION_STRING=...      # the account connection string
 ```
 
 ## Settings
@@ -118,12 +118,12 @@ JENESIS_AZURE_CONNECTION_STRING=...      # the account connection string
 
 One setting picks the backend; leaving it unset uses the filesystem.
 
-| `-Djenesis.repository.store=` | Backend | Also set |
+| `-Djenreg.store=` | Backend | Also set |
 |-------------------------------|---------|----------|
-| *(unset)* | Filesystem *(default)* | `JENESIS_STORE_ROOT` |
-| `s3` | S3 / GCS / MinIO / Ceph | `JENESIS_AWS_BUCKET` (+ `JENESIS_AWS_ENDPOINT` for non-AWS) |
-| `gcs` | Google Cloud Storage (native) | `JENESIS_GCS_BUCKET` + the `JENESIS_GCS_ACCESS_KEY_ID` / `JENESIS_GCS_SECRET_ACCESS_KEY` HMAC pair |
-| `azure-blob` | Azure Blob | `JENESIS_AZURE_CONNECTION_STRING` (+ optional `JENESIS_AZURE_CONTAINER`) |
+| *(unset)* | Filesystem *(default)* | `JENREG_FILESYSTEM_ROOT` |
+| `s3` | S3 / GCS / MinIO / Ceph | `JENREG_S3_BUCKET` (+ `JENREG_S3_ENDPOINT` for non-AWS) |
+| `gcs` | Google Cloud Storage (native) | `JENREG_GCS_BUCKET` + the `JENREG_GCS_ACCESS_KEY_ID` / `JENREG_GCS_SECRET_ACCESS_KEY` HMAC pair |
+| `azure-blob` | Azure Blob | `JENREG_AZURE_BLOB_CONNECTION_STRING` (+ optional `JENREG_AZURE_BLOB_CONTAINER`) |
 
 The store is the exclusive seam with a loud failure mode: a selection naming a backend that is not on
 the module path, or one missing its required keys, **fails the boot** rather than silently falling
@@ -140,11 +140,11 @@ configuration at all. To supply keys explicitly - the path a self-hosted MinIO o
 of:
 
 ```bash
-JENESIS_AWS_ACCESS_KEY_ID=...
-JENESIS_AWS_SECRET_ACCESS_KEY=...
+JENREG_S3_ACCESS_KEY_ID=...
+JENREG_S3_SECRET_ACCESS_KEY=...
 ```
 
-The **Azure backend** authenticates with the connection string in `JENESIS_AZURE_CONNECTION_STRING`.
+The **Azure backend** authenticates with the connection string in `JENREG_AZURE_BLOB_CONNECTION_STRING`.
 
 ### Quota
 
@@ -152,7 +152,7 @@ A repository-wide storage cap is optional. It refuses a new artifact once stored
 answering `507 Insufficient Storage`:
 
 ```bash
--Djenesis.repository.quota=10GB          # a byte count, or a K/M/G/T suffix
+-Djenreg.quota=10GB          # a byte count, or a K/M/G/T suffix
 ```
 
 Only **content blobs** count toward the cap. Because storage is content-addressed, a deduped re-deploy of
@@ -166,7 +166,7 @@ what was uploaded.
   <code>blobs/</code>, <code>publish/</code> and <code>oci/</code> trees (and <code>imports/</code> job
   state, if any) directly under the store root; move them once into the default scope. On the filesystem
   backend:
-  <pre><code>cd "$JENESIS_STORE_ROOT" &amp;&amp; mkdir -p default/default &amp;&amp; mv blobs publish oci imports default/default/</code></pre>
+  <pre><code>cd "$JENREG_FILESYSTEM_ROOT" &amp;&amp; mkdir -p default/default &amp;&amp; mv blobs publish oci imports default/default/</code></pre>
   On S3 or Azure, do the equivalent server-side per-prefix move. Credentials under <code>auth/</code> are
   deployment-wide, not artifact data, and stay at the store root.
 </div>
