@@ -6,7 +6,7 @@ description: Moving a repository's contents in from an incumbent manager - the i
 
 You do not adopt a repository by hand-copying artifacts into it. When you move off an incumbent manager -
 Sonatype Nexus, JFrog Artifactory, or another Jenesis instance - you point Jenesis at the old server and it
-walks the source, streaming each artifact into its own store and regenerating its own indexes as it goes. And
+walks the source, streaming each artifact into its own store and rebuilding what it serves as it goes. And
 the same store exposes a plain export surface that another tool can drain, so a migration runs in both
 directions.
 
@@ -21,10 +21,13 @@ discovered plug-in:
   discovered with `ServiceLoader`, so the server supports another incumbent by gaining a module and names none
   of them itself.
 - **The write half - a per-format importer.** An *importer* takes one asset of one ecosystem and writes it
-  into the store **through that format's own publish path** - so the imported repository regenerates its own
-  `maven-metadata.xml`, its own module index, its own manifests, rather than copying the source's stale
-  metadata. There is one importer per format, discovered the same way, so **an import's format coverage is
-  simply the set of importers on the module path.**
+  into the store **through that format's own publish path** - the same path a `mvn deploy` or an `npm publish`
+  takes - so an imported artifact is indistinguishable from a published one. There is one importer per format,
+  discovered the same way, so **an import's format coverage is simply the set of importers on the module path.**
+
+  A format that *generates* its enumeration surface therefore serves it for imported artifacts too. Maven is
+  the one to check before you cut over: its index is served verbatim by default (see
+  [Check your index after the walk](#check-your-index-after-the-walk)).
 
 An orchestrator walks a source and routes each asset to the importer that handles its format. An asset whose
 format has **no importer on the path is reported skipped** - and because content is read lazily, a skipped
@@ -84,7 +87,8 @@ package type**, so you name the ecosystem format when you start the migration.
 The `maven` connector reads **any** server that publishes the Maven layout over plain HTTP - a Nexus, an
 Artifactory, an nginx autoindex, a static bucket - without using a vendor API at all. It stacks enumeration
 strategies by what the server offers, walking a directory listing where one exists, and it skips
-`maven-metadata.xml` and checksum sidecars because the target regenerates them. Reach for it when the source
+`maven-metadata.xml` and checksum sidecars: the checksums are re-derived from the bytes that arrive, and the
+index is the target's to serve rather than the source's stale copy to carry. Reach for it when the source
 is a plain repository, or when a vendor connector's API is not available to you.
 
 ### Format index
@@ -118,6 +122,31 @@ must read a coordinate or manifest ever buffers, and only that small metadata.
   already stored needs no new space and changes nothing, so a re-run after an interrupted or partial migration
   is always safe.
 </div>
+
+## Check your index after the walk
+
+An importer writes through its format's own publish path, so anything that format *generates* on read is
+generated for imported artifacts too. **Maven is the exception worth knowing about before you cut over.**
+
+By default the Maven format serves `maven-metadata.xml` **verbatim** - the publisher's own stored document,
+byte for byte, which is what a mirror owes its consumers. A migration skips the source's copy (it is stale by
+definition, and its checksums describe bytes that are about to be re-derived), so a coordinate whose metadata
+nobody uploaded through the publish path has **no index at all**. The artifacts are all there, every one
+resolvable by exact coordinate, and a client asking "what versions exist?" gets a `404`.
+
+Turn on the computed index, which derives a document for exactly this case:
+
+```properties
+jenreg.maven-metadata-compute=true
+```
+
+It reconciles the `<versions>` list against the version folders actually stored - every other field of an
+uploaded document is preserved - and derives one for a coordinate no client ever uploaded metadata for. It is
+**off by default and applies on the next restart**, so set it before the migration and restart, not after.
+
+The symptom if you skip this step is easy to misread: the migration reports every asset imported, the bytes are
+in the store, and a `mvn dependency:get` for a pinned version succeeds. Only a version-range or "latest"
+resolve fails, and it fails as "no versions available" rather than as anything that points back here.
 
 ## The `/api/assets` export
 
