@@ -25,9 +25,9 @@ with the settings at the end of this chapter.
 
 ### The naming convention
 
-Observations are named `jenesis.<area>.<signal>` - for example `jenesis.proxy.fetch` for a
-pull-through cache leg, or `jenesis.gc.collected` for reclaimed objects. When you scan a metrics or
-trace backend, everything the repository itself raises sits under the `jenesis.` prefix; the Spring
+Observations are named `jenreg.<area>.<signal>` - for example `jenreg.proxy.fetch` for a
+pull-through cache leg, or `jenreg.gc.collected` for reclaimed objects. When you scan a metrics or
+trace backend, everything the repository itself raises sits under the `jenreg.` prefix; the Spring
 and Tomcat meters keep their own.
 
 ### High-cardinality context vs. metric tags
@@ -77,7 +77,7 @@ curl -H "Jenesis-Repository-Key: $KEY" 'https://repo.example.com/api/logs?level=
 ```
 
 The console surfaces the same thing as a **Logs** panel. It is a bounded ring, never a file re-read, so it
-costs a fixed amount of memory and cannot grow: `jenesis.repository.logs-buffer` sets how many entries it
+costs a fixed amount of memory and cannot grow: `jenreg.logs-buffer` sets how many entries it
 holds. Reading it is authorised like every other read.
 
 ## Metrics
@@ -89,7 +89,7 @@ endpoints, over the same HTTP port as the repository:
 |----------|--------|
 | `/actuator/health` | Liveness and readiness. Kubernetes-style **probes** are enabled; full details show only to an authorised caller. |
 | `/actuator/info` | Build and application information. |
-| `/actuator/metrics` | The Micrometer meter registry - every `jenesis.*` observation timer plus the JVM, Tomcat and HTTP meters. |
+| `/actuator/metrics` | The Micrometer meter registry - every `jenreg.*` observation timer plus the JVM, Tomcat and HTTP meters. |
 
 <div class="tip">
   The health probes are never rate-limited, so an aggressive
@@ -101,18 +101,18 @@ Beyond the per-operation timers, each capability publishes the few numbers that 
 
 | Meter | Reports |
 |-------|---------|
-| `jenesis.proxy.fetch` | One timer per pull-through leg, tagged by format and outcome. Chart the miss rate to see how much load [proxying](/repository/proxying/) sheds upstream. |
-| `jenesis.proxy.revalidation.entries` | Index bodies held for conditional revalidation, a bounded gauge. |
-| `jenesis.quota.capacity` | The storage ceiling, against which stored bytes are measured. |
-| `jenesis.ratelimit.buckets` | How many rate-limit buckets are live. |
-| `jenesis.usage.tracked` / `.dropped` | Credential uses recorded, and uses shed because the tracking queue was full. |
-| `jenesis.walk.resumes` | How often an artifact walk resumed a segment rather than starting one. |
-| `jenesis.gc.condemned` / `.collected` | Objects marked unreferenced, and objects actually reclaimed. |
-| `jenesis.consistency.nodes` / `.diverged` | Live nodes compared, and how many are diverged rather than lagging. |
+| `jenreg.proxy.fetch` | One timer per pull-through leg, tagged by format and outcome. Chart the miss rate to see how much load [proxying](/repository/proxying/) sheds upstream. |
+| `jenreg.proxy.revalidation.entries` | Index bodies held for conditional revalidation, a bounded gauge. |
+| `jenreg.quota.capacity` | The storage ceiling, against which stored bytes are measured. |
+| `jenreg.ratelimit.buckets` | How many rate-limit buckets are live. |
+| `jenreg.usage.tracked` / `.dropped` | Credential uses recorded, and uses shed because the tracking queue was full. |
+| `jenreg.walk.resumes` | How often an artifact walk resumed a segment rather than starting one. |
+| `jenreg.gc.condemned` / `.collected` | Objects marked unreferenced, and objects actually reclaimed. |
+| `jenreg.consistency.nodes` / `.diverged` | Live nodes compared, and how many are diverged rather than lagging. |
 
-Health checks sit beside them under `/actuator/health`: `jenesis.proxy.negativecache`,
-`jenesis.proxy.revalidation`, `jenesis.ratelimit.limiter`, `jenesis.usage.worker` and
-`jenesis.consistency.divergence` each report whether their own machinery is doing its job.
+Health checks sit beside them under `/actuator/health`: `jenreg.proxy.negativecache`,
+`jenreg.proxy.revalidation`, `jenreg.ratelimit.limiter`, `jenreg.usage.worker` and
+`jenreg.consistency.divergence` each report whether their own machinery is doing its job.
 
 <div class="note">
   Authentication failures and shed requests are <em>recorded</em> by the components that refuse them -
@@ -130,7 +130,7 @@ puts a Prometheus registry on the module path and adds `prometheus` to the expos
 management.endpoints.web.exposure.include=health,info,metrics,prometheus
 ```
 
-Prometheus then scrapes `/actuator/prometheus`, and the same `jenesis.*` meters appear in its text
+Prometheus then scrapes `/actuator/prometheus`, and the same `jenreg.*` meters appear in its text
 exposition format with no further wiring.
 
 ## Traces
@@ -148,7 +148,7 @@ management.otlp.tracing.endpoint=http://otel-collector:4318/v1/traces
 ```
 
 Each span carries the same repository and tenant key-values as its log line and inherits the
-`jenesis.<area>.<signal>` name, so a trace reads as the operation it measures. And because the log
+`jenreg.<area>.<signal>` name, so a trace reads as the operation it measures. And because the log
 line now carries the trace id, a warning in your logs links straight to the trace that produced it.
 
 <div class="warning">
@@ -168,9 +168,9 @@ curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/api/posture
 ```
 
 Each advisory carries an id, a severity, what is unsafe about the setting and what to do instead - so a
-deployment running open (`jenesis.auth.open`), one seeding demo data into a writable space
-(`jenesis.demo.writable`), one whose console accepts a wildcard origin (`jenesis.console.wildcard`) or whose
-import edge will follow a private address (`jenesis.importer.ssrf`) says so out loud, at boot and on every
+deployment running open (`jenreg.auth.open`), one seeding demo data into a writable space
+(`jenreg.demo.writable`), one whose console accepts a wildcard origin (`jenreg.console.wildcard`) or whose
+import edge will follow a private address (`jenreg.importer.ssrf`) says so out loud, at boot and on every
 read of the endpoint.
 
 A module that is absent, or switched off, reports nothing - so the posture is a picture of what this
@@ -197,14 +197,14 @@ generation or where a pointer resolves, is **diverged**, and that is a problem t
 
 It **detects and reports; it never blocks a request**. A divergence surfaces three ways: as a
 security-posture advisory naming the node and the fix, as metrics
-(`jenesis.consistency.nodes`, `jenesis.consistency.diverged`) with a matching health check, and as a
+(`jenreg.consistency.nodes`, `jenreg.consistency.diverged`) with a matching health check, and as a
 **Consistency** panel in the console.
 
 <div class="note">
   Off by default, because a single node has nothing to compare itself against and would only write
   heartbeats into an otherwise clean store. A multi-node deployment sets
-  <code>jenesis.consistency.enabled=true</code> and gives each node its own
-  <code>jenesis.consistency.node-id</code> - both per node rather than shared, since they describe the
+  <code>jenreg.consistency.enabled=true</code> and gives each node its own
+  <code>jenreg.consistency.node-id</code> - both per node rather than shared, since they describe the
   instance rather than the deployment. It degrades cleanly: one node reports no divergence rather than a
   false positive.
 </div>

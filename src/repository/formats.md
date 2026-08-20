@@ -28,8 +28,8 @@ that claims its path - so formats plug in without the core naming any of them.
   capabilities off its module set: the formats present <em>are</em> the ecosystems it speaks.
 </div>
 
-An installed format is also switchable off by configuration alone: `jenesis.repository.<name>=false`
-(`JENESIS_REPOSITORY_MAVEN=false` as an environment variable) keeps a format from activating at
+An installed format is also switchable off by configuration alone: `jenreg.<name>=false`
+(`JENREG_MAVEN=false` as an environment variable) keeps a format from activating at
 discovery, so its paths unclaim and its importer skips - exactly as if the module were absent. That
 is how one image carrying every format is trimmed per deployment instead of rebuilt; see
 [Feature toggles & implementation selection](/repository/configuration-reference/).
@@ -138,8 +138,8 @@ set chooses which ecosystems a deployment speaks; the core stays generic.
 A proxy-capable format serves a local miss from an upstream you point it at, keyed by the format's name:
 
 ```bash
--Djenesis.repository.proxy.maven=https://repo1.maven.org/maven2/   # the Maven layout's upstream
--Djenesis.repository.proxy.oci=https://registry-1.docker.io/       # the OCI format's upstream
+-Djenreg.proxy.maven=https://repo1.maven.org/maven2/   # the Maven layout's upstream
+-Djenreg.proxy.oci=https://registry-1.docker.io/       # the OCI format's upstream
 ```
 
 The Maven layout defaults to **Maven Central** (`https://repo1.maven.org/maven2/`) with no configuration.
@@ -153,7 +153,7 @@ exactly the bytes a client uploaded. Opt into computing it on read instead, deri
 folders, with:
 
 ```bash
--Djenesis.repository.maven-metadata-compute=true   # default off
+-Djenreg.maven-metadata-compute=true   # default off
 ```
 
 Leave it off unless you want the server to be the source of truth for artifact-level metadata; the verbatim

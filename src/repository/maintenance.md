@@ -17,17 +17,17 @@ moment, and must be able to pick up where it stopped rather than start again.
 Each pass above visits what it already knows how to find - a repository's versions, its stored SBOMs. A pass
 that must visit **everything the store holds** rides a different primitive: the **shared artifact walk**, one
 ordered, resumable enumeration of the store's keys that every store-sweeping consumer uses instead of writing
-its own listing loop. The walk is itself a discovered capability - `jenesis.repository.walk` selects an
+its own listing loop. The walk is itself a discovered capability - `jenreg.walk` selects an
 implementation by name, and the shipped `store` walk descends the store's own key layout through ordered
 paging - and it hands every rider the same guarantees:
 
 - **It resumes, never restarts.** Progress is committed as a compare-and-set cursor every
-  `jenesis.walk.checkpoint` keys (default `1000`). A node that dies mid-pass loses at most the uncommitted
+  `jenreg.walk.checkpoint` keys (default `1000`). A node that dies mid-pass loses at most the uncommitted
   tail, which is re-visited on resume - so a consumer is written to tolerate seeing an item twice, and a pass
   over a huge store survives any interruption.
-- **Replicas split the work without a coordinator.** A pass is planned as up to `jenesis.walk.segments`
+- **Replicas split the work without a coordinator.** A pass is planned as up to `jenreg.walk.segments`
   contiguous ranges (default `32`), and each node claims a segment with a compare-and-set write - a claim is
-  refused, never stolen. A dead node's claim expires after `jenesis.walk.ttl` seconds (default `900`) and
+  refused, never stolen. A dead node's claim expires after `jenreg.walk.ttl` seconds (default `900`) and
   another node resumes the segment from its last cursor.
 - **State lives only in the store.** Like everything else, a pass's manifest and cursors are objects in the
   object store - there is no scheduler database, and a pass survives the death of any process that ran it.
@@ -46,7 +46,7 @@ pointer is long gone. The **garbage collector** is the capability that finds and
 Deleting data is the one unrecoverable act, so garbage collection is the most strictly opt-in capability in
 the product: **with no collector module installed, nothing is ever reclaimed** - the standard image ships
 without one, and its absence costs only disk. Installing one is a deliberate choice, and
-`jenesis.repository.gc` selects among installed collectors by name; **`mark-sweep`** is the shipped
+`jenreg.gc` selects among installed collectors by name; **`mark-sweep`** is the shipped
 implementation.
 
 The `mark-sweep` collector rides the shared artifact walk - never a listing loop of its own - and is built so
@@ -71,13 +71,13 @@ The walk and collector read **startup keys, spelled in full** (they are not per-
 
 | Key | Default | Meaning |
 |-----|---------|---------|
-| `jenesis.repository.walk` | *(first enabled - `store`)* | Selects the artifact-walk implementation store-sweeping passes enumerate through. |
-| `jenesis.walk.checkpoint` | `1000` | Keys visited between durable cursor commits of a walk segment. |
-| `jenesis.walk.segments` | `32` | Target number of ranges a pass is split into across nodes. |
-| `jenesis.walk.ttl` | `900` | Seconds before a dead node's segment claim expires and its segment is resumed elsewhere. |
-| `jenesis.repository.gc` | *(none installed - nothing reclaimed)* | Selects the garbage collector; `mark-sweep` is the shipped implementation. |
-| `jenesis.gc.stride` | `20000` | Checkpoint stride of the collector's own walk passes. |
-| `jenesis.gc.grace` | *(none)* | Optional ISO-8601 wall-clock floor on the condemn-to-collect grace, on top of the one-pass gap. Set it so a blob is never reclaimed until it has carried its condemned marker at least this long - a guard for when several nodes collect, or a node re-collects after a lease expiry, and generations advance faster than the collection interval. |
+| `jenreg.walk` | *(first enabled - `store`)* | Selects the artifact-walk implementation store-sweeping passes enumerate through. |
+| `jenreg.walk.checkpoint` | `1000` | Keys visited between durable cursor commits of a walk segment. |
+| `jenreg.walk.segments` | `32` | Target number of ranges a pass is split into across nodes. |
+| `jenreg.walk.ttl` | `900` | Seconds before a dead node's segment claim expires and its segment is resumed elsewhere. |
+| `jenreg.gc` | *(none installed - nothing reclaimed)* | Selects the garbage collector; `mark-sweep` is the shipped implementation. |
+| `jenreg.gc.stride` | `20000` | Checkpoint stride of the collector's own walk passes. |
+| `jenreg.gc.grace` | *(none)* | Optional ISO-8601 wall-clock floor on the condemn-to-collect grace, on top of the one-pass gap. Set it so a blob is never reclaimed until it has carried its condemned marker at least this long - a guard for when several nodes collect, or a node re-collects after a lease expiry, and generations advance faster than the collection interval. |
 
 ## Settings
 
@@ -85,12 +85,12 @@ The walk's dials are runtime-tunable; garbage collection is off until you turn i
 
 | Key | Default | Meaning |
 |-----|---------|---------|
-| `jenesis.repository.walk` | `store` | Which walk implementation the store-sweeping passes ride, selected by name. |
-| `jenesis.walk.checkpoint` | `1000` | Keys between resumable cursor writes. |
-| `jenesis.walk.segments` | `32` | How many contiguous ranges a pass is planned as, so replicas can claim one each. |
-| `jenesis.walk.ttl` | `900` | Seconds a segment claim survives a dead node before another may resume it. |
-| `jenesis.gc.stride` | `20000` | Objects scanned per garbage-collection pass. |
-| `jenesis.gc.grace` | *(see below)* | How long an unreferenced object survives before the collector may reclaim it. |
+| `jenreg.walk` | `store` | Which walk implementation the store-sweeping passes ride, selected by name. |
+| `jenreg.walk.checkpoint` | `1000` | Keys between resumable cursor writes. |
+| `jenreg.walk.segments` | `32` | How many contiguous ranges a pass is planned as, so replicas can claim one each. |
+| `jenreg.walk.ttl` | `900` | Seconds a segment claim survives a dead node before another may resume it. |
+| `jenreg.gc.stride` | `20000` | Objects scanned per garbage-collection pass. |
+| `jenreg.gc.grace` | *(see below)* | How long an unreferenced object survives before the collector may reclaim it. |
 
 The grace period is the safety margin that makes collection safe to run against a live server: a blob that
 has just been written but not yet pointed at must not be mistaken for garbage. Leave it long enough to cover
