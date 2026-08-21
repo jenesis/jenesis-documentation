@@ -35,10 +35,11 @@ Then open `http://localhost:8081/`, which redirects to `/console`. [Getting star
 walks through the server side of the same setup.
 
 <div class="note">
-  The <strong>Logs</strong> and <strong>Consistency</strong> panels call the server's <code>/api/logs</code> and
-  <code>/api/consistency</code> at the console's own origin. For them to work, serve the console and the server
-  behind one host name, with a reverse proxy routing <code>/api/</code> to the server. Every other panel reads
-  the store directly and works without it.
+  The <strong>Logs</strong>, <strong>Consistency</strong> and <strong>Credentials</strong> panels call the
+  server's <code>/api/logs</code>, <code>/api/consistency</code> and <code>/api/credentials</code> at the
+  console's own origin. For them to work, serve the console and the server behind one host name, with a
+  reverse proxy routing <code>/api/</code> to the server. Every other panel reads the store directly and works
+  without it.
 </div>
 
 ## Signing in
@@ -63,12 +64,12 @@ For a local run, the `dev` Spring profile replaces OAuth2 with a form login and 
 </div>
 
 Console sign-in is separate from the keys that gate the server's artifact API: a console session grants no
-rights on the wire, and the two panels that read the server's API ask you for a key.
+rights on the wire, and the three panels that call the server's API ask you for a key.
 
 ## The console page
 
 `/console` shows the installed panels in one page, with a header that carries **Sign out**, the theme switch,
-and a read-only banner when the deployment runs with `jenreg.read-only=true`. Six panels ship with the
+and a read-only banner when the deployment runs with `jenreg.read-only=true`. Seven panels ship with the
 console:
 
 | Panel | What it shows |
@@ -78,6 +79,7 @@ console:
 | **Metrics overview** | Current values, health states and background-task status reported by installed modules. It is empty until a module that reports them is installed. |
 | **Logs** | A tail of the server's recent log entries, with level and text filters and auto-follow. |
 | **Consistency** | The per-node report of a multi-node deployment, or a single-node notice. |
+| **Credentials** | The keys the server authorises with: list them, issue one with a label, revoke one. |
 | **Security posture** | The server's configuration advisories, severity first, each with its fix. |
 
 ## Browsing artifacts
@@ -109,6 +111,15 @@ panel has a field to paste one, and sends it as the `Jenesis-Repository-Key` hea
 authentication off, leave the field empty. Before a key is entered, or against an empty log ring, a panel
 shows an empty state rather than an error. [Observability](/repository/observability/) describes both
 endpoints and their fields.
+
+## Issuing keys
+
+The **Credentials** panel is the console's view of `/api/credentials`. Paste a key that carries
+`manage:write` - the bootstrap key does - and the panel lists the tenant's credentials with their labels,
+expiry, use and grants. **Issue a key** mints one with the label you typed and shows the secret **once**: only
+its hash is stored, so copy it before you leave the page. **Revoke** removes a key at once. A freshly issued
+key has no rights until it is granted some, which - like rotation and address allowlists - is an API call;
+[Authentication & access](/repository/authentication/) covers the whole surface.
 
 ## Theme and accessibility
 

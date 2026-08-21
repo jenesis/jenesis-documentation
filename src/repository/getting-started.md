@@ -66,8 +66,7 @@ filesystem. Everything on the module path is on until you configure it off.
 ## A first local run, open
 
 The server **enforces key-based authentication by default**: every request must carry a valid repository key,
-and a request without one is refused. The server ships no command that creates a key, so for a local trial
-you switch enforcement off:
+and a request without one is refused. For a local trial the quickest route is to switch enforcement off:
 
 ```bash
 JENREG_AUTH=false JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
@@ -76,8 +75,12 @@ JENREG_AUTH=false JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
 
 Running open is never silent. The server logs a warning at boot and reports the `jenreg.auth.open` advisory at
 `GET /api/posture`, so an open deployment says so wherever an operator looks. It is the right setting for a
-laptop or a trusted network; for anything reachable from outside, read *Authentication & access* before you
-expose it.
+laptop or a trusted network. The rest of this chapter assumes it, so that `mvn` needs no credentials.
+
+For anything reachable from outside, keep enforcement on and start from a **bootstrap key** instead: set
+`JENREG_BOOTSTRAP_KEY` to a key of your choosing, and the server provisions it at boot with every right, so
+you can issue the keys your clients will use through `/api/credentials`. *Authentication & access* walks
+through it, including how to generate a well-formed key.
 
 <div class="tip">
   An empty repository is hard to judge. Add <code>-Djenreg.demo=true</code> and the server seeds itself in the

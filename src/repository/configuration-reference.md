@@ -103,6 +103,7 @@ See [Authentication & access](/repository/authentication/).
 | Key | Default | Effect |
 |---|---|---|
 | `jenreg.auth` | `true` | Authorise every request against the `Jenesis-Repository-Key` header. `false` serves every request anonymously and raises the `jenreg.auth.open` advisory. |
+| `jenreg.bootstrap-key` | *(empty)* | A well-formed `jenk_<tenant>.<secret><checksum>` key provisioned at boot with `*` on every repository of its tenant, so a fresh enforcing deployment can issue its first real keys through `/api/credentials`. Malformed values refuse to boot; a `SECURITY` line is logged while it is set. |
 | `jenreg.anonymous-rights` | *(empty)* | The rights a keyless caller holds under `jenreg.auth=true`: a comma list of `<surface>:<verb>` tokens (`repository:read`, `repository:write`, `manage:read`, `manage:write`, `<surface>:*`, `*`), each optionally scoped as `<repository>=<token>`. |
 | `jenreg.read-only` | `false` | See *Server & storage*; paired with `anonymous-rights=repository:read` this is the public-mirror pattern. |
 
