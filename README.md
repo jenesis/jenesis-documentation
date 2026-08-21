@@ -27,8 +27,9 @@ passes - publishes to GitHub Pages. A broken link fails the deploy, so run `npm 
 ## How the site is structured
 
 - `src/index.njk` - the landing page (the project grid).
-- `src/<section>/` - one folder per tool: `tool`, `jpx`, `launcher`, `modules`, `repository`. Each folder's
-  `<section>.json` sets the shared layout and menu title.
+- `src/<section>/` - one folder per tool: `tool` (Jenesis), `jpx` (Jenesis jpx), `launcher` (Jenesis Launcher),
+  `modules` (Jenesis Module Index), `repository` (Jenesis Repository). Each folder's `<section>.json` sets the
+  shared layout and menu title.
 - `src/_includes/` - the page shell (`base.njk`) and the documentation layout with the sidebar (`docs.njk`).
 - `src/_data/` - `demos.js` (the demo index, kept in step with `raphw/jenesis`'s `demo/`) and `release.js`
   (which repository each landing-page tile takes its version from - the version itself is read from the
@@ -85,6 +86,20 @@ documentation as a project is not a topic.
 
 **Always write "Java Module System", never "JPMS"**, and capitalise it as the proper name. Generic
 back-references ("the module system") are fine.
+
+**Use the product names strictly.** The service at repo.jenesis.build is **the Jenesis Module Index** (then
+"the module index"); **Jenesis Repository** is only the artifact-repository product; `~/.jenesis` is "the local
+module repository" (as `~/.m2` is the local Maven repository); the GitHub project is "the `raphw/jenesis`
+repository". The module runner is **jpx**, lower case even at the start of a sentence; the executable-jar tool
+is **Jenesis Launcher** and its artifact "a launcher jar" (the build tool's `bundle=true` owns the word
+"bundle"). Build extensions are "plugins", the folder is "the configuration folder" (`build.jenesis/`), and
+"class path" / "module path" are two words in prose. British spelling throughout (licence, behaviour,
+serialise), and the house dash is a spaced hyphen (" - ").
+
+**Document what ships, never what is planned.** Check the tool's own repository before describing an install
+channel, image or endpoint (`jreleaser.yml`, `install.sh`, the `Dockerfile`). If something cannot be done
+today, describe the route that works and say nothing about the future - "not yet", "planned" and tier words
+("free", "distribution", "enterprise") do not belong on the site.
 
 **Never frame the Java Module System as a trade-off or a burden.** It is a Java-native build- and
 runtime-dependency descriptor that replaces the POM, with every further advantage of modularity coming for

@@ -1,238 +1,157 @@
 ---
-order: 8
+order: 7
 title: Authentication & access
-description: Identifying every request and deciding what it may do - the authentication seam, the key credential model and its grants, OIDC token exchange and console sign-in, anonymous read, the deployment-wide read-only mode, and the settings that switch enforcement on.
+description: How a deployment decides who may read and publish - running open on a trusted network, serving a public read-only mirror, the key credential the server enforces by default, and signing in to the console.
 ---
 
-Everything so far assumed an open repository - one that answers any request that reaches it. A deployment
-that is reachable by anyone else needs the other thing: every request **identified**, and every operation
-**checked** against what that identity may do. Authentication is a discovered capability like the rest, so
-the server runs open until you enforce it, and the mechanism that enforces it is a module rather than a
-different binary.
+A fresh Jenesis Repository **enforces** authentication: every request is checked against a per-credential
+key, and a request that carries none is refused. Before you expose a server to anyone else, you choose how
+it identifies callers. There are three deployment shapes, and this chapter takes them in the order you are
+likely to meet them: an open server on a trusted network, a public read-only mirror, and a key-gated server.
+Signing in to the web console is a separate matter, covered at the end.
 
-A fresh server **enforces**: every request is authorised against a per-credential key, and one that carries
-none is refused. The machine-to-machine artifact API is keyed by a header, with no browser session, no CSRF
-and no HTTP Basic in the way.
+## Three ways to deploy
 
-Running **open** is the opt-out, not the default - `jenreg.auth=false` (env
-`JENREG_AUTH=false`) allows every request and identifies nobody.
+### Open, on a trusted network
 
-<div class="warning">
-  Opening the wire is never silent. <code>auth=false</code> raises the <code>jenreg.auth.open</code>
-  security-posture advisory, logged once at boot and shown on the console and at
-  <code>GET /api/posture</code>, so a deployment that is open says so wherever an operator looks. It is the
-  right setting for a laptop; it is the wrong one for anything reachable.
-</div>
+For a laptop, a CI network, or any deployment that lives behind its own perimeter, switch enforcement off:
 
-## The capabilities
+```bash
+JENREG_AUTH=false
+```
 
-### The artifact space
+Every request is then served anonymously: anyone who can reach the port can read, publish and delete. The
+choice is never silent. The server logs a warning at boot and raises the `jenreg.auth.open` advisory, which
+`GET /api/posture` reports and the console shows on its Security posture panel.
 
-The server serves **one artifact space**, named by `jenreg.tenant` and
-`jenreg.repository` - both `default` unless you set them. Every request resolves to it: artifacts
-under the `/repository/…` prefix, which is stripped so a format sees its own `/maven/`, `/raw/` … path, and
-the OCI registry at `/v2/`, where the Docker protocol pins it.
+### A public read-only mirror
 
-The two names look like more than they are. Objects are stored under a `<tenant>/<repository>/…` scope
-(introduced in [Storage](/repository/storage/)), so a space is addressed the same way whether a deployment
-serves one or routes to many - which is why the settings carry a tenant even when there is only ever one, and
-why data stays where it was left if a deployment's routing is later replaced.
+For a repository that anyone may read but nobody may change - an open-source project's artifacts, a
+browsable archive - keep enforcement on, grant keyless callers read access, and remove writing altogether:
 
-### The authentication seam
+```bash
+JENREG_AUTH=true                             # the default
+JENREG_ANONYMOUS_RIGHTS=repository:read
+JENREG_READ_ONLY=true
+```
 
-Enforcement runs one **credential model** - a key on a request, checked against stored grants - behind a
-composition seam. Two things plug into that seam:
+`jenreg.anonymous-rights` names exactly what a caller without a key may do. It is blank by default, so an
+enforcing server stays closed until you say otherwise. The value is a comma-separated list in the grant
+grammar below: `repository:read` on every repository, `<repository>=repository:read` for one named
+repository, `<surface>:*` for every verb on a surface, or `*` for everything. Granting writes anonymously
+is allowed and warned about at boot.
 
-- **Token exchange** - a discovered mechanism that trades a workload's identity token for a short-lived key,
-  so a CI job never stores a static secret. With none installed, the exchange endpoint reports the feature is
-  not installed rather than failing closed.
-- **Console sign-in** - OAuth2 / OIDC login for people, layered over the same baseline chain and resolving to
-  the same key model, rather than a second identity system beside it.
+`jenreg.read-only` refuses **every** write with `403` - a publish, an import, a proxy fetch caching an
+artifact - at the store itself, so no credential and no internal path gets around it. A common pattern pairs
+one firewalled read-write instance that publishes into a shared bucket with public read-only instances that
+serve from it.
 
-So the always-present mechanism is **key authentication**; the others are capabilities a deployment adds. The
-sections below take each in turn.
+### Key-gated access
 
-## Implementations
+With enforcement on, a client identifies itself with a key in the `Jenesis-Repository-Key` header. A `GET`
+or `HEAD` needs the `repository:read` right on the requested path; any other method needs
+`repository:write`. Where the route does not already name the repository, `Jenesis-Repository-Name` does.
 
-### Key authentication
+```bash
+curl -H "Jenesis-Repository-Key: jenk_default.…" \
+     -T app-1.0.jar http://repo.example.com/repository/maven/com/example/app/1.0/app-1.0.jar
+```
 
-An enforcing request carries its credential in the **`Jenesis-Repository-Key`** header (and, where the route
-does not already name it, the target repository in `Jenesis-Repository-Name`). A GET or HEAD needs
-`repository:read`; any other method needs `repository:write`.
-
-A key is minted in a **scannable, self-describing** form:
+A key is a self-describing string:
 
 ```
 jenk_<tenant>.<secret><checksum>
 ```
 
-- the **`jenk_` prefix** and the trailing **CRC checksum** let a secret scanner recognise a leaked Jenesis key
-  and validate it offline, and let the server reject a malformed or truncated key with **no store lookup**;
-- the **owner travels in the key**, so a request is attributed without a directory read;
-- only the key's **SHA-256 hash is ever stored** - never the secret itself.
+The `jenk_` prefix and the trailing checksum let a secret scanner recognise a leaked key and let the server
+reject a malformed one without a store lookup. The owner travels in the key, so a request is attributed
+without a directory read, and only the key's SHA-256 hash is ever stored.
 
-#### Grants: scopes and rights
+A key's rights are a map from **scope** to **rights**. A scope is a repository name (`*` for every
+repository), optionally narrowed to a path prefix as `<repository>:<prefix>`, which covers a request only
+when its path lies at or under the prefix on a segment boundary. A right is a `<surface>:<verb>` token over
+the surfaces `repository`, `cache` and `manage`, each with `read` and `write`; `<surface>:*` grants both
+verbs and a bare `*` grants everything. Three built-in roles bundle them:
 
-A credential's rights are stored as a map of **scope → rights**:
-
-- A **scope** is a repository name (`*` matches every repository), optionally narrowed to a path prefix as
-  `<repo>:<prefix>` - a prefix grant covers a request only when its path lies **at or under** the prefix on a
-  segment boundary. So one key can hold repository-wide and path-scoped rights at once.
-- A **right** is a `<surface>:<verb>` token. The built-in surfaces are `repository`, `cache` and `manage`,
-  each with a `read` and a `write` verb. A `<surface>:*` token grants every verb on that surface, and a bare
-  `*` grants everything - an owner key.
-
-| Right | Allows |
-|-------|--------|
-| `repository:read` / `repository:write` | resolve from / publish to a repository |
-| `cache:read` / `cache:write` | read / populate the pull-through cache |
-| `manage:read` / `manage:write` | view / change management surfaces |
-
-Because a right names its surface, **one key can carry any mix** - repository, cache and management rights
-together - which is how a single credential authorises a combined deployment. A grant check reads the stored
-objects on **every request**, so revoking or narrowing a grant takes effect at once, and an **expired key is
-rejected before its grants are even read**.
-
-#### Lifetime, rotation, and containment
-
-A minted key **expires by default** - 90 days unless a shorter one is requested - and a deployment or tenant
-policy can set both a **default lifetime** and a **hard ceiling** no key may outlive. A key can be **rotated**:
-a successor inherits the same label, grants and allowlist with a fresh lifetime, and the old key keeps working
-for a short **overlap** (a week by default) so callers swap over with no downtime.
-
-Two containment controls narrow a key further:
-
-- a **source-IP allowlist** (CIDRs) refuses a key used from an unlisted address, so a stolen key is useless off
-  its network - with `X-Forwarded-For` honoured only from a trusted proxy, so a client cannot spoof its own
-  address;
-- a leaked key can be **revoked immediately** by its raw value (the tenant and checksum are read straight off
-  the key), and the credential-usage capability stamps each key's **last-use time, address and count** (batched
-  off-request) so an unused or misused key is visible.
-
-<div class="note">
-  Provisioning, rotating, listing and revoking credentials - and editing roles, trusts and per-tenant policy -
-  are done through the console or admin API of a deployment that installs the management capability. A plain
-  free server enforces the same stored grants; it just has no built-in surface to edit them.
-</div>
-
-### Roles and memberships
-
-Raw `<surface>:<verb>` tokens are precise but unfriendly, so a **role** bundles them under a name. Three
-built-in roles form a hierarchy a console can offer directly:
-
-| Role | Bundles |
-|------|---------|
+| Role | Grants |
+|---|---|
 | `read-only` | `cache:read`, `repository:read` |
-| `deploy` | adds `cache:write`, `repository:write` |
-| `admin` | `*` - everything |
+| `deploy` | the above plus `cache:write`, `repository:write` |
+| `admin` | `*` |
 
-A tenant can define **custom roles** (and override a built-in name), so membership in a role is how you grant a
-person or a CI identity a coherent set of rights without spelling out tokens.
+A key expires 90 days after it is created unless given a shorter lifetime, can be restricted to a
+source-address allowlist, and is checked against its stored grants on every request, so a narrowed or
+revoked key stops working at once.
 
-### OIDC token exchange
-
-A CI job already holds an identity token from its platform. **Token exchange** trades that token for a
-short-lived Jenesis key, so the pipeline stores **no static secret at all**. Install the OIDC module
-(`source/oidc`) and the exchange is live - there is nothing more to configure, because *which* issuers are
-honoured is **per-tenant trust data**, not deployment configuration.
-
-Each tenant keeps a set of named **trusts**. A presented token is admitted only when it matches one:
-
-- its **issuer** must name a configured trust - a forged or foreign token matches nothing;
-- its signature is verified by that issuer's published **JWKS** (via standard OIDC discovery, with key rotation
-  and caching handled by the vetted Spring/Nimbus decoder - not hand-rolled crypto);
-- the trust's **audience** and **subject** (a glob, blank for any) must match.
-
-On a match, a fresh key is minted carrying the trust's **scope and rights**, expiring after the trust's **TTL**
-(an hour by default). A trust therefore reads as: *a token from this issuer, for this audience and subject, is
-worth this much, for this long.*
-
-<div class="tip">
-  This is the recommended way to let CI publish. The build's OIDC token is exchanged at job start for a key
-  scoped to exactly the repository it may write, and it expires on its own - nothing to store in the pipeline,
-  nothing to rotate, nothing to leak.
+<div class="warning">
+  The server ships no command or screen that creates a key. Key-gated access applies to keys that are
+  already present in the store's <code>auth/</code> objects; a new deployment that needs credentials for
+  its clients runs open on a trusted network or as a read-only mirror, as above.
 </div>
 
-### Console sign-in
+## What a client can find out
 
-The mechanisms above authenticate **machines**. **People** sign in to the
-[console](/repository/console/) over OAuth2 / OIDC, through the same authentication seam and resolving to the
-same credential model - so a person's console rights and a token's API rights are one grant system rather
-than two.
+`GET /api/capabilities` answers a small JSON map a client or console reads to adapt itself: `auth` (whether
+the wire is credential-gated), `readOnly`, and `anonymousRights` (the keyless grant, if any).
+`GET /api/posture` lists the security advisories the current configuration raises, from `jenreg.auth.open`
+to `jenreg.ratelimit.unset`, each with the setting that would clear it. Both are reads: on an enforcing
+server they need a key with read rights, or an anonymous read grant, and the posture report is scoped to the
+whole deployment rather than to one repository.
 
-<div class="note">
-  For a <strong>local run</strong>, the <code>dev</code> profile
-  (<code>SPRING_PROFILES_ACTIVE=dev</code>) swaps in a built-in <code>admin</code>/<code>admin</code> form
-  login so you can open the console without an identity provider - see
-  <a href="/repository/getting-started/">Getting started</a>. It is for local use only.
-</div>
+## Signing in to the console
 
-Whichever mechanism denies a request, the server records the failure by **mechanism** and outcome, exposed as
-a metric so a dashboard can watch authentication health across all of them at once.
+The web console is a separate application with its own sign-in. People authenticate through an identity
+provider, not with repository keys, and the console has two roles: every signed-in user is a **user** who
+can browse, and a user listed as an admin can also act on what the console exposes.
 
-## Letting a keyless caller read
+Two providers are supported and either or both may be configured; with neither, sign-in is disabled and the
+console shows a notice instead of failing:
 
-An enforcing deployment refuses a request that carries no credential. Where a repository is meant to be
-readable by anyone - a public mirror, an open-source project's own artifacts - one setting grants a keyless
-caller a named set of rights:
+```bash
+# GitHub OAuth app
+JENREG_UI_GITHUB_CLIENT_ID=…
+JENREG_UI_GITHUB_CLIENT_SECRET=…
 
-```properties
-jenreg.anonymous-rights=repository:read
+# One OpenID Connect issuer (Google, Keycloak, Okta, Entra ID, Auth0, …); endpoints are discovered
+JENREG_UI_OIDC_ISSUER_URI=https://login.example.com/realms/main
+JENREG_UI_OIDC_CLIENT_ID=…
+JENREG_UI_OIDC_CLIENT_SECRET=…
+JENREG_UI_OIDC_NAME="Company SSO"          # labels the sign-in button
 ```
 
-It is **strictly opt-in and blank by default**, so an enforcing deployment stays closed until somebody says
-otherwise, and what is granted is spelled out rather than implied - anonymous read is a different decision
-from anonymous write, and each is named.
+Admins are named by provider-qualified id in `JENREG_UI_ADMINS`, comma-separated: `github/<id>` for a
+GitHub user, `oidc/<sub>` for an OIDC subject. The list is empty by default, so an unconfigured console
+grants admin to nobody. A `*` entry makes every signed-in user an admin, which raises the
+`jenreg.console.wildcard` advisory.
 
-<div class="note">
-  This is not the same as leaving the wire open. An open deployment (<code>auth=false</code>) allows every
-  request and identifies nobody; an enforcing deployment with anonymous rights still authenticates every
-  caller that <em>does</em> present a key, and grants the unauthenticated ones exactly the listed rights.
+The session cookie is sent only over HTTPS. For a local run over plain http, where the cookie has to survive
+the OAuth redirect without TLS, set `JENREG_UI_SECURE_COOKIE=false`.
+
+<div class="tip">
+  For local work, start the console with <code>SPRING_PROFILES_ACTIVE=dev</code>. The profile replaces the
+  provider sign-in with a form login and two built-in accounts, <code>admin</code>/<code>admin</code> and
+  <code>viewer</code>/<code>viewer</code>, so both roles can be tried without an identity provider. It
+  raises the <code>jenreg.profile.dev</code> advisory and is never for a reachable deployment.
 </div>
-
-## Read-only mode
-
-Authentication decides *who* may write; a second, deployment-wide switch removes writing altogether.
-**Read-only mode** (`jenreg.read-only=true`, env `JENREG_READ_ONLY`, off by default)
-refuses **every** write with `403` - a hosted publish, an import, every mutating admin action - while browse,
-download, search and all read APIs work normally.
-
-The refusal is enforced at one low-level choke point: a decorator wraps the storage seam itself, so an
-*internal* write - a pull-through proxy caching an upstream artifact, an import replaying assets - is refused
-before any bytes are stored, and the write-producing background jobs are disabled. There is no path around
-it, whatever credentials a request carries.
-
-Two deployments want this:
-
-- **A browsable-but-immutable demo or archive** - the contents are the point; changing them is not.
-- **A public read-only mirror.** Pair one firewalled read-write instance that publishes into a shared store
-  with public read-only instances serving reads from it - the public face cannot be made to write, not even
-  through its own proxy caching.
-
-A client or console does not have to probe for the mode: the server advertises it, together with whether the
-wire is credential-gated, at a capability endpoint - `GET /api/capabilities` answers a small JSON map
-(`readOnly`, `auth`) a distribution extends as it adds capabilities - and the
-[console](/repository/console/) shows a read-only banner when the mode is on.
 
 ## Settings
 
-Authentication and tenancy are pinned from above the store - an environment variable or a
-`-Djenreg.<key>=…` system property - since they decide how the wire is gated before any tenant
-configuration is read.
+Server-side settings, read at startup from the environment, a `-D` system property or
+`application.properties`:
 
-| Key | Default | Meaning |
-|-----|---------|---------|
-| `auth` | `true` | Enforce the credential model. `false` leaves the server **open** - every request allowed - and raises a security-posture advisory. |
-| `read-only` | `false` | Refuse every write - external or internal - with `403`, while all reads work normally. Advertised at `GET /api/capabilities`. |
-| `tenant` | `default` | The tenant half of the one artifact space this deployment serves. |
-| `repository` | `default` | The repository half of that space. |
+| Key | Default | Effect |
+|---|---|---|
+| `jenreg.auth` | `true` | Enforce the key credential. `false` serves every request anonymously and raises `jenreg.auth.open`. |
+| `jenreg.anonymous-rights` | *(blank)* | Rights granted to a caller without a key, in the grant grammar; only meaningful with `jenreg.auth=true`. |
+| `jenreg.read-only` | `false` | Refuse every write, external or internal, with `403`. Advertised at `GET /api/capabilities`. |
+| `jenreg.tenant` / `jenreg.repository` | `default` | The names of the one artifact space this deployment serves; a key's tenant must match. |
 
-Beyond these, the finer-grained controls are **per-tenant data** held in the store - credential lifetime
-**policy** (default and ceiling), OIDC **trusts**, custom **roles**, and a tenant's **quota** and
-**[rate limit](/repository/rate-limiting-usage/)**.
+Console settings, read by the console process:
 
-Installing the OIDC module enables token exchange; a server without it runs enforcing and key-only, which is
-a complete and safe deployment on its own. Where the module is installed it stays configuration-switchable -
-`jenreg.oidc=false` turns the exchange off exactly as removing the module would, and
-`jenreg.token-exchange` selects among implementations by name, per
-[Feature toggles & implementation selection](/repository/configuration-reference/).
+| Key | Default | Effect |
+|---|---|---|
+| `jenreg.ui.admins` | *(blank)* | Comma-separated `github/<id>` / `oidc/<sub>` ids granted admin; `*` for everyone. |
+| `jenreg.ui.github.client-id` / `.client-secret` | *(blank - disabled)* | GitHub OAuth app credentials. |
+| `jenreg.ui.oidc.issuer-uri` / `.client-id` / `.client-secret` | *(blank - disabled)* | The OIDC issuer and client. |
+| `jenreg.ui.oidc.name` | `Single sign-on` | The label on the OIDC sign-in button. |
+| `JENREG_UI_SECURE_COOKIE` | `true` | Send the session cookie over HTTPS only. |

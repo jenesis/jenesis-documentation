@@ -1,176 +1,167 @@
 ---
 order: 4
 title: Storage
-description: The one store every plug-in writes through - its content-addressed primitives, the filesystem, S3, and Azure backends, and the settings that select and cap them.
+description: Where your artifacts live - the filesystem, S3-compatible, Google Cloud Storage and Azure Blob backends, how to select one, the storage quota, and how to back a repository up.
 ---
 
-The [Architecture](/repository/architecture/) chapter established that the store is the server's **only
-durable state** - there is no database. Every byte the repository owns (a jar, a generated POM, a checksum,
-an index, a compare-and-set pointer, a config document) is an object written through **one storage seam**.
-This chapter is that seam: what it does, the backends that implement it, and how you point a deployment at
-one.
+Jenesis Repository keeps everything it owns in **one store**. A jar, a Docker layer, a checksum, a
+`maven-metadata.xml`, the pointer that says which blob a path serves - all of it is an object in that store,
+and there is no database beside it. This chapter is about choosing where that store lives: a directory on
+disk, an S3-compatible bucket, Google Cloud Storage, or Azure Blob.
 
-## The storage seam
+## One store, four backends
 
-The storage backend is a discovered plug-in like every other capability. The core names no backend; it asks
-the seam which one applies and writes everything through it. The seam is small on purpose - a backend is
-just these primitives over an object namespace:
+The store is content-addressed and streamed. An upload is digested as it is written and lands under
+`blobs/<sha256>`, so identical bytes are stored once - a re-deploy of unchanged content costs no space, and
+a Docker layer dedupes against a jar with the same bytes. Bytes move from the network straight to storage
+and back without being held whole in memory, so a 4 KB POM and a 4 GB image layer cost the same fixed heap.
+Pointers are written with compare-and-set, which is how several server instances can share one bucket
+without a lock service.
 
-- **Streaming read and write.** `write(key, InputStream)` copies a stream into an object; `read(key,
-  OutputStream)` copies it back out. Bytes move from the network straight to storage and back - never held
-  whole in memory, so a 4 KB POM and a 4 GB image layer cost the same fixed heap.
-- **Content addressing - `writeBlob`.** `writeBlob(InputStream)` digests a stream *as it writes* and keys
-  the result by its own hash: `blobs/<sha256>`. Identical bytes therefore land once. A re-deploy of
-  unchanged content needs no new space, and because an OCI digest already *is* a `sha256:`, a Docker layer
-  dedupes against everything else for free.
-- **Compare-and-set - `writeVersioned`.** A conditional write that only succeeds if the object is unchanged
-  since you read it. This is how several stateless server instances agree on a pointer with **no lock
-  service** - the store itself is the coordination point.
-- **Scoping and listing.** Every object lives under a `<tenant>/<repository>/…` **scope**; a backend
-  resolves a key within the active scope, and `list` walks a prefix one level at a time so a browse or a
-  cleanup never scans a whole tree. `exists`, `size`, and `delete` round out the set.
+Every artifact lives under a `<tenant>/<repository>/…` prefix. Both names default to `default`, so a fresh
+server writes under `default/default/`. You never edit objects under the root by hand.
 
-That is the whole contract. Because it is this narrow, the same content-addressed publication path,
-authorization, and console work identically whether the bytes land on a disk or in a cloud bucket - the
-layers above the store never learn which backend answered.
+A backend is a discovered module, chosen **once, at startup, for the whole deployment**. You select it with
+`jenreg.store` (environment variable `JENREG_STORE`); leaving it unset uses the filesystem.
 
-<div class="note">
-  A backend is chosen once, at startup, for the whole deployment. You do not mix backends within one server;
-  you point the server at the medium you want and everything flows there.
+| `jenreg.store` | Backend | Required setting |
+|---|---|---|
+| *(unset)* or `filesystem` | A directory on disk *(default)* | `jenreg.filesystem.root` |
+| `s3` | AWS S3 or any S3-compatible store (MinIO, Ceph, LocalStack) | `jenreg.s3.bucket` |
+| `gcs` | Google Cloud Storage | `jenreg.gcs.bucket` |
+| `azure-blob` | Azure Blob Storage | `jenreg.azure-blob.connection-string` |
+
+<div class="warning">
+  A selected backend is never silently replaced. Naming a backend whose module is not on the path, or one
+  that is missing a required setting, <strong>fails the boot</strong> with a message naming every missing
+  key. Persisting against the wrong store is never the safe default.
 </div>
 
-## The backends
+## Filesystem - the default
 
-Three backends ship in the box. Each maps the primitives above onto a real medium; you select one with a
-single setting (below) and supply its credentials.
-
-### Filesystem - the default
-
-The filesystem backend keeps blobs under a mounted root directory. It is the backend the server **falls
-back to when you name none**, so the getting-started run needed no selection at all - only a path:
+The filesystem backend keeps objects under a root directory. It is the right choice for a single instance
+or a local run, and it needs only a path:
 
 ```bash
 JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
-  java -Djenesis.execute.module=source+server build/jenesis/Execute.java
+  java -Djenesis.execute.module=source+bundle build/jenesis/Execute.java
 ```
 
-Point `JENREG_FILESYSTEM_ROOT` at durable, backed-up storage - a mounted volume, an NFS share - and the server
-is complete. It is the right choice for a single instance or a local run; the cloud backends are what you
-reach for to run stateless and horizontally scaled.
+The root defaults to `/var/lib/jenesis-repository`. Point it at durable storage - a mounted volume, an NFS
+share - and the server is complete. File permissions on the root are the only access control the backend
+itself applies.
 
-### S3 - and GCS, MinIO, Ceph
+## S3 - AWS, MinIO, Ceph
 
-The S3 backend (AWS SDK v2) stores every object in an S3-compatible bucket. Selecting it makes the server
-**stateless**: an instance can die and lose nothing, and you can run several behind a load balancer or
-serverless, because the durable state lives in the bucket, not the instance.
+The S3 backend stores every object in a bucket, which makes the server **stateless**: an instance can die
+and lose nothing, and you can run several behind a load balancer. Select it and name the bucket:
 
 ```bash
--Djenreg.store=s3            # select the backend
-JENREG_S3_BUCKET=my-artifacts          # the bucket to use
+JENREG_STORE=s3
+JENREG_S3_BUCKET=my-artifacts
+JENREG_S3_REGION=eu-central-1          # default us-east-1
 ```
 
-The same backend serves any S3-compatible store - **Google Cloud Storage, MinIO, Ceph** - by pointing it at
-a custom endpoint:
+Credentials come from the standard AWS chain - environment variables, a shared profile, an instance or task
+role - so a server on AWS usually needs no keys in its configuration. To supply keys explicitly, the path a
+self-hosted MinIO or Ceph takes, set both `JENREG_S3_ACCESS_KEY_ID` and `JENREG_S3_SECRET_ACCESS_KEY`.
+
+An S3-compatible store is reached through an endpoint, which switches the client to path-style access:
 
 ```bash
-JENREG_S3_ENDPOINT=https://storage.googleapis.com   # or a self-hosted MinIO/Ceph URL
+JENREG_S3_ENDPOINT=https://minio.internal:9000
 ```
 
-The object **ETag is the version token**, so `writeVersioned` becomes a true cross-node compare-and-set over
-S3's `If-None-Match` / `If-Match` conditional writes - the coordination is the bucket's, with no separate
-lock service. And because `PutObject` needs the object length up front, a streamed upload of unknown length
-spills to a temp file rather than to the heap, preserving the fixed-memory guarantee.
+The endpoint must be `https`. A plain-http endpoint - a MinIO on a laptop, say - is refused at boot unless
+you opt in with `JENREG_S3_ALLOW_INSECURE_ENDPOINT=true`, because credentials and artifact bytes would
+otherwise cross the network unencrypted.
 
-### Google Cloud Storage
+Objects are written with server-side encryption: SSE-S3 by default, or `aws:kms` when
+`JENREG_S3_SSE_KMS_KEY_ID` names a key. The object ETag is the compare-and-set token, so several instances
+coordinate through the bucket alone. Because S3 needs an object's length up front, a streamed upload of
+unknown length is spilled to a temporary file rather than to the heap.
 
-There is also a **native GCS backend** - the same modular AWS SDK v2 client speaking GCS's
-S3-compatible XML API, with the GCS differences handled for you: the version token is the object
-**generation** (GCS honours `If-Match` only on reads), so `writeVersioned` is a cross-node
-compare-and-set over the `x-goog-if-generation-match` precondition, and uploads skip the chunked
-signing GCS does not decode. It authenticates with an HMAC key pair (Cloud Storage → Settings →
-Interoperability):
+## Google Cloud Storage
+
+The GCS backend speaks Google's S3-compatible XML API with the GCS differences handled for you: the
+compare-and-set token is the object **generation**, and uploads skip the chunked signing GCS does not decode.
 
 ```bash
--Djenreg.store=gcs
+JENREG_STORE=gcs
 JENREG_GCS_BUCKET=my-artifacts
-JENREG_GCS_ACCESS_KEY_ID=...            # the HMAC pair
-JENREG_GCS_SECRET_ACCESS_KEY=...
 ```
 
-The plain S3 backend pointed at `storage.googleapis.com` (above) still works; the native backend is
-the one to pick when you want generation-token compare-and-set semantics rather than ETags.
+It authenticates with an HMAC key pair (Cloud Storage → Settings → Interoperability) in
+`JENREG_GCS_ACCESS_KEY_ID` and `JENREG_GCS_SECRET_ACCESS_KEY`; when neither is set, the ambient AWS
+credential chain is used. `JENREG_GCS_ENDPOINT` (default `https://storage.googleapis.com`) points the
+backend at an emulator and must be `https` unless `JENREG_GCS_ALLOW_INSECURE_ENDPOINT=true`;
+`JENREG_GCS_REGION` sets the signing region (default `auto`).
 
-### Azure Blob
+The plain `s3` backend pointed at `https://storage.googleapis.com` works as well. Pick the native backend
+when you want generation-based compare-and-set rather than ETags.
 
-The Azure backend (azure-storage-blob SDK) stores objects in an Azure Blob container and behaves exactly
-like the S3 backend for scaling and coordination - the blob **ETag is the version token**, so
-`writeVersioned` is a cross-node compare-and-set over Azure's `If-None-Match` / `If-Match` conditional
-writes.
+## Azure Blob
+
+The Azure backend stores objects in a blob container and behaves like the S3 backend for scaling and
+coordination, with the blob ETag as the compare-and-set token:
 
 ```bash
--Djenreg.store=azure-blob
-JENREG_AZURE_BLOB_CONNECTION_STRING=...      # the account connection string
+JENREG_STORE=azure-blob
+JENREG_AZURE_BLOB_CONNECTION_STRING='DefaultEndpointsProtocol=https;AccountName=…'
+JENREG_AZURE_BLOB_CONTAINER=artifacts   # default jenesis-repository
 ```
+
+The endpoint the connection string resolves to must be `https`; a plain-http one (an Azurite emulator)
+needs `JENREG_AZURE_BLOB_ALLOW_INSECURE_ENDPOINT=true`.
+
+## Capping storage
+
+A repository-wide storage cap is optional. Once stored content reaches the limit, a new artifact is refused
+with `507 Insufficient Storage`:
+
+```bash
+JENREG_QUOTA=10G       # a byte count, or a K/M/G/T suffix (1024-based)
+```
+
+The quota counts the bytes actually held: content blobs, plus the chunks of an OCI upload that is still in
+progress. A deduplicated re-deploy of bytes already stored needs no new space and is never refused.
+
+## Backing up and moving
+
+Because the store is the server's only state, a backup is a copy of the store: the root directory on the
+filesystem backend, or the bucket or container on a cloud backend, using whatever snapshot or sync tooling
+you already run for that medium. Moving a repository between backends is a copy too - copy the objects
+across with their keys unchanged, point `jenreg.store` and the backend's settings at the new medium, and
+restart.
+
+<div class="note">
+  The credential objects the server reads for key authentication live under <code>auth/</code> at the store
+  root, outside the <code>&lt;tenant&gt;/&lt;repository&gt;/</code> prefix. A backup of the whole root
+  carries them; a copy of one repository prefix alone does not.
+</div>
 
 ## Settings
 
-### Selecting a backend
+| Key | Default | Effect |
+|---|---|---|
+| `jenreg.store` | `filesystem` | The backend: `filesystem`, `s3`, `gcs` or `azure-blob`. |
+| `jenreg.filesystem.root` | `/var/lib/jenesis-repository` | Root directory of the filesystem backend. |
+| `jenreg.s3.bucket` | *(required for `s3`)* | The bucket. |
+| `jenreg.s3.region` | `us-east-1` | The signing region. |
+| `jenreg.s3.endpoint` | *(AWS)* | An S3-compatible endpoint; enables path-style access. Must be `https`. |
+| `jenreg.s3.access-key-id` / `jenreg.s3.secret-access-key` | *(AWS credential chain)* | Static keys; set both or neither. |
+| `jenreg.s3.sse-kms-key-id` | *(SSE-S3)* | A KMS key for `aws:kms` server-side encryption. |
+| `jenreg.s3.allow-insecure-endpoint` | `false` | Permit a plain-http endpoint. |
+| `jenreg.gcs.bucket` | *(required for `gcs`)* | The bucket. |
+| `jenreg.gcs.access-key-id` / `jenreg.gcs.secret-access-key` | *(ambient chain)* | The HMAC pair; set both or neither. |
+| `jenreg.gcs.endpoint` | `https://storage.googleapis.com` | An emulator endpoint. Must be `https`. |
+| `jenreg.gcs.region` | `auto` | The signing region. |
+| `jenreg.gcs.allow-insecure-endpoint` | `false` | Permit a plain-http endpoint. |
+| `jenreg.azure-blob.connection-string` | *(required for `azure-blob`)* | The storage-account connection string. |
+| `jenreg.azure-blob.container` | `jenesis-repository` | The blob container. |
+| `jenreg.azure-blob.allow-insecure-endpoint` | `false` | Permit a plain-http endpoint. |
+| `jenreg.quota` | *(unset - no cap)* | Storage ceiling; a write over it answers `507`. |
+| `jenreg.tenant` / `jenreg.repository` | `default` | The prefix every artifact is stored under. |
 
-One setting picks the backend; leaving it unset uses the filesystem.
-
-| `-Djenreg.store=` | Backend | Also set |
-|-------------------------------|---------|----------|
-| *(unset)* | Filesystem *(default)* | `JENREG_FILESYSTEM_ROOT` |
-| `s3` | S3 / GCS / MinIO / Ceph | `JENREG_S3_BUCKET` (+ `JENREG_S3_ENDPOINT` for non-AWS) |
-| `gcs` | Google Cloud Storage (native) | `JENREG_GCS_BUCKET` + the `JENREG_GCS_ACCESS_KEY_ID` / `JENREG_GCS_SECRET_ACCESS_KEY` HMAC pair |
-| `azure-blob` | Azure Blob | `JENREG_AZURE_BLOB_CONNECTION_STRING` (+ optional `JENREG_AZURE_BLOB_CONTAINER`) |
-
-The store is the exclusive seam with a loud failure mode: a selection naming a backend that is not on
-the module path, or one missing its required keys, **fails the boot** rather than silently falling
-back to another store - persisting against the wrong backend is never the safe default. See
-[Feature toggles & implementation selection](/repository/configuration-reference/).
-
-### Credentials
-
-The filesystem backend needs no credentials - file permissions on the root are the access control.
-
-The **S3 backend** takes credentials from the standard AWS chain by default: environment variables, a shared
-profile, or an instance/role identity, so a server on AWS with an instance role needs no keys in
-configuration at all. To supply keys explicitly - the path a self-hosted MinIO or Ceph takes - set **both**
-of:
-
-```bash
-JENREG_S3_ACCESS_KEY_ID=...
-JENREG_S3_SECRET_ACCESS_KEY=...
-```
-
-The **Azure backend** authenticates with the connection string in `JENREG_AZURE_BLOB_CONNECTION_STRING`.
-
-### Quota
-
-A repository-wide storage cap is optional. It refuses a new artifact once stored content reaches the limit,
-answering `507 Insufficient Storage`:
-
-```bash
--Djenreg.quota=10GB          # a byte count, or a K/M/G/T suffix
-```
-
-Only **content blobs** count toward the cap. Because storage is content-addressed, a deduped re-deploy of
-bytes already stored needs no new space and is never refused - the quota measures what is actually held, not
-what was uploaded.
-
-<div class="warning">
-  <strong>Upgrading a pre-scope deployment.</strong> Every artifact now lives under a
-  <code>&lt;tenant&gt;/&lt;repository&gt;/…</code> scope (both default to <code>default</code>, so a fresh
-  server writes under <code>default/default/</code>). A deployment whose data predates this layout keeps its
-  <code>blobs/</code>, <code>publish/</code> and <code>oci/</code> trees (and <code>imports/</code> job
-  state, if any) directly under the store root; move them once into the default scope. On the filesystem
-  backend:
-  <pre><code>cd "$JENREG_FILESYSTEM_ROOT" &amp;&amp; mkdir -p default/default &amp;&amp; mv blobs publish oci imports default/default/</code></pre>
-  On S3 or Azure, do the equivalent server-side per-prefix move. Credentials under <code>auth/</code> are
-  deployment-wide, not artifact data, and stay at the store root.
-</div>
-
-The store is the floor of the stack - every capability in the rest of this section writes through it. The
-next chapter, **Formats**, is the other end: the wire protocols that turn these stored blobs into artifacts
-a Maven, npm, or Docker client can resolve.
+Every key is also an environment variable in upper case with underscores (`JENREG_S3_BUCKET`), a `-D`
+system property, or an `application.properties` entry.

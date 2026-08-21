@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: null
-description: The Jenesis product family - a Java-native build tool, module runner, launcher, module catalogue, and artifact repository.
+description: The Jenesis product family - a Java-native build tool, module runner, launcher, module index, and artifact repository.
 ---
 <main class="landing" id="main">
   <section class="landing-hero">
@@ -89,20 +89,22 @@ description: The Jenesis product family - a Java-native build tool, module runne
       <article class="mission-point">
         <h3>Maven Central, ready as modules</h3>
         <p>
-          The modular world is already stocked. A <a href="/modules/">public catalogue</a> maps every
-          artifact on Maven Central to its stable module name and serves the whole repository as a true
-          module layer, so a <code>requires</code> line resolves straight to the artifact behind it. Decades of published Java become ready-to-use modules, today.
+          The modular world is already stocked. The <a href="/modules/">Jenesis Module Index</a> records the
+          module name every artifact on Maven Central declares and resolves each name to the artifact behind
+          it, so a <code>requires</code> line turns straight into a download - with one owner per name, so
+          a shaded copy never answers for the original. Decades of published Java become ready-to-use
+          modules, today.
         </p>
       </article>
       <article class="mission-point">
         <h3>Free to enter, free to leave</h3>
         <p>
-          A <a href="/repository/">module-aware artifact manager</a> that speaks the Maven layout and the
-          ecosystems around it. Entering is easy in every sense: up and running in minutes on a small,
-          modern stack with no database to run, and importing from the repository you use today is a
-          built-in feature. Leaving is treated just as respectfully - you walk out with every artifact
-          and all of your metadata. And Java is never rationed: no component ceilings and no request
-          quotas for the artifacts your builds live on.
+          A <a href="/repository/">module-aware artifact repository</a> that speaks the Maven layout, the
+          module layout, OCI and raw files. Entering is easy in every sense: up and running in minutes on a
+          small, modern stack with no database to run, and importing from the repository you use today is a
+          built-in feature. Leaving is treated just as respectfully - the store is a directory or a bucket
+          you own, and a listing API enumerates every artifact in it. And Java is never rationed: no
+          component ceilings and no request quotas for the artifacts your builds live on.
         </p>
       </article>
     </div>

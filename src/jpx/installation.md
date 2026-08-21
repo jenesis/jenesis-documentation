@@ -10,39 +10,47 @@ jpx installs every resolved target once and reuses it across runs. Each target l
 ~/.jenesis/jpx/<name>@<version>/
 ```
 
-The folder holds the closure's jars in one flat directory beside a `jpx.properties` descriptor that records
-the module path, the class path, the entry point, and a deterministic **SHA-256 digest over all the jars** -
-the same digest [`--hash`](/jpx/isolation-and-verification/) checks against:
+The folder holds the closure's jars in one flat directory beside a `jpx.properties` **descriptor**. The
+descriptor records the module path, the class path, the entry point, and a deterministic **SHA-256 digest
+over all the jars**:
 
 ```properties
 name=org.junit.platform.console
 version=6.1.3
-mainModule=org.junit.platform.console
 mainClass=org.junit.platform.console.ConsoleLauncher
-modulepath=apiguardian-api-1.1.2.jar,junit-platform-commons-6.1.3.jar,…
+mainModule=org.junit.platform.console
+modulepath=apiguardian-api-1.1.2.jar,jspecify-1.0.0.jar,junit-platform-commons-6.1.3.jar,…
 checksum=SHA-256/9b60dfc3d10f0b4fdf69050eec7b7332f5c395f7e36fad5747ff421e01cfd3e8
 ```
 
-The folder is named for what you asked for, not for what it resolved to, so the same tool named as a module
-and as a coordinate installs twice, side by side - the second under
-`org.junit.platform--junit-platform-console@6.1.3`, since a folder name cannot carry the coordinate's colon.
-The jars, and therefore the digest, are the same.
+One more key, `javaOptions`, appears when the module path is not self-contained - when it carries an
+automatic module, or a class-path jar sits beside it. It then holds `--add-modules=ALL-MODULE-PATH,ALL-DEFAULT`,
+the flag the launch needs to root the whole path, and jpx passes it to `java` for you.
 
-The paths are not. The `modulepath` above is what a module name produces - each jar placed as it describes a
-module - while the coordinate's descriptor lists those same jars as a `classpath` and records no `mainModule`,
-because a coordinate names an artifact rather than a module. [Choosing a target](/jpx/targets/) covers the
-distinction.
+The digest is what a later launch checks an installation against; the next chapter shows how.
 
-This is also what makes an unpinned target fast: the most recently installed version is preferred over a
-fresh resolution, so only the first run pays for a download - see
-[Choosing a target](/jpx/targets/).
+## Named for what you asked, not what resolved
 
-Downloads land in the installation folder directly rather than by way of your local Maven repository, so a
-machine that has never run a build - and has no `~/.m2` at all - installs a target just the same.
+The folder is named for what you asked for, so the same tool named as a module and as a coordinate installs
+twice, side by side. The second lands under `org.junit.platform--junit-platform-console@6.1.3`, since a
+folder name cannot carry the coordinate's colon. The jars, and therefore the digest, are the same.
+
+The paths are not. The `modulepath` above is what a module name produces: each jar placed as it describes a
+module. The coordinate's descriptor lists those same jars as a `classpath` and records no `mainModule`,
+because a coordinate names an artifact rather than a module.
+
+Because the most recently installed version of a name is preferred over a fresh resolution, an unpinned
+target pays for a download only on its first run.
+
+## No build required
+
+jpx does not need a local Maven repository. Where `~/.m2/repository` exists, downloads pass through it and
+are hard-linked into the installation folder; where it does not exist, they land in the installation folder
+directly. A machine that has never run a build, and has no `~/.m2` at all, installs a target just the same.
 
 ## An incomplete install never launches
 
-The descriptor is written **last**, on purpose: a download that crashes mid-way leaves no descriptor, so jpx
-recognizes the install as incomplete and redoes it rather than launching a half-populated folder. Two
+The descriptor is written **last**, on purpose. A download that crashes midway leaves no descriptor, so jpx
+recognises the install as incomplete and redoes it rather than launching a half-populated folder. Two
 processes installing the same target coordinate through a **file lock**, so concurrent `jpx` invocations do
 not collide.

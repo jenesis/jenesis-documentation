@@ -5,8 +5,8 @@ description: Build steps, the build graph, the layouts that shape a project into
 ---
 
 *[Getting started](/tool/getting-started/)* ran a build and toured `Project.java`. This chapter opens the box:
-what a build actually *is*, how Jenesis shapes your project into one, and the rule that decides - on every
-run - what recompiles and what is reused. Three ideas, and everything later in this section rests on them.
+what a build actually *is*, how Jenesis shapes your project into one, and the rule that decides on every
+run what recompiles and what is reused. Three ideas, and everything later in this section rests on them.
 
 ## A build is a graph of steps
 
@@ -26,9 +26,9 @@ writes its own output into one new folder. It never edits an input in place and 
 folders it was handed.
 
 Those folder names are conventions the built-in steps share, so steps compose without knowing how they were
-wired together. A `Javac` step, for example, reads each predecessor's `sources/` and writes `classes/`; a
-`Jar` step then reads `classes/` and writes `artifacts/classes.jar`. You will meet the individual steps in
-later chapters - here the point is only their shape: **folders in, a fresh folder out.**
+wired together. The compile step, for example, reads each predecessor's `sources/` and writes `classes/`; the
+jar step then reads `classes/` and writes `artifacts/classes.jar`. You will meet the individual steps in
+later chapters. Here the point is only their shape: **folders in, a fresh folder out.**
 
 <div class="note">
   Because every step writes a <em>new</em> output folder rather than mutating its inputs, the whole build tree
@@ -43,10 +43,10 @@ named subgraph - typically one compilable unit: its compile, test, jar, and docu
 one name. A multi-module project is a graph of these subgraphs, and Jenesis builds them in dependency order,
 so a library module is built before the application module that depends on it.
 
-The engine that owns and walks the graph is the **build executor**. It collects every registered step and
-module, works out the order from their declared inputs, and runs each one - reusing a cached output when it
-can (the last section of this chapter). The same executor drives one level of the graph and each nested
-module, so a build of one module and a build of fifty are the same machinery at different scales.
+The engine that owns and walks the graph collects every registered step and module, works out the order
+from their declared inputs, and runs each one, reusing a cached output when it can (the last section of this
+chapter). The same engine drives one level of the graph and each nested module, so a build of one module and
+a build of fifty are the same machinery at different scales.
 
 ### Selectors: choosing what to run
 
@@ -54,8 +54,9 @@ module, so a build of one module and a build of fifty are the same machinery at 
 the default target (`build`) runs. A selector is really a path through the graph. Two things make that precise:
 
 - A `+<module>` selector builds one module's subtree. `+greeter` builds the `greeter` module and whatever it
-  depends on, and nothing unrelated. In a modular project the tests live in a separate `@jenesis.test` module,
-  so `+greeter` runs *no* tests - you select the test module itself with `+greeter-test`.
+  depends on, and nothing unrelated. The name after `+` is the module's **folder** name. In a modular
+  project the tests live in a separate module, which the next chapters show how to write. So `+greeter` runs
+  *no* tests; you select the test module by its own folder, `+greeter-test`.
 - Under the hood every selector is a slash-delimited path of `module/step` identities, with two wildcards:
   `:` matches a single path segment, and `::` matches any depth. So `::/jar` runs the `jar` step of every
   module wherever it sits in the tree.
@@ -67,7 +68,8 @@ java build/jenesis/Project.java '::/test'        # the test step of every module
 
 Wildcards are **lenient**: a branch that does not match is silently skipped. A *literal* path that does not
 resolve fails the build with `Unknown selector: …`, so a typo in a name you spelled out is caught rather than
-quietly doing nothing. Prefer literal paths when you know them.
+quietly doing nothing. Prefer literal paths when you know them. A module in a nested folder takes one `+`
+per folder segment: the module in `foo/bar` is selected as `+foo+bar`.
 
 ## Layouts: how your project is shaped
 
@@ -89,7 +91,7 @@ four values in full.
 <div class="note">
   Discovery walks the project tree, so a repository that holds more than one project needs a way to say where
   one stops. An empty <strong><code>.jenesis.skip</code></strong> file marks a subtree as none of this build's
-  business - the scan does not descend into it. That is how a sample project, a plug-in, or a vendored build
+  business - the scan does not descend into it. That is how a sample project, a build plugin, or a vendored build
   can sit inside a repository without being built as part of it.
 </div>
 
@@ -105,16 +107,16 @@ how a `requires` is satisfied:
   resolves the transitive closure through Maven - nearest-wins versions and Maven scopes, exactly as if your
   project had listed those coordinates in a `pom.xml`. It emits the modular jar **plus a generated `pom.xml`**,
   so the artifact is publishable to Maven Central and consumable by Maven projects. Because it reaches
-  dependencies by coordinate, it can also pull in plain-classpath and *automatic*-module libraries.
-- **`modular`** resolves dependencies **purely by Java module name** against the Jenesis module repository, with
+  dependencies by coordinate, it can also pull in plain class-path and *automatic*-module libraries.
+- **`modular`** resolves dependencies **purely by Java module name** through the Jenesis Module Index, with
   no Maven coordinates anywhere, and emits **only the modular jar - no `pom.xml`**. Every dependency resolved
   this way is a named module, so the closure is provably consumable on the module path.
 
 That difference is why `auto` picks `modular_to_maven`: reaching dependencies by coordinate makes it open to
-everything already published, including a library that carries no module name of its own. `modular` gives you
-more in return for asking more of the ecosystem - every dependency resolves as a named module, so the closure
-is provably module-path-consumable and no Maven coordinate appears anywhere - which is why you select it
-deliberately rather than having it selected for you.
+everything already published, including a library that carries no module name of its own. `modular` is the
+layout for a project whose whole closure is already modular. It guarantees that every dependency is a named
+module and that no Maven coordinate appears anywhere, so it is a statement about the project, and you make it
+deliberately rather than having it made for you.
 
 You can force a layout for one run with a system property, or record it in a project file (covered in
 *[Configuration](/tool/configuration/)*):
@@ -128,8 +130,8 @@ The property accepts `auto`, `maven`, `modular`, and `modular_to_maven`.
 ### Seeing the difference
 
 The `dependencies` selector prints each module's resolved graph, and it makes the layout choice concrete. The
-same `requires org.slf4j` shows up two ways. Under `modular` it is a Java module name resolved from the module
-repository:
+same `requires org.slf4j` shows up two ways. Under `modular` it is a Java module name resolved through the
+module index:
 
 ```
 main/compile (module-sources)
@@ -154,16 +156,16 @@ what the previous run recorded:
 
 1. its **input checksums** - the bytes its predecessors produced;
 2. its own **output folder** - re-hashed, so a tampered-with output is detected; and
-3. its **configuration hash** - a digest of the step's own *serialized form*.
+3. its **configuration hash** - a digest of the step's own *serialised form*.
 
-That third point is the one to internalise. Jenesis content-hashes each step's **serialized state**, not just
-its inputs. So a step re-runs when its inputs change **or when its own configuration changes** - editing a
-knob on a step (say a test filter) alters its serialized form, its hash changes, and it re-runs, even though not
-one input byte moved.
+That third point is the one to internalise. Jenesis hashes each step's **serialised state**, not just its
+inputs. So a step re-runs when its inputs change **or when its own configuration changes**: editing a knob on
+a step (say a test filter) alters its serialised form, its hash changes, and it re-runs, even though not one
+input byte moved.
 
 <div class="note">
   For the built-in steps this is invisible - they are written so that every knob worth rebuilding for is part
-  of that serialized state. It becomes a rule you have to respect only when you write a step of your own,
+  of that serialised state. It becomes a rule you have to respect only when you write a step of your own,
   which <em>Extending the build</em> covers in full.
 </div>
 
@@ -175,6 +177,6 @@ cache as expected.
   Two runnable projects show this chapter end to end:
   <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-04-java-modular-multi">demo-04</a> builds a
   multi-module modular project and prints its module graph, and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-29-module-layout">demo-29</a> is the same
-  shape of project under the pure <code>modular</code> layout. See <a href="/tool/demos/">Demos</a>.
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-29-module-layout">demo-29</a> is a
+  single-module project under the pure <code>modular</code> layout. See <a href="/tool/demos/">Demos</a>.
 </div>

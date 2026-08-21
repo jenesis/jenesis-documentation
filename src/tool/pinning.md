@@ -10,9 +10,9 @@ is newest today. This chapter is about freezing it.
 
 **Pinning** records every dependency in the transitive closure with both an exact version *and* the SHA-256
 checksum of the jar, in your own committed sources. A later build that resolves a jar whose bytes do not match
-the recorded checksum **fails** - so the build is resistant to a supply-chain swap at a coordinate you already
-trusted. The second half of the chapter is how to share one such record across modules and projects instead of
-repeating it.
+the recorded checksum **fails**, so the build is resistant to a supply-chain swap at a coordinate you already
+trusted. The second half of the chapter is how to share one such record across modules and projects instead
+of repeating it.
 
 ## Recording the pins
 
@@ -23,7 +23,7 @@ sources with the result:
 java build/jenesis/Project.java pin
 ```
 
-`pin` is opt-in - it is not part of the default `build` - and it writes back into your project tree rather than
+`pin` is opt-in (it is not part of the default `build`) and it writes back into your project tree rather than
 under `target/`. In a **modular** project it adds a `@jenesis.pin` tag per dependency on the module
 declaration; in a **`pom.xml`** project it fills a `<dependencyManagement>` block, tagging each entry with a
 `<!--Checksum/…-->` comment. Commit the result and the pin set travels with the project.
@@ -50,8 +50,8 @@ shorthands for a project's own dependencies (the `main` group):
 
 A module project can therefore pin a plain Maven transitive it pulls in (say a non-modular library behind a
 named module) with the `groupId/artifactId` form, even though its own dependencies resolve through the module
-repository. Two optional additions to that grammar - a classifier and a platform guard - are the subject of
-the next section; everything else `pin` writes and refreshes for you.
+index. Two optional additions to that grammar, a classifier and a platform guard, are the subject of the next
+section. Everything else `pin` writes and refreshes for you.
 
 <div class="tip">
   Re-run <code>pin</code> whenever you change a dependency; it refreshes the versions and checksums from the
@@ -91,10 +91,10 @@ pin line may end with a bracketed guard, and the line whose guard matches the ma
  */
 ```
 
-The active platform is a set of **tokens** - the detected operating system and chipset, one of
+The active platform is a set of **tokens**: the detected operating system and chipset, one of
 `windows`/`linux`/`macos` plus one of `x86_64`/`aarch64`. A guard matches when *all* its tokens are active, the
 most specific match wins, and an unguarded line is the fallback. Every variant stays committed with its own
-checksum, so selection only decides which checksum-validated line applies and the build stays reproducible on
+checksum. Selection only decides which checksum-validated line applies, so the build stays reproducible on
 every machine.
 
 `-Djenesis.platform.<token>=true` adds a token and `=false` removes a detected one. That is how
@@ -103,8 +103,8 @@ host, and how a free-form token (`fips`, `musl`) names a build flavour of your o
 works on a `pom.xml`'s `<!--jenesis.pin ... -->` block, where it selects a coordinate's version per platform.
 
 <div class="warning">
-  Two corner cases to know. Classifier pins resolve through the <strong>module</strong> repository only, so
-  they need the <code>modular</code> layout - a classified artifact shares its coordinate's POM, so
+  Two corner cases to know. Classifier pins resolve through the <strong>module index</strong> only, so
+  they need the <code>modular</code> layout: a classified artifact shares its coordinate's POM, so
   <code>modular_to_maven</code> has no per-classifier POM to translate through. And two equally specific
   guards fail the build, while an unmatched guard with no fallback simply leaves the module unpinned.
 </div>
@@ -121,10 +121,10 @@ How strictly the recorded pins are enforced is controlled by one property,
 | `versions` | honoured | not verified |
 | `ignore` | float freely | not verified |
 
-The default already validates every checksum you have recorded - a mismatch always fails the build. **Strict**
+The default already validates every checksum you have recorded; a mismatch always fails the build. **Strict**
 mode goes further and refuses to build at all until *nothing* is left unpinned, which is what you want in CI
-once a project is fully pinned: run `pin`, commit, then build under `-Djenesis.dependency.pin=strict` so no new
-un-vetted artifact can slip in unnoticed.
+once a project is fully pinned. Run `pin`, commit, then build under `-Djenesis.dependency.pin=strict` so no
+new un-vetted artifact can slip in unnoticed.
 
 <div class="note">
   First-party artifacts built within the project are exempt from the strict checksum requirement - only
@@ -146,8 +146,8 @@ checksums are not consulted. `pin` then re-resolves that fresh closure and rewri
 `module-info.java`) with the new versions and freshly computed checksums.
 
 <div class="warning">
-  This step <em>establishes</em> trust rather than enforcing it: because it bypasses checksum verification
-  while it resolves, it re-blesses whatever the repository currently serves - a swapped artifact would be
+  This step <em>establishes</em> trust rather than enforcing it. Because it bypasses checksum verification
+  while it resolves, it re-blesses whatever the repository currently serves; a swapped artifact would be
   written in as an accepted pin just the same. Run it only on a <strong>trusted machine</strong> against a
   <strong>trusted repository</strong>, review the resulting diff, and commit it. Every subsequent build then
   enforces the new pins against the artifacts you just vetted.
@@ -157,7 +157,7 @@ checksums are not consulted. `pin` then re-resolves that fresh closure and rewri
 
 Pins written per module are exact but repetitive: the same versions recur across modules, and across projects
 that want to stay in step. A **bill of materials** is that same pin set in one file, imported instead of
-repeated - a module then declares only *what* it requires while the BOM decides *which version* and *which
+repeated. A module then declares only *what* it requires while the BOM decides *which version* and *which
 bytes*.
 
 A local BOM is a `pin-<name>.properties` file in the project's BOM location - by default the same
@@ -185,8 +185,8 @@ module demo.bom {
 
 The second line shows the other source a BOM can come from: **a published Maven BOM**, whose
 `<dependencyManagement>` is imported the way Maven imports it, parent chains and nested imports included. A
-third form names a module coordinate, which resolves a BOM published as a module in the Jenesis repository -
-versioned and checksummed, or floating to the latest published file.
+third form names a module, which resolves a BOM published under that module name through the module index
+or from your local module repository, versioned and checksummed, or floating to the latest published file.
 
 ### Which source seals how much
 
@@ -197,17 +197,17 @@ one you are importing:
 | --- | --- | --- |
 | A local file | `pin-<name>.properties` | Whatever the file records - byte-stable, so entries can carry hashes and need no pins at all. |
 | A published module BOM | `<module> [<version> [<algorithm>/<hash>]]` | The reference itself is content-verified; strict pinning requires the hash. |
-| A Maven BOM | `<groupId>/<artifactId> <version>` | The reference carries none: repositories re-serialize POMs, so a hash over one is not stable. `pin` records the resolved artifacts instead. |
+| A Maven BOM | `<groupId>/<artifactId> <version>` | The reference carries none: repositories re-serialise POMs, so a hash over one is not stable. `pin` records the resolved artifacts instead. |
 
-All three satisfy `-Djenesis.dependency.pin=strict` - a Maven BOM by way of the artifact pins `pin` writes for
+All three satisfy `-Djenesis.dependency.pin=strict`, a Maven BOM by way of the artifact pins `pin` writes for
 what resolves through it. Precedence is local-first: an explicit `@jenesis.pin` always overrides a BOM entry,
 and when two BOMs manage the same coordinate the **last declared wins**, so broad curation is declared first
 and local refinement last.
 
 ### What `pin` does with a BOM
 
-By default it writes no `@jenesis.pin` line for a coordinate a BOM already supplies - and removes one that has
-become redundant - while pinning the BOM reference itself by content. `-Djenesis.pin.bom=flatten` inverts the
+By default it writes no `@jenesis.pin` line for a coordinate a BOM already supplies, removes one that has
+become redundant, and pins the BOM reference itself by content. `-Djenesis.pin.bom=flatten` inverts the
 migration: the BOM declarations go and the closure is pinned in full.
 
 <div class="tip">
