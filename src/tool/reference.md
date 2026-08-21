@@ -222,6 +222,7 @@ Read by the `release` target - see *[Publishing](/tool/publishing/)*.
 | `jenesis.executor.timeout` | `PT0S` | ISO-8601 per-step timeout; `PT0S` disables it. |
 | `jenesis.executor.rebuild` | `false` | Delete `target/` first, forcing a full rebuild. |
 | `jenesis.executor.aggregate` | `false` | Let independent step failures aggregate into one report instead of failing at the first. |
+| `jenesis.executor.concurrency` | `0` | The most build steps that run at once across the whole build; `0` means no limit. |
 | `jenesis.process.factory` | `tool` | How JDK tool steps launch: `tool` (in-process) or `fork`. |
 | `JAVA_HOME` (env) | *(from `java.home`)* | Locates the JDK binaries when the runtime is not a JDK. |
 
