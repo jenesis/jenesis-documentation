@@ -2,8 +2,8 @@
 
 The published documentation for the Jenesis tools (`src/` → jenesis.build). This file is how a change to it is
 made: where the facts come from, how a claim is verified, what the site says and does not say, and how a
-change is checked before it lands. `CLAUDE.md` carries the short editorial rules and `README.md` the site's
-build and the chapter-writing guidelines; both apply in full.
+change is checked before it lands. `README.md` describes the site's build and the chapter-writing
+guidelines; it applies in full.
 
 ## Where the facts come from
 
@@ -58,9 +58,11 @@ tree, on its current default branch, before a chapter describes it.
   not belong on the site.
 - **Never the site itself.** No site tooling, no documentation repository, no authorship or writing status.
   Reader navigation ("this chapter covers", "the next chapter") is fine.
-- **The Java Module System** is described as what it is for these tools: the Java-native build- and
-  runtime-dependency descriptor. It is not framed as a cost or a trade-off, and support for non-modular code is
-  described as openness to the existing ecosystem.
+- **The Java Module System** is always written out and capitalised as the proper name - never the
+  abbreviation, in chapters, templates and data files alike; generic back-references ("the module system")
+  are fine. It is described as what it is for these tools: the Java-native build- and runtime-dependency
+  descriptor. It is not framed as a cost or a trade-off, and support for non-modular code is described as
+  openness to the existing ecosystem.
 
 ## Naming
 
