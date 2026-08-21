@@ -151,6 +151,8 @@ java -Djenesis.maven.uri=http://localhost:8080/repository/maven/ \
      build/jenesis/Project.java
 ```
 
+On an enforcing server add `-Djenesis.maven.token=jenk_…` (and `-Djenesis.module.token=jenk_…`): the build
+sends the key as a bearer token, which the server accepts like its own header.
 `jenesis.repository.insecure` is needed only because this is plain `http://` on localhost; a build refuses a
 plaintext repository otherwise. The *[Dependencies](/tool/dependencies/)* chapter of the build tool explains
 both settings and their environment-variable forms.
