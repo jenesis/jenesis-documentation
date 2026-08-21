@@ -7,10 +7,11 @@ description: Turn a project into something you can ship and run - application im
 A plain build stops at jars. **Packaging** turns those jars into something a user can run without a Java
 project in front of them: a self-contained application image, a trimmed runtime, a zip to drop onto a JRE, a
 single executable jar, a container image, or an ahead-of-time-compiled native binary. Each form answers the
-same question differently - *how much of the runtime travels with the program* - and this chapter is the menu.
+same question differently - *how much of the runtime travels with the program* - and this chapter walks
+through the options.
 
-Every form is **opt-in** and driven by convention, not a build script: you name it in a
-`packaging.properties` file in the [configuration location](/tool/configuration/), and it runs for every module
+Every form is **opt-in** and driven by convention, not a build script. You name it in a
+`packaging.properties` file in the [configuration folder](/tool/configuration/), and it runs for every module
 that declares a main class.
 
 | Key in `packaging.properties` | Produces |
@@ -24,10 +25,11 @@ that declares a main class.
 | `native=true` | a GraalVM native binary |
 
 <div class="note">
-  As with every configuration file, the first location that carries one wins - so a module's own
-  <code>build.jenesis/</code> packages that module alone, while a project-wide file packages them all. What
-  each key switches on is a step in the <strong>package phase</strong>, which runs after every module has
-  built, so packaging never blocks a sibling's compile.
+  As with every configuration file, the first folder that carries one wins. A module's own
+  <code>build.jenesis/</code> packages that module alone, while a project-wide file packages them all. The
+  <code>jmod</code> step joins the module's own build; every other key adds a step to the
+  <strong>package phase</strong>, which runs after every module has built, so packaging never blocks a
+  sibling's compile.
 </div>
 
 ## What makes a module packageable
@@ -44,7 +46,7 @@ module demo.modular.executable {
 }
 ```
 
-Every packaging step keys off that one declaration, and skips a module that has none. So a library needs no
+Every packaging step keys off that one declaration and skips a module that has none. A library needs no
 packaging configuration to be left alone, and an application needs no packaging-specific entry point.
 
 ## The application image
@@ -62,45 +64,59 @@ jpackage=app-image
 java build/jenesis/Project.java stage
 ```
 
-The `--name`, `--main-jar`/`--main-class` (or `--module`) arguments are derived automatically from the
-module's coordinate and main class. The `stage` target collects each produced image into `stage/packages/`,
-the staging analogue of `stage/maven` and `stage/modular`, under a folder named for the module it came from -
-so a project that packages several applications never mixes two of them:
+The `--name`, `--main-jar`/`--main-class` (or `--module`) arguments are derived from the module's coordinate
+and main class. The `stage` target collects each produced image under `stage/packages/`, the staging analogue
+of `stage/maven` and `stage/modular`, in a folder named for the module it came from:
 
 ```
-target/stage/packages/output/demo.modular.executable/   the module's own folder
-`-- demo.modular.executable/                            the image jpackage produced
-    |-- bin/demo.modular.executable                     the launcher
-    `-- lib/                                            app jars + bundled runtime
+target/stage/packages/output/demo.modular.executable/   the image jpackage produced
+|-- bin/demo.modular.executable                         the launcher
+`-- lib/                                                app jars + bundled runtime
 ```
 
-The image bundles the whole runtime *closure*, not just your own code - a dependency your app uses is bundled
-next to the application jar. Because the image is self-contained, a deployable container needs no JDK, only a
+The image bundles the whole runtime *closure*, not just your own code: a dependency your app uses sits next
+to the application jar. Because the image is self-contained, a deployable container needs no JDK, only a
 minimal base:
 
 ```dockerfile
 FROM debian:stable-slim
-COPY target/stage/packages/output/demo.modular.executable/demo.modular.executable /opt/app
+COPY target/stage/packages/output/demo.modular.executable /opt/app
 ENTRYPOINT ["/opt/app/bin/demo.modular.executable"]
 ```
 
 <div class="tip">
-  jpackage links the bundled runtime from <strong>the very JDK that compiled the code and ran the tests</strong>,
-  so the app ships on exactly the same JVM it was built and verified against - not whatever patch version a
-  base image happens to provide.
+  jpackage links the bundled runtime from <strong>the very JDK that compiled the code and ran the tests</strong>.
+  The app ships on exactly the JVM it was built and verified against, not whatever patch version a base image
+  happens to provide.
 </div>
 
 ### Modular images are smaller
 
 How big the image is depends on the layout. A **modular** project lets jpackage run `jlink` internally and
-trim the bundled runtime to just the modules the graph resolves; a **classpath** (Maven-layout) project cannot
-be trimmed, so it ships a full runtime.
+trim the bundled runtime to just the modules the graph resolves. A **class-path** (Maven-layout) project
+cannot be trimmed, so it ships a full runtime.
 
 <div class="note">
   Measured with Temurin 25.0.3, a modular app-image is about 57&nbsp;MB against about 138&nbsp;MB for the
-  classpath sibling - a gap that is almost entirely the JVM, since <code>java.base</code> alone links to
-  ~60&nbsp;MB and a full JDK is ~303&nbsp;MB.
+  class-path sibling. The gap is almost entirely the JVM: <code>java.base</code> alone links to ~60&nbsp;MB
+  and a full JDK is ~303&nbsp;MB.
 </div>
+
+### Passing jpackage its own flags
+
+jpackage has flags of its own - an icon, a vendor, a description, a licence file. They go in a
+`process-jpackage.properties` file in the configuration folder, one flag per line, exactly as
+*[Building & running](/tool/building-and-running/)* described for `javac`:
+
+```properties
+# build.jenesis/process-jpackage.properties
+--vendor=Example Ltd
+--icon=branding/app.png
+```
+
+`process-jlink.properties`, `process-jmod.properties` and `process-native-image.properties` do the same for
+the tools below. One flag is derived for you: `--app-version` comes from `jenesis.project.version` with any
+non-numeric suffix stripped, because jpackage accepts only dotted numbers - `1.4.0-SNAPSHOT` becomes `1.4.0`.
 
 ## Native installers
 
@@ -114,43 +130,49 @@ rather than a directory to launch in place. The value is passed straight to `jpa
 | `dmg`, `pkg` | macOS |
 
 An installer carries the whole bundled runtime, so it is tens of megabytes. Producing one needs the platform's
-own packaging tooling on the `PATH` (Linux: `dpkg-deb`/`fakeroot` for `deb`, `rpmbuild` for `rpm`; Windows: the
-WiX Toolset; macOS: the bundled `productbuild`/`hdiutil`). For that reason an installer is usually built
-locally, while the tooling-free `app-image` covers the packaging path in CI.
+own packaging tooling on the `PATH`: `dpkg-deb`/`fakeroot` for `deb` and `rpmbuild` for `rpm` on Linux, the
+WiX Toolset on Windows, the bundled `productbuild`/`hdiutil` on macOS. For that reason an installer is usually
+built locally, while the tooling-free `app-image` covers the packaging path in CI.
 
 ## Runtime images and `.jmod` files
 
 Two modular-only keys expose the lower-level artifacts that jpackage builds internally. Both need *modules*, so
-a classpath project has nothing to link or pack.
+a class-path project has nothing to link or pack.
 
 `jlink=true` links a **custom runtime image** holding only the modules your app needs, staged under
 `stage/runtime`. It runs straight from its own `bin/java` with no JDK installed:
 
 ```bash
-target/stage/runtime/output/demo.modular.executable/bin/java \
+target/stage/runtime/output/module-sources/bin/java \
     -m demo.modular.executable/sample.Sample Ada Lovelace
 ```
+
+The folder under `output/` is the module's build identity rather than its name: `module` for a module whose
+descriptor sits at the project root, `module-<folder>` otherwise - `module-sources` for a module under
+`sources/`. The `docker` context below uses the same naming.
 
 `jmod=true` packs the module into a **`.jmod`**, staged beside the modular jar. Its one advantage over a jar is
 that it can carry native libraries, commands, and config files, which `jlink` then lays into the runtime's
 `lib/`, `bin/`, and `conf/`. The three steps chain - `jmod → jlink → jpackage` - so a config file packed this
-way reaches the shipped app, where the program reads it from `<java.home>/conf/`; packed into a jar instead, it
-would be stranded there.
+way reaches the shipped app, where the program reads it from `<java.home>/conf/`. Packed into a jar instead,
+it would be stranded there.
 
 <div class="warning">
   <code>jlink</code> links <strong>explicit modules only</strong>. Every jar it links must carry a
-  <code>module-info</code>, or be a <code>.jmod</code>; a plain jar - and an automatic module, which declares
-  no <code>requires</code> of its own - is rejected with "automatic modules cannot be used with jlink".
-  <code>jpackage</code>, which calls <code>jlink</code> under the hood, inherits the same rule. The next
-  section is how a closure of plain jars becomes one <code>jlink</code> accepts.
+  <code>module-info</code>, or be a <code>.jmod</code>. A plain jar - and an automatic module, which declares
+  no <code>requires</code> of its own - is rejected with "automatic module cannot be used with jlink". With
+  <code>jlink=true</code> beside it, <code>jpackage</code> is handed that linked runtime and inherits the rule.
+  On its own, <code>jpackage</code> stages the jars as its module path and roots the whole path instead, as
+  the bundle section below describes. The next section is how a closure of plain jars becomes one
+  <code>jlink</code> accepts.
 </div>
 
 ## Making a closure linkable
 
 A dependency that ships as a plain jar - or that you gave a name with a
 [module alias](/tool/dependencies/) - is an automatic module, and `jlink` will not take one. A
-`modules.properties` file in the [configuration location](/tool/configuration/) closes that gap by turning the
-module's whole resolved closure into **explicit named modules**:
+`modules.properties` file in the configuration folder closes that gap by turning the module's whole resolved
+closure into **explicit named modules**:
 
 ```properties
 # build.jenesis/modules.properties
@@ -158,13 +180,13 @@ mode=declared
 ```
 
 An empty file means the same thing, since `declared` is the default. Every jar that already declares a
-`module-info` passes through untouched; for the rest, `jdeps` works out what each one actually reads and a
+`module-info` passes through untouched. For the rest, `jdeps` works out what each one actually reads and a
 generated `module-info` is injected into a copy of it.
 
-The rewritten closure then *replaces* the resolved one for everything the module builds - `javac`, the tests,
-and every packaging step. That is the point rather than a side effect: a module graph that does not hold
-together - a split package, two jars claiming one name, a `requires` nothing provides - then fails at compile
-or test time instead of first appearing in the shipped image.
+The rewritten closure then *replaces* the resolved one for everything the module builds: `javac`, the tests,
+and every packaging step. That is the point rather than a side effect. A module graph that does not hold
+together - a split package, two jars claiming one name, a `requires` nothing provides - fails at compile or
+test time instead of first appearing in the shipped image.
 
 The `mode` key decides what happens to a jar with no name of its own to carry: `declared` fails the build and
 names the coordinate, `synthetic` invents a stable name derived from the jar's digest, and `none` skips the
@@ -173,7 +195,7 @@ rewrite - which is how a single module opts out of a project-wide file.
 <div class="note">
   Nothing that describes what you <em>fetched</em> is affected. The bill of materials, the licence and
   vulnerability checks, and the closure <code>pin</code> records all keep reading the artifacts as they were
-  downloaded - so a rewritten jar's bytes can never reach a <code>@jenesis.pin</code> checksum.
+  downloaded, so a rewritten jar's bytes can never reach a <code>@jenesis.pin</code> checksum.
 </div>
 
 ## Bundles for a JRE base
@@ -183,29 +205,30 @@ off-the-shelf JRE base. `bundle=true` wires a step that writes one `bundle.zip` 
 
 ```
 bundle.zip
-|-- application.properties     mainClass=sample.Sample, mainModule=demo.bundle, selfContainedModuleGraph=true
+|-- application.properties     mainClass=sample.Sample, mainModule=demo.bundle
 |-- modulepath/                jars that are modules (the app jar and its module dependencies)
 `-- classpath/                 any non-modular (plain) jars
 ```
 
 The zip carries exactly the runtime closure the `Execute` launcher would run, split the same way: real and
 automatic modules under `modulepath/`, plain jars under `classpath/`. The `application.properties` describes
-the launch - `mainClass` (always), `mainModule` (only for a modular launcher), and `selfContainedModuleGraph`.
-Dropped onto a `-jre` base it needs no JDK and no jpackage - it is the input a container image, an
-init-script, or any other deployment builds around.
+the launch with three keys: `mainClass` (always), `mainModule` (only for a modular launcher), and
+`javaOptions` (only when needed - see below). Dropped onto a `-jre` base it needs no JDK and no jpackage. It
+is the input a container image, an init script, or any other deployment builds around.
 
-The trade against an app-image is the classic one: an app-image is self-contained but duplicates the JVM per
-service, while a bundle is tiny and shares one JVM layer across every image built on the same base - leaner in
+The trade against an app-image is the classic one. An app-image is self-contained but duplicates the JVM per
+service. A bundle is tiny and shares one JVM layer across every image built on the same base - leaner in
 aggregate for many services, at the cost of coupling to that base's JVM version.
 
 <div class="note">
-  <strong>What <code>selfContainedModuleGraph</code> means.</strong> A module graph is self-contained when
-  every jar on the module path is an explicit named module, so the launcher reaches all of them through the
-  main module's <code>requires</code>. An automatic module or a plain jar breaks that, because a module it
-  uses only internally is never pulled in - so the launcher is given
-  <code>--add-modules ALL-MODULE-PATH</code> to root the whole path instead. The build detects this and
-  applies it for you, here and in jpackage and native images alike; the flag only tells a bundle's consumer
-  which case they are in.
+  <strong>What <code>javaOptions</code> means.</strong> A module graph is self-contained when every jar on
+  the module path is an explicit named module, so the launcher reaches all of them through the main module's
+  <code>requires</code>. An automatic module or a plain jar breaks that, because a module it uses only
+  internally is never pulled in. The build detects this and writes
+  <code>javaOptions=--add-modules=ALL-MODULE-PATH,ALL-DEFAULT</code>, which a consumer splices into the
+  <code>java</code> command to root the whole module path and the default platform modules. jpackage, the
+  container context and the native image apply the same correction for you; the key only tells a bundle's
+  consumer which case they are in.
 </div>
 
 ## A container build context
@@ -220,20 +243,20 @@ docker=eclipse-temurin:25-jre
 
 ```bash
 java build/jenesis/Project.java stage
-docker build -t sample target/stage/docker/output/demo.modular.executable
+docker build -t sample target/stage/docker/output/module-sources
 ```
 
 The staged folder holds a generated `Dockerfile` beside the `modulepath/` and `classpath/` folders it copies
 in, split exactly the way a bundle splits them. Its `ENTRYPOINT` is the same entry point every other packaging
-form reads, so a container can never drift from what the app image or the launcher jar starts - and when the
-module graph is not self-contained, it carries the same `--add-modules ALL-MODULE-PATH` correction.
+form reads, so a container can never drift from what the app image or the launcher jar starts. When the
+module graph is not self-contained, it carries the same `--add-modules=ALL-MODULE-PATH,ALL-DEFAULT` correction.
 
 The base image is the only knob, and deliberately so: `ENV`, `USER`, `EXPOSE` and the rest are inherited from
 the base, so image environment belongs in a base image rather than in build configuration.
 
 <div class="note">
   The build never invokes a container tool - it writes files - so producing the context needs no Docker
-  installation at all, and nothing in the generated file is Docker-specific: <code>podman build</code> and
+  installation at all. Nothing in the generated file is Docker-specific: <code>podman build</code> and
   <code>buildah bud</code> consume the same folder.
 </div>
 
@@ -245,10 +268,10 @@ and explodes each dependency into its own `classpath/<jar>/` or `modulepath/<jar
 launcher rebuilds the module graph from those subfolders in process, so `module-info`s and `META-INF/services`
 never collide.
 
-Unlike jpackage and bundle, this carries no JVM and no `jlink` runtime - it is a plain jar that runs on any
-JDK 25, and unlike a bundle it needs no launch script. The shaded launcher is [pinned](/tool/pinning/)
-like any other dependency, in its own `launcher` group, so the exact bytes are verified and the build stays
-reproducible.
+Unlike jpackage and bundle, this carries no JVM and no `jlink` runtime. It is a plain jar that runs on any
+JDK 25 or newer, and unlike a bundle it needs no launch script. The shaded launcher is
+[pinned](/tool/pinning/) like any other dependency, in its own `launcher` group, so the exact bytes are
+verified and the build stays reproducible.
 
 <div class="tip">
   The launcher jar has its own section - see
@@ -259,12 +282,12 @@ reproducible.
 ## Native images
 
 `native=true` compiles the application ahead of time into a **single standalone native executable** with
-GraalVM `native-image` - a binary that starts in milliseconds and carries no Java runtime, because the runtime
-it needs is linked into the binary itself. The `stage` target collects it into `stage/native`, and you run it
+GraalVM `native-image`: a binary that starts in milliseconds and carries no Java runtime, because the runtime
+it needs is linked into the binary itself. The `stage` target collects it under `stage/native`, and you run it
 directly, with no `java` in the command:
 
 ```bash
-target/stage/native/output/demo.graal.image/demo.graal.image Ada
+target/stage/native/output/demo.graal.image Ada
 ```
 
 Native compilation needs GraalVM. The tool is located through `GRAALVM_HOME`, then the running JDK's own
@@ -278,8 +301,8 @@ GRAALVM_HOME=~/.sdkman/candidates/java/25.0.3-graal java build/jenesis/Project.j
 
 `native-image`'s closed-world analysis cannot see reflection, JNI, resources, or proxies, so it needs
 **reachability metadata** for anything dynamic. Jenesis captures that automatically: drop a `graal.properties`
-marker file in the configuration location and its presence attaches GraalVM's tracing agent to the test run.
-The agent records every dynamic access the tests trigger, and the native build picks it up directly - so a
+marker file in the configuration folder and its presence attaches GraalVM's tracing agent to the test run.
+The agent records every dynamic access the tests trigger, and the native build picks it up directly. A
 single build both captures the metadata and compiles the image, with no committed `META-INF/native-image/`
 directory to maintain.
 
@@ -295,12 +318,12 @@ directory to maintain.
 Both turn a modular app into something a user runs without a JDK, but they differ in kind. **jpackage** ships
 your bytecode plus a trimmed JVM: normal startup, tens of megabytes, no extra tooling. **native-image**
 compiles the program *and* its runtime into machine code: near-instant startup and a small binary, at the cost
-of GraalVM, a slow compile, and complete reachability metadata. They are alternatives, not a progression -
-jpackage for a faithful bundle of the JVM you tested against, native-image when startup and footprint matter
-more.
+of GraalVM, a slow compile, and complete reachability metadata. They are alternatives, not a progression.
+Choose jpackage for a faithful bundle of the JVM you tested against, and native-image when startup and
+footprint matter more.
 
 <div class="tip">
-  Five runnable projects cover this chapter:
+  Six runnable projects cover this chapter:
   <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-05-java-pom-executable">demo-05</a> and
   <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-06-java-modular-executable">demo-06</a> ship
   the whole menu from one project each - an app image, a native installer, a bundle, a launcher jar, and a

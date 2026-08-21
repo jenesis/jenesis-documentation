@@ -1,220 +1,198 @@
 ---
-order: 10
+order: 9
 title: Migration & import
-description: Moving a repository's contents in from an incumbent manager - the import-source capability that reads a foreign repository and the per-format importer that writes it, the Nexus, Artifactory and Jenesis connectors, the built-in Maven, OCI/Docker and raw importers, the /api/assets export that lets you leave again, and the settings that trigger and configure a migration.
+description: Bringing an existing repository's contents into Jenesis Repository - the import job, the Nexus, Artifactory, Maven, index and Jenesis connectors, archive uploads, and listing everything back out again.
 ---
 
-You do not adopt a repository by hand-copying artifacts into it. When you move off an incumbent manager -
-Sonatype Nexus, JFrog Artifactory, or another Jenesis instance - you point Jenesis at the old server and it
-walks the source, streaming each artifact into its own store and rebuilding what it serves as it goes. And
-the same store exposes a plain export surface that another tool can drain, so a migration runs in both
-directions.
+Most teams adopting Jenesis Repository already have artifacts somewhere else. This chapter shows how to move
+them in with one request, how to follow and resume the job, how to load an archive of files in one go, and
+how to list everything back out when you leave.
 
-## The capability - two SPIs meet in the store
+## Starting an import
 
-A migration is two halves that meet at the [content-addressed store](/repository/storage/), each a swappable,
-discovered plug-in:
+An import is a background job. You `POST` a small JSON body to `/repository/admin/import`, the server answers
+at once with a job id, and the job walks the source and publishes every artifact it finds into this
+repository. The walk runs server-side through the same upstream fetcher that pull-through proxying uses, so
+the upstream fetcher module must be installed - without it the request is refused with `501`.
 
-- **The read half - an import source.** A *source* connects to one incumbent and **enumerates its assets**,
-  handing each one - its ecosystem format, its path within the repository, and a handle to its bytes - to a
-  consumer. It is the only part that knows an incumbent's shape. A connector ships as its own module and is
-  discovered with `ServiceLoader`, so the server supports another incumbent by gaining a module and names none
-  of them itself.
-- **The write half - a per-format importer.** An *importer* takes one asset of one ecosystem and writes it
-  into the store **through that format's own publish path** - the same path a `mvn deploy` or an `npm publish`
-  takes - so an imported artifact is indistinguishable from a published one. There is one importer per format,
-  discovered the same way, so **an import's format coverage is simply the set of importers on the module path.**
+```bash
+curl -X POST http://localhost:8080/repository/admin/import \
+  -H 'Content-Type: application/json' \
+  -d '{
+        "source": "nexus",
+        "url": "https://nexus.example.com",
+        "repository": "maven-releases",
+        "username": "migrator",
+        "password": "…"
+      }'
+# 202  {"job":"a1b2c3…","state":"running"}
+```
 
-  A format that *generates* its enumeration surface therefore serves it for imported artifacts too. Maven is
-  the one to check before you cut over: its index is served verbatim by default (see
-  [Check your index after the walk](#check-your-index-after-the-walk)).
+On a deployment that enforces authentication, add the `Jenesis-Repository-Key` header with a key that may
+write to the target repository. With authentication switched off, no header is needed.
 
-An orchestrator walks a source and routes each asset to the importer that handles its format. An asset whose
-format has **no importer on the path is reported skipped** - and because content is read lazily, a skipped
-asset is **never downloaded**, so an unsupported format costs no bandwidth.
+The request fields:
 
-<div class="note">
-  The import <em>edge</em> is itself a seam. An <code>ImportEdgeProvider</code> SPI lets a distribution own
-  the repository's import surface: when a provider is installed, the built-in edge
-  (<code>/repository/admin/import</code>, below) yields to it, so an alternative import surface composes
-  cleanly without overriding beans. With no provider present the built-in edge serves normally.
-</div>
+| Field | Required | Meaning |
+|---|---|---|
+| `source` | yes | The connector to walk with: `nexus`, `artifactory`, `maven`, `index` or `jenesis`. |
+| `url` | yes | The base URL of the source. It must be `https` and resolve to a public host (see below). |
+| `repository` | yes | The source repository to read - a Nexus or Artifactory repository name, or the path under the base URL. |
+| `format` | Artifactory and index | The ecosystem of the source repository: `maven`, `docker` or `raw`. The other connectors report a format per asset. |
+| `username`, `password` | no | Credentials sent to the source. The `jenesis` connector takes its API key as the `password`. |
+| `resume` | no | The id of an earlier job; the new job continues from that job's recorded position and counts. |
 
-<div class="note">
-  Because an importer writes through the format's normal publish primitives, an imported artifact passes
-  through the same publication pipeline as a fresh upload - so a
-  <a href="/repository/architecture/">publication screen</a> sees what you migrate in exactly as it sees what
-  you publish.
-</div>
+Only `POST` starts a job; any other method on `/repository/admin/import` answers `405`. A deployment in
+read-only mode refuses imports with `403`.
 
 <div class="warning">
-  Both halves stream through the same HTTP fetcher the <a href="/repository/proxying/">pull-through
-  proxy</a> uses - the discovered <code>source/proxy</code> module. Without a fetcher on the path a deployment
-  serves only local content and <strong>refuses imports</strong>, so keep it installed when you plan a
-  migration.
+  The import URL is screened before anything is fetched: it must be <code>https</code>, and it must not resolve
+  to a private, loopback or link-local address. A migration carries your upstream credentials and is walked
+  from inside the server, so an unscreened URL would hand those credentials to a plaintext hop, or turn the
+  importer into a proxy for your own network. Set <code>jenreg.block-private-import-hosts=false</code> only for a
+  controlled migration from an internal or plaintext mirror, and switch it back on afterwards. Running with it
+  off raises the <code>jenreg.importer.ssrf</code> advisory.
 </div>
 
-## Implementations - the connectors (read half)
+## Following and resuming a job
 
-Five source connectors ship, each keyed by a stable **source name** you pass when you trigger the import.
-That name is also the connector's toggle: an installed connector is removed from the accepted `source`
-values with `jenreg.<name>=false` (`jenreg.nexus=false`), degrading exactly like a
-missing module - see
-[Feature toggles & implementation selection](/repository/configuration-reference/).
+The job writes its state into the store, so it survives a restart and any node can answer for it. Read it
+with the id the `POST` returned:
+
+```bash
+curl http://localhost:8080/repository/admin/import/a1b2c3…
+```
+
+```json
+{"state":"completed","imported":128,"skipped":0,"held":0,"rejected":0,
+ "skippedFormats":[],"cursor":null,"asset":"maven/org/example/app/1.0/app-1.0.jar","error":null}
+```
+
+| Field | Meaning |
+|---|---|
+| `state` | `running`, `completed` or `failed`. |
+| `imported`, `skipped`, `held`, `rejected` | Running counts. An asset is skipped when no installed importer handles its format. |
+| `skippedFormats` | The formats that were skipped, so you can see what a missing format module cost you. |
+| `cursor` | The walk's last checkpoint, kept for a resume. `null` once the walk is finished. |
+| `asset` | The last asset imported. |
+| `error` | The failure message when `state` is `failed`. |
+
+A job that stopped - a network fault, a restart - is continued by submitting the same request again with
+`"resume": "<job id>"`. The new job picks up the recorded cursor and counts, and the content-addressed store
+makes any overlap free: re-importing bytes that are already stored needs no space and changes nothing, so a
+re-run after a partial migration is always safe.
+
+## The connectors
+
+Each connector reads one kind of source. All of them stream every artifact straight into the store, and
+all of them checkpoint as they go.
 
 ### Nexus
 
-The `nexus` connector pages Sonatype Nexus 3's components REST API by continuation token. The **format is
-reported per asset**, so a mixed repository - Maven jars and Docker images side by side - migrates in a single
-pass with no format named up front.
+`nexus` pages the Sonatype Nexus 3 components API and downloads every asset a component lists. Nexus names
+a format per asset (`maven2`, `docker`, `raw`, and others), so one job can migrate a Nexus instance that
+holds repositories of several formats. The credentials you pass travel only to the base origin; a download
+URL on another host is fetched without them.
 
 ### Artifactory
 
-The `artifactory` connector reads JFrog Artifactory's storage listing. An Artifactory repository holds **one
-package type**, so you name the ecosystem format when you start the migration.
-
-<div class="note">
-  Artifactory's fast, single-request deep listing (<code>GET /api/storage/&lt;repo&gt;?list&amp;deep=1</code>)
-  is a Pro-only feature; a self-hosted OSS instance answers <code>400</code>. The connector detects this and
-  falls back <strong>seamlessly</strong> to the OSS-available per-folder listing, recursed for the same files -
-  more requests, checkpointing after each top-level subtree so an interrupted crawl resumes where it stopped.
-  The same <code>artifactory</code> migration therefore works unchanged against both a Pro and a free
-  Artifactory.
-</div>
+`artifactory` lists a repository with the storage API and downloads each file. An Artifactory repository has
+a single package type, so the request must name its `format`. Against Artifactory Pro it uses the deep file
+listing; against an OSS instance, which refuses that API, it falls back to the per-folder listing and
+checkpoints after every top-level folder, so an interrupted OSS migration resumes without re-walking.
 
 ### Maven
 
-The `maven` connector reads **any** server that publishes the Maven layout over plain HTTP - a Nexus, an
-Artifactory, an nginx autoindex, a static bucket - without using a vendor API at all. It stacks enumeration
-strategies by what the server offers, walking a directory listing where one exists, and it skips
-`maven-metadata.xml` and checksum sidecars: the checksums are re-derived from the bytes that arrive, and the
-index is the target's to serve rather than the source's stale copy to carry. Reach for it when the source
-is a plain repository, or when a vendor connector's API is not available to you.
+`maven` walks any repository that serves the Maven layout over plain HTTP - a Nexus or Artifactory repository
+root, an `nginx` or `httpd` directory listing, a static bucket, or another Jenesis Repository. Where the
+server exposes a listing, the tree is walked; where it does not, the connector falls back to the
+`.index/nexus-maven-repository-index.gz` index and refreshes each coordinate through its `maven-metadata.xml`.
+Every asset is reported as `maven`.
 
-### Format index
+### Index
 
-The `index` connector walks a format's **own published index** - the mirror-style enumeration an ecosystem
-already offers - and reports each asset under that format's name, so the orchestrator routes it to the right
-importer. It migrates whatever the installed formats can enumerate, with no vendor involved.
+`index` walks a format's own published index rather than a vendor API, which is why it needs the `format`
+up front. It migrates whatever the installed format can enumerate from the source.
 
 ### Jenesis
 
-The `jenesis` connector is the read half of the *exit* story, symmetric with the others: it walks another
-Jenesis instance's `/api/assets` enumeration (below) by its opaque cursor, format reported
-per asset. So one Jenesis repository migrates into another with no lock-in. Its credential is the target's
-single opaque API key (taken from the request password).
+`jenesis` walks another Jenesis Repository through its `/api/assets` listing (below), so one instance
+migrates into another. Its credential is the source's API key, passed as the `password`.
 
-## Implementations - the importers (write half)
+## What the importers write
 
-The core ships three per-format importers; another ecosystem's importer is one more module.
+A connector hands each asset to the importer for its format. Three ship with the server:
 
-| Importer | Handles | Notes |
-|----------|---------|-------|
-| **Maven** | `maven2` | Streams each file in; a modular jar is cross-published into the module layout over the same bridge a normal Maven publish uses. A source `maven-metadata.xml` is dropped and regenerated (derived from the imported version folders under the `maven-metadata-compute` opt-in). |
-| **OCI / Docker** | `docker` | Layers, configs and manifests land in the content-addressed store and dedupe against everything else. |
-| **Raw / generic** | `raw` | A plain file store - the raw layout provides its own importer so generic assets migrate alongside Maven and OCI. |
+| Importer | Accepts source formats | Writes |
+|---|---|---|
+| Maven | `maven`, `maven2` | The artifact at its Maven path. A jar that carries a module name is cross-published into the module layout, exactly as a normal Maven publish is. |
+| OCI / Docker | `oci`, `docker` | Layers, configs and manifests into the content-addressed store, where they dedupe against everything else. |
+| Raw | `raw`, `generic` | The file at its path under the raw layout. |
 
-Every importer streams straight to storage: a plain blob copies through unbuffered, and only an importer that
-must read a coordinate or manifest ever buffers, and only that small metadata.
-
-<div class="tip">
-  Imports are <strong>content-addressed and idempotent</strong>: re-importing an artifact whose bytes are
-  already stored needs no new space and changes nothing, so a re-run after an interrupted or partial migration
-  is always safe.
-</div>
-
-## Check your index after the walk
-
-An importer writes through its format's own publish path, so anything that format *generates* on read is
-generated for imported artifacts too. **Maven is the exception worth knowing about before you cut over.**
-
-By default the Maven format serves `maven-metadata.xml` **verbatim** - the publisher's own stored document,
-byte for byte, which is what a mirror owes its consumers. A migration skips the source's copy (it is stale by
-definition, and its checksums describe bytes that are about to be re-derived), so a coordinate whose metadata
-nobody uploaded through the publish path has **no index at all**. The artifacts are all there, every one
-resolvable by exact coordinate, and a client asking "what versions exist?" gets a `404`.
-
-Turn on the computed index, which derives a document for exactly this case:
-
-```properties
-jenreg.maven-metadata-compute=true
-```
-
-It reconciles the `<versions>` list against the version folders actually stored - every other field of an
-uploaded document is preserved - and derives one for a coordinate no client ever uploaded metadata for. It is
-**off by default and applies on the next restart**, so set it before the migration and restart, not after.
-
-The symptom if you skip this step is easy to misread: the migration reports every asset imported, the bytes are
-in the store, and a `mvn dependency:get` for a pinned version succeeds. Only a version-range or "latest"
-resolve fails, and it fails as "no versions available" rather than as anything that points back here.
-
-## The `/api/assets` export
-
-The other direction is a read-only surface every server exposes - the free product's first `/api`:
-
-```
-GET /api/assets?repo=<repository>&cursor=<token>
-```
-
-It is a **flat, stably-ordered, cursor-paged walk** of a repository's publication pointers. Each entry reports
-its path, size, and SHA-256 **straight from the pointer** (no blob is ever opened) plus its format and
-coordinate from the owning layout, and a `cursor` for the next page (`null` at the end). It is read-authorised
-like the rest of the wire.
-
-That is exactly what the `jenesis` connector consumes, so one instance can be enumerated and drained by
-another - but the format is plain enough for any tool of your own. Getting your data out is always a
-supported operation, not an afterthought.
+Two Maven details matter before you cut clients over. The source's `maven-metadata.xml` files are always
+left behind - their checksums describe bytes the source served, not the copy you now hold. Jenesis Repository
+serves a stored `maven-metadata.xml` verbatim, so an imported coordinate has no version listing until one is
+published, and a client asking "which versions exist?" gets a `404`. Switch on
+`jenreg.maven-metadata-compute=true` and the server derives the listing from the version folders it holds
+instead. The `maven` connector also skips checksum sidecars (`.sha1`, `.md5`), and the server does not derive
+them, so a client that verifies checksums warns until one is published beside the artifact. The Nexus and
+Artifactory connectors import the sidecars they list.
 
 ## Loading an archive in one request
 
-A migration walks a live repository. When what you have is a *directory of artifacts* instead - a backup, an
-air-gapped hand-off, the output of somebody else's export - a single request can carry it. With
-`jenreg.batch-upload=true`, a `PUT` whose body is a zip and which carries
-`X-Jenesis-Explode: zip` is exploded into **one publish per entry**:
+For a one-off load without a source to walk - a backup, a hand-built tree - upload a zip and let the server
+publish each entry as if it had been deployed on its own. The feature is off by default; switch it on with
+`jenreg.batch-upload=true`, then `PUT` or `POST` the archive to the repository path the entries are relative
+to, with the `X-Jenesis-Explode: zip` header:
 
 ```bash
-curl -X PUT -H "Jenesis-Repository-Key: $KEY" -H "X-Jenesis-Explode: zip"      --data-binary @artifacts.zip https://repo.example.com/default/
+curl -X PUT http://localhost:8080/repository/maven/ \
+  -H 'X-Jenesis-Explode: zip' \
+  --data-binary @artifacts.zip
 ```
 
-Each member travels its own format's normal publish path, so nothing about it is a shortcut: the same layout
-writer runs, and the same publication screen sees every entry. The response is a per-entry manifest saying
-what landed. It is off by default, capped by entry count, and refuses a path that would escape the target
-namespace.
+Every entry is published through the same path a single deploy takes, so a Maven jar is laid out and
+cross-published, and an entry no format claims is reported rather than stored. The response is a per-entry
+manifest (`path` and `status` - `stored`, `quarantined`, `rejected` or `unclaimed`), with `"capped": true`
+when the walk stopped at `jenreg.batch-upload-max-entries` (default 10 000). An entry whose name tries to
+escape its folder is rejected before it reaches the store, and a malformed archive answers `400`. Only `zip`
+is understood; another encoding answers `415`.
 
-## Triggering a migration
+## Listing everything back out
 
-You start a migration on a running server with a single request; it runs in the **background** and returns a
-job id you can poll. Starting it is a `repository:write` operation.
+Leaving is as easy as arriving. `GET /api/assets` lists every published artifact in a repository as a flat,
+stably ordered, paged JSON list - the same listing the `jenesis` connector reads when another instance
+imports from this one:
 
 ```bash
-# start a job
-curl -X POST http://repo.example.com/repository/admin/import -d \
-  '{"source":"nexus","url":"https://nexus.example.com","repository":"maven-releases"}'
-# {"job":"a1b2...","state":"running"}
-
-# poll its state and running counts
-curl http://repo.example.com/repository/admin/import/a1b2...
-# {"state":"completed","imported":128,"skipped":0,"skippedFormats":[],"cursor":null}
+curl 'http://localhost:8080/api/assets?limit=500'
 ```
 
-The status reports how many assets were `imported`, how many were `skipped`, which `skippedFormats` had no
-importer on the path, and the resume `cursor`. Because the job **persists that cursor**, a later request naming
-a prior job continues the walk from where it stopped - so an interrupted crawl resumes rather than restarting.
+```json
+{"repository":"default",
+ "assets":[{"path":"maven/org/example/app/1.0/app-1.0.jar","size":48213,"sha256":"9f3b…",
+            "format":"maven","ecosystem":"Maven","coordinate":"org.example:app","version":"1.0",
+            "prerelease":false}],
+ "cursor":"bWF2ZW4v…"}
+```
 
-## Settings - the migration request
+Each entry carries the request path, size and SHA-256 straight from the publication record - no artifact is
+opened - plus the format's reading of it: `format`, `ecosystem`, `coordinate`, `version` and `prerelease`.
+Pass the returned `cursor` back as `?cursor=` for the next page; it is `null` once the listing is exhausted.
+`limit` defaults to 500 and is capped at 1 000, and `repo` names another repository than the one the
+request routed to. The read needs `repository:read` on the repository it lists.
 
-A migration is configured per run, in the request body, not by a standing key. A provider reads the fields it
-needs and ignores the rest.
+The web console offers the same walk as a download (`assets.ndjson`, one object per line with `path`,
+`size` and `sha256`), described in [The console](/repository/console/). The bytes themselves are addressed by
+the paths the listing returns, so any HTTP client can copy a repository out.
 
-| Field | Required | Meaning |
-|-------|----------|---------|
-| `source` | yes | The connector name - `maven`, `index`, `nexus`, `artifactory`, or `jenesis`. |
-| `url` | yes | The incumbent's base URL. |
-| `repository` | yes | The source repository to walk. |
-| `format` | for `artifactory` | The ecosystem format of a single-package-type source. A per-asset source (Nexus, Jenesis) reports it itself and needs none. |
-| `username` / `password` | when the source needs auth | HTTP basic credentials; for a `jenesis` source the opaque API key travels as the password. |
-| `resume` / `cursor` | to continue | A prior job's saved cursor, to pick up an interrupted walk instead of starting over. |
+## Settings
 
-The set of `source` names you can pass is just the connectors on the module path, and the set of formats an
-import can land is just the importers on the path - so what a deployment can migrate, in and out, is a
-question of which modules it runs.
+| Key | Default | Effect |
+|---|---|---|
+| `jenreg.block-private-import-hosts` | `true` | Refuse an import URL that is not `https` or that resolves to a private, loopback or link-local address. |
+| `jenreg.batch-upload` | `false` | Honour the `X-Jenesis-Explode` header and publish an archive entry by entry. |
+| `jenreg.batch-upload-max-entries` | `10000` | The most entries one exploded archive may publish; the walk stops there and reports `capped`. |
+| `jenreg.maven-metadata-compute` | `false` | Derive `maven-metadata.xml` from the stored version folders instead of serving only what was published. |
+
+Every key is also an environment variable (`JENREG_BATCH_UPLOAD=true`) or a `-D` system property.

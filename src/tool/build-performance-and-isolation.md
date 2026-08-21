@@ -37,19 +37,24 @@ the host JVM:
 java -Djenesis.project.docker=true build/jenesis/Project.java
 ```
 
-A minimal image is built on demand the first time and cached for later runs. To target a different image, add
-`-Djenesis.project.docker.image=<reference>`. Inside the container neither your home directory nor the host
-environment is present, so a test or dependency that reaches for `~/.aws/credentials` or a CI secret finds
-nothing.
+A minimal image is built on demand the first time and cached for later runs. Inside the container neither
+your home directory nor the host environment is present, so a test or dependency that reaches for
+`~/.aws/credentials` or a CI secret finds nothing.
+
+To target a different image, add `-Djenesis.project.docker.image=<reference>`. The implicit image runs with
+`--cap-drop ALL` and `--security-opt no-new-privileges`; a named image is run as you named it, without those
+two flags, so harden it in the image itself if you swap it.
 
 ### What is mounted automatically
 
-Every location the project is configured with is represented inside the container **at its host path**, so paths
-resolve identically:
+Every location the project is configured with is represented inside the container, almost all of them **at
+their host path** so that paths resolve identically:
 
 - the **project root** - writable;
-- the **JDK** and the local **Maven / Jenesis repositories** - read-only, with `MAVEN_REPOSITORY_LOCAL` /
-  `JENESIS_REPOSITORY_LOCAL` forwarded so the in-container JVM finds them despite its different home;
+- the **JDK** - read-only, at `/opt/java-home`, so the same Java runs inside;
+- the local **Maven and module repositories** (`~/.m2`, `~/.jenesis`) - read-only, with
+  `MAVEN_REPOSITORY_LOCAL` / `JENESIS_REPOSITORY_LOCAL` forwarded so the in-container JVM finds them despite
+  its different home;
 - out-of-root `target` / `artifacts` locations - writable;
 - out-of-root configuration, BOM, and `jenesis.project.metadata` folders - read-only;
 - an out-of-root [`jenesis.project.cache`](#the-build-cache) or `file://` `jenesis.cache.uri` cache - writable,
@@ -79,7 +84,7 @@ environment - a private-repository token, a proxy setting - and is opt-in so amb
 by default.
 
 <div class="warning">
-  The local Maven and Jenesis repositories (<code>~/.m2</code>, <code>~/.jenesis</code>) are mounted
+  The local Maven and module repositories (<code>~/.m2</code>, <code>~/.jenesis</code>) are mounted
   <strong>read-only</strong>. So dependencies must already be cached - warm the cache with a host build first -
   and <code>export</code> fails with an <code>AccessDeniedException</code>, since publishing writes into those
   repositories. Staging works inside the container (<code>stage</code> only writes under <code>target/</code>);
@@ -104,8 +109,8 @@ counterparts. Because the build runs as usual and only the launch crosses the co
 image and the runtime image can differ**.
 
 <div class="note">
-  Running a build or program in a container needs a Docker daemon, so it is a local exercise rather than part of
-  CI. <code>jenesis.print.docker</code> is on by default and prints the image the JVM is wrapped in; set it
+  Running a build or program in a container needs a Docker daemon on the machine that runs the build.
+  <code>jenesis.print.docker</code> is on by default and prints the image the JVM is wrapped in; set it
   <code>false</code> to suppress.
 </div>
 
@@ -126,16 +131,16 @@ the project root:
 java -Djenesis.project.cache build/jenesis/Project.java
 ```
 
-The value is a **filesystem path** (never a URI): an empty value - as above - resolves to `.jenesis/cache` under
+The value is a **filesystem path** (never a URI): an empty value, as above, resolves to `.jenesis/cache` under
 the project root, and a value relocates it. Each entry lives at `.jenesis/cache/<step-hash>/<inputs-hash>/`,
-where the step hash identifies the step by its **serialized form** and the inputs hash folds every input file's
-content hash. On a miss the executor runs the step and stores the result; on a hit it materialises the cached
-output - **hard-linked, so near free** - and the step body never runs. Because it sits outside `target/`, it
-survives a `target/` wipe.
+where the step hash identifies the step by its **serialised form** and the inputs hash folds every input
+file's content hash. On a miss the build runs the step and stores the result. On a hit it materialises the
+cached output - hard-linked, so near free - and the step body never runs. Because it sits outside `target/`,
+it survives a `target/` wipe.
 
-That survival is the point. `-Djenesis.executor.rebuild=true` deletes `target/` first, so the incremental cache
-is gone and *every* step is a forced miss that would normally re-run from scratch - yet the build cache serves
-them:
+That survival is the point. `-Djenesis.executor.rebuild=true` deletes `target/` first, so the incremental
+cache is gone and *every* step is a forced miss that would normally re-run from scratch. The build cache
+serves them anyway:
 
 ```bash
 java -Djenesis.project.cache \
@@ -158,19 +163,21 @@ explicit location with `-Djenesis.cache.uri=`. The value is a URI:
 -Djenesis.cache.uri=file:///mnt/team/jenesis-cache  # a shared (or local) folder
 ```
 
-A `file://` URI resolves the same on-disk format as the local cache; an `http(s)://` URL selects an HTTP backend
-that GETs and PUTs the same entries to a cache server, naming the project with
-`-Djenesis.cache.project=<project>` and authenticating with `-Djenesis.cache.key=<key>` - both sent as **headers,
-never in the URL** (with `JENESIS_CACHE_PROJECT` / `JENESIS_CACHE_KEY` environment fallbacks). A non-URI value is
-rejected; use `file://` for an on-disk location.
+A `file://` URI resolves the same on-disk format as the local cache. An `http(s)://` URL selects an HTTP
+backend that GETs and PUTs the same entries to a cache server, naming the project with
+`-Djenesis.cache.project=<project>` and authenticating with `-Djenesis.cache.key=<key>`. Both are sent as
+**headers, never in the URL**, and both fall back to the `JENESIS_CACHE_PROJECT` / `JENESIS_CACHE_KEY`
+environment variables. `-Djenesis.cache.connect` and `-Djenesis.cache.read` set the HTTP timeouts as ISO-8601
+durations (`PT1S` and `PT10S` by default). A non-URI value is rejected; use `file://` for an on-disk
+location.
 
 The shared cache can be used two ways:
 
 - **As a replacement** - the shared cache only, no local tier. Fitting for an ephemeral CI runner whose disk is
   thrown away anyway: pass `jenesis.cache.uri` alone.
 - **Layered behind the local cache** - set both `-Djenesis.project.cache` *and* `-Djenesis.cache.uri=...`. Every
-  read tries `.jenesis/cache` first and falls through to the shared cache only on a miss; a shared hit is copied
-  into the local cache on the way past, so the next read is local; and a store writes through to both.
+  read tries `.jenesis/cache` first and falls through to the shared cache only on a miss. A shared hit is
+  copied into the local cache on the way past, so the next read is local, and a store writes through to both.
 
 ```bash
 java -Djenesis.project.cache \
@@ -182,8 +189,8 @@ java -Djenesis.project.cache \
 <div class="note">
   Serving a step from the local tier means no <code>GET</code> reaches the server, which would let that shared
   entry age toward eviction even while in active use. So a local hit also sends the server a best-effort
-  <code>HEAD</code> (never the body), and the server treats it as a read, bumping the entry's recency. Each tier
-  keeps its own LRU and both stay warm.
+  <code>HEAD</code>, never the body, and the server treats it as a read and bumps the entry's recency. Each
+  tier keeps its own LRU and both stay warm.
 </div>
 
 ### Tuning with `cache.properties`

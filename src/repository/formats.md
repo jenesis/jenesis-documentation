@@ -1,93 +1,71 @@
 ---
 order: 5
 title: Formats
-description: The format seam every client ecosystem plugs into - the RepositoryFormat SPI and its ProxyFormat/ArtifactLayout options, the built-in Maven, module, OCI/Docker and raw layouts, and the settings that point them upstream.
+description: The four layouts the server speaks - Maven, the Jenesis module layout, OCI/Docker and raw files - their URLs, what each accepts and serves, and the settings that switch them.
 ---
 
-The [Storage](/repository/storage/) chapter was the bottom of the stack - the one store every capability
-writes through. This chapter is the top: the **wire protocols** that turn those stored blobs into artifacts
-a Maven, Gradle, Docker, or Jenesis client can resolve. A *format* is the plug-in that speaks one client
-ecosystem's protocol, and - like every capability in this section - it is discovered, swappable, and
-optional.
+A **format** is what lets a particular client talk to the repository: Maven and Gradle speak the Maven
+layout, a Jenesis build resolves module names through the module layout, `docker` speaks the OCI registry
+protocol, and `curl` can store plain files. Jenesis Repository ships four formats. Each is a discovered
+module on the server's module path, so a deployment speaks exactly the formats it carries, and every one of
+them stores its artifacts in the same content-addressed store.
 
-## The format seam
+| Format | Id | Served at | Clients |
+|---|---|---|---|
+| Maven layout | `maven` | `/repository/maven/` | Maven, Gradle, a Jenesis `pom.xml` build |
+| Module layout | `jenesis` | `/repository/module/` and `/repository/artifact/` | A Jenesis modular build, `curl` |
+| OCI registry | `oci` | `/v2/` | `docker`, `podman`, any OCI client |
+| Raw files | `raw` | `/repository/raw/` | `curl`, scripts, anything that can `PUT` |
 
-A **format owns the wire protocol of one client ecosystem.** It recognises the request paths that belong to
-it and either serves them or accepts an upload on them. That is the whole job, and it is the shortest
-statement of what you are choosing between: which ecosystems a deployment speaks is exactly the set of format
-modules on its path.
+## The Maven layout
 
-The seam is deliberately narrow. A format answers three questions: what is its **name** (`maven`, `oci`,
-`module`), does it **handle** a given request path, and how does it **serve or accept** that request against
-the store. The dispatcher discovers every installed format at startup and routes each request to the one
-that claims its path - so formats plug in without the core naming any of them.
+`/repository/maven/` is a drop-in Maven repository URL for publishing and resolving. A `PUT` stores the
+uploaded file content-addressed and links its path; a `GET` serves it back. Point a `<distributionManagement>` entry
+at the URL and `mvn deploy` publishes to it; a `<repository>` entry with the same URL resolves from it:
 
-<div class="note">
-  A server with <strong>no format at all</strong> is still a valid, fully wired repository - it just
-  answers <code>404</code> until a format is on the path to serve a request. You read a deployment's
-  capabilities off its module set: the formats present <em>are</em> the ecosystems it speaks.
-</div>
+```xml
+<distributionManagement>
+  <repository>
+    <id>jenesis</id>
+    <url>http://localhost:8080/repository/maven/</url>
+  </repository>
+</distributionManagement>
+```
 
-An installed format is also switchable off by configuration alone: `jenreg.<name>=false`
-(`JENREG_MAVEN=false` as an environment variable) keeps a format from activating at
-discovery, so its paths unclaim and its importer skips - exactly as if the module were absent. That
-is how one image carrying every format is trimmed per deployment instead of rebuilt; see
-[Feature toggles & implementation selection](/repository/configuration-reference/).
+The server stores what you upload and nothing more: it does not generate a POM for a jar, so publish the POM
+alongside the jar as a normal Maven deploy does. A published `maven-metadata.xml` is stored and served back
+**verbatim**. If you would rather have the server derive the version list from the artifacts it holds, opt
+in with `jenreg.maven-metadata-compute=true`.
 
-### Two optional powers a format may take
+With an upstream configured (see *[Proxying](/repository/proxying/)*), the same URL also serves everything
+from Maven Central, so one `<mirror>` entry covers your own artifacts and the public ones.
 
-Beyond serving requests, a format can opt into either of two extra capabilities. A format that has no use
-for one is simply unaffected - the core detects the capability's presence, so nothing is forced on a plain
-format.
+### Every modular jar is a published module too
 
-- **Pull-through proxying (`ProxyFormat`).** The format can serve a local miss from an upstream registry -
-  fetch it, verify it, store it, and re-serve it. The OCI format uses this to mirror Docker Hub; the Maven
-  layout uses it to mirror Maven Central. The mechanics are the subject of the **Proxying & groups** chapter;
-  here it is enough to know the capability lives on the format.
-- **Coordinate exposure (`ArtifactLayout`).** The format can expose the **neutral coordinate** behind a
-  request path - its `{ecosystem, coordinate, version}`, whether the version is a prerelease, and the set of
-  paths a version occupies. This lets inventory, search, and cleanup key on the coordinate a format supplies
-  rather than each having to parse the format's own path layout. Both JVM coordinate layouts - Maven and the
-  module layout - supply one.
+When a jar published to the Maven layout carries a `module-info` or an `Automatic-Module-Name`, the server
+reads the module name from the stored bytes and **cross-publishes** the jar into the module layout. A Jenesis
+build that declares `requires <that module>` then resolves it from the same server with no second upload.
+The bridge runs one way: a module published directly to the module layout stays there.
 
-## The built-in formats
+## The module layout
 
-A standard build puts four formats on the path. They fall into three shapes.
+The module layout resolves artifacts **by Java module name**, under the same URL shapes as the
+[Jenesis Module Index](/modules/):
 
-### JVM coordinate layouts - Maven and the module layout
+```
+GET /repository/module/<name>/<version>/<name>.jar     a specific version
+GET /repository/module/<name>/<name>.jar               the latest version
+```
 
-The repository is **dual-layout**: it serves the same JVM artifacts under both the Maven coordinate layout
-and the Jenesis module layout, so a single upload feeds both ecosystems.
+A Jenesis build reaches it through `jenesis.module.uri`, exactly as it reaches the public index - so a
+private server and the public index are interchangeable from the build's point of view. A `PUT` under
+`/repository/module/` or `/repository/artifact/` stores a file at that path; most modules arrive through
+the Maven cross-publish above instead, which links the two `/module/` shapes shown.
 
-- **The Maven layout** is served under `/repository/maven/` and is a drop-in Maven `<repository>` URL for
-  publishing and resolving alike. It stores the uploaded jar and **computes the POM** when you publish a
-  module, so the artifact is consumable even if you never uploaded one. A published `maven-metadata.xml` is
-  stored and served back **verbatim** by default. And it **proxies Maven Central**, so the one URL resolves
-  both your own artifacts and everything upstream.
-- **The Jenesis module layout** is served under `/repository/module/` and `/repository/artifact/`, and
-  resolves artifacts **by module name** rather than by Maven coordinate. Its route shapes mirror the public
-  [repo.jenesis.build](/modules/resolving/) service, so a Jenesis `modular` build resolves against your own
-  server exactly the way it resolves against the hosted one. Like the Maven layout, it also **exposes its
-  coordinate** (`ArtifactLayout`): a `/module/<name>/<version>/<file>` path - and the version-less
-  `/module/<name>/<name>.jar` "latest" pointer - resolves to a neutral coordinate whose ecosystem is
-  `Jenesis`, whose coordinate is the **module name** itself (no `group:artifact` split), plus the version. So
-  the module layout participates in every coordinate-aware feature that reads a layout - download and usage
-  tracking, cleanup and retention by coordinate, and coordinate-based routing - rather than falling through.
+## The OCI registry
 
-The two layouts are bridged in one direction: when you publish a **modular jar** to the Maven layout, the
-server reads the jar's module name back from the just-stored blob and **cross-publishes** it into the module
-layout, so a `modular` build resolves it with no extra step. A module published directly to the module layout
-stays there - the bridge does not mirror back to Maven.
-
-<div class="tip">
-  This is the point of publishing once: <code>mvn deploy</code> a modular jar and it resolves both by Maven
-  coordinate <em>and</em> by module name, from the same server, with no second upload.
-</div>
-
-### Registry protocol - OCI / Docker
-
-The **OCI format** implements the `/v2/` Distribution API end to end, so `docker push` and `docker pull`
-talk to the server directly, with no plugin or sidecar:
+The OCI format implements the Distribution API at `/v2/`, at the host root because the Docker protocol pins
+it there. `docker push` and `docker pull` talk to the server directly:
 
 ```bash
 docker tag my-app repo.example.com/my-app:1.0
@@ -95,69 +73,39 @@ docker push repo.example.com/my-app:1.0
 docker pull repo.example.com/my-app:1.0
 ```
 
-It supports monolithic **and** chunked blob uploads, manifests addressed by tag or by digest (the media type
-kept in a sidecar so a pull returns it verbatim), `tags/list`, and `HEAD` existence checks. The fit is
-unusually clean because an OCI blob is addressed by its `sha256:` digest - **exactly the content-addressed
-`blobs/<hex>` key** the store already uses - so image layers, configs, and manifests dedupe against
-everything else and inherit the same authorization, storage, and console as a Maven artifact,
-for free. It can also run as a pull-through mirror of an upstream registry (see **Proxying & groups**).
+It supports monolithic and chunked blob uploads, manifests addressed by tag or by digest (the media type is
+kept beside the manifest so a pull returns it verbatim), `HEAD` existence checks, `tags/list`, and
+`_catalog`. An OCI blob is addressed by its `sha256:` digest, which is the very key the store uses, so image
+layers dedupe against everything else the repository holds. With an upstream registry configured, the same
+endpoint is a pull-through mirror (see *[Proxying](/repository/proxying/)*).
 
-### Generic files - raw
+## Raw files
 
-The **raw format** is served under `/repository/raw/`: a plain content-addressed file store - `PUT` stores a
-file, `GET` serves it back, over the same store primitives as everything else. Use it for artifacts that
-have no ecosystem of their own. It also carries an importer, so raw assets migrate in alongside Maven and
-OCI (see **Migration & import**).
+The raw format is a plain file store under `/repository/raw/` for artifacts that belong to no ecosystem -
+installers, archives, datasets, signed binaries:
 
-### Another ecosystem is one more format
+```bash
+curl -T installer.msi http://localhost:8080/repository/raw/tools/installer-1.2.msi
+curl    http://localhost:8080/repository/raw/tools/installer-1.2.msi -o installer.msi
+curl    http://localhost:8080/repository/raw/tools/          # lists the directory
+curl -X DELETE http://localhost:8080/repository/raw/tools/installer-1.2.msi
+```
 
-Because a format is just a discovered module over the shared store, extending the server to a new ecosystem -
-npm, PyPI, NuGet, Cargo, Gem, and the rest - is **adding one more format module to the path**, grouped by the
-same three shapes above (a coordinate layout, a registry protocol, or a generic file store). It inherits the
-content-addressed storage, authorization, and console untouched. There is no central table of
-formats to edit and no core to fork; the set of format modules on a deployment's path is the full list of
-what it speaks.
+`PUT` stores a file content-addressed, `GET` serves it, `GET` on a trailing slash lists the directory, and
+`DELETE` removes the path. The bytes share the store with every other format, so a raw upload that matches a
+jar or an image layer costs no extra space.
 
 ## Settings
 
-### Enabling a format
+Every format is on until you switch it off. `jenreg.<id>=false` (as an environment variable,
+`JENREG_MAVEN=false`, `JENREG_JENESIS=false`, `JENREG_OCI=false`, `JENREG_RAW=false`) keeps a format from
+activating, exactly as if its module were absent: its paths answer `404` and its importer is skipped.
 
-A format is enabled by being **on the module path** - there is no on/off setting. A standard build already
-includes the Maven, module, OCI, and raw formats, so the getting-started run served all of them. To build a
-single format and its dependencies you name its module, the same way you would a storage backend:
+| Key | Default | Effect |
+|---|---|---|
+| `jenreg.maven` / `jenreg.jenesis` / `jenreg.oci` / `jenreg.raw` | `true` | Switch a format off with `false`. |
+| `jenreg.maven-metadata-compute` | `false` | Derive `maven-metadata.xml` from stored versions instead of serving the uploaded file. |
+| `jenreg.proxy.<id>` | *(unset)* | The upstream a format pulls through from; see *[Proxying](/repository/proxying/)*. |
 
-```bash
-java build/jenesis/Project.java +source+format+maven build   # the Maven layout and its dependencies
-```
-
-You then select the formats you want alongside `source+server` when you launch. The distribution's module
-set chooses which ecosystems a deployment speaks; the core stays generic.
-
-### Per-format upstreams
-
-A proxy-capable format serves a local miss from an upstream you point it at, keyed by the format's name:
-
-```bash
--Djenreg.proxy.maven=https://repo1.maven.org/maven2/   # the Maven layout's upstream
--Djenreg.proxy.oci=https://registry-1.docker.io/       # the OCI format's upstream
-```
-
-The Maven layout defaults to **Maven Central** (`https://repo1.maven.org/maven2/`) with no configuration.
-How a miss is fetched, verified, cached, and re-served - and how group repositories fan out over several
-upstreams - is the **Proxying & groups** chapter; this key is just where you name the upstream.
-
-### `maven-metadata.xml` computation
-
-By default the Maven layout stores and serves a published `maven-metadata.xml` **verbatim** - it hands back
-exactly the bytes a client uploaded. Opt into computing it on read instead, derived from the stored version
-folders, with:
-
-```bash
--Djenreg.maven-metadata-compute=true   # default off
-```
-
-Leave it off unless you want the server to be the source of truth for artifact-level metadata; the verbatim
-default is faithful to what was published.
-
-The next chapter, **Proxying & groups**, picks up the pull-through capability introduced here - how a format
-mirrors an upstream, and how group repositories serve many upstreams behind one URL.
+A server with every format switched off is still a valid server - it answers `404` to every artifact
+request until a format is on to claim it.

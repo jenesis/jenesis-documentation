@@ -11,10 +11,10 @@ it** - and Jenesis owns the first while deliberately leaving the signed upload t
 
 ## Staging the release tree
 
-The `stage` target materializes the full release tree in Maven repository layout under
+The `stage` target materialises the full release tree in Maven repository layout under
 `target/stage/maven/output/`: the main jar, the POM, and - when you ask for them - the `-sources.jar` and
-`-javadoc.jar` that Central demands. You enable those and set the version either on the `Project` builder or
-from the command line:
+`-javadoc.jar` that Central demands. You enable those and set the version from the command line, or in code
+on `Project` (`new Project().version("1.0.0")`):
 
 ```bash
 java -Djenesis.project.version=1.0.0 \
@@ -24,10 +24,10 @@ java -Djenesis.project.version=1.0.0 \
 ```
 
 Central also requires the POM to carry `name`, `description`, `url`, `<licenses>`, `<developers>`, and
-`<scm>`. Jenesis folds two channels into each POM: everything it can derive from the source (the coordinate and
-description come from the module name and its Javadoc, or from the source `pom.xml`), plus a
-`project.properties` file - pointed at with `-Djenesis.project.metadata=project.properties` - that carries only
-what a module declaration cannot express:
+`<scm>`. Jenesis folds two channels into each POM. Everything it can derive from the source comes first: the
+coordinate and description from the module name and its Javadoc, or from the source `pom.xml`. A
+`project.properties` file, pointed at with `-Djenesis.project.metadata=project.properties`, carries only what
+a module declaration cannot express:
 
 ```properties
 # project.properties
@@ -63,9 +63,10 @@ scm.url=https://github.com/raphw/jenesis
 java build/jenesis/Project.java export
 ```
 
-It copies the staged tree into your local Maven repository - and, on the modular layouts, into the local
-Jenesis module repository - so another project on the same machine resolves the artifact immediately. That is
-the whole loop for a library you are developing alongside its consumer, with no remote involved.
+It copies the staged tree into the repositories your layout publishes to: the local Maven repository
+(`~/.m2`) for `maven`, the local module repository (`~/.jenesis`) for `modular`, and both for
+`modular_to_maven`. Another project on the same machine then resolves the artifact immediately. That is the
+whole loop for a library you are developing alongside its consumer, with no remote involved.
 
 ## Publishing a bill of materials
 
@@ -73,16 +74,16 @@ A module can also publish the pin set of its own resolved closure, so a downstre
 this one was built and tested against instead of curating its own. It is the emitting counterpart of the
 [bills of materials](/tool/pinning/) you already know how to consume.
 
-A `bom.properties` build-configuration file switches it on - the file may be empty, presence is the switch -
-and the modular layouts then render the module's closure as a properties file that `export` publishes into the
-Jenesis module repository beside the module jar:
+A `bom.properties` file in the configuration folder switches it on - the file may be empty, presence is the
+switch. The modular layouts then render the module's closure as a properties file that `export` publishes
+into the local module repository beside the module jar:
 
 ```
 ~/.jenesis/demo.bom/1.0.0/demo.bom.properties
 ```
 
 Another project consumes it with `@jenesis.bom demo.bom`, exactly the way it consumes a hand-written file. The
-BOM travels through the Jenesis repository only; the Maven export never carries it.
+BOM travels through the module layout only; the Maven export never carries it.
 
 ## The last mile: signing and uploading
 
@@ -90,8 +91,8 @@ The remote upload and GPG signing are not Jenesis's job. Point **[JReleaser](htt
 `target/stage/maven/output/` and it signs every artifact and uploads the bundle to Central. Jenesis stops at
 the unsigned, validated bundle, so credentials and signing keys never enter the build.
 
-This split is deliberate. Most people building a project never release it - releasing is a rare, tightly
-controlled job for CI or a hardened environment that holds the keys - and the way you release evolves
+This split is deliberate. Most people building a project never release it: releasing is a rare, tightly
+controlled job for CI or a hardened environment that holds the keys. And the way you release evolves
 independently of how the build produces artifacts.
 
 ### Driving the release tool from the build
@@ -111,10 +112,11 @@ configuration against one base directory. `-Djenesis.jreleaser.config=<path>` na
 
 It contributes two steps. The first writes a `jreleaser.properties` holding `JRELEASER_PROJECT_VERSION`, the
 version this build stamped, so the version is stated once rather than passed to two tools that can then
-disagree; point a configuration at it with
+disagree. Point a configuration at it with
 `environment: { variables: target/release/jreleaser/environment/output/jreleaser.properties }`. The second runs
-the `jreleaser` executable found in the environment, forwarding the process environment unchanged - so every
-`JRELEASER_*` credential is read by JReleaser itself and never touched, logged, or stored by the build.
+the `jreleaser` executable found in the environment, forwarding the process environment unchanged. Every
+`JRELEASER_*` credential is therefore read by JReleaser itself and never touched, logged, or stored by the
+build.
 
 <div class="warning">
   <code>release</code> is a <strong>dry run by default</strong>: every local phase runs and every remote one is

@@ -1,167 +1,117 @@
 ---
-order: 12
+order: 11
 title: The console
-description: Using the web console - signing in, browsing repositories and artifacts, reading a repository's settings, the installed-capabilities view, the theme switch, and how the console scopes itself to a tenant.
+description: The web console - a separate application over the same store - how to start it, sign in, browse artifacts, download a listing, and read the server's logs, consistency and security posture.
 ---
 
-Everything the repository does is reachable over HTTP, but you rarely want to read a namespace with
-`curl`. The server ships a small **web console** so an operator can sign in, see what is published,
-read how each repository is configured, and confirm which capabilities the deployment is actually
-running - all in a browser. This chapter is a tour of what you can see and do there.
+Jenesis Repository ships a web console for browsing what the repository holds and for reading how the server
+is doing. It is a separate application from the server, not a page the server serves: it reads the same
+store the server writes to, and it calls the server's HTTP endpoints for logs and the consistency check.
+This chapter shows how to run it, sign in, and use each panel.
 
-The console is served at **`/console`**, and the bare host redirects to it, so pointing a browser at
-the server lands you on the console.
+## Starting it
+
+The console listens on port 8081 (`PORT`). Point it at the same store as the server - the same
+`JENREG_STORE` backend and the same `JENREG_FILESYSTEM_ROOT` or cloud settings - and it shows what the server
+serves. From a clone, run it as a second process beside the server with the console's entry point:
+
+```bash
+SPRING_PROFILES_ACTIVE=dev JENREG_UI_SECURE_COOKIE=false \
+JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
+  java -Djenesis.execute.module=source+bundle \
+       -Djenesis.execute.mainClass=build.jenesis.repository.bundle.Console \
+       build/jenesis/Execute.java
+```
+
+The locally built image runs the console the same way, with the entry point and port passed as environment
+variables:
+
+```bash
+docker run -e MAINCLASS=build.jenesis.repository.bundle.Console -e PORT=8081 -p 8081:8081 \
+  -v jenesis-data:/data jenesis-repository
+```
+
+Then open `http://localhost:8081/`, which redirects to `/console`. [Getting started](/repository/getting-started/)
+walks through the server side of the same setup.
+
+<div class="note">
+  The <strong>Logs</strong> and <strong>Consistency</strong> panels call the server's <code>/api/logs</code> and
+  <code>/api/consistency</code> at the console's own origin. For them to work, serve the console and the server
+  behind one host name, with a reverse proxy routing <code>/api/</code> to the server. Every other panel reads
+  the store directly and works without it.
+</div>
 
 ## Signing in
 
-The console is deny-by-default: every page requires an authenticated session. How you sign in depends
-on how the deployment is set up.
+Every page except sign-in requires a session. Sign-in is OAuth2: a GitHub OAuth app, a single OpenID Connect
+provider (Google, Keycloak, Okta, Entra ID, Auth0, …), or both, each configured with a few `jenreg.ui.*`
+settings listed in [Authentication & access](/repository/authentication/). The sign-in page shows one button
+per configured provider; with none configured it shows a notice instead of failing.
 
-- **A real deployment** authenticates over **OAuth2 / OIDC**. The sign-in page shows one button per
-  configured identity provider; you pick yours and complete the login with your organisation's
-  account. Configuring those providers is the subject of the
-  [Authentication & access](/repository/authentication/) chapter.
-- **A local run** can use the built-in `dev` profile, which swaps in an `admin` / `admin` form login
-  so you can open the console without wiring up an identity provider first:
+Every signed-in person is a **user** and may read everything the console shows. Only an **admin** may perform
+a mutating action, and nobody is an admin until their provider-qualified id - `github/<id>` or `oidc/<subject>`
+- is listed in `jenreg.ui.admins`. Listing `*` makes every signed-in user an admin, which the server reports
+as the `jenreg.console.wildcard` advisory.
 
-```bash
-SPRING_PROFILES_ACTIVE=dev JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
-  java -Djenesis.execute.module=source+server build/jenesis/Execute.java
-```
+For a local run, the `dev` Spring profile replaces OAuth2 with a form login and two built-in accounts:
+`admin`/`admin` (an admin) and `viewer`/`viewer` (a user). On plain `http`, also set
+`JENREG_UI_SECURE_COOKIE=false`, or the session cookie is never sent back.
 
 <div class="warning">
-  The <code>dev</code> profile and its <code>admin</code>/<code>admin</code> account are for local use
-  only. Never expose a <code>dev</code>-profile server - a production deployment signs in over OIDC.
+  The <code>dev</code> profile is for a laptop. Its built-in accounts are an authentication bypass anywhere
+  else, and the server raises the <code>jenreg.profile.dev</code> advisory while the profile is active.
 </div>
 
-A **Sign out** button sits in the top navigation on every page; using it returns you to the sign-in
-page with a confirmation.
+Console sign-in is separate from the keys that gate the server's artifact API: a console session grants no
+rights on the wire, and the two panels that read the server's API ask you for a key.
 
 ## The console page
 
-The console is a single page built from **panels**. Each capability the deployment runs contributes
-its own panel - a labelled entry in the top navigation and a card of content below it - and the page
-stitches whichever panels are present into one tabbed view. The core ships five: **Browse**, the
-**installed capabilities** catalogue, **Observability**, **Logs** and **Consistency**, with a **Posture**
-panel beside them; other panels appear as their capabilities are installed.
+`/console` shows the installed panels in one page, with a header that carries **Sign out**, the theme switch,
+and a read-only banner when the deployment runs with `jenreg.read-only=true`. Six panels ship with the
+console:
 
-That is the first useful thing the console tells you: **it shows only what is actually installed.** A
-format, a storage backend, or an authentication mechanism that is not on this server's module path
-contributes no panel, so the set of panels you see is a live picture of what this deployment can do -
-you never have to read the startup log to find out. If a server is running with no panels at all, the
-page says so plainly rather than showing a blank screen.
+| Panel | What it shows |
+|---|---|
+| **Browse** | The repository's artifacts as a folder tree, with a link to the full browse page. |
+| **SPI catalog** | Every module on the deployment's module path that provides a capability - formats, stores, importers, fetchers - so you can read a deployment's abilities off one list. |
+| **Metrics overview** | Current values, health states and background-task status reported by installed modules. It is empty until a module that reports them is installed. |
+| **Logs** | A tail of the server's recent log entries, with level and text filters and auto-follow. |
+| **Consistency** | The per-node report of a multi-node deployment, or a single-node notice. |
+| **Security posture** | The server's configuration advisories, severity first, each with its fix. |
 
-The console also reflects the deployment's mode. On a server running in
-[read-only mode](/repository/authentication/), every console page carries a **read-only banner**, so
-nobody wonders why a write was refused - the page itself says the deployment does not accept them.
+## Browsing artifacts
 
-## Browsing repositories and artifacts
+`/browse` is a breadcrumbed file browser over the repository's published paths. It works the same for every
+format because it reads the repository's own listing rather than knowing about Maven or OCI layouts:
 
-The **browse** view - reachable from its panel and directly at **`/browse`** - is a generic file
-browser over any repository's published namespace. It works the same way for every format, because it
-reads the repository's own listing rather than knowing about Maven, npm, or OCI layouts.
+- It shows the **request paths** artifacts are published under - `maven/org/apache/commons/…`,
+  `oci/…`, `raw/…` - not the content-addressed storage underneath, so what you see is what a client requests.
+- Each row is a **folder** or an **artifact**; artifacts show their stored size. A folder's children are
+  listed only when you open it, one level at a time, so a large repository browses as quickly as a small one.
+  A folder with more than 1 000 children is cut off with a notice.
+- No artifact is ever opened to render a row, and the browse never reaches outside the published tree: a
+  `path` that tries `..` is cleaned, and an artifact the server currently withholds is omitted, so the browse
+  and a plain `GET` always agree.
 
-- It shows the **logical request paths** artifacts are published under (for example
-  `maven/org/apache/commons/…`), not the internal content-addressed storage - so what you see is what
-  a client would request.
-- Each row is either a **folder** or an **artifact**, and artifacts carry a human-readable **size**.
-- A **breadcrumb trail** runs across the top: click any segment to jump back up the tree.
-- The tree is **lazy**. Each level lists only its immediate children, and a folder's contents are
-  fetched only when you open it. A browse never scans or downloads a whole repository, so it stays fast
-  over a namespace with millions of entries.
-- A **Download asset listing** action streams the repository's full inventory - every published path with
-  its size and SHA-256, read straight from the pointer tree. It is the console face of the `GET /api/assets`
-  export covered in [Migration & import](/repository/migration-import/), so getting your data out is one
-  click.
+## Downloading a listing
 
-<div class="note">
-  Because browse reads the published pointer tree and never opens a stored blob, it is cheap even on a
-  very large repository, and it can never be steered outside a repository's own namespace - the path is
-  guarded against <code>..</code> traversal.
-</div>
+**Download asset listing** on the browse page streams every published artifact as `assets.ndjson` - one JSON
+object per line with `path`, `size` and `sha256`, read from the publication records without opening a blob.
+It is the console's counterpart of the server's `GET /api/assets`, which adds the format, coordinate and
+version per entry; see [Migration & import](/repository/migration-import/).
 
-Browse shows **exactly what a `GET` would serve** - no more. Where a publication screen has withheld an
-artifact, its path is never listed and never navigable, so a reader with browse access cannot enumerate the
-paths or sizes of withheld artifacts; the **Download asset listing** export honours the same rule.
+## Reading the server's logs and consistency
 
-A hold covers an artifact's **checksum and signature sidecars** along with the artifact. A `.sha1`, `.md5`,
-`.sha256`, `.sha512`, `.asc` or `.sig` beside a withheld file is withheld too - which matters more than it
-first sounds, because a checksum *is* the digest of the bytes being withheld, and a folder still listing one
-would publish both the digest and the fact that the version exists.
-
-## Finding an artifact
-
-Browse answers "what is in this repository"; **search** answers "where is the thing I can name". It matches
-two ways at once, and unions the results:
-
-- **By coordinate** - the name, version and licence facets a package carries. This is the right index for
-  anything with a coordinate: a Maven `group:artifact`, an npm package, a crate, a gem.
-- **By published path** - the served path itself. A raw upload has no coordinate at all; its path *is* its
-  address, so an installer put there is findable by the name somebody typed rather than only by browsing to
-  the folder it sits in.
-
-Both halves answer the same way whether or not this deployment has a search index installed, which is the
-point: a registry with an index and one without must not disagree about what exists.
-
-The path half is a bounded read - it examines a capped number of entries and returns a capped number of hits -
-and it reports that it stopped rather than presenting a clamped list as the whole answer. It is screened at
-every level, so a withheld artifact is no more findable here than it is in a listing.
-
-## Reading a repository's settings
-
-The console lets you **view a repository and its configuration** - which format it serves, its
-upstreams, its quota, and the other settings that apply to it. Each setting is shown
-with its current value and a short inline explanation, so you can read how a repository behaves without
-cross-referencing a settings table.
-
-Two cues on the settings view are worth knowing:
-
-- A setting notes whether changing it takes effect **live** or needs a **restart**, so you know before
-  you change something whether it applies immediately.
-- A setting that has been **changed from its default** is marked as such, so the values you have
-  deliberately set stand out from the ones left at their defaults.
-
-Status is shown the same way throughout the console: where a plug-in gives an artifact a state, it carries a
-badge, and - because colour is never the only signal - the badge always spells that state out in words as
-well.
-
-## The installed-capabilities view
-
-Alongside the per-repository settings, the console surfaces **what the server itself is running**:
-which formats, storage backend, importers, screens and authentication mechanisms are installed on this
-deployment. This is the operator's answer to "does this server have the S3 backend?" or "which importers
-can I migrate with?" - read straight from the running process rather than inferred from configuration
-files.
-
-The view is organised the way the server itself is: an **SPI catalog**, grouped by the *seam* - the
-plug-in point from [Architecture](/repository/architecture/) - with the installed implementations that
-provide each listed beneath it, each under its own mark where the plug-in ships one and a generated one
-where it does not. It is pure discovery over the running process's Java Module System graph,
-the same `provides` declarations the server loads plug-ins from, so what you read here is what the
-dispatcher actually discovered - and it reads no artifact data to say so.
-
-It is the same principle as the panels: a capability that is not installed simply does not appear.
-Confirming a capability here is the quickest way to check that an intended module made it onto the
-deployment's module path.
-
-## The tenant-scoped view
-
-Everything the console shows is scoped to **one tenant at a time**. On a single-tenant server - the
-default - that scoping is invisible: there is exactly one tenant, so every repository, artifact, and
-setting you see already belongs to it, and there is no tenant to choose.
-
-When the deployment has a **tenant directory** installed, the console additionally offers
-**tenant management** - the screens to see and administer tenants - and the views become explicitly
-scoped to the tenant you are working in. A server without a tenant directory offers no such screens at
-all; the capability simply is not there. Tenancy modes and how tenants are administered are covered in
-the [Authentication & access](/repository/authentication/) chapter.
+The **Logs** panel tails `GET /api/logs` and the **Consistency** panel reads `GET /api/consistency`. Both
+endpoints show deployment-wide state, so the server gates them to a key with a deployment-wide `*` grant; each
+panel has a field to paste one, and sends it as the `Jenesis-Repository-Key` header. On a server running with
+authentication off, leave the field empty. Before a key is entered, or against an empty log ring, a panel
+shows an empty state rather than an error. [Observability](/repository/observability/) describes both
+endpoints and their fields.
 
 ## Theme and accessibility
 
-A compact **theme switch** in the navigation offers **Auto**, **Light**, and **Dark**. Your choice is
-remembered in the browser - it is a per-browser presentation preference, not a server setting, so it
-never affects anyone else - and **Auto** follows your operating system's light/dark preference.
-
-The console is built to an accessibility baseline you can rely on: a "skip to content" link as the
-first stop, every control reachable and operable from the keyboard with a visible focus ring, status
-never conveyed by colour alone, and AA-level contrast in both the light and dark themes.
+The theme switch in the header offers **Auto**, **Light** and **Dark**; Auto follows the operating system,
+and the choice is remembered per browser. Every page starts with a skip-to-content link for keyboard users,
+and every interactive element shows a visible focus ring.

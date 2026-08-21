@@ -1,112 +1,108 @@
 ---
 order: 3
 title: Producing a launcher jar
-description: The build-tool switch that emits a launcher jar, what the bundler assembles into it, and the manifest wiring that makes java -jar start the launcher.
+description: The build-tool switch that emits a launcher jar, what the build writes into it, where the jar lands, and how the launcher itself is pinned.
 ---
 
-You never assemble a launcher jar by hand. The Jenesis build tool produces it from a switch in
-`packaging.properties`, shading the launcher into the jar and laying out your dependencies for it. This
-chapter shows what that switch produces: the assembly the bundler performs, the resulting jar layout, and the
-manifest entries that make `java -jar app.jar` start the launcher.
+You never assemble a launcher jar by hand. The Jenesis build tool produces it from one switch in
+`packaging.properties`: it resolves the launcher, copies its classes into the jar, lays out your dependencies
+for it, and writes the descriptor and manifest that make `java -jar app.jar` start the launcher. This chapter
+shows that switch, what the build writes, and where the result lands.
 
 ## Turning it on
 
-The launcher jar is one of the build tool's [packaging options](/tool/packaging/). Enable it
-by setting `launcher=true` in a `packaging.properties` file in the [configuration
-location](/tool/configuration/):
+The launcher jar is one of the build tool's [packaging options](/tool/packaging/). Enable it with
+`launcher=true` in a `packaging.properties` file in the [configuration folder](/tool/configuration/):
 
 ```properties
 # build.jenesis/packaging.properties
 launcher=true
 ```
 
-Like every packaging feature, it only runs for a module that declares a main class - the same
-`@jenesis.main` tag (or `<mainClass>` POM property) the other packaging steps key off. The build then wires a
-`launcher` step into the package phase and writes one executable jar per runnable module:
-
-```
-target/.../launcher/<name>.jar
+```bash
+java build/jenesis/Project.java
 ```
 
-## What the bundler assembles
+Like every packaging feature, it only runs for a module that declares a main class - the same `@jenesis.main`
+tag (or `<mainClass>` POM property) the other packaging steps key off. A module without one is skipped, so a
+library is left alone and an application needs no launcher-specific configuration.
 
-The build resolves the published Jenesis Launcher artifact and produces the jar in four moves. Everything the
+## What the build writes
+
+The build resolves the published launcher artifact and produces the jar in four moves. Everything the
 launcher needs at run time - the layout described in [*How it works*](/launcher/how-it-works/) - is put in
 place here:
 
-1. **Shade the launcher into the jar root.** The launcher's own `build/jenesis/launcher/*.class` files are
-   copied to the jar root, with the launcher's `module-info` and manifest dropped, so at run time they are the
-   unnamed module hosting your application.
-2. **Explode each dependency into its own subfolder** - `classpath/<name>/` for a non-modular dependency,
-   `modulepath/<name>/` for a modular or automatic one, using the *same* modular split the `Execute` launcher
-   and a bundle use. `<name>` is the dependency's original jar file name,
-   so automatic-module naming, which the JDK derives from that name, is unchanged.
-3. **Set the manifest `Main-Class`** to `build.jenesis.launcher.Launcher`, so `java -jar` starts the launcher.
-4. **Write `application.properties`** - the descriptor from *How it works*, carrying `mainClass`, `mainModule`
-   when the application is modular, the class-path order, and (when present) `agentClass`.
+1. **The launcher's classes go into the jar root.** Only its `build/jenesis/launcher/*.class` files are
+   copied; the launcher's own `module-info` and manifest are left out, so at run time those classes are the
+   unnamed module that hosts your application.
+2. **Each dependency is exploded into its own subfolder.** The resolved jar file name becomes the folder name:
+   `modulepath/org.slf4j%2Fslf4j-api%2F2.0.16.jar/` for a modular or automatic dependency, `classpath/…/`
+   for a plain one, and `classes.jar/` for the application's own module. The split follows the same rule as
+   the build's `Execute` launcher and its `bundle.zip`: a jar is placed on the module path only when the
+   application is modular and the jar describes a module. A `pom.xml` application without a module
+   therefore gets everything under `classpath/`.
+3. **`application.properties` is written** with `mainClass`, `mainModule` (modular applications only), and
+   `classpath` - the class-path subfolders, listed in file-name order.
+4. **The manifest gets one attribute**, `Main-Class: build.jenesis.launcher.Launcher`, so `java -jar` starts
+   the launcher.
+
+That is the complete set. The other descriptor keys and manifest attributes the launcher understands -
+bundled agents, module-access grants, signer reconstruction - are for a jar you assemble yourself; the
+[*Reference*](/launcher/reference/) chapter lists them.
 
 <div class="note">
-  This is the same content a <a href="/tool/packaging/">bundle</a> holds - the exploded
-  <code>classpath/</code> and <code>modulepath/</code> subfolders and an <code>application.properties</code>.
-  The launcher jar folds it into a single runnable jar with the launcher shaded in, so it needs no launch
-  script; a bundle keeps the files separate for you to drop onto a JRE base.
+  A <a href="/tool/packaging/">bundle</a> (<code>bundle=true</code>) makes the same module-path / class-path
+  split, but keeps each jar whole under <code>modulepath/</code> and <code>classpath/</code> for you to drop
+  onto a JRE. The launcher jar explodes those same jars into subfolders and adds the launcher, so it needs no
+  launch script.
 </div>
 
-## The produced jar layout
+## Where the jar lands
 
-The result is an ordinary jar - every class and resource is a direct entry - with a fixed shape the launcher
-knows how to read:
-
-```
-foo.jar
-├── META-INF/MANIFEST.MF          Main-Class: build.jenesis.launcher.Launcher
-├── build/jenesis/launcher/…      the shaded launcher classes
-├── application.properties        mainClass, mainModule, classpath order, agentClass
-├── classpath/
-│   └── <dependency-jar-name>/…   a non-modular dependency, exploded
-└── modulepath/
-    └── <module-jar-name>/…       a modular or automatic dependency, exploded
-```
-
-Nothing is merged: each dependency keeps its own `module-info`, `META-INF/services` files, and resources in
-its own subfolder. That is what lets the launcher rebuild the module graph at startup - see [*How it
-works*](/launcher/how-it-works/) for how it reads this jar.
-
-## The manifest wiring
-
-Two manifest attributes are all that connect `java -jar` to the launcher.
-
-`Main-Class` names the launcher, so the JVM invokes it and the launcher then finds and runs your real main
-class from `application.properties`:
+The jar is named after the module's artifact id - `demo.modular.executable.jar` for the modular demo - or
+`application.jar` when the build knows no artifact id. It is written into the module's build output, under
+the `launcher` module's `bundle` step:
 
 ```
-Main-Class: build.jenesis.launcher.Launcher
+target/build/…/launcher/bundle/output/launcher/<name>.jar
 ```
 
-When the descriptor carries an `agentClass` - the application bundles its own Java agents - the bundler adds a
-second attribute so the JVM hands the launcher a real `Instrumentation` before `main` runs:
-
-```
-Launcher-Agent-Class: build.jenesis.launcher.LauncherAgent
-```
-
-Without it, the JVM captures no `Instrumentation` and only agents that need none can run. The full set of
-agent and access-control descriptor keys is covered in the [*Reference*](/launcher/reference/) chapter.
-
-## Class-path order is preserved
-
-A class path is **ordered**: when two jars carry the same class or resource, the first one wins. Exploding the
-dependencies into subfolders would lose that order, so the bundler records it in a `classpath` property of
-`application.properties`, and the launcher orders its class path by that list. You never write this by hand -
-the build captures the resolved order for you; the key itself is documented in the
-[*Reference*](/launcher/reference/) chapter.
+It is not collected into the `stage` tree. A build of your own can locate it as the jar under a `launcher/`
+folder of the build output - `build/DemoLauncher.java` in the two executable demos does exactly that, then
+runs the jar.
 
 ## The launcher is pinned like any dependency
 
-The Jenesis Launcher is resolved as a normal dependency, in its own `launcher` group, and is
-[pinned](/tool/pinning/) like every other artifact the build uses. The exact launcher bytes shaded into
-your jar are therefore verified, and the produced jar stays reproducible - the same sources yield the same
-bytes.
+The build resolves the launcher as a normal dependency, in its own `launcher` group, kept apart from your
+application's dependencies. Until you pin it, it floats to the latest release. Run `pin` and the build records
+the exact version and checksum next to your other pins - in a modular project:
 
-With the jar produced, the next chapter turns to running it: the start-up flow, the single-loader
-consequences, and the pitfalls to watch for.
+```java
+/**
+ * @jenesis.main sample.Sample
+ * @jenesis.pin launcher/maven/build.jenesis/build.jenesis.launcher 0.3.1 SHA-256/720f9c17…
+ */
+module demo.modular.executable {
+    requires org.slf4j;
+
+    exports sample;
+}
+```
+
+A `pom.xml` project carries the same line in its `<!--jenesis.pin … -->` block, outside
+`<dependencyManagement>`, since the launcher is not an application dependency. Either way the launcher bytes
+shaded into your jar are [verified](/tool/pinning/) on every build, and the produced jar is reproducible:
+the same sources yield the same bytes.
+
+<div class="tip">
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-05-java-pom-executable">demo-05</a> (a
+  <code>pom.xml</code> application) and
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-06-java-modular-executable">demo-06</a> (a
+  modular one) each ship a <code>build/DemoLauncher.java</code> that switches the launcher on through a
+  profile, builds the jar, and runs it: <code>java build/DemoLauncher.java Ada Lovelace</code>. Their pinned
+  <code>module-info.java</code> and <code>pom.xml</code> show the pin line in both forms.
+</div>
+
+With the jar produced, the next chapter turns to running it: the start-up flow, what the single loader means
+for your code, and the pitfalls to watch for.

@@ -18,15 +18,12 @@ recompiles that engine and runs it:
 java build/jenesis/Project.java [selectors…]
 ```
 
-Three faster launch forms produce the same result (the SDKMAN wrapper is installed in
-*[Getting started](/tool/getting-started/)*):
+A package-manager install (see *[Getting started](/tool/getting-started/)*) adds a second form:
 
 | Form | Invocation | Notes |
 | --- | --- | --- |
-| Source | `java build/jenesis/Project.java` | The canonical form; recompiles the engine each run. |
-| Compiled | `java -cp .jenesis/launcher build.jenesis.Project` | Skips the recompile once the engine is cached. |
-| SDKMAN | `jenesis` | The wrapper installed by `sdk install jenesis`, equivalent to the source form. |
-| Native | `./jenesis` | A precompiled native launcher, the fastest start-up. |
+| Source | `java build/jenesis/Project.java` | The canonical form; compiles the embedded engine on each run. |
+| Installed | `jenesis` | The command from SDKMAN, Homebrew or Scoop. It runs the *installed* engine against the current directory, not the sources under `build/jenesis/`, so it also builds a project that embeds none. |
 
 <div class="note">
   How the JDK tool steps launch is set by <code>-Djenesis.process.factory=tool|fork</code>:
@@ -44,8 +41,8 @@ property). The top-level targets the shipped layouts register:
 | Target | What it runs |
 | --- | --- |
 | `build` | Compile, check, test, and package every module (the default). |
-| `stage` | Materialise the release tree under `target/stage/…` (see *[Packaging](/tool/packaging/)*). |
-| `export` | Publish the staged tree - into the local Maven repository (`maven`), the local module repository (`modular`), or both. |
+| `stage` | Materialise the release tree under `target/stage/…` (see *[Publishing](/tool/publishing/)*). |
+| `export` | Publish the staged tree - into the local Maven repository (`~/.m2`), the local module repository (`~/.jenesis`), or both, depending on the layout. |
 | `release` | Hand the staged tree to a configured release tool; a dry run unless told otherwise (see *[Publishing](/tool/publishing/)*). |
 | `pin` | Rewrite every `pom.xml` / `module-info.java` so the transitive closure is pinned at source (see *[Pinning &amp; bills of materials](/tool/pinning/)*). |
 | `dependencies` | Print each module's resolved dependency graph with licences. |
@@ -60,8 +57,9 @@ property). The top-level targets the shipped layouts register:
 A selector picks part of the build graph. Three shapes exist.
 
 **Module selectors** start with `+`: the active layout rewrites `+<name>` into that module's path, so one
-module builds without dragging in its siblings. `+` alone names the multi-module root (the Maven root POM);
-a pure modular project has no such root.
+module builds without dragging in its siblings. A nested module is named by joining its path segments with
+`+`, as in `+api+client`. `+` alone names the module whose descriptor sits at the project root - a root
+`pom.xml` that is itself a module; an aggregator-only root or a pure modular project has no such module.
 
 ```bash
 java build/jenesis/Project.java +mymodule      # build just this module's subgraph
@@ -70,7 +68,7 @@ java build/jenesis/Project.java +mymodule      # build just this module's subgra
 **Path selectors** are a slash-delimited path of `module/step` identities matched against the graph, with two
 wildcards:
 
-- `:` matches a single segment - `build/:/test` matches the `test` step of every direct child of `build`.
+- `:` matches exactly one segment.
 - `::` matches any depth - `::/sign` matches every `sign` step anywhere in the tree.
 
 Wildcards are **lenient**: a branch that fails to match is silently skipped. A **literal** path that does not
@@ -104,38 +102,38 @@ variable as a fallback. Defaults apply when the key is unset.
 | `jenesis.project.root` | `.` | The directory scanned for `module-info.java` / `pom.xml`. Command-line only. |
 | `jenesis.project.target` | `target` | The per-build output folder. Safe to delete for a clean build. |
 | `jenesis.project.version` | *(unset)* | Stamps this version onto every artifact the build produces. |
-| `jenesis.project.metadata` | *(unset)* | Path to a project-level POM metadata override file (conventionally `project.properties`). |
+| `jenesis.project.metadata` | *(unset)* | Path-separated list of project-level POM metadata files (conventionally one `project.properties`). |
 | `jenesis.project.sources` | `false` | Also assemble a per-module sources jar. |
 | `jenesis.project.documentation` | `false` | Also assemble a per-module javadoc jar. |
 | `jenesis.project.watch` | `false` | Keep the process alive and rebuild on every source change (see *[Building &amp; running](/tool/building-and-running/)*). |
 | `jenesis.project.properties` | *(unset)* | Comma-separated **profile** names to activate. |
 | `jenesis.project.global` | `$HOME` | Base folder whose `.jenesis/` subfolder holds the user-global `jenesis.properties`; empty string disables it. |
-| `jenesis.project.configuration` | `build.jenesis/` | Path-separated project-wide configuration directories. |
-| `jenesis.project.boms` | *(unset)* | Path-separated list of imported BOM files. |
-| `jenesis.project.artifacts` | `.jenesis/artifacts` | The module-jar artifact cache (the `modular` layout only). |
+| `jenesis.project.configuration` | `build.jenesis/` | Path-separated project-wide configuration folders. |
+| `jenesis.project.boms` | the configuration folders | Path-separated list of folders searched for `pin-<name>.properties` files. |
+| `jenesis.project.artifacts` | `.jenesis/artifacts` | The project-local folder resolved artifacts are materialised into (hard-linked from `~/.m2` where possible), in every layout. |
 
 ### Building & testing
 
 | Key | Default | Effect |
 | --- | --- | --- |
-| `jenesis.test.skip` | *(off)* | Register no test steps, so no tests run. |
+| `jenesis.test.skip` | *(off)* | Register no test steps, so no tests run. Read by presence: any value, even `false`, skips. |
 | `jenesis.test.filter` | *(unset)* | Comma-separated `<classRegex>[#<method>]` list; runs only matching tests. |
 | `jenesis.test.tag` | *(unset)* | Comma-separated test tags / groups to include. |
 | `jenesis.test.engine` | *(auto)* | Force the engine: `junit-platform`, `junit4`, or `testng`. |
 | `jenesis.test.parallel` | `false` | Run tests in parallel where the framework supports it. |
 | `jenesis.test.reporting` | `false` | Emit Open Test Reporting XML under `reports/tests/`. |
 | `jenesis.test.incremental` | *(off)* | Run only the tests a change can reach; the value names the digest algorithm. |
-| `jenesis.test.force` | `false` | Run the tests even when nothing changed and the recorded scope already covers the request. |
+| `jenesis.test.force` | `false` | `true` runs the tests even when nothing changed and the recorded scope already covers the request. |
 | `jenesis.stage.tests` | `false` | Include test-variant artifacts when staging. |
 | `jenesis.sbom.cyclonedx` | `true` | Emit a CycloneDX SBOM; set `false` to skip it. |
 | `jenesis.compliance` | `true` | Run the licence and vulnerability checks; `false` skips both. |
-| `jenesis.source.<tool>` | `true` | Per-linter switch (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `codenarc`). |
+| `jenesis.source.<tool>` | `true` | Per-linter switch (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`). |
 | `jenesis.validator.spotbugs` | `true` | Run SpotBugs when its filter file is present. |
 | `jenesis.format.java` / `.ktlint` / `.scalafmt` | `true` | Per-formatter switch. |
 | `jenesis.format.rewrite` | `false` | Rewrite sources in place instead of verifying. |
 | `jenesis.observe.jacoco` | `true` | Run JaCoCo coverage when its file is present. |
 | `jenesis.observe.native` | `true` | Run the GraalVM tracing agent when its file is present. |
-| `jenesis.mutate.pitest` | `true` | Run PiTest mutation testing when its file is present. |
+| `jenesis.mutate.pitest` | `true` | Run PIT mutation testing when its file is present. |
 
 The quality and packaging *files* these keys gate (`checkstyle.xml`, `packaging.properties`, and the like)
 are covered in *[Code quality &amp; testing](/tool/code-quality-and-testing/)*, *[Supply-chain
@@ -160,14 +158,14 @@ features](/tool/supply-chain/)*, and *[Packaging](/tool/packaging/)*.
 | `jenesis.maven.uri` (`MAVEN_REPOSITORY_URI`) | Maven Central | Upstream Maven repository URL(s); supports filters and references. |
 | `jenesis.maven.local` (`MAVEN_REPOSITORY_LOCAL`) | `~/.m2/repository` | Local Maven repository for reads and `export`. |
 | `jenesis.maven.token` (`MAVEN_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the Maven upstream. |
-| `jenesis.module.uri` (`JENESIS_REPOSITORY_URI`) | `repo.jenesis.build` | Upstream module repository URL(s). |
-| `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | `~/.jenesis` | Local module repository for reads and `export`. |
-| `jenesis.module.token` (`JENESIS_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the module upstream. |
+| `jenesis.module.uri` (`JENESIS_REPOSITORY_URI`) | `https://repo.jenesis.build/` | The Jenesis Module Index URL(s) module names resolve through; same list/filter/`@` grammar. |
+| `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | `~/.jenesis` | The local module repository, read first and written by `export`. |
+| `jenesis.module.token` (`JENESIS_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the module index. |
 | `jenesis.repository.insecure` | `false` | Permit plaintext (`http://`) fetches. |
 | `jenesis.repository.retries` | `2` | Retries for a transient fetch failure (`0` disables). |
 | `jenesis.repository.backoff` | `125` | Initial retry wait in milliseconds, doubling each attempt. |
-| `jenesis.repository.connect.timeout` | *(set)* | Connect timeout for a repository fetch, as an ISO-8601 duration. |
-| `jenesis.repository.read.timeout` | *(set)* | Read timeout for a repository fetch, as an ISO-8601 duration. |
+| `jenesis.repository.connect.timeout` | `10000` | Connect timeout for a repository fetch, in milliseconds. |
+| `jenesis.repository.read.timeout` | `30000` | Read timeout for a repository fetch, in milliseconds. |
 
 ### Caching
 
@@ -177,7 +175,8 @@ features](/tool/supply-chain/)*, and *[Packaging](/tool/packaging/)*.
 | `jenesis.project.cache` | *(off)* | Project-local on-disk build cache (a path; empty enables `.jenesis/cache`). |
 | `jenesis.cache.project` (`JENESIS_CACHE_PROJECT`) | *(unset)* | Project header sent to an HTTP cache. |
 | `jenesis.cache.key` (`JENESIS_CACHE_KEY`) | *(unset)* | Auth key sent to an HTTP cache. |
-| `jenesis.cache.timeout` | `PT1S` | HTTP cache connect timeout. |
+| `jenesis.cache.connect` | `PT1S` | HTTP cache connect timeout, as an ISO-8601 duration. |
+| `jenesis.cache.read` | `PT10S` | HTTP cache read timeout, as an ISO-8601 duration. |
 | `jenesis.cache.insecure` | `false` | Permit the cache key over plaintext `http://`. |
 
 ### Running & containers
@@ -215,7 +214,7 @@ Read by the `release` target - see *[Publishing](/tool/publishing/)*.
 | `jenesis.print.process` | `false` | Stream every external tool's output; `jenesis.print.<command>` targets one tool. |
 | `jenesis.print.tests` | `false` | Stream the test JVM's command and output. |
 | `jenesis.print.fetch` | `false` | Print a `[FETCHED]` line per downloaded artifact. |
-| `jenesis.print.cache` | `false` | Print `[LOADED]`/`[STORED]` lines for the shared cache. |
+| `jenesis.print.cache` | `false` | Print `[LOADED]`/`[STORED]` lines for the build cache, local and shared. |
 | `jenesis.print.checksum` | `false` | Append input/output checksums under each `[EXECUTED]` line. |
 | `jenesis.print.jreleaser` | `false` | Stream the release tool's output. |
 | `jenesis.tree.format` | `full` | The `dependencies` tree rendering: `full` or `compact`. |
@@ -236,16 +235,17 @@ in the linked chapter.
 
 | Step | Produces |
 | --- | --- |
-| `compiled` | Compiled classes from sources and the compile classpath (`javac`, or a language compiler). |
+| `binary` | The Java toolchain for one module; its `compiled`, `classes`, `validate`, and `artifacts` steps sit beneath it. |
+| `compiled` | Compiled classes from sources and the compile class path (`javac`, or a language compiler). |
 | `classes` | The version-stamped classes exposed to downstream consumers. |
+| `validate` | Byte-code analysis (SpotBugs, as `validate/spotbugs`). |
 | `artifacts` | The packaged jar. |
 | `check` | Static-analysis findings (Checkstyle, PMD, detekt, …). |
 | `format` | Formatting verification, or an in-place rewrite. |
-| `binary` | Byte-code analysis (SpotBugs). |
 | `dependencies` | The resolved, fetched dependency closure. |
 | `test` (`executed`) | The test run and its reports. |
 | `observed` | The coverage- or trace-wrapped test run. |
-| `mutate` | The mutation-testing report (PiTest). |
+| `mutate` | The mutation-testing report (PIT). |
 | `compliance` | The licence and vulnerability check results. |
 | `sbom` | The CycloneDX bill of materials. |
 | `documentation` | The javadoc (or Dokka) output and its jar. |
@@ -261,7 +261,7 @@ Wired by keys in `packaging.properties` - see *[Packaging](/tool/packaging/)*.
 | `jlink` | A custom runtime image. |
 | `jpackage` | A native installer or self-contained app image. |
 | `bundle` | A self-contained `bundle.zip` of the application. |
-| `launcher` | A single executable launcher jar (see *[Launcher](/launcher/)*). |
+| `launcher` | A single executable launcher jar (see *[Jenesis Launcher](/launcher/)*). |
 | `docker` | A container build context - a `Dockerfile` and the jars it copies. |
 | `native-image` | A GraalVM native executable. |
 | `modules` | The dependency closure rewritten into explicit named modules (from `modules.properties`). |
@@ -280,12 +280,12 @@ layout, the POM equivalent named beside it. This is the whole vocabulary:
 | --- | --- | --- |
 | `@jenesis.release <N>` | The Java release to compile against (`maven.compiler.release` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
 | `@jenesis.main <class>` | The module's entry point (`<mainClass>` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
-| `@jenesis.test <module>` | Marks this module as the test module of another. | *[Building &amp; running](/tool/building-and-running/)* |
+| `@jenesis.test [<module>]` | Marks this module as the test module of another. | *[Building &amp; running](/tool/building-and-running/)* |
 | `@jenesis.plugin [<compiler>] <token>` | An annotation processor, or a compiler plugin for a named compiler. | *[Other JVM languages](/tool/other-jvm-languages/)* |
 | `@jenesis.attach <token> [<options>]` | A library to attach as a Java agent (`<!--jenesis.attach-->` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
 | `@jenesis.exclude <module> <group>/<artifact>…` | Transitives to prune from a requirement (`<exclusions>` in a POM). | *[Dependencies](/tool/dependencies/)* |
-| `@jenesis.alias <module> <group>/<artifact>` | A module name for an artifact that has none. | *[Dependencies](/tool/dependencies/)* |
-| `@jenesis.pin <token> <version> [<algorithm>/<hash>]` | An exact version and checksum (`<!--jenesis.pin-->` / `<dependencyManagement>` in a POM). | *[Pinning &amp; bills of materials](/tool/pinning/)* |
+| `@jenesis.alias <module> <group>/<artifact>[/<type>[/<classifier>]]` | A module name for an artifact that has none. | *[Dependencies](/tool/dependencies/)* |
+| `@jenesis.pin <token> <version> [<algorithm>/<hash>] [[<guard>]]` | An exact version and checksum (`<!--jenesis.pin-->` / `<dependencyManagement>` in a POM); a trailing `[<token>,…]` guard applies the line only on a matching platform. | *[Pinning &amp; bills of materials](/tool/pinning/)* |
 | `@jenesis.bom <token> [<version> [<algorithm>/<hash>]]` | A bill of materials to import. | *[Pinning &amp; bills of materials](/tool/pinning/)* |
 
 <div class="tip">
