@@ -1,13 +1,13 @@
 ---
 order: 6
 title: Dependencies
-description: Declaring dependencies in each layout, how they resolve over the Maven and module repositories, which version wins a conflict, pruning an unwanted transitive, and giving a nameless library a module name.
+description: Declaring dependencies in each layout, how they resolve through Maven Central and the Jenesis Module Index, which version wins a conflict, pruning an unwanted transitive, and giving a nameless library a module name.
 ---
 
 Every non-trivial build pulls in libraries. This chapter is about where you declare them, how Jenesis turns
-each declaration into a downloaded jar, which version it settles on when two paths disagree, and the two
-tags that let you correct a closure you do not control - dropping a transitive you do not want, and naming a
-library that arrives without a module name of its own.
+each declaration into a downloaded jar, and which version it settles on when two paths disagree. It ends with
+the two tags that let you correct a closure you do not control: dropping a transitive you do not want, and
+naming a library that arrives without a module name of its own.
 
 ## Declaring a dependency
 
@@ -40,38 +40,40 @@ result on the compile and runtime paths.
 
 Jenesis resolves through two named repositories, one per kind of coordinate:
 
-- **`maven`** - Maven coordinates (`groupId:artifactId:version`). Fetched over HTTP from Maven Central
-  (`https://repo1.maven.org/maven2/`) and hardlinked into your **local Maven repository** (`~/.m2/repository`),
-  exactly where `mvn` keeps them.
-- **`module`** - Java module names. Resolved through **repo.jenesis.build**, the module-name
-  index that maps a name like `com.fasterxml.jackson.databind` to its artifact and 302-redirects to the file
-  on Maven Central.
+- **`maven`** - Maven coordinates (`groupId:artifactId:version`). Fetched over HTTPS from Maven Central
+  (`https://repo1.maven.org/maven2/`) into your **local Maven repository** (`~/.m2/repository`), exactly
+  where `mvn` keeps them, and hard-linked from there into the build.
+- **`module`** - Java module names. Resolved through the **Jenesis Module Index** at `repo.jenesis.build`,
+  which maps a name like `com.fasterxml.jackson.databind` to its artifact and redirects to the file on Maven
+  Central.
 
 Which one a dependency uses follows from the layout. A `pom.xml` declares Maven coordinates, so it resolves
-through `maven`. A `requires` names a module, so it resolves through `module` - and this is the step that turns
-a module name into something downloadable. The **[Jenesis Modules](/modules/)** section documents that lookup
-in full; the short version is that it is a thin, module-name-addressable mirror of Maven Central.
+through `maven`. A `requires` names a module, so it resolves through `module`, and this is the step that turns
+a module name into something downloadable. The **[Jenesis Module Index](/modules/)** section documents that
+lookup in full.
 
 <div class="note">
   Under the default <code>modular_to_maven</code> layout, a <code>requires</code> is resolved to the declaring
   module's <em>Maven coordinate</em> (its POM is fetched through the module index), and transitive resolution
-  then proceeds through Maven - so a module project reaches automatic-module and plain-classpath libraries too.
-  The strict <code>modular</code> layout resolves purely by module name. <em>Core concepts</em> covers the
-  difference; the <code>dependencies</code> selector below shows it concretely.
+  then proceeds through Maven. A module project therefore reaches automatic-module and plain class-path
+  libraries too. The strict <code>modular</code> layout resolves purely by module name. <em>Core concepts</em>
+  covers the difference; the <code>dependencies</code> selector below shows it concretely.
 </div>
 
 ### Pointing at a different repository
 
-To resolve through a corporate mirror or a private repository instead of the public defaults, set an
-environment variable before the build - no project change required:
+To resolve through a corporate mirror or a private repository instead of the public defaults, set a system
+property or an environment variable before the build. No project change is required, and a property beats
+the variable of the same name:
 
-| Variable | What it overrides |
+| Property (environment variable) | What it overrides |
 | --- | --- |
-| `MAVEN_REPOSITORY_URI` | The Maven upstream. Accepts a comma-separated list, queried left to right; an entry may append `\|`-separated group ids to serve only those groups, and a bare `@` splices the default chain back in (`https://nexus.corp/,@`). |
-| `MAVEN_REPOSITORY_TOKEN` | Sent verbatim as the `Authorization` header on every Maven fetch (e.g. `Bearer …` or `Basic …`). |
-| `MAVEN_REPOSITORY_LOCAL` | The local Maven repository directory (default `~/.m2/repository`). |
-| `JENESIS_REPOSITORY_URI` | The module-index base URL (default `https://repo.jenesis.build/`), with the same list/filter/`@` grammar. |
-| `JENESIS_REPOSITORY_TOKEN` | The `Authorization` header for module-index fetches. |
+| `jenesis.maven.uri` (`MAVEN_REPOSITORY_URI`) | The Maven upstream. Accepts a comma-separated list, queried left to right; an entry may append `\|`-separated group ids to serve only those groups, and a bare `@` splices the default chain back in (`https://nexus.corp/,@`). |
+| `jenesis.maven.token` (`MAVEN_REPOSITORY_TOKEN`) | Sent verbatim as the `Authorization` header on every Maven fetch (e.g. `Bearer …` or `Basic …`). |
+| `jenesis.maven.local` (`MAVEN_REPOSITORY_LOCAL`) | The local Maven repository directory (default `~/.m2/repository`). |
+| `jenesis.module.uri` (`JENESIS_REPOSITORY_URI`) | The module index base URL (default `https://repo.jenesis.build/`), with the same list/filter/`@` grammar. |
+| `jenesis.module.token` (`JENESIS_REPOSITORY_TOKEN`) | The `Authorization` header for module index fetches. |
+| `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | The local module repository directory (default `~/.jenesis`). |
 
 <div class="warning">
   Fetches are refused over plaintext <code>http</code> - only <code>https</code> and <code>file</code> are
@@ -93,8 +95,9 @@ Each node shows the version every parent requested, the **negotiated** version i
 this project rather than fetched. A per-module *Resolved dependencies* list and a licence summary follow the
 tree. It is the fastest way to answer "why is this version on my class path?" before you pin anything.
 
-For a large closure, `-Djenesis.tree.format=compact` prints each dependency once instead of at every place it
-is reached - the shape to skim when you only want the set, not the paths through it.
+When the external closure is just noise, `-Djenesis.tree.format=compact` keeps only the `local` modules and
+folds everything external into a count per branch, so a large multi-module project shows its own shape at a
+glance.
 
 ## Version negotiation
 
@@ -106,9 +109,9 @@ matches the repository:
 - **Module** names use **first-parent-wins**: the first requirer reached in the resolution walk fixes the
   version, and a later, deeper requirer asking for a different version is ignored.
 
-To override the negotiated result, declare the version you want directly - a `<version>` (or a
-`<dependencyManagement>` entry) in Maven, or a **pin** in a modular project (below). A declared version always
-beats what negotiation would have chosen.
+To override the negotiated result, declare the version you want directly: a `<version>` (or a
+`<dependencyManagement>` entry) in Maven, or a **pin** in a modular project (the next chapter). A declared
+version always beats what negotiation would have chosen.
 
 ### Choosing a different strategy
 
@@ -122,7 +125,7 @@ side, `-Djenesis.resolver.maven` takes four values:
 | `latest` / `release` | Ignore every declared version and take the `<latest>` or `<release>` entry of each coordinate's metadata. |
 
 On the module side, `-Djenesis.resolver.module` decides what happens when two compiled `module-info` files
-record different versions of the same requirement: `first` (the default) keeps the one nearest the roots,
+record different versions of the same requirement. `first` (the default) keeps the one nearest the roots,
 `fail` reports the disagreement instead of discarding one, and `ignore` keeps no compiled version at all.
 
 <div class="warning">
@@ -134,8 +137,8 @@ record different versions of the same requirement: `first` (the default) keeps t
 
 ## Excluding a transitive
 
-A dependency can drag in a transitive you do not want. Pruning it is a Maven mechanism - an exclusion tells
-the resolver to skip a subtree of a POM - so it is available wherever a POM is read: in the `maven` layout,
+A dependency can drag in a transitive you do not want. Pruning it is a Maven mechanism (an exclusion tells
+the resolver to skip a subtree of a POM), so it is available wherever a POM is read: in the `maven` layout,
 and in the default `modular_to_maven` layout, whose `requires` resolve through Maven.
 
 In a `pom.xml` it is an `<exclusions>` block, exactly as in Maven - the excluded artifact never reaches the
@@ -166,15 +169,14 @@ module demo.sample {
 }
 ```
 
-One line names the module to prune and any number of `<groupId>/<artifactId>` targets, and repeated lines for
+One line names the module to prune and any number of `<groupId>/<artifactId>` targets. Repeated lines for
 the same module add up, so a growing list of upstream mistakes stays readable. A target is an artifact, never
 one of its variants, so it carries no version, type, or classifier. Excluding from a module the declaration
-does not `requires` is an error rather than a silent no-op - it is a typo in every case that matters.
+does not `requires` is an error rather than a silent no-op, because it is a typo in every case that matters.
 
-Either way the artifact takes the whole subtree it pulled in with it, and because it never enters the resolved
-closure there is nothing left to leak: it is off the compile and test paths, absent from the generated POM, and
-absent from the bill of materials and the compliance reports, which is the honest answer - the build genuinely
-never fetched it.
+Either way the artifact takes the whole subtree it pulled in with it. Because it never enters the resolved
+closure, there is nothing left to leak: it is off the compile and test paths, absent from the generated POM,
+and absent from the bill of materials and the compliance reports. The build genuinely never fetched it.
 
 <div class="note">
   The strict <code>modular</code> layout is the one place this does not apply. Resolution there matches module
@@ -200,20 +202,20 @@ module demo.cli {
 ```
 
 The tag maps a module name onto a `<groupId>/<artifactId>` the resolved closure already contains, and the name
-is then a module name like any other - the `opens` above is what lets args4j set the annotated fields by
-reflection. Nothing is synthesized and no jar is rewritten: the artifact is placed under the aliased file name,
-which is exactly the name the JDK derives an automatic module from, so a pinned checksum keeps describing the
-bytes on the command line.
+is then a module name like any other; the `opens` above is what lets args4j set the annotated fields by
+reflection. Nothing is synthesised and no jar is rewritten. The artifact is placed under the aliased file
+name, which is exactly the name the JDK derives an automatic module from, so a pinned checksum keeps
+describing the bytes on the command line.
 
-Two rules keep an alias predictable. It carries **no version** - the version comes from a pin, a bill of
+Two rules keep an alias predictable. It carries **no version**: the version comes from a pin, a bill of
 materials, or the closure the alias names, and is stated in one place only. And it only ever *renames*: a jar
 that already declares a `module-info` or an `Automatic-Module-Name` is rejected, because it is addressable
-under that name already. An alias also travels: a project that depends on a module which declared one inherits
-the name without redeclaring it.
+under that name already. An alias also travels. A project that depends on a module which declared one
+inherits the name without redeclaring it.
 
 <div class="tip">
   An alias does not have to be something you <code>requires</code> yourself. Naming a transitive dependency
-  the project never mentions is enough to make it a module every other module can require - which is how a
+  the project never mentions is enough to make it a module every other module can require. That is how a
   closure of plain jars is brought onto the module path one deliberate name at a time.
 </div>
 

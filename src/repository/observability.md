@@ -1,233 +1,166 @@
 ---
-order: 11
+order: 10
 title: Observability
-description: How the repository reports on itself - one instrumentation point that feeds logs, metrics and traces at once; the Micrometer naming convention and the tags it keeps off your meters; the Actuator and Prometheus endpoints; and the OTLP tracing you switch on with two settings.
+description: How a running Jenesis Repository reports on itself - recent logs over HTTP, health and metrics endpoints, the security-posture advisories, and the consistency check for a multi-node deployment.
 ---
 
-A repository you run in anger needs to tell you what it is doing: which uploads were rejected, how
-often a proxy leg misses its cache, how many sign-ins failed. Jenesis Repository is a Spring Boot
-application, so it reports through the standard **Actuator** endpoints and the **Micrometer**
-metric façade - nothing bespoke to learn. What is worth knowing is how it wires those together, and
-which two settings turn distributed tracing on.
+A repository you depend on needs to answer three questions: what is it doing, is it healthy, and is it
+configured safely. Jenesis Repository answers them over plain HTTP, so a console, a script or a monitoring
+system reads the same endpoints. This chapter covers the log tail, the health and metrics endpoints, the
+security-posture report, and the consistency check that keeps several nodes honest.
 
-## One instrumentation point, three signals
+## Who may read these endpoints
 
-Every meaningful operation in the server - a proxy fetch, a publish decision, an import, a console
-action - is wrapped once, at a single instrumentation point, as a **Micrometer observation**. From
-that one wrap the framework fans out three signals:
+`GET /api/logs`, `GET /api/consistency` and the `/actuator` endpoints show deployment-wide state - every
+repository's log lines, every node, every metric. They are therefore gated to a key that holds a
+deployment-wide `*` grant; a key scoped to one repository is refused, and so is a keyless caller even when
+anonymous read rights are granted. On a deployment that runs with authentication off, anyone can read them.
+`/actuator/health` is always open, so probes need no credential.
 
-- a **log line** when the operation finishes,
-- a **metric** (a timer, and a count of errors), and
-- a **trace span** - but only when a tracing bridge is on the module path (see *Traces*, below).
+## Recent logs
 
-You never choose per-call which signals to emit. Instrument once; configure what leaves the process
-with the settings at the end of this chapter.
-
-### The naming convention
-
-Observations are named `jenreg.<area>.<signal>` - for example `jenreg.proxy.fetch` for a
-pull-through cache leg, or `jenreg.gc.collected` for reclaimed objects. When you scan a metrics or
-trace backend, everything the repository itself raises sits under the `jenreg.` prefix; the Spring
-and Tomcat meters keep their own.
-
-### High-cardinality context vs. metric tags
-
-Each observation carries the **repository** and **tenant** it ran under. These are recorded as
-**high-cardinality key-values**: they ride along on logs and trace spans, where you want to filter by
-them, but they are deliberately **kept off the metric tags**. A busy deployment can hold
-thousands of repositories, and turning each into a metric dimension would multiply your time series
-past what a metrics backend can hold.
-
-What *does* become a metric tag is a small, bounded **outcome**: the proxy-fetch meter is tagged with
-its `format` and an `outcome` of `hit`, `miss` or `negative`; a publish observation carries its
-verdict; an import carries its source. These are low-cardinality by construction, so grouping a chart
-by them stays cheap.
-
-<div class="note">
-  An operation that runs before a tenant or repository is resolved - a deployment-wide sweep, a
-  request rejected at the door - records <code>none</code> for the missing value rather than failing.
-  So a dashboard filter on repository always has something to match.
-</div>
-
-## Logs
-
-The logging signal is always on. Each observation logs exactly **one line** when it completes, under
-the logger `build.jenesis.observation`, carrying the observation name, its key-values (repository,
-tenant, any outcome) and - if the operation failed - the error. A successful operation logs at
-`INFO`; a failed one at `WARN`.
-
-Because it is a plain SLF4J logger, you tune it like any other. Raise it to `WARN` to see only
-failures, or route it to its own appender:
-
-```properties
-logging.level.build.jenesis.observation=WARN
-```
-
-When tracing is enabled, each of these lines also carries the current **trace and span ids**, so you
-can pivot straight from a log entry to the full trace.
-
-### Reading the recent ones without shell access
-
-You do not always have the log file to hand - a container that ships its output elsewhere, or a colleague
-diagnosing a publish from the console. The server keeps its **last 1000 entries in memory** and serves them
-at `GET /api/logs`, filtered by `level`, searched with `q`, and tailed with a `since` cursor:
+The server keeps its most recent log entries in memory and serves them at `GET /api/logs`, which lets you read
+the tail without shell access to the host:
 
 ```bash
-curl -H "Jenesis-Repository-Key: $KEY" 'https://repo.example.com/api/logs?level=WARN&q=publish'
+curl -H 'Jenesis-Repository-Key: jenk_…' \
+  'http://localhost:8080/api/logs?level=WARN&q=proxy&limit=50'
 ```
 
-The console surfaces the same thing as a **Logs** panel. It is a bounded ring, never a file re-read, so it
-costs a fixed amount of memory and cannot grow: `jenreg.logs-buffer` sets how many entries it
-holds. Reading it is authorised like every other read.
-
-## Metrics
-
-Metrics are exposed through Spring Boot Actuator. By default the server publishes three Actuator
-endpoints, over the same HTTP port as the repository:
-
-| Endpoint | Serves |
-|----------|--------|
-| `/actuator/health` | Liveness and readiness. Kubernetes-style **probes** are enabled; full details show only to an authorised caller. |
-| `/actuator/info` | Build and application information. |
-| `/actuator/metrics` | The Micrometer meter registry - every `jenreg.*` observation timer plus the JVM, Tomcat and HTTP meters. |
-
-<div class="tip">
-  The health probes are never rate-limited, so an aggressive
-  <a href="/repository/rate-limiting-usage/"><code>rate-limit</code></a> setting can never make your
-  orchestrator think the server is down.
-</div>
-
-Beyond the per-operation timers, each capability publishes the few numbers that describe its own state:
-
-| Meter | Reports |
-|-------|---------|
-| `jenreg.proxy.fetch` | One timer per pull-through leg, tagged by format and outcome. Chart the miss rate to see how much load [proxying](/repository/proxying/) sheds upstream. |
-| `jenreg.proxy.revalidation.entries` | Index bodies held for conditional revalidation, a bounded gauge. |
-| `jenreg.quota.capacity` | The storage ceiling, against which stored bytes are measured. |
-| `jenreg.ratelimit.buckets` | How many rate-limit buckets are live. |
-| `jenreg.usage.tracked` / `.dropped` | Credential uses recorded, and uses shed because the tracking queue was full. |
-| `jenreg.walk.resumes` | How often an artifact walk resumed a segment rather than starting one. |
-| `jenreg.gc.condemned` / `.collected` | Objects marked unreferenced, and objects actually reclaimed. |
-| `jenreg.consistency.nodes` / `.diverged` | Live nodes compared, and how many are diverged rather than lagging. |
-
-Health checks sit beside them under `/actuator/health`: `jenreg.proxy.negativecache`,
-`jenreg.proxy.revalidation`, `jenreg.ratelimit.limiter`, `jenreg.usage.worker` and
-`jenreg.consistency.divergence` each report whether their own machinery is doing its job.
-
-<div class="note">
-  Authentication failures and shed requests are <em>recorded</em> by the components that refuse them -
-  tagged by mechanism and outcome, and by the bucket a request metered against - but the core registers no
-  meter of its own for them. A deployment that wants them charted surfaces them through whatever metrics
-  layer it installs, which is why they are absent from the table above.
-</div>
-
-### Prometheus
-
-The base server exposes metrics in Actuator's own JSON. To scrape with **Prometheus**, a distribution
-puts a Prometheus registry on the module path and adds `prometheus` to the exposed endpoints:
-
-```properties
-management.endpoints.web.exposure.include=health,info,metrics,prometheus
+```json
+{"cursor":1834,"count":2,"entries":[
+  {"seq":1821,"timestamp":"2026-08-21T09:14:02.118Z","level":"WARN",
+   "logger":"build.jenesis.observation","message":"jenreg.proxy.fetch [format=maven, outcome=miss] failed: …",
+   "tenant":"default"}]}
 ```
 
-Prometheus then scrapes `/actuator/prometheus`, and the same `jenreg.*` meters appear in its text
-exposition format with no further wiring.
+| Parameter | Meaning |
+|---|---|
+| `level` | The minimum level to return (`INFO`, `WARN`, `ERROR`). |
+| `q` | A substring matched against the logger name and the message. |
+| `since` | A sequence number; only entries after it are returned. Use the `cursor` of a previous response to tail. |
+| `limit` | The most entries to return (default 200). |
+| `tenant` | Restrict to entries stamped with this tenant. |
 
-## Traces
+The buffer holds the last 1 000 entries by default (`jenreg.logs-buffer`); older lines are gone from this
+view, but still reach your normal log output. Each entry carries a `seq`, so polling with `since=<cursor>`
+never repeats or skips a line.
 
-Distributed tracing is **off until you opt in**. The instrumentation is always present - every
-observation is span-ready - but a span is only recorded and exported when a **tracing bridge** is on
-the module path. With one there, you turn tracing on with the standard Micrometer settings: a sampling
-probability, and an **OTLP** endpoint to export spans to.
+The server's own operations log under the logger `build.jenesis.observation`: a completed operation at
+`INFO`, a failed one at `WARN` with its error. Today the one operation instrumented this way is the proxy
+fetch, `jenreg.proxy.fetch`, tagged with the `format` it served and the `outcome` - `hit` (served locally),
+`miss` (fetched from the upstream), `negative` (a remembered upstream 404), `verified` or `withheld`. Filter
+on `q=proxy.fetch` to watch your pull-through cache work.
 
-```properties
-# Sample every request while you investigate; dial down in production.
-management.tracing.sampling.probability=1.0
-# An OpenTelemetry collector speaking OTLP over HTTP.
-management.otlp.tracing.endpoint=http://otel-collector:4318/v1/traces
-```
+## Health and metrics
 
-Each span carries the same repository and tenant key-values as its log line and inherits the
-`jenreg.<area>.<signal>` name, so a trace reads as the operation it measures. And because the log
-line now carries the trace id, a warning in your logs links straight to the trace that produced it.
+The server exposes three Spring Boot Actuator endpoints: `/actuator/health`, `/actuator/info` and
+`/actuator/metrics`. Health serves the liveness and readiness probes (`/actuator/health/liveness`,
+`/actuator/health/readiness`) a container platform expects, is never rate-limited, and is readable without a
+credential. Its detail is shown only to an authorised caller (`management.endpoint.health.show-details` is
+`when-authorized`); an anonymous probe sees up or down alone.
 
-<div class="warning">
-  Sampling at <code>1.0</code> traces every request - right for a short investigation, expensive as a
-  standing default. Lower <code>management.tracing.sampling.probability</code> to a small fraction once
-  you are done, or leave tracing off entirely and rely on metrics and logs.
-</div>
+`/actuator/metrics` lists the JVM and HTTP request meters Spring Boot collects - request counts by URI and
+status, memory, threads. The proxy-fetch operation described above is also an observation, so a Micrometer
+registry on the module path receives it as a timer tagged with `format` and `outcome`. The server ships no
+registry of its own; the endpoint serves what the registry you install collects.
 
 ## Security posture
 
-Metrics tell you how the server is behaving; the **security posture** tells you how it is *configured*. Each
-module reports advisories about its own settings - a pure function of configuration, so reading it never
-changes anything - and the server collects them at `GET /api/posture` and on a console panel.
+`GET /api/posture` lists every setting that leaves the deployment less safe than it could be, each with the
+reason and the exact key and value that fix it. It never echoes a secret, so it is safe to surface on a
+dashboard:
 
 ```bash
-curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/api/posture
+curl -H 'Jenesis-Repository-Key: jenk_…' http://localhost:8080/api/posture
 ```
 
-Each advisory carries an id, a severity, what is unsafe about the setting and what to do instead - so a
-deployment running open (`jenreg.auth.open`), one seeding demo data into a writable space
-(`jenreg.demo.writable`), one whose console accepts a wildcard origin (`jenreg.console.wildcard`) or whose
-import edge will follow a private address (`jenreg.importer.ssrf`) says so out loud, at boot and on every
-read of the endpoint.
+```json
+{"count":2,"critical":1,"warn":1,"info":0,"advisories":[
+  {"id":"jenreg.auth.open","severity":"CRITICAL","scope":"DEPLOYMENT","tenant":null,
+   "title":"Authorization is disabled - the instance is fully open",
+   "why":"…","fix":"…","settingKey":"jenreg.auth","settingValue":"true","docs":"…"}]}
+```
 
-A module that is absent, or switched off, reports nothing - so the posture is a picture of what this
-deployment actually runs rather than a checklist of everything the product could do.
+The advisories the server raises:
+
+| Id | Severity | Raised when |
+|---|---|---|
+| <span id="jenreg.auth.open">`jenreg.auth.open`</span> | critical | `jenreg.auth=false` - every request is served anonymously. |
+| <span id="jenreg.profile.dev">`jenreg.profile.dev`</span> | critical | The `dev` Spring profile is active, so the console runs its local-only form login. |
+| <span id="jenreg.anonymous.write">`jenreg.anonymous.write`</span> | critical | `jenreg.anonymous-rights` grants a keyless caller write or manage rights. |
+| <span id="jenreg.anonymous.enabled">`jenreg.anonymous.enabled`</span> | warn | `jenreg.anonymous-rights` grants a keyless caller read rights (the public-mirror pattern). |
+| <span id="jenreg.importer.ssrf">`jenreg.importer.ssrf`</span> | warn | `jenreg.block-private-import-hosts=false` - an import may reach internal hosts or run over plaintext. |
+| <span id="jenreg.ratelimit.unset">`jenreg.ratelimit.unset`</span> | warn | `jenreg.rate-limit` is unset or `0`, so nothing throttles a client. |
+| <span id="jenreg.console.wildcard">`jenreg.console.wildcard`</span> | warn | `jenreg.ui.admins` contains `*`, making every signed-in console user an admin. |
+| <span id="jenreg.demo.writable">`jenreg.demo.writable`</span> | warn | `jenreg.demo=true` without `jenreg.read-only=true` - a seeded demo anyone can write to. |
+
+A clean deployment returns an empty list. The same report is shown in the console's **Security posture**
+panel, and the `jenreg.auth.open` advisory is also logged once at boot.
+
+<div class="note">
+  On an enforcing server the posture read needs a key with a deployment-wide <code>*</code> grant, like the
+  other reads above. Unlike them, it is also readable by a keyless caller once
+  <code>jenreg.anonymous-rights</code> grants read rights, since it never reveals a secret. With authentication
+  off, anyone reads it.
+</div>
 
 ## Running more than one node
 
-Several server nodes over one shared store are **eventually consistent by design**: each derives its own
-indexes from the store, so at any instant one may be slightly behind another. That is normal and harmless -
-what matters is telling it apart from a node that has stopped catching up.
+Every node is stateless; the store is the only state, so several nodes behind a load balancer share one
+bucket or one mounted directory and serve the same content. Each node derives some state from the store -
+its view of the index, its configuration - and a node that falls behind or is configured differently would
+answer differently from its peers. The consistency check makes that visible.
 
-Each node therefore publishes a small **fingerprint** of its derived state on a heartbeat - its cursor, its
-config generation, a few counters and a sampled set of pointers - and `GET /api/consistency` compares the
-fingerprints of the nodes currently alive:
+Switch it on with `jenreg.consistency.enabled=true` on every node. Each node then publishes a small
+fingerprint of its derived state to the store on a heartbeat, and `GET /api/consistency` on any node compares
+all of them:
 
 ```bash
-curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/api/consistency
+curl -H 'Jenesis-Repository-Key: jenk_…' http://localhost:8080/api/consistency
 ```
 
-The comparison distinguishes two things. A node that is **behind but still advancing** inside the staleness
-window is benign lag, and is reported as such. A node that is **alive but frozen** - its cursor unmoved for
-several sweeps - or that disagrees about something which must be identical, like the configuration
-generation or where a pointer resolves, is **diverged**, and that is a problem to act on.
+```json
+{"localNodeId":"repo-2","nodeCount":3,"liveCount":3,"converged":true,"singleNode":false,
+ "nodes":[{"nodeId":"repo-1","live":true,"stale":false,"heartbeatAgeMillis":4120,
+           "indexCursor":128934,"snapshotVersion":"…","configGeneration":"3f2a…",
+           "inventoryTotal":12894,"quotaUsed":73400320,"local":false}],
+ "divergences":[]}
+```
 
-It **detects and reports; it never blocks a request**. A divergence surfaces three ways: as a
-security-posture advisory naming the node and the fix, as metrics
-(`jenreg.consistency.nodes`, `jenreg.consistency.diverged`) with a matching health check, and as a
-**Consistency** panel in the console.
+A node is **live** while its heartbeat is younger than `jenreg.consistency.dead-after`; only live nodes take
+part in the comparison, and a fleet of one live node is always converged. A node whose last heartbeat is older
+than `staleness-window` is flagged `stale` but stays in the comparison until `dead-after`. Three kinds of
+divergence are reported, and each also appears in the security-posture report under its own id:
 
-<div class="note">
-  Off by default, because a single node has nothing to compare itself against and would only write
-  heartbeats into an otherwise clean store. A multi-node deployment sets
-  <code>jenreg.consistency.enabled=true</code> and gives each node its own
-  <code>jenreg.consistency.node-id</code> - both per node rather than shared, since they describe the
-  instance rather than the deployment. It degrades cleanly: one node reports no divergence rather than a
-  false positive.
-</div>
+| Id | Meaning |
+|---|---|
+| <span id="jenreg.consistency.config">`jenreg.consistency.config`</span> | A live node's configuration generation differs from the freshest node's - it missed a configuration change or is split from the fleet. |
+| <span id="jenreg.consistency.stuck">`jenreg.consistency.stuck`</span> | A node's index cursor has lagged behind the furthest node for longer than `sweep-interval × sweep-intervals` without advancing. Lag within that budget is not a divergence. |
+| <span id="jenreg.consistency.pointer">`jenreg.consistency.pointer`</span> | Two live nodes resolve the same pointer to different content - a client would get different bytes depending on which node answers. |
 
-<div class="tip">
-  This is what makes the per-instance caveat on the metrics above safe to rely on. The numbers a node
-  reports are its own, so a fleet reading one node's metrics sees one node's view - the consistency check
-  is how you learn whether that view is representative.
-</div>
+The check only reports; it never blocks a request.
+
+A node names itself with `jenreg.consistency.node-id`; unset, it uses the hostname, and falls back to a
+generated id (with a warning) only when no hostname is available. Give each node a stable id so a restart
+re-uses its fingerprint. Without the setting switched on, a node publishes nothing and writes no operational
+keys into the store.
 
 ## Settings
 
-The observability knobs are the standard Spring Boot properties; set them as system properties
-(`-Dmanagement.…`), environment variables, or in the deployment's configuration.
+| Key | Default | Effect |
+|---|---|---|
+| `jenreg.logs-buffer` | `1000` | Entries the in-memory log ring keeps for `GET /api/logs`. |
+| `jenreg.consistency.enabled` | `false` | Publish this node's fingerprint and take part in the consistency check. |
+| `jenreg.consistency.node-id` | the hostname | The node's stable name in the report. |
+| `jenreg.consistency.heartbeat` | the sweep interval | Milliseconds between fingerprint publications (at least 1 000). |
+| `jenreg.consistency.sweep-interval` | `60000` | Milliseconds per sweep; with `sweep-intervals`, the budget a lagging node has before it is stuck. |
+| `jenreg.consistency.sweep-intervals` | `3` | Sweeps a lagging node may take to catch up. |
+| `jenreg.consistency.staleness-window` | `300000` | Milliseconds since a node's last heartbeat after which it is flagged `stale`. |
+| `jenreg.consistency.dead-after` | `900000` | Milliseconds of silence after which a node leaves the live comparison. |
+| `management.endpoints.web.exposure.include` | `health,info,metrics` | The Actuator endpoints served. |
+| `management.endpoint.health.probes.enabled` | `true` | Serve the liveness and readiness probe groups. |
+| `management.endpoint.health.show-details` | `when-authorized` | Show health detail only to an authorised caller. |
 
-| Key | Default | Meaning |
-|-----|---------|---------|
-| `management.endpoints.web.exposure.include` | `health,info,metrics` | Which Actuator endpoints are served. Add `prometheus` to expose `/actuator/prometheus`. |
-| `management.endpoint.health.probes.enabled` | `true` | Serve separate liveness and readiness probes. |
-| `management.endpoint.health.show-details` | `when-authorized` | Show full health detail only to an authorised caller; anonymous callers see up/down alone. |
-| `logging.level.build.jenesis.observation` | `INFO` | Verbosity of the one-line-per-operation log. Raise to `WARN` for failures only. |
-| `management.tracing.sampling.probability` | `0.0` | Fraction of operations traced. `0` records no spans; `1.0` traces everything. Needs a tracing bridge on the path. |
-| `management.otlp.tracing.endpoint` | - | Where to export spans over OTLP. Unset means no export even when sampling is above zero. |
-
-Metrics and logs need no extra infrastructure - they are on the moment the server starts. Tracing is
-the one signal that asks for a bridge on the module path and a collector to receive it.
+Every `jenreg.*` key is also an environment variable (`JENREG_CONSISTENCY_ENABLED=true`) or a `-D` system
+property.

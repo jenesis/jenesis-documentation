@@ -21,13 +21,13 @@ export default function (eleventy) {
     );
   }
 
-  // The four sections as an ordered list, for the landing page and the top navigation.
+  // The five sections as an ordered list, for the landing page and the top navigation.
   eleventy.addGlobalData("sections", () => [
     { key: "tool", url: "/tool/", logo: "jenesis-tool", repo: "https://github.com/raphw/jenesis", title: "Jenesis", tagline: "The Java-native build tool." },
-    { key: "jpx", url: "/jpx/", logo: "jenesis-jpx", repo: "https://github.com/raphw/jenesis", title: "Jenesis JPX", tagline: "Runs any published module with a single command - npx for the module path." },
+    { key: "jpx", url: "/jpx/", logo: "jenesis-jpx", repo: "https://github.com/raphw/jenesis", title: "Jenesis jpx", tagline: "Runs any published module or Maven artifact with one command - npx for the module path." },
     { key: "launcher", url: "/launcher/", logo: "jenesis-launcher", repo: "https://github.com/raphw/jenesis-launcher", title: "Jenesis Launcher", tagline: "Executable jars that keep real Java modularity - no fat-jar merge." },
-    { key: "modules", url: "/modules/", logo: "jenesis-modules", repo: "https://github.com/raphw/jenesis-modules", title: "Jenesis Modules", tagline: "A catalogue of Maven Central's stably named modules - with validated ownership of every module name." },
-    { key: "repository", url: "/repository/", logo: "jenesis-repository", repo: "https://github.com/raphw/jenesis-repository", title: "Jenesis Repository", tagline: "A module-aware, database-free artifact repository with a supply-chain gate - every Maven publish is a published module too." },
+    { key: "modules", url: "/modules/", logo: "jenesis-modules", repo: "https://github.com/raphw/jenesis-modules", title: "Jenesis Module Index", tagline: "Every module name declared on Maven Central, resolved to the artifact behind it - one owner per name." },
+    { key: "repository", url: "/repository/", logo: "jenesis-repository", repo: "https://github.com/raphw/jenesis-repository", title: "Jenesis Repository", tagline: "A module-aware, database-free artifact repository for Maven, modules, OCI and raw files - a modular jar published the Maven way is a published module too." },
   ]);
 
   return {

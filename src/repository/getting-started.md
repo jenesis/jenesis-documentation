@@ -1,141 +1,110 @@
 ---
 order: 2
 title: Getting started
-description: Run a Jenesis Repository server on the filesystem - from source or as the all-in-one image - publish and consume a Maven artifact, and open the console.
+description: Run Jenesis Repository from source against a folder on disk, configure it the Spring Boot way, publish and resolve a Maven artifact, open the console, and see the alternatives - a local container image and the cloud stores.
 ---
 
-This chapter takes you from nothing to a running repository. You build the server, start it against a
-folder on disk, open its web console, and then publish a Maven artifact into it and resolve that artifact
-back with plain `mvn`. Everything later in this section assumes only what is here.
-
-The server has **no database**. Every durable thing it owns - artifacts, generated POMs, checksums,
-indexes - lives in one **store**, and the simplest store is a directory on your disk. That is where we
-start; cloud backends come later.
+This chapter takes you from nothing to a running repository. You start the server from its source against a
+folder on disk, learn how every setting reaches it, publish a Maven artifact and resolve it back, and open the
+web console. Everything later in this section assumes only what is here.
 
 ## Prerequisites
 
-You need **a JDK, version 25 or newer**, and nothing else on the server side - the repository is itself a
-Jenesis build, so it launches straight from source with the JVM, with no daemon or wrapper. To exercise it
-you also want a `mvn` on your path.
+You need **a JDK, version 25 or newer**. The server is itself a Jenesis build, so it launches straight from
+source with the JVM - no daemon, no build to install. To try publishing you also want `mvn` on your path.
 
 ```bash
 java --version      # must report 25 or above
 ```
 
-## Build the server
+## Run it from source
 
-Clone the project and run its build. Like every Jenesis build, this is one command and produces every
-module:
+Clone the project with its submodule - the build tool is pinned under `.jenesis/upstream` and `build/jenesis`
+links into it - and start the all-in-one server. The all-in-one is the `source/bundle` module: one launchable
+module that carries every format, every storage backend, the import connectors and the web console.
 
 ```bash
-git clone https://github.com/raphw/jenesis-repository.git
+git clone --recurse-submodules https://github.com/raphw/jenesis-repository.git
 cd jenesis-repository
-java build/jenesis/Project.java
+JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
+  java -Djenesis.execute.module=source+bundle build/jenesis/Execute.java
 ```
+
+The first run builds the modules it needs, then starts the server on **port 8080**. The **filesystem store is
+the default**, so the only thing you told it was where to keep its data; without `JENREG_FILESYSTEM_ROOT` it
+uses `/var/lib/jenesis-repository`. That folder is the whole repository: artifacts, checksums, indexes and
+settings all live there, and backing it up backs up the server.
 
 <div class="note">
-  The server is built with Jenesis the same way any project is - the same <code>Project.java</code>,
-  selectors, and module syntax the <a href="/tool/getting-started/">tool section</a> covers. To build just
-  one backend and its dependencies you name its module, for example
-  <code>java build/jenesis/Project.java +source+store+s3</code>.
+  <code>Execute.java</code> is the build tool's runner: it builds the named module's subtree and launches its
+  declared main class. The <a href="/tool/building-and-running/">build tool section</a> covers it; here you only
+  need the one command.
 </div>
 
-## Run it on the filesystem
+## How configuration reaches the server
 
-Start the server and point it at a directory. The **filesystem backend is the default**, so you select
-nothing - you just tell it where to keep its data with `JENREG_FILESYSTEM_ROOT`:
+The server is a Spring Boot application, and every setting is a `jenreg.*` property that Spring Boot binds
+the usual ways. Pick whichever suits where the server runs - they are all the same property:
 
-```bash
-JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
-  java -Djenesis.execute.module=source+server build/jenesis/Execute.java
-```
+| Form | Example | Typical use |
+| --- | --- | --- |
+| Environment variable | `JENREG_STORE=s3` | Containers and systemd units; dots become underscores, upper-cased |
+| System property | `-Djenreg.store=s3` before `build/jenesis/Execute.java` | A one-off run from the command line |
+| Properties file | `jenreg.store=s3` in `allinone.properties` in the working directory, or its `config/` subfolder | A deployment that keeps its settings in a file |
+| Spring profile | `SPRING_PROFILES_ACTIVE=dev` | Switching a named set of settings on, such as the local-login profile below |
 
-That is a complete, running repository. The server itself is **stateless and format-neutral**: it
-discovers whichever layouts, storage backends, importers, and the console are on its module path at
-startup and dispatches to them. A standard build puts the Maven layout, the Jenesis module layout, the
-OCI/Docker registry, the filesystem store, and the web console on that path - so the command above already
-serves all of them.
-
-The server listens on **port 8080** by default. Everything below assumes `http://localhost:8080`.
-
-### Where your data lands
-
-Inside the store, every artifact lives under a `<tenant>/<repository>/…` space. Both default to `default`,
-so a fresh deployment writes under `default/default/`:
-
-```bash
--Djenreg.tenant=default -Djenreg.repository=default   # the defaults
-```
-
-Blobs are **content-addressed** - identical bytes are stored once, so a re-deploy of unchanged content
-needs no new space. You never edit files under the root by hand.
-
-<div class="tip">
-  To run on a cloud object store instead - S3, GCS/MinIO, or Azure Blob - you select the backend and give
-  it a bucket or connection string. That is the subject of the <strong>Storage</strong> chapter; the
-  filesystem backend here needs no selection at all.
-</div>
-
-## Or run the all-in-one image
-
-If you would rather run a container than a JDK, the clone also builds the **all-in-one image**: one image
-carrying every format, every storage backend, every import connector, the token exchange, the rate limiter,
-the usage tracker, and the web console -
-
-```bash
-docker build -t jenesis-repository:free .
-docker run -p 8080:8080 -v jenesis-data:/data jenesis-repository:free
-```
-
-The store defaults to the filesystem under `/data` (mount a volume there), and the server listens on
-port 8080 - the same running repository as above. Everything on board is **on until configured off**, and
-because every `jenreg.*` key is also an environment variable, the image is shaped with
-`docker run -e` rather than rebuilt:
-
-```bash
-# disable the Maven layout; select the S3 backend
-docker run -p 8080:8080 \
-  -e JENREG_MAVEN=false \
-  -e JENREG_STORE=s3 -e JENREG_S3_BUCKET=my-artifacts \
-  jenesis-repository:free
-```
-
-A capability that needs configuration it does not have - a cloud backend without its bucket, the token
-exchange without a trust - simply disables itself until its keys arrive. The trim convention is covered in
-[Feature toggles & implementation selection](/repository/configuration-reference/); the same image also runs
-the web console as a second container against the same store
-(`docker run -e MAINCLASS=build.jenesis.repository.bundle.Console -e PORT=8081 …`).
-
-## Open the console
-
-The web console is at **`/console`** - browse repositories and artifacts and view their configuration. A
-generic, breadcrumbed file browser over any repository's namespace is at **`/browse`**.
-
-Sign-in is OAuth2 / OIDC. For a **local run**, start with the `dev` profile, which swaps in a built-in
-`admin` / `admin` form login so you can sign in without configuring an identity provider:
-
-```bash
-SPRING_PROFILES_ACTIVE=dev JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
-  java -Djenesis.execute.module=source+server build/jenesis/Execute.java
-```
+Two conventions cover most of what you will set. `jenreg.<feature>=false` switches a discovered module off as
+if it were not installed - `JENREG_MAVEN=false` drops the Maven layout, `JENREG_OCI=false` the registry.
+`jenreg.<choice>=<name>` selects among alternatives - `JENREG_STORE=s3` picks the S3 backend instead of the
+filesystem. Everything on the module path is on until you configure it off.
 
 <div class="warning">
-  The <code>dev</code> profile and its <code>admin</code>/<code>admin</code> login are for local use only.
-  Real deployments authenticate over OIDC and per-tenant keys - covered in the
-  <strong>Authentication &amp; access</strong> chapter.
+  The all-in-one server reads <code>allinone.properties</code>, not <code>application.properties</code>, so
+  that the server and the console can share one module path. Name a settings file accordingly.
 </div>
 
+## A first local run, open
+
+The server **enforces key-based authentication by default**: every request must carry a valid repository key,
+and a request without one is refused. The server ships no command that creates a key, so for a local trial
+you switch enforcement off:
+
+```bash
+JENREG_AUTH=false JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
+  java -Djenesis.execute.module=source+bundle build/jenesis/Execute.java
+```
+
+Running open is never silent. The server logs a warning at boot and reports the `jenreg.auth.open` advisory at
+`GET /api/posture`, so an open deployment says so wherever an operator looks. It is the right setting for a
+laptop or a trusted network; for anything reachable from outside, read *Authentication & access* before you
+expose it.
+
 <div class="tip">
-  A brand-new server is empty, which makes it hard to judge. Start it with
-  <code>-Djenreg.demo=true</code> and it seeds itself with real artifacts in the background,
-  pulled through the normal proxy path. It refuses a repository that already holds anything, so it can never
-  touch a real one.
+  An empty repository is hard to judge. Add <code>-Djenreg.demo=true</code> and the server seeds itself in the
+  background with a few real, harmless releases pulled from the public registries - Maven Central for the
+  Maven layout. It needs outbound network access, and it refuses a repository that already holds anything, so
+  it can never touch a real one.
 </div>
+
+## Let it proxy Maven Central
+
+Nothing is proxied until you name an upstream. One setting per format turns pull-through on; for the Maven
+layout:
+
+```bash
+JENREG_AUTH=false JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
+JENREG_PROXY_MAVEN=https://repo1.maven.org/maven2/ \
+  java -Djenesis.execute.module=source+bundle build/jenesis/Execute.java
+```
+
+With that set, a request for an artifact the server does not hold is fetched from Central, stored, and served
+- and every later request is a local hit. One URL then serves both your own artifacts and everything on
+Central, so a build needs only one repository entry. *Proxying* covers revalidation and the negative cache.
 
 ## Publish a Maven artifact
 
-The Maven layout is served under **`/repository/maven/`**, so that URL is a drop-in Maven repository for
-both publishing and resolving. Point a project's `distributionManagement` at it:
+The Maven layout is served under **`/repository/maven/`**, a drop-in Maven repository URL for publishing and
+resolving alike. Point a project's `distributionManagement` at it:
 
 ```xml
 <distributionManagement>
@@ -146,34 +115,21 @@ both publishing and resolving. Point a project's `distributionManagement` at it:
 </distributionManagement>
 ```
 
-Supply credentials for that `id` in your `~/.m2/settings.xml` (for the local `dev` run above, the
-built-in login):
-
-```xml
-<servers>
-  <server>
-    <id>jenesis</id>
-    <username>admin</username>
-    <password>admin</password>
-  </server>
-</servers>
-```
-
-Then deploy as usual:
+With authentication off no credentials are needed, so deploy as usual:
 
 ```bash
 mvn deploy
 ```
 
-The server stores the uploaded jar and, when you publish a module, **computes its POM** so the artifact is
-consumable even if you never uploaded one. A published `maven-metadata.xml` is stored and served back
-**verbatim**. If the jar is a real Java module, it is also **cross-published into the module layout** by
-module name, so a Jenesis `modular` build can resolve it without any extra step.
+The server stores the jar, the POM and the checksums exactly as Maven uploaded them. A `maven-metadata.xml`
+is stored and served back verbatim. If the jar is a Java module - it carries a `module-info` or an
+`Automatic-Module-Name` - the server also **publishes it into the module layout** under its module name, so a
+Jenesis build can resolve it by `requires` with no extra step.
 
-## Consume it with `mvn`
+## Resolve it
 
-Resolving is the same URL as a `<repository>`. Any Maven, Gradle, or Jenesis Maven-mode build can now pull
-your artifact:
+Resolving uses the same URL as a `<repository>`. Any Maven or Gradle build can now pull your artifact, and
+whatever it proxies:
 
 ```xml
 <repository>
@@ -182,23 +138,73 @@ your artifact:
 </repository>
 ```
 
-The Maven layout also **proxies Maven Central**, so this single URL serves both your own artifacts and
-everything from Central - you can point a build's mirror at it and resolve the whole graph through one
-endpoint.
-
-## Point a Jenesis build at it
-
-A Jenesis build needs no new client - it points at the running repository with the existing knobs:
+A Jenesis build needs no new client. It points both of its repositories at the server, the Maven one for
+`pom.xml` projects and the module one for `requires` resolution:
 
 ```bash
--Djenesis.maven.uri=https://repo.example.com/repository/maven/
--Djenesis.module.uri=https://repo.example.com/repository/
--Djenesis.module.token=jenk_<tenant>.<secret>
+java -Djenesis.maven.uri=http://localhost:8080/repository/maven/ \
+     -Djenesis.module.uri=http://localhost:8080/repository/ \
+     -Djenesis.repository.insecure=true \
+     build/jenesis/Project.java
 ```
 
-The Maven URI feeds Maven-mode resolution; the module URI and token feed module-name resolution against
-the same server. See the tool section's [Dependencies](/tool/dependencies/) chapter for how those knobs
-fit into a build.
+`jenesis.repository.insecure` is needed only because this is plain `http://` on localhost; a build refuses a
+plaintext repository otherwise. The *[Dependencies](/tool/dependencies/)* chapter of the build tool explains
+both settings and their environment-variable forms.
 
-You now have a working repository. The next chapter, **Architecture**, explains the plug-in model behind it -
-why every layout, backend, and screen is a discovered module over one content-addressed store.
+## Open the console
+
+The web console is a **second process** that reads the same store. Start it from the same clone with the
+console's main class, on its own port:
+
+```bash
+PORT=8081 SPRING_PROFILES_ACTIVE=dev JENREG_UI_SECURE_COOKIE=false \
+JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
+  java -Djenesis.execute.module=source+bundle \
+       -Djenesis.execute.mainClass=build.jenesis.repository.bundle.Console \
+       build/jenesis/Execute.java
+```
+
+Open `http://localhost:8081/console` and sign in as `admin` / `admin`. The `dev` profile swaps the console's
+OAuth sign-in for a built-in form login with two accounts, `admin`/`admin` and `viewer`/`viewer`, so you can
+look around without configuring an identity provider. `JENREG_UI_SECURE_COOKIE=false` lets the session cookie
+travel over plain HTTP; leave it at its default behind HTTPS.
+
+<div class="warning">
+  The <code>dev</code> profile is for local use only. A real deployment signs in over GitHub or an OpenID
+  Connect provider, configured in <em>The console</em>.
+</div>
+
+## The alternatives
+
+**A container image, built locally.** If you would rather run a container than a JDK, the clone builds one:
+the `Dockerfile` packages the same all-in-one module, boots the server on 8080, and keeps its data under `/data`.
+
+```bash
+docker build -t jenesis-repository .
+docker run -p 8080:8080 -e JENREG_AUTH=false -v jenesis-data:/data jenesis-repository
+```
+
+Every setting above applies unchanged, because the image is shaped with `-e` rather than rebuilt. The same
+image runs the console instead of the server with `-e MAINCLASS=build.jenesis.repository.bundle.Console -e
+PORT=8081`.
+
+**A cloud store instead of a folder.** The filesystem is the default, but the server runs the same on an
+object store, which is how you run it stateless and behind a load balancer. You select the backend and give
+it a bucket:
+
+| Store | Select with | Then set |
+| --- | --- | --- |
+| A directory | `JENREG_STORE=filesystem` *(default)* | `JENREG_FILESYSTEM_ROOT` |
+| S3, or an S3-compatible service such as MinIO | `JENREG_STORE=s3` | `JENREG_S3_BUCKET`, credentials, an endpoint for a compatible service |
+| Google Cloud Storage | `JENREG_STORE=gcs` | `JENREG_GCS_BUCKET` |
+| Azure Blob Storage | `JENREG_STORE=azure-blob` | the connection string and container |
+
+*Storage* covers each backend, its credentials, and the storage quota.
+
+## Where to go next
+
+You now have a running repository that proxies Central, holds an artifact of your own, and shows it in the
+console. *Architecture* explains the plugin model behind it in a few pages; after that, each chapter covers
+one capability - storage, formats, proxying, access, import, observability and the console - with its
+settings at the end, and the *Configuration reference* lists every setting in one place.

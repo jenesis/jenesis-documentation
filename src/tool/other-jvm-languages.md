@@ -5,9 +5,10 @@ description: Compiling Kotlin, Scala and Groovy - alone or mixed with Java in on
 ---
 
 Jenesis is not a Java-only build tool. Drop `.kt`, `.scala` or `.groovy` sources into a module and it resolves
-the matching compiler and builds them, mixed freely with Java, into one modular jar and its generated POM - with
-**no build script to write**. You do not turn a language on; Jenesis detects it from the file extensions present
-and wires the right compiler into the same step graph *[Core concepts](/tool/core-concepts/)* described.
+the matching compiler and builds them, mixed freely with Java, into one modular jar and its generated POM, with
+**no build script to write**. You do not turn a language on. Jenesis detects it from the file extensions
+present and wires the right compiler into the same step graph *[Core concepts](/tool/core-concepts/)*
+described.
 
 This chapter covers what changes when a module holds more than Java: how two compilers share one module, the one
 rule that decides which packages you can export, the standard-library dependency each language needs, their
@@ -35,9 +36,9 @@ Java output, then `groovyc` compiles the `.groovy` sources, reaching Java types 
 already produced.
 
 <div class="note">
-  <strong>Scala and <code>module-info.java</code>.</strong> <code>scalac</code>'s Java parser cannot read a
-  module declaration - it trips over the dotted module name - so Jenesis withholds <code>module-info.java</code>
-  from <code>scalac</code> and lets <code>javac</code> own it. <code>scalac</code> still receives your other
+  <strong>Who owns <code>module-info.java</code>.</strong> Neither <code>kotlinc</code> nor <code>scalac</code>
+  is handed the module declaration; <code>javac</code> always owns it. For <code>scalac</code> that is a
+  necessity, since its Java parser trips over the dotted module name. Both compilers still receive your other
   <code>.java</code> sources for resolution.
 </div>
 
@@ -109,9 +110,9 @@ nothing.
 | Scala | Scalastyle, scalafmt | `scalastyle-config.xml`, `.scalafmt.conf` | scalafmt (`.scalafmt.conf`) |
 | Groovy | CodeNarc | `codenarc.xml` | *(none)* |
 
-As with the Java tools, the linters are **report-only by default** and the formatters run in **verify mode** -
+As with the Java tools, the linters are **report-only by default** and the formatters run in **verify mode**:
 a normal build fails if a source file is not already formatted but never rewrites it. Rewrite in place with the
-same switch that drives `google-java-format`, `-Djenesis.format.rewrite=true`; it flips ktlint (to `ktlint -F`)
+same switch that drives the Java formatter, `-Djenesis.format.rewrite=true`; it flips ktlint (to `ktlint -F`)
 and scalafmt together with the Java formatter.
 
 <div class="note">
@@ -137,11 +138,11 @@ module demo.serialize {
 }
 ```
 
-Jenesis resolves the plugin under the `kotlinc` group, and the Kotlin compiler picks up the jar and self-loads it
-through its `CompilerPluginRegistrar` - you never name an entry point. Above, the `kotlinx.serialization` plugin
-generates a `@Serializable` class's `serializer()`, and the `requires` provides the annotation and the runtime
-types the generated code references. The Scala path is identical: `@jenesis.plugin scalac <coordinate>` resolves
-in the `scalac` group, and `scalac` loads the plugin the same way.
+Jenesis resolves the plugin under the `kotlinc` group, and the Kotlin compiler picks up the jar and loads it
+itself - you never name an entry point. Above, the `kotlinx.serialization` plugin generates a `@Serializable`
+class's `serializer()`, and the `requires` provides the annotation and the runtime types the generated code
+references. The Scala path is identical: `@jenesis.plugin scalac <coordinate>` resolves in the `scalac`
+group, and `scalac` loads the plugin the same way.
 
 <div class="warning">
   A plugin runs <strong>only because it is declared</strong>. Delete the <code>@jenesis.plugin</code> line and
@@ -154,14 +155,14 @@ The plugin's version is pinned the usual way, coordinated to the compiler - the 
 
 ## API documentation
 
-When you build documentation jars (`jenesis.project.documentation`, *Building & running*), each language uses its
-own documentation tool - Dokka for Kotlin, `scaladoc` for Scala, `groovydoc` for Groovy, `javadoc` for Java. You
-do not configure this; Jenesis scans the sources and picks tools to cover the languages present. When **one tool
-can document every language in the module** it runs alone and renders a single document (Java + Kotlin is one
-Dokka document, Java + Groovy one groovydoc document). Only an incompatible mix - Java + Scala, or three or more
-languages - splits the output, with `javadoc` rendering the Java at the archive root and each remaining language
-in its own subfolder. Either way the produced `-javadoc.jar` always has a root `index.html`, so it satisfies a
-repository like Maven Central.
+When you build documentation jars (`jenesis.project.documentation`, *Building & running*), each language uses
+its own documentation tool: Dokka for Kotlin, `scaladoc` for Scala, `groovydoc` for Groovy, `javadoc` for
+Java. You do not configure this; Jenesis scans the sources and picks tools to cover the languages present.
+When **one tool can document every language in the module** it runs alone and renders a single document:
+Java + Kotlin is one Dokka document, Java + Groovy one groovydoc document. Any mix that includes Scala, or
+Kotlin together with Groovy, splits the output, with `javadoc` rendering the Java at the archive root and
+each remaining language in its own subfolder. Either way the produced `-javadoc.jar` always has a root
+`index.html`, so it satisfies a repository like Maven Central.
 
 <div class="tip">
   Seven runnable demos exercise this chapter - a language mixed with Java, its quality tools, and a plugin:

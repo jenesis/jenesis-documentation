@@ -34,7 +34,7 @@
     --app-radius-md: 0.5rem;
     --app-radius-lg: 0.75rem;
 
-    /* Uniform icon box (see the Icon SPI, W4.2): square, currentColor-friendly. */
+    /* Uniform icon box (see the Icon SPI): square, currentColor-friendly. */
     --app-icon-size: 1.25rem;
 
     /* Status palette - the semantic colours for the badge/pill. Both light and dark values are defined so no
@@ -314,7 +314,7 @@
 .app-badge--muted { background: var(--app-status-muted-bg); color: var(--app-status-muted-fg); }
 
 /* ---- Icon ------------------------------------------------------------------------------------------------- */
-/* SPI-provided icons (W4.2) render at a uniform size and inherit the text colour so they invert with the theme. */
+/* SPI-provided icons render at a uniform size and inherit the text colour so they invert with the theme. */
 .app-icon {
     display: inline-block;
     width: var(--app-icon-size);

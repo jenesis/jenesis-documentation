@@ -22,36 +22,44 @@ java --version
 
 A Jenesis build lives *with* your project: its engine ships as plain Java source under `build/jenesis/`, and
 you launch it with the JVM's single-file source mode. Installing is really just populating that
-`build/jenesis/` folder. There are three equivalent ways to do it - all land at the same on-disk state, so
+`build/jenesis/` folder. There are three equivalent ways to do it. All land at the same on-disk state, so
 the canonical `java build/jenesis/Project.java` command works identically afterwards. Pick by how you prefer
 to manage versions.
 
-### SDKMAN (recommended)
+### A package manager (recommended)
 
 Best when you would rather manage the tool version globally than vendor its sources into every project.
-Install once, then initialise each project from the installed SDK:
+Install once with SDKMAN, Homebrew, or Scoop, then initialise each project from the installed copy:
 
 ```bash
-sdk install jenesis
+sdk install jenesis                # SDKMAN
+brew install raphw/tap/jenesis     # Homebrew
+scoop bucket add raphw https://github.com/raphw/scoop-bucket && scoop install jenesis   # Scoop
+
 jenesis-init                       # run from your project root
-java build/jenesis/Project.java    # or just 'jenesis', equivalent
+java build/jenesis/Project.java
 ```
 
 `jenesis-init` writes `build/jenesis/` into the current directory (pass one or more paths to initialise
-several projects at once). Once the SDK is installed you also get a `jenesis` command that is a thin
-launcher around the same engine: `jenesis +sources` is exactly `java build/jenesis/Project.java +sources`
-run from a project root.
+several projects at once). From then on the project builds with the canonical command, and needs nothing but
+a JDK.
+
+The install also puts a `jenesis` command on your path. It runs the *installed* engine, not the copy under
+`build/jenesis/`, so `jenesis +sources` builds the current directory with the installed version. The two
+give the same result whenever the embedded copy and the installed copy are the same version, which is what
+`jenesis-version` and `jenesis-validate` check for you.
 
 <div class="tip">
   You can skip embedding entirely and run <code>jenesis</code> from a project root with no
-  <code>build/jenesis/</code> at all - the SDK's own copy builds the current directory. That is handy for a
-  quick trial or for building an untrusted project while keeping Jenesis itself the trusted, SDK-installed
-  copy. In that mode you can only tune the build through system properties, not custom build code.
+  <code>build/jenesis/</code> at all. That is handy for a quick trial, or for building an untrusted project
+  while keeping Jenesis itself the trusted, installed copy. In that mode you can only tune the build through
+  system properties, not custom build code.
 </div>
 
-The SDK also ships companion scripts: `jenesis-exec` runs a module's `main` the way `jenesis` runs the build,
-`jenesis-version` and `jenesis-validate` check that a project's embedded `build/jenesis/` matches the installed
-version, and `jenesis-switch` moves the current shell to the version a project records.
+The install ships a few companion commands. `jenesis-exec` runs a module's `main` the way `jenesis` runs the
+build. `jenesis-version` and `jenesis-validate` check that a project's embedded `build/jenesis/` matches the
+installed version. `jenesis-switch` moves the current shell to the version a project records; source it, as
+`. jenesis-switch`, since it changes the calling shell.
 
 ### curl bootstrap
 
@@ -74,7 +82,7 @@ every fresh checkout stays cheap:
 
 ```bash
 git submodule add --depth 1 https://github.com/raphw/jenesis.git .jenesis
-git config -f .gitmodules submodule..jenesis.shallow true
+git config -f .gitmodules submodule..jenesis.shallow true   # the submodule is named ".jenesis"
 ln -s ../.jenesis/sources/build/jenesis build/jenesis
 java build/jenesis/Project.java
 ```
@@ -84,8 +92,8 @@ build/jenesis` and refresh the copy after each submodule update.
 
 ## Building an example end to end
 
-The Jenesis repository ships a runnable example for every feature under `demo/`. Clone it and build the
-simplest one - a single-module Java project in the classic Maven layout:
+The `raphw/jenesis` repository ships a runnable example for every feature under `demo/`. Clone it and build
+the simplest one - a single-module Java project described by a `pom.xml`:
 
 ```bash
 git clone https://github.com/raphw/jenesis.git
@@ -96,13 +104,13 @@ java build/jenesis/Project.java
 There is no build script to write. The project is just a `pom.xml` and a source file that uses Apache
 Commons Lang. Pointed at that directory, Jenesis:
 
-1. **auto-detects the layout** - a `pom.xml` at the root selects the `MAVEN` layout;
+1. **auto-detects the layout** - a `pom.xml` at the root selects the `maven` layout;
 2. **resolves and downloads** the declared `commons-lang3` dependency from Maven Central (or your local
    `~/.m2`);
 3. **compiles** the sources against it with the JDK's `javac`; and
 4. **packages** a jar under `target/`.
 
-Because every step is content-hashed, the first run does the work and a second run reuses it - nothing
+Because every step is content-hashed, the first run does the work and a second run reuses it. Nothing
 recompiles until an input actually changes.
 
 ### Reading what it resolved
@@ -121,8 +129,8 @@ maven/org.apache.commons/commons-lang3 3.14.0 [compile] (module org.apache.commo
 
 Each line shows the resolution key, the resolved version, the Maven scope, the resolved **Java module name**,
 and the declared **licence** - Jenesis reads a real module graph, not a flat class path. The `commons-lang3`
-version here is fixed to an exact release and content checksum, because this demo ships *pinned*;
-dependencies and pinning have their own chapter later.
+version here is fixed to an exact release and content checksum, because this demo ships *pinned*.
+Dependencies and pinning each have their own chapter later.
 
 <div class="tip">
   Want the same project in a modular shape, or spread across several modules? The four foundational
@@ -135,15 +143,15 @@ dependencies and pinning have their own chapter later.
 
 Everything you ran above went through one file: `build/jenesis/Project.java`. It is a normal Java source
 file, and `Project` itself is a small Java **record** - so a build is configured as code, not markup. You
-almost never edit it; instead you either flip system properties on the command line or, for code-level
-control, write a tiny launcher of your own next to it (covered in *[Extending the build](/tool/extending-the-build/)*).
+almost never edit it. Instead you flip system properties on the command line or, for code-level control,
+write a tiny entry point of your own next to it (covered in *[Extending the build](/tool/extending-the-build/)*).
 
-Four fields carry the knobs you reach for first. Each has a `jenesis.project.*` system property that sets it
-before the build starts, and a matching in-code method (a "wither") for a custom launcher.
+Four fields carry the knobs you reach for first. Three have a `jenesis.project.*` system property that sets
+them before the build starts; all four have a matching in-code method for a custom entry point.
 
 | Field | Property | Default | What it is |
 | --- | --- | --- | --- |
-| `root` | `jenesis.project.root` | `.` | The directory Jenesis scans for `module-info.java` / `pom.xml`. |
+| `root` | `jenesis.project.root` | `.` | The directory Jenesis scans for `module-info.java` / `pom.xml`. Command line only. |
 | `target` | `jenesis.project.target` | `target` | Where every build output is written. Safe to delete for a clean build. |
 | `layout` | `jenesis.project.layout` | `auto` | How the project is shaped and how dependencies resolve. |
 | `defaultTarget` | *(none)* | `build` | What runs when you pass no selector. |
@@ -179,7 +187,7 @@ every discovered module. The other targets the shipped layouts register:
 | --- | --- |
 | `build` | Compile, test, and jar every module *(the default)*. |
 | `stage` | The full release recipe - build, then lay out a publishable tree under `target/stage/`. |
-| `export` | Publish the staged tree into your local Maven / module repository. |
+| `export` | Publish the staged tree into your local Maven repository (`~/.m2`), your local module repository (`~/.jenesis`), or both, as the layout dictates. |
 | `pin` | Rewrite every `pom.xml` / `module-info.java` to pin the full resolved dependency closure. |
 | `dependencies` | Print each module's resolved dependency graph with licences (shown above). |
 | `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata. |
