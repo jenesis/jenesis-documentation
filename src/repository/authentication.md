@@ -82,14 +82,28 @@ serve from it.
 
 ## Keys, grants and roles
 
-With enforcement on, a client identifies itself with a key in the `Jenesis-Repository-Key` header. A `GET`
-or `HEAD` needs the `repository:read` right on the requested path; any other method needs
-`repository:write`. A request without a key is answered `401`; one whose key lacks the right is answered
-`403`. Where the route does not already name the repository, `Jenesis-Repository-Name` does.
+With enforcement on, a client identifies itself with a key. A `GET` or `HEAD` needs the `repository:read`
+right on the requested path; any other method needs `repository:write`. A request without a key is answered
+`401`; one whose key lacks the right is answered `403`. Where the route does not already name the
+repository, `Jenesis-Repository-Name` does.
+
+The key travels in whichever header the client can send:
+
+| Header | Who sends it that way |
+|---|---|
+| `Jenesis-Repository-Key: jenk_…` | The server's own header - `curl`, scripts, the console panels, Maven's `<httpHeaders>`. It wins when present. |
+| `Authorization: Bearer jenk_…` (or the bare key) | A Jenesis build, whose `jenesis.maven.token` / `jenesis.module.token` go out as the `Authorization` header; Gradle's `HttpHeaderCredentials`; any bearer-token client. |
+| `Authorization: Basic …` with the key as the password | `docker login -u anyone -p jenk_…` - the user name is ignored. |
+
+Only a well-formed key is ever read out of `Authorization`; anything else in that header is treated as no
+key at all, never as a credential.
 
 ```bash
 curl -H "Jenesis-Repository-Key: jenk_default.…" \
      -T app-1.0.jar http://repo.example.com/repository/maven/com/example/app/1.0/app-1.0.jar
+
+java -Djenesis.maven.uri=https://repo.example.com/repository/maven/ \
+     -Djenesis.maven.token=jenk_default.… build/jenesis/Project.java
 ```
 
 The `jenk_` prefix and the trailing checksum let a secret scanner recognise a leaked key and let the server
@@ -114,13 +128,10 @@ source-address allowlist, and is checked against its stored grants on every requ
 revoked key stops working at once.
 
 <div class="note">
-  A Jenesis build sends its <code>jenesis.maven.token</code> / <code>jenesis.module.token</code> as an
-  <code>Authorization</code> header, which Jenesis Repository does not consult. Give builds read access
-  through <code>jenreg.anonymous-rights=repository:read</code>; publishing with a key is done with Maven,
-  <code>curl</code> or any client that can set the <code>Jenesis-Repository-Key</code> header - in Maven's
-  <code>settings.xml</code>, the server's <code>&lt;configuration&gt;&lt;httpHeaders&gt;</code> block.
+  Maven itself has no bearer-token setting, so a Maven client presents the server's own header: in
+  <code>settings.xml</code>, the server's <code>&lt;configuration&gt;&lt;httpHeaders&gt;</code> block with
+  a <code>Jenesis-Repository-Key</code> property.
 </div>
-
 ## Issuing and revoking keys
 
 Keys are administered through `/api/credentials`. Issuing a key is administration, not publishing, so the
