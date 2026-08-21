@@ -1,20 +1,54 @@
 ---
 order: 7
 title: Authentication & access
-description: How a deployment decides who may read and publish - running open on a trusted network, serving a public read-only mirror, the key credential the server enforces by default, and signing in to the console.
+description: How a deployment decides who may read and publish - the bootstrap key that gets you the first credential, issuing and revoking keys, running open on a trusted network, a public read-only mirror, and signing in to the console.
 ---
 
 A fresh Jenesis Repository **enforces** authentication: every request is checked against a per-credential
 key, and a request that carries none is refused. Before you expose a server to anyone else, you choose how
-it identifies callers. There are three deployment shapes, and this chapter takes them in the order you are
-likely to meet them: an open server on a trusted network, a public read-only mirror, and a key-gated server.
-Signing in to the web console is a separate matter, covered at the end.
+it identifies callers. There are three deployment shapes: a key-gated server, which starts from a bootstrap
+key; an open server on a trusted network; and a public read-only mirror. The chapter then covers the keys
+themselves - their grants, and how to issue and revoke them. Signing in to the web console is a separate
+matter, covered at the end.
 
 ## Three ways to deploy
 
+### Key-gated, starting from a bootstrap key
+
+A real deployment keeps enforcement on and issues each client a key of its own. The first key is the one
+problem: every route that can mint a key requires one already. `jenreg.bootstrap-key` solves that - a key you
+choose, which the server provisions at boot with every right on every repository of its tenant, and which
+you then use to issue the keys you actually want.
+
+A key is a self-describing string, `jenk_<tenant>.<secret><checksum>`, and the bootstrap key has to be
+well-formed because the server reads the tenant out of it. Generate one with a few lines of Python (the
+checksum is the CRC32 of everything before it, base64url-encoded without padding):
+
+```bash
+python3 - <<'EOF'
+import base64, os, zlib
+body = "jenk_default." + base64.urlsafe_b64encode(os.urandom(24)).rstrip(b"=").decode()
+crc = zlib.crc32(body.encode()) & 0xffffffff
+print(body + base64.urlsafe_b64encode(crc.to_bytes(4, "big")).rstrip(b"=").decode())
+EOF
+```
+
+Start the server with it, once:
+
+```bash
+JENREG_BOOTSTRAP_KEY=jenk_default.… JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
+  java -Djenesis.execute.module=source+bundle build/jenesis/Execute.java
+```
+
+A malformed value refuses to boot rather than being ignored, and the server logs a `SECURITY` line for as
+long as the setting is present: the bootstrap key never expires, is re-provisioned on every boot, and grants
+everything. Use it to issue real credentials (below), then unset it and restart - its entry stays in the
+store until you revoke it like any other key.
+
 ### Open, on a trusted network
 
-For a laptop, a CI network, or any deployment that lives behind its own perimeter, switch enforcement off:
+For a laptop, a CI network, or any deployment that lives behind its own perimeter, you can skip keys
+altogether:
 
 ```bash
 JENREG_AUTH=false
@@ -46,26 +80,22 @@ artifact - at the store itself, so no credential and no internal path gets aroun
 one firewalled read-write instance that publishes into a shared bucket with public read-only instances that
 serve from it.
 
-### Key-gated access
+## Keys, grants and roles
 
 With enforcement on, a client identifies itself with a key in the `Jenesis-Repository-Key` header. A `GET`
 or `HEAD` needs the `repository:read` right on the requested path; any other method needs
-`repository:write`. Where the route does not already name the repository, `Jenesis-Repository-Name` does.
+`repository:write`. A request without a key is answered `401`; one whose key lacks the right is answered
+`403`. Where the route does not already name the repository, `Jenesis-Repository-Name` does.
 
 ```bash
 curl -H "Jenesis-Repository-Key: jenk_default.…" \
      -T app-1.0.jar http://repo.example.com/repository/maven/com/example/app/1.0/app-1.0.jar
 ```
 
-A key is a self-describing string:
-
-```
-jenk_<tenant>.<secret><checksum>
-```
-
 The `jenk_` prefix and the trailing checksum let a secret scanner recognise a leaked key and let the server
-reject a malformed one without a store lookup. The owner travels in the key, so a request is attributed
-without a directory read, and only the key's SHA-256 hash is ever stored.
+reject a malformed one without a store lookup. The tenant travels in the key, so a request is attributed
+without a directory read, and only the key's SHA-256 hash is ever stored - a lost key is re-issued, never
+recovered.
 
 A key's rights are a map from **scope** to **rights**. A scope is a repository name (`*` for every
 repository), optionally narrowed to a path prefix as `<repository>:<prefix>`, which covers a request only
@@ -79,15 +109,59 @@ verbs and a bare `*` grants everything. Three built-in roles bundle them:
 | `deploy` | the above plus `cache:write`, `repository:write` |
 | `admin` | `*` |
 
-A key expires 90 days after it is created unless given a shorter lifetime, can be restricted to a
+A key expires 90 days after it is created unless given another lifetime, can be restricted to a
 source-address allowlist, and is checked against its stored grants on every request, so a narrowed or
 revoked key stops working at once.
 
-<div class="warning">
-  The server ships no command or screen that creates a key. Key-gated access applies to keys that are
-  already present in the store's <code>auth/</code> objects; a new deployment that needs credentials for
-  its clients runs open on a trusted network or as a read-only mirror, as above.
+<div class="note">
+  A Jenesis build sends its <code>jenesis.maven.token</code> / <code>jenesis.module.token</code> as an
+  <code>Authorization</code> header, which Jenesis Repository does not consult. Give builds read access
+  through <code>jenreg.anonymous-rights=repository:read</code>; publishing with a key is done with Maven,
+  <code>curl</code> or any client that can set the <code>Jenesis-Repository-Key</code> header - in Maven's
+  <code>settings.xml</code>, the server's <code>&lt;configuration&gt;&lt;httpHeaders&gt;</code> block.
 </div>
+
+## Issuing and revoking keys
+
+Keys are administered through `/api/credentials`. Issuing a key is administration, not publishing, so the
+routes require the `manage:read` right (to list) or `manage:write` (to change) at deployment scope - the
+bootstrap key and any key with `*` carry them; a `deploy` key cannot issue more keys.
+
+Mint a key, optionally with a label and a lifetime. The secret comes back **once**:
+
+```bash
+curl -H "Jenesis-Repository-Key: $BOOTSTRAP" -H 'Content-Type: application/json' \
+     -d '{"label":"ci-publisher"}' http://localhost:8080/api/credentials
+```
+
+```json
+{"id":"deead028…","key":"jenk_default.PLy9vc…","expires":"2026-11-19T16:31:23Z"}
+```
+
+A new key has **no rights** until you grant some. Grant a scope and the tokens it gets - `*` for every
+repository, or one repository's name:
+
+```bash
+curl -H "Jenesis-Repository-Key: $BOOTSTRAP" -H 'Content-Type: application/json' \
+     -d '{"scope":"*","tokens":["repository:read","repository:write"]}' \
+     http://localhost:8080/api/credentials/deead028…/grants
+```
+
+The whole surface, where `<id>` is the 64-character hash the mint returned and the listing shows:
+
+| Request | Effect |
+|---|---|
+| `GET /api/credentials` | Every credential of the tenant - id, label, created, expires, allowed addresses, grants - never a secret. |
+| `POST /api/credentials` | Mint. Body: `label`, `expires` (`P30D` from now, or an instant; blank = the 90-day default), `nonExpiring: true`. Answers `201` with `id`, `key`, `expires`. |
+| `POST /api/credentials/<id>/grants` | Set the rights at one scope. Body: `scope`, `tokens` (a list). |
+| `DELETE /api/credentials/<id>/grants/<scope>` | Remove the rights at one scope. |
+| `PUT /api/credentials/<id>/expiry` | Change the expiry. Body: `expires` as above; blank clears it. |
+| `PUT /api/credentials/<id>/allowed-ips` | Restrict the key to source addresses. Body: `addresses`, comma-separated CIDRs or addresses; blank clears it. |
+| `POST /api/credentials/<id>/rotate` | Mint a successor that inherits the grants and allowlist, and expire the old key after an overlap. Body: `overlap` (default seven days). Answers `201` like a mint. |
+| `DELETE /api/credentials/<id>` | Revoke. The key stops working at once. |
+
+The console's **Credentials** panel does the everyday part of this - list, issue with a label, revoke - with
+a managing key pasted into the page; grants and rotation are API calls.
 
 ## What a client can find out
 
@@ -142,6 +216,7 @@ Server-side settings, read at startup from the environment, a `-D` system proper
 | Key | Default | Effect |
 |---|---|---|
 | `jenreg.auth` | `true` | Enforce the key credential. `false` serves every request anonymously and raises `jenreg.auth.open`. |
+| `jenreg.bootstrap-key` | *(blank)* | A well-formed key provisioned at boot with `*` on every repository of its tenant; logged as a `SECURITY` line while set. Unset it once real keys exist. |
 | `jenreg.anonymous-rights` | *(blank)* | Rights granted to a caller without a key, in the grant grammar; only meaningful with `jenreg.auth=true`. |
 | `jenreg.read-only` | `false` | Refuse every write, external or internal, with `403`. Advertised at `GET /api/capabilities`. |
 | `jenreg.tenant` / `jenreg.repository` | `default` | The names of the one artifact space this deployment serves; a key's tenant must match. |
