@@ -2,6 +2,8 @@
 
 The published documentation site for the Jenesis product family (`src/` → jenesis.build). See README.md
 for how to build, preview, and validate the site.
+AGENTS.md is the working process for changing it: where each tool's source of truth lives, how a claim
+is verified, the naming table, and the per-section notes.
 
 ## Editorial rules
 
