@@ -137,6 +137,7 @@ See [Observability](/repository/observability/).
 | `jenreg.consistency.sweep-intervals` | `3` | Sweeps a lagging node may take to catch up before it is reported stuck. |
 | `jenreg.consistency.staleness-window` | `300000` | Milliseconds since a node's last heartbeat after which it is flagged `stale`. |
 | `jenreg.consistency.dead-after` | `900000` | Milliseconds of silence after which a node leaves the live comparison. |
+| `jenreg.consistency.forget-after` | `86400000` | Milliseconds of silence after which a node's fingerprint is deleted by the next node that publishes. |
 | `management.endpoints.web.exposure.include` | `health,info,metrics` | The Actuator endpoints served. |
 | `management.endpoint.health.probes.enabled` | `true` | Serve the liveness and readiness probe groups. |
 | `management.endpoint.health.show-details` | `when-authorized` | Show health detail only to an authorised caller. |

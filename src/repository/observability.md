@@ -121,7 +121,7 @@ curl -H 'Jenesis-Repository-Key: jenk_…' http://localhost:8080/api/consistency
 ```
 
 ```json
-{"localNodeId":"repo-2","nodeCount":3,"liveCount":3,"converged":true,"singleNode":false,
+{"localNodeId":"repo-2","nodeCount":3,"liveCount":3,"converged":true,"singleNode":false,"truncated":false,
  "nodes":[{"nodeId":"repo-1","live":true,"stale":false,"heartbeatAgeMillis":4120,
            "indexCursor":128934,"snapshotVersion":"…","configGeneration":"3f2a…",
            "inventoryTotal":12894,"quotaUsed":73400320,"local":false}],
@@ -145,6 +145,11 @@ A node names itself with `jenreg.consistency.node-id`; unset, it uses the hostna
 generated id (with a warning) only when no hostname is available. Give each node a stable id so a restart
 re-uses its fingerprint. Without the setting switched on, a node publishes nothing and writes no operational
 keys into the store.
+
+A fingerprint whose node has been silent for longer than `jenreg.consistency.forget-after` (a day by default)
+is deleted by the next node that publishes, so a fleet that gives every restart a fresh hostname does not
+accumulate a fingerprint per host it ever ran on. A report reads at most 1 000 fingerprints; past that it
+answers with `"truncated":true` and compares the ones it read.
 
 ## Settings
 
