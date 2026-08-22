@@ -98,10 +98,12 @@ format because it reads the repository's own listing rather than knowing about M
 
 ## Downloading a listing
 
-**Download asset listing** on the browse page streams every published artifact as `assets.ndjson` - one JSON
+**Download asset listing** on the browse page streams the published artifacts as `assets.ndjson` - one JSON
 object per line with `path`, `size` and `sha256`, read from the publication records without opening a blob.
-It is the console's counterpart of the server's `GET /api/assets`, which adds the format, coordinate and
-version per entry; see [Migration & import](/repository/migration-import/).
+One download holds at most 10 000 entries (`/assets?limit=` asks for fewer); when more remain, its last line
+is `{"cursor":"…"}`, and `/assets?cursor=…` continues from there, so a large repository is exported in
+slices. It is the console's counterpart of the server's `GET /api/assets`, which adds the format, coordinate
+and version per entry; see [Migration & import](/repository/migration-import/).
 
 ## Reading the server's logs and consistency
 
