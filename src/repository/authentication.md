@@ -96,7 +96,10 @@ The key travels in whichever header the client can send:
 | `Authorization: Basic …` with the key as the password | `docker login -u anyone -p jenk_…` - the user name is ignored. |
 
 Only a well-formed key is ever read out of `Authorization`; anything else in that header is treated as no
-key at all, never as a credential.
+key at all, never as a credential. A request for an artifact that presents no key is answered `401` with a
+`WWW-Authenticate: Basic` challenge, which is what Maven (on a read) and a Docker client wait for before
+sending the credential they hold; the `/api/` paths answer a bare `401`, so a browser is never shown a
+sign-in dialog.
 
 ```bash
 curl -H "Jenesis-Repository-Key: jenk_default.…" \
