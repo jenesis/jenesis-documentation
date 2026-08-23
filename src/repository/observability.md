@@ -50,7 +50,9 @@ The server's own operations log under the logger `build.jenesis.observation`: a 
 `INFO`, a failed one at `WARN` with its error. Today the one operation instrumented this way is the proxy
 fetch, `jenreg.proxy.fetch`, tagged with the `format` it served and the `outcome` - `hit` (served locally),
 `miss` (fetched from the upstream), `negative` (a remembered upstream 404), `verified` or `withheld`. Filter
-on `q=proxy.fetch` to watch your pull-through cache work.
+on `q=proxy.fetch` to watch your pull-through cache work. The same logger writes one line per HTTP request,
+`http.server.requests`, with its method, path and status - the server's access log; nothing else is logged
+per request.
 
 ## Health and metrics
 
