@@ -35,7 +35,8 @@ at the URL and `mvn deploy` publishes to it; a `<repository>` entry with the sam
 The server stores what you upload and nothing more: it does not generate a POM for a jar, so publish the POM
 alongside the jar as a normal Maven deploy does. A published `maven-metadata.xml` is stored and served back
 **verbatim**. If you would rather have the server derive the version list from the artifacts it holds, opt
-in with `jenreg.maven-metadata-compute=true`.
+in with `jenreg.maven-metadata-compute=true`: the document is then kept as a stored listing that every
+upload under the coordinate updates, and a read serves it as it is.
 
 With an upstream configured (see *[Proxying](/repository/proxying/)*), the same URL also serves everything
 from Maven Central, so one `<mirror>` entry covers your own artifacts and the public ones.
@@ -75,8 +76,10 @@ docker pull repo.example.com/my-app:1.0
 
 It supports monolithic and chunked blob uploads, manifests addressed by tag or by digest (the media type is
 kept beside the manifest so a pull returns it verbatim), `HEAD` existence checks, `tags/list`, and
-`_catalog`. An OCI blob is addressed by its `sha256:` digest, which is the very key the store uses, so image
-layers dedupe against everything else the repository holds. With an upstream registry configured, the same
+`_catalog`. Both listings are stored documents a tag push keeps current, paged in memory for a client's
+`n` and `last`, so listing a registry of many images costs one read. An OCI blob is addressed by its
+`sha256:` digest, which is the very key the store uses, so image layers dedupe against everything else the
+repository holds. With an upstream registry configured, the same
 endpoint is a pull-through mirror (see *[Proxying](/repository/proxying/)*).
 
 ## Raw files
