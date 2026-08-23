@@ -93,6 +93,23 @@ Screens and observers are plugins, and **the server ships neither**. Out of the 
 and served exactly as it arrives; a deployment that wants publishes screened or announced adds a module at
 those two points, and nothing about the core changes.
 
+### Listings are written, not computed
+
+A repository answers many more reads than writes, so the work of keeping a listing current is done by the
+write that changes it. An OCI `tags/list` or `_catalog`, a computed `maven-metadata.xml`: each is a
+**stored document** under `listing/` that the server streams to a client as it is. When a tag is pushed, the
+image's tag list is rewritten with the one new entry and the catalog with the one image; when a manifest is
+withheld or released, the same two documents are rewritten the same way. A read never enumerates the store,
+never screens a name, and never re-renders anything - its cost is one read of one document, however large
+the repository has grown.
+
+The cost of a write is therefore one rewrite of the listings the artifact belongs to, and nothing that
+scales with the rest of the repository. Concurrent publishes to the same listing are merged into one rewrite
+per server, and a compare-and-set write keeps several servers consistent. A listing a server has never
+written - a repository from before this layout - is generated from the store the first time it is read and
+stored from then on. The rebuild pass (`jenreg.rebuild.interval`) regenerates every stored listing on its
+cadence, so a write that could not complete is repaired without a read ever paying for it.
+
 ## The map
 
 Every capability in this section is one of these modules. This is where each plugs in:
