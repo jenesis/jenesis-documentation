@@ -53,7 +53,7 @@ See [Getting started](/repository/getting-started/) and [Storage](/repository/st
 | `jenreg.repository` | `default` | The repository half of the artifact space. |
 | `jenreg.quota` | *(unset - no cap)* | The storage ceiling, as a byte count or a number with a `K`/`M`/`G`/`T` suffix; a write past it answers `507`. |
 | `jenreg.read-only` | `false` | Refuse every write - publishes, imports, deletes and internal cache fills - with `403`, while reads work normally. |
-| `jenreg.rebuild.interval` | `P1D` | How often the server walks its repository and streams every retained artifact pointer to the installed walk consumers (the Maven module index, among them), so a derived view converges without a republish. An ISO-8601 duration (`PT6H`) or a short one (`6h`, `30m`); `off` disables the pass. The first pass runs a minute after start; nothing runs when no consumer is installed. |
+| `jenreg.rebuild.interval` | `P1D` | How often the server walks its repository and streams every retained artifact pointer to the installed walk consumers (the Maven module index, among them), so a derived view converges without a republish, and regenerates every stored listing (`tags/list`, `_catalog`, a computed `maven-metadata.xml`). An ISO-8601 duration (`PT6H`) or a short one (`6h`, `30m`); `off` disables the pass. The first pass runs a minute after start. |
 | `jenreg.demo` | `false` | Seed a completely empty repository with real artifacts through the configured upstreams; a no-op on a repository that holds anything. |
 | `jenreg.filesystem.root` | `/var/lib/jenesis-repository` | The directory the filesystem backend stores under. |
 | `jenreg.s3.bucket` | *(required for `s3`)* | The bucket. |
