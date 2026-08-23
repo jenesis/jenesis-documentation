@@ -105,6 +105,8 @@ See [Authentication & access](/repository/authentication/).
 |---|---|---|
 | `jenreg.auth` | `true` | Authorise every request against the `Jenesis-Repository-Key` header. `false` serves every request anonymously and raises the `jenreg.auth.open` advisory. |
 | `jenreg.bootstrap-key` | *(empty)* | A well-formed `jenk_<tenant>.<secret><checksum>` key provisioned at boot with `*` on every repository of its tenant, so a fresh enforcing deployment can issue its first real keys through `/api/credentials`. Malformed values refuse to boot; a `SECURITY` line is logged while it is set. |
+| `jenreg.credential-default-lifetime` | *(empty)* | The lifetime of a key minted without an explicit expiry, as an ISO-8601 duration (`P30D`, `PT12H`). Empty keeps the 90-day default. |
+| `jenreg.credential-max-lifetime` | *(empty)* | The ceiling on any key's lifetime, as an ISO-8601 duration; a mint or an expiry change asking for more is pulled back to it. Empty leaves lifetimes uncapped. |
 | `jenreg.anonymous-rights` | *(empty)* | The rights a keyless caller holds under `jenreg.auth=true`: a comma list of `<surface>:<verb>` tokens (`repository:read`, `repository:write`, `manage:read`, `manage:write`, `<surface>:*`, `*`), each optionally scoped as `<repository>=<token>`. |
 | `jenreg.read-only` | `false` | See *Server & storage*; paired with `anonymous-rights=repository:read` this is the public-mirror pattern. |
 
