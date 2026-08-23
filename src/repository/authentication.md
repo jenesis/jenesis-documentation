@@ -126,9 +126,10 @@ verbs and a bare `*` grants everything. Three built-in roles bundle them:
 | `deploy` | the above plus `cache:write`, `repository:write` |
 | `admin` | `*` |
 
-A key expires 90 days after it is created unless given another lifetime, can be restricted to a
-source-address allowlist, and is checked against its stored grants on every request, so a narrowed or
-revoked key stops working at once.
+A key expires 90 days after it is created unless given another lifetime (the deployment can set a
+different default and a ceiling - see the settings below), can be restricted to a source-address
+allowlist, and is checked against its stored grants on every request, so a narrowed or revoked key stops
+working at once.
 
 <div class="note">
   Maven itself has no bearer-token setting, so a Maven client presents the server's own header: in
@@ -231,6 +232,8 @@ Server-side settings, read at startup from the environment, a `-D` system proper
 |---|---|---|
 | `jenreg.auth` | `true` | Enforce the key credential. `false` serves every request anonymously and raises `jenreg.auth.open`. |
 | `jenreg.bootstrap-key` | *(blank)* | A well-formed key provisioned at boot with `*` on every repository of its tenant; logged as a `SECURITY` line while set. Unset it once real keys exist. |
+| `jenreg.credential-default-lifetime` | *(blank)* | The lifetime of a key minted without an explicit expiry, as an ISO-8601 duration; blank is 90 days. |
+| `jenreg.credential-max-lifetime` | *(blank)* | The longest any key may live; a longer request is pulled back to it. Blank leaves lifetimes uncapped. |
 | `jenreg.anonymous-rights` | *(blank)* | Rights granted to a caller without a key, in the grant grammar; only meaningful with `jenreg.auth=true`. |
 | `jenreg.read-only` | `false` | Refuse every write, external or internal, with `403`. Advertised at `GET /api/capabilities`. |
 | `jenreg.tenant` / `jenreg.repository` | `default` | The names of the one artifact space this deployment serves; a key's tenant must match. |
