@@ -67,6 +67,34 @@ status, memory, threads. The proxy-fetch operation described above is also an ob
 registry on the module path receives it as a timer tagged with `format` and `outcome`. The server ships no
 registry of its own; the endpoint serves what the registry you install collects.
 
+### What the modules report
+
+Beside those meters, each installed module reports signals of its own, named `jenreg.<area>.<signal>`. The
+console's **Observability** panel lists them with their current values and a line of description each. A
+module that is absent, or whose feature is switched off, reports nothing rather than an empty row - so the
+panel shows what this deployment is actually doing, not a fixed catalogue.
+
+| Signal | Kind | Reports |
+|---|---|---|
+| `jenreg.listing.materialised` | counter | Listing documents generated from the store, on first use or a rebuild. |
+| `jenreg.listing.updates` | counter | Listing documents rewritten on the write path. |
+| `jenreg.listing.coalesced` | counter | Listing changes that rode along another writer's rewrite instead of making their own. |
+| `jenreg.listing.conflicts` | counter | Listing writes retried because another node changed the document first. |
+| `jenreg.listing.forgotten` | counter | Listing documents dropped for regeneration after a write could not land. |
+| `jenreg.proxy.negativecache.entries` | gauge | Upstream `404`s remembered, so a re-probe is answered without re-hitting the upstream. |
+| `jenreg.proxy.revalidation.entries` | gauge | Proxied indexes held with their validator, so a re-fetch is a conditional request. |
+| `jenreg.proxy.revalidation.bytes` | gauge | Bytes those held indexes occupy, against the ceiling past which the oldest are evicted. |
+| `jenreg.quota.used` | gauge | Stored bytes counted against the storage quota, when one is set. |
+| `jenreg.ratelimit.buckets` | gauge | Rate-limit buckets tracked, one per active key, when a limit is set. |
+| `jenreg.usage.tracked` / `.queue` / `.dropped` | gauge, gauge, counter | Credential-use accounting: accumulators held, hits waiting to drain, and hits dropped under back-pressure. Needs `jenreg.track-key-usage`. |
+| `jenreg.usage.flush` | task | The worker draining those buffered hits. |
+| `jenreg.rebuild.pass` | task | The scheduled rebuild pass, when one is scheduled. |
+| `jenreg.consistency.nodes` / `.diverged` | gauge | Live nodes sharing the store, and how many have diverged. Needs `jenreg.consistency.enabled`. |
+| `jenreg.consistency.divergence` | health | Whether any node has diverged - detect-only, and never blocks a request. |
+
+A counter accumulates for the life of the process, a gauge is a current reading, a task carries its last
+run and outcome, and a health check is up or down with a line saying why.
+
 ## Security posture
 
 `GET /api/posture` lists every setting that leaves the deployment less safe than it could be, each with the
