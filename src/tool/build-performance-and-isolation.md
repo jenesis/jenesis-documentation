@@ -114,7 +114,7 @@ image and the runtime image can differ**.
   <code>false</code> to suppress.
 </div>
 
-## The build cache
+## <span id="the-build-cache">The build cache</span>
 
 Every build already has an *incremental* cache: Jenesis content-hashes each step's inputs and outputs under
 `target/`, so a warm rebuild only re-runs the steps whose inputs changed (see

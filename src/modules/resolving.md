@@ -220,7 +220,7 @@ The reference service is a small HTTP function that reads four optional environm
 Any number of path segments *before* the route marker are ignored, so the same service works whether it
 is mounted at `/`, `/mod/`, or `/jenesis/v1/`, with no configuration.
 
-## Reading the index directly
+## <span id="reading-the-index-directly">Reading the index directly</span>
 
 You do not have to go through the service at all. Each redirect comes from one row of a **resolved view**,
 a plain tab-separated file you can read over `raw.githubusercontent.com` or any mirror - enough to build

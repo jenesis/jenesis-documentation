@@ -8,7 +8,7 @@
   "scripts": {
     "build": "eleventy",
     "serve": "eleventy --serve",
-    "validate": "hyperlink --root _site --internal _site/index.html",
+    "validate": "hyperlink --root _site --internal --recursive _site/index.html",
     "check": "npm run build && npm run validate"
   },
   "devDependencies": {
