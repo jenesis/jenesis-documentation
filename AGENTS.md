@@ -41,8 +41,9 @@ tree, on its current default branch, before a chapter describes it.
    property documented in a chapter also appears in that section's reference table, `src/_data/demos.js`
    matches the `demo/` folder of raphw/jenesis, and the landing page (`src/index.njk` and the taglines in
    `eleventy.config.js`) claims nothing a chapter contradicts.
-6. `npm run check` builds the site and validates every internal link. It must pass before a push; the deploy
-   runs only when it does.
+6. `npm run check` builds the site and crawls it, validating every internal link and every `#fragment` on
+   every page - not just the ones the landing page reaches. It must pass before a push; the deploy runs only
+   when it does.
 
 ## What the site says
 
@@ -94,6 +95,13 @@ reference pages may be longer.
 Front matter is `order`, `title`, `description`; the menu, the previous/next links and the section index
 derive from it. Callouts are `<div class="note|tip|warning">`; a closing `tip` links the demos that exercise
 the chapter. No diagrams, no screenshots.
+
+**A heading is not an anchor.** Nothing gives a rendered heading an `id`, so `/repository/storage/#the-store`
+resolves to the page and silently ignores the fragment - it does not fail, it just lands in the wrong place.
+Where a link needs to reach a point inside a page, put the anchor there by hand and link to that:
+`## <span id="the-store">The store</span>`. This is the same span the advisory ids use (see Section notes),
+generalised: it is the only anchor the site has. `npm run check` catches a fragment with nothing behind it,
+so a heading link written out of habit fails the build rather than the reader.
 
 ## Section notes
 
