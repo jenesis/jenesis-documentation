@@ -117,7 +117,10 @@ up front. It migrates whatever the installed format can enumerate from the sourc
 ### Jenesis
 
 `jenesis` walks another Jenesis Repository through its `/api/assets` listing (below), so one instance
-migrates into another. Its credential is the source's API key, passed as the `password`.
+migrates into another. Its credential is the source's API key, passed as the `password`. The first
+download settles the source's serving-path shape - a source that names the repository in its serving
+path and one that serves its space at `/repository/` directly are both read - so nothing about the
+source's layout needs configuring.
 
 ## What the importers write
 
