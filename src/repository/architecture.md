@@ -31,6 +31,9 @@ set is **discoverable and switchable**. Module names follow the kind they plug i
 `build.jenesis.repository.format.<name>`, a backend `build.jenesis.repository.store.<name>` - so the list of
 modules on a deployment's path reads as the list of what it can do.
 
+The name in the module and the name you configure with usually match. The Azure backend is the exception:
+the module is `build.jenesis.repository.store.azure`, and you select it as `jenreg.store=azure-blob`.
+
 ### Switching a capability off
 
 A module on the path is on until you configure it off. `jenreg.<name>=false` - `JENREG_MAVEN=false`,
@@ -42,7 +45,7 @@ In a Jenesis build you can also build a narrower server by selecting modules, fo
 only the S3 backend and what it depends on:
 
 ```bash
-java build/jenesis/Project.java +source+store+s3 build
+java build/jenesis/Project.java +source+store+s3
 ```
 
 A server with **no format at all** is still a valid repository: every request is answered `404` until a
@@ -89,9 +92,10 @@ hangs something off it. An accepted publish takes four steps, in order:
    webhook or a replication feed would ride. An observer has no say in the verdict, and its failure is logged
    and contained. Removal is symmetric: when a version is deleted, the same observers are told.
 
-Screens and observers are plugins, and **the server ships neither**. Out of the box every upload is accepted
-and served exactly as it arrives; a deployment that wants publishes screened or announced adds a module at
-those two points, and nothing about the core changes.
+Screens and observers are plugins, and **no screen ships**: out of the box every upload is accepted and
+served exactly as it arrives, and a deployment that wants publishes screened adds a module at that point.
+Observers do ship: the Maven, OCI and raw formats each install one, and they are the listing maintainers
+described next. A deployment that wants a publish announced elsewhere adds its own beside them.
 
 ### Listings are written, not computed
 

@@ -49,10 +49,10 @@ never repeats or skips a line.
 The server's own operations log under the logger `build.jenesis.observation`: a completed operation at
 `INFO`, a failed one at `WARN` with its error. Today the one operation instrumented this way is the proxy
 fetch, `jenreg.proxy.fetch`, tagged with the `format` it served and the `outcome` - `hit` (served locally),
-`miss` (fetched from the upstream), `negative` (a remembered upstream 404), `verified` or `withheld`. Filter
-on `q=proxy.fetch` to watch your pull-through cache work. The same logger writes one line per HTTP request,
-`http.server.requests`, with its method, path and status - the server's access log; nothing else is logged
-per request.
+`miss` (fetched from the upstream) or `negative` (the upstream did not have it either, whether that `404`
+was fresh or remembered). Filter on `q=proxy.fetch` to watch your pull-through cache work. The same logger
+writes one line per HTTP request, `http.server.requests`, with its method, path and status - the server's
+access log; nothing else is logged per request.
 
 ## Health and metrics
 
@@ -65,12 +65,13 @@ credential. Its detail is shown only to an authorised caller (`management.endpoi
 `/actuator/metrics` lists the JVM and HTTP request meters Spring Boot collects - request counts by URI and
 status, memory, threads. The proxy-fetch operation described above is also an observation, so a Micrometer
 registry on the module path receives it as a timer tagged with `format` and `outcome`. The server ships no
-registry of its own; the endpoint serves what the registry you install collects.
+*exporting* registry of its own: Spring Boot auto-configures an in-memory one, which is what this endpoint
+serves, and forwarding the numbers to a monitoring system means adding that system's registry.
 
 ### What the modules report
 
 Beside those meters, each installed module reports signals of its own, named `jenreg.<area>.<signal>`. The
-console's **Observability** panel lists them with their current values and a line of description each. A
+console's **Metrics overview** panel lists them with their current values and a line of description each. A
 module that is absent, or whose feature is switched off, reports nothing rather than an empty row - so the
 panel shows what this deployment is actually doing, not a fixed catalogue.
 
@@ -82,18 +83,23 @@ panel shows what this deployment is actually doing, not a fixed catalogue.
 | `jenreg.listing.conflicts` | counter | Listing writes retried because another node changed the document first. |
 | `jenreg.listing.forgotten` | counter | Listing documents dropped for regeneration after a write could not land. |
 | `jenreg.proxy.negativecache.entries` | gauge | Upstream `404`s remembered, so a re-probe is answered without re-hitting the upstream. |
+| `jenreg.proxy.negativecache` | health | That the negative cache is installed and remembering upstream misses. |
 | `jenreg.proxy.revalidation.entries` | gauge | Proxied indexes held with their validator, so a re-fetch is a conditional request. |
 | `jenreg.proxy.revalidation.bytes` | gauge | Bytes those held indexes occupy, against the ceiling past which the oldest are evicted. |
+| `jenreg.proxy.revalidation` | health | That the revalidation cache is installed and saving index transfers. |
 | `jenreg.quota.used` | gauge | Stored bytes counted against the storage quota, when one is set. |
-| `jenreg.ratelimit.buckets` | gauge | Rate-limit buckets tracked, one per active key, when a limit is set. |
+| `jenreg.quota.capacity` | health | Headroom under that quota; degraded once usage reaches the ceiling and a fresh blob is refused. |
+| `jenreg.ratelimit.buckets` | gauge | Rate-limit buckets tracked, one per metered tenant; `0` while no limit is set. |
+| `jenreg.ratelimit.limiter` | health | That the token-bucket limiter is installed and metering requests. |
 | `jenreg.usage.tracked` / `.queue` / `.dropped` | gauge, gauge, counter | Credential-use accounting: accumulators held, hits waiting to drain, and hits dropped under back-pressure. Needs `jenreg.track-key-usage`. |
 | `jenreg.usage.flush` | task | The worker draining those buffered hits. |
-| `jenreg.rebuild.pass` | task | The scheduled rebuild pass, when one is scheduled. |
-| `jenreg.consistency.nodes` / `.diverged` | gauge | Live nodes sharing the store, and how many have diverged. Needs `jenreg.consistency.enabled`. |
+| `jenreg.usage.worker` | health | That the worker thread is running and draining hits off the request path. Needs `jenreg.track-key-usage`. |
+| `jenreg.rebuild.pass` | task | The scheduled rebuild pass; reported as disabled, with the reason, when none is scheduled. |
+| `jenreg.consistency.nodes` / `.diverged` | gauge | Live nodes sharing the store, and how many have diverged; both `0` until `jenreg.consistency.enabled` is on. |
 | `jenreg.consistency.divergence` | health | Whether any node has diverged - detect-only, and never blocks a request. |
 
 A counter accumulates for the life of the process, a gauge is a current reading, a task carries its last
-run and outcome, and a health check is up or down with a line saying why.
+run and outcome, and a health check reads `UP`, `UNKNOWN`, `DEGRADED` or `DOWN`, with a line saying why.
 
 ## Security posture
 
@@ -126,7 +132,7 @@ The advisories the server raises:
 | <span id="jenreg.demo.writable">`jenreg.demo.writable`</span> | warn | `jenreg.demo=true` without `jenreg.read-only=true` - a seeded demo anyone can write to. |
 
 A clean deployment returns an empty list. The same report is shown in the console's **Security posture**
-panel, and the `jenreg.auth.open` advisory is also logged once at boot.
+panel, and every advisory scoped to the deployment is also logged once at boot.
 
 <div class="note">
   On an enforcing server the posture read needs a key with a deployment-wide <code>*</code> grant, like the
@@ -177,9 +183,9 @@ re-uses its fingerprint. Without the setting switched on, a node publishes nothi
 keys into the store.
 
 A fingerprint whose node has been silent for longer than `jenreg.consistency.forget-after` (a day by default)
-is deleted by the next node that publishes, so a fleet that gives every restart a fresh hostname does not
-accumulate a fingerprint per host it ever ran on. A report reads at most 1 000 fingerprints; past that it
-answers with `"truncated":true` and compares the ones it read.
+is deleted by a publishing node, which reaps at most once an hour, so a fleet that gives every restart a
+fresh hostname does not accumulate a fingerprint per host it ever ran on. A report reads at most 1 000
+fingerprints; past that it answers with `"truncated":true` and compares the ones it read.
 
 ## Settings
 
@@ -193,6 +199,7 @@ answers with `"truncated":true` and compares the ones it read.
 | `jenreg.consistency.sweep-intervals` | `3` | Sweeps a lagging node may take to catch up. |
 | `jenreg.consistency.staleness-window` | `300000` | Milliseconds since a node's last heartbeat after which it is flagged `stale`. |
 | `jenreg.consistency.dead-after` | `900000` | Milliseconds of silence after which a node leaves the live comparison. |
+| `jenreg.consistency.forget-after` | `86400000` | Milliseconds of silence after which a node's fingerprint is deleted; a publishing node reaps at most hourly. |
 | `management.endpoints.web.exposure.include` | `health,info,metrics` | The Actuator endpoints served. |
 | `management.endpoint.health.probes.enabled` | `true` | Serve the liveness and readiness probe groups. |
 | `management.endpoint.health.show-details` | `when-authorized` | Show health detail only to an authorised caller. |

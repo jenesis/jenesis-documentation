@@ -84,8 +84,10 @@ serve from it.
 
 With enforcement on, a client identifies itself with a key. A `GET` or `HEAD` needs the `repository:read`
 right on the requested path; any other method needs `repository:write`. A request without a key is answered
-`401`; one whose key lacks the right is answered `403`. Where the route does not already name the
-repository, `Jenesis-Repository-Name` does.
+`401`; one whose key lacks the right is answered `403`. The repository a request is authorised against is
+the one its `Jenesis-Repository-Name` header names, never the one the route serves; without the header the
+request is authorised against the deployment-wide `*` scope, which only a key holding a wildcard grant
+satisfies.
 
 The key travels in whichever header the client can send:
 
@@ -226,7 +228,7 @@ the OAuth redirect without TLS, set `JENREG_UI_SECURE_COOKIE=false`.
 ## Settings
 
 Server-side settings, read at startup from the environment, a `-D` system property or
-`application.properties`:
+`allinone.properties`:
 
 | Key | Default | Effect |
 |---|---|---|

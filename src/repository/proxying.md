@@ -20,8 +20,8 @@ JENREG_PROXY_OCI=https://registry-1.docker.io/
 
 With `JENREG_PROXY_MAVEN` set, `http://localhost:8080/repository/maven/` resolves everything on Maven
 Central as well as what you published, so a build needs one `<mirror>` entry. With `JENREG_PROXY_OCI` set,
-`docker pull localhost:8080/library/debian` fetches the image through your server. An upstream must be
-`https`; the server warns loudly at boot about one that is not.
+`docker pull localhost:8080/library/debian` fetches the image through your server. An upstream should be
+`https`: the server warns loudly at boot about one that is not, but proxies through it all the same.
 
 ## How a miss becomes a local hit
 
@@ -31,11 +31,11 @@ version, an image layer - is stored content-addressed as it streams through, and
 for it is a plain local hit that never touches the network again. The copy is a stream, digest and all, so a
 multi-hundred-megabyte layer is mirrored in a small, fixed heap.
 
-A **mutable index** - a `maven-metadata.xml`, a tag list - is never cached that way, because it changes
-upstream. It is fetched fresh on each request, so an artifact published upstream after your first look shows
-through. To avoid re-downloading an index that has not changed, the fetcher **revalidates** it: it remembers
-the `ETag` or `Last-Modified` and sends a conditional request, and a `304 Not Modified` answers from the
-remembered bytes. The upstream is still asked every time; only the transfer is saved.
+A **mutable index** - a `maven-metadata.xml` - is never cached that way, because it changes upstream. It is
+fetched fresh on each request, so an artifact published upstream after your first look shows through. To
+avoid re-downloading an index that has not changed, the fetcher **revalidates** it: it remembers the `ETag`
+or `Last-Modified` and sends a conditional request, and a `304 Not Modified` answers from the remembered
+bytes. The upstream is still asked every time; only the transfer is saved.
 
 ### The negative cache
 
@@ -51,22 +51,35 @@ window.
 
 ### Verifying what upstream sent
 
-Where upstream publishes a digest, the fetched bytes are held to it before they are stored. A Maven
-artifact is checked against the `.sha1` file published beside it, and a mismatch is refused rather than
-cached. The OCI mirror verifies every blob against the `sha256:` digest that addresses it, and a manifest
-against the digest the upstream registry reports.
+Where upstream publishes a digest, the fetched bytes are held to it **before anything is linked**. The blob
+may be stored first - that is how the digest is computed while the bytes stream - but nothing points at it
+until the check passes. A Maven artifact is checked against the `.sha1` published beside it, and a mismatch
+is refused rather than served. The OCI mirror verifies every blob against the `sha256:` digest that
+addresses it, and a manifest against the digest the upstream registry reports.
+
+The raw layout is the exception. A plain file mirror publishes no digest for what it serves, so a raw
+pull-through is stored and served on the upstream's word alone.
 
 That matters because the alternative is worse than a failed download. A proxy that stores whatever upstream
 returned turns one bad response - a corrupted mirror, a tampered hop - into a durable local artifact that
 every later client receives. Refusing at the point of fetch keeps a bad byte from becoming the repository's
 own answer.
 
+Two documents are answered `502` rather than `404` when this server could not read them upstream, or
+refused what it read: a `maven-metadata.xml`, and Gradle's `.module` descriptor. A client resolves against
+the absence of both, so a `404` would read as "this coordinate has nothing" and resolve something else
+without an error.
+
 ### The OCI mirror
 
 The OCI format follows the Distribution **bearer-token handshake** an upstream registry demands: a `401`
-with a `Bearer` challenge is exchanged for a token and the fetch is retried. It resolves multi-architecture
-image indexes to the manifests they list, and a mirrored layer dedupes against everything else the
-repository holds, because an OCI digest is the store's own key.
+with a `Bearer` challenge is exchanged for a token and the fetch is retried. A multi-architecture image
+index is fetched, stored and served as it is; the client then asks for the per-architecture manifest by
+digest, and that fetch is proxied in turn. A mirrored layer dedupes against everything else the repository
+holds, because an OCI digest is the store's own key.
+
+Only blobs and manifests are proxied. `tags/list` and `_catalog` are served from this server's own stored
+documents, so a mirrored registry's tag list shows what this server holds, never the upstream's catalogue.
 
 ## The fetcher module
 
