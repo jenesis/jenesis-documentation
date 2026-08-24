@@ -40,7 +40,7 @@ version count and groupIds by module count.
 
 ## Top modules by year
 
-Coverage across the whole index understates what you actually meet in practice, because most of Maven
+Coverage across the whole index understates what you meet in practice, because most of Maven
 Central is a long tail of artifacts almost nothing depends on. The **top-modules** reports fix that. Each
 ranks the 1000 **most downloaded** artifacts of a given year and shows how many of them ship a module.
 There is one report per year - [2019](https://github.com/raphw/jenesis-modules/blob/main/data/top/2019.md)

@@ -24,7 +24,7 @@ name the publisher shipped, looking in order for:
    **named**;
 3. an `Automatic-Module-Name` entry in the manifest → an **automatic** module.
 
-An artifact that has none of these carries no stable module name and is simply not added to the index.
+An artifact that has none of these carries no stable module name and is not added to the index.
 
 This is why the [reports](/modules/reports/) can distinguish **named** from **automatic** with confidence:
 the split reflects what is really inside each jar, not a heuristic.

@@ -7,7 +7,7 @@ description: What the compile, test, and jar phases do; feeding the compiler ext
 The default `build` target compiles, tests, and jars every module. You saw it run in
 *[Getting started](/tool/getting-started/)*, and *[Core concepts](/tool/core-concepts/)* explained the step
 graph underneath. This chapter is about the everyday loop that graph drives. It covers what each of those
-phases actually does, where your tests go, how to hand the compiler an extra flag or an annotation
+phases does, where your tests go, how to hand the compiler an extra flag or an annotation
 processor, how to run a module's `main`, and how to keep rebuilding as you edit.
 
 ## The build pipeline

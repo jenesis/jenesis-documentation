@@ -123,7 +123,7 @@ with `507 Insufficient Storage`:
 JENREG_QUOTA=10G       # a byte count, or a K/M/G/T suffix (1024-based)
 ```
 
-The quota counts the bytes actually held: content blobs, plus the chunks of an OCI upload that is still in
+The quota counts the bytes held: content blobs, plus the chunks of an OCI upload that is still in
 progress. A deduplicated re-deploy of bytes already stored needs no new space and is never refused.
 
 ## Backing up and moving
