@@ -40,7 +40,7 @@ classpath=dep1.jar,dep2.jar
 The launcher searches its class path in this order; any `classpath/` subfolder the property does not name
 follows, in name order. The build tool lists the subfolders in file-name order.
 
-## Bundled Java agents
+## <span id="bundled-java-agents">Bundled Java agents</span>
 
 A launcher jar can carry its own Java agents. `agentClass` is a comma-separated list of fully qualified agent
 class names, each optionally followed by `=<arguments>`, mirroring `-javaagent:<jar>=<arguments>`:
@@ -92,7 +92,7 @@ path. The `=args` from the command line reach each agent that declares no `=<arg
   then resolves that class's own jar, with its own descriptor and dependencies.
 </div>
 
-## Relaxing module access
+## <span id="relaxing-module-access">Relaxing module access</span>
 
 A bundled module sometimes needs reflective access that a framework expects but its `module-info` does not
 declare. Three keys grant it - the in-jar equivalent of `--add-exports` / `--add-opens` / `--add-reads`,
@@ -110,7 +110,7 @@ opened this way - while the targets may be bundled, boot, or the unnamed module.
 your code, use the JDK's own executable-jar manifest attributes (`Add-Opens`, `Add-Exports`), which the JVM
 honours under `java -jar`.
 
-## Emulating a signed jar
+## <span id="emulating-a-signed-jar">Emulating a signed jar</span>
 
 A dependency that shipped as a *signed* jar loses its signer identity when exploded: its signature files
 (`META-INF/*.SF`, `*.RSA`/`*.DSA`/`*.EC`) become ordinary entries, so a class-path class would otherwise
