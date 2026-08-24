@@ -16,7 +16,7 @@ code-quality tools, and how to run a compiler plugin.
 
 ## One module, two compilers
 
-A mixed module is compiled by **two compilers in sequence**, not one. Jenesis runs the other-language compiler
+A mixed module is compiled by **two compilers in sequence**. Jenesis runs the other-language compiler
 and `javac` in a fixed order over the same sources, each producing its own classes into the module. Because both
 write into one module, the exported jar looks exactly like a single-language one - a consumer never sees the
 seam.

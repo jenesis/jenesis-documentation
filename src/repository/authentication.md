@@ -18,7 +18,7 @@ matter, covered at the end.
 A real deployment keeps enforcement on and issues each client a key of its own. The first key is the one
 problem: every route that can mint a key requires one already. `jenreg.bootstrap-key` solves that - a key you
 choose, which the server provisions at boot with every right on every repository of its tenant, and which
-you then use to issue the keys you actually want.
+you then use to issue the keys you want.
 
 A key is a self-describing string, `jenk_<tenant>.<secret><checksum>`, and the bootstrap key has to be
 well-formed because the server reads the tenant out of it. Generate one with a few lines of Python (the

@@ -184,9 +184,9 @@ An empty file means the same thing, since `declared` is the default. Every jar t
 generated `module-info` is injected into a copy of it.
 
 The rewritten closure then *replaces* the resolved one for everything the module builds: `javac`, the tests,
-and every packaging step. That is the point rather than a side effect. A module graph that does not hold
-together - a split package, two jars claiming one name, a `requires` nothing provides - fails at compile or
-test time instead of first appearing in the shipped image.
+and every packaging step. A module graph that does not hold together - a split package, two jars claiming
+one name, a `requires` nothing provides - fails at compile or test time instead of first appearing in the
+shipped image.
 
 The `mode` key decides what happens to a jar with no name of its own to carry: `declared` fails the build and
 names the coordinate, `synthetic` invents a stable name derived from the jar's digest, and `none` skips the

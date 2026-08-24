@@ -86,7 +86,7 @@ The `modulepath` and `classpath` entries are comma-separated file names, relativ
 the two a jar lands in follows from how the target was named: a module name is placed jar by jar as each
 describes a module, a Maven coordinate on the class path in full. So `mainModule` is absent for a coordinate,
 as it is for a module name whose jars declare none. A target with no entry point at all is a legitimate
-install too: `mainClass` is simply absent, and `launch` then fails unless you name a class yourself.
+install too: `mainClass` is absent, and `launch` then fails unless you name a class yourself.
 
 To find an install that is already on disk without resolving anything, ask for the newest one by name:
 
@@ -144,9 +144,8 @@ try {
 ```
 
 <div class="note">
-  The argument file is how a launch survives a long module path on every platform, so it is a parameter
-  rather than a detail: the returned list refers to the file, which therefore has to outlive the process you
-  start with it.
+  The argument file is how a launch survives a long module path on every platform: the returned list refers
+  to the file, which therefore has to outlive the process you start with it.
 </div>
 
 ## Choosing where things come from
