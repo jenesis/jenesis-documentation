@@ -117,6 +117,7 @@ See [Rate limiting](/repository/rate-limiting-usage/).
 | Key | Default | Effect |
 |---|---|---|
 | `jenreg.rate-limit` | `0` *(no limit)* | Permits per minute per tenant (and for the shared anonymous bucket); excess answers `429` with `Retry-After`. Unset raises the `jenreg.ratelimit.unset` advisory. |
+| `jenreg.track-key-usage` | `false` | Record each credential's last use and running count. Off by default; the accounting is batched, and its `jenreg.usage.*` signals report nothing until it is on. |
 
 ## Migration & import
 
