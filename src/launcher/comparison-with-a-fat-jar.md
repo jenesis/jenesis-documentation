@@ -43,8 +43,8 @@ where its dependency put it, and `ServiceLoader` sees them all.
 
 The deepest loss is the one no transformer can patch. Once every class sits in one flat namespace with the
 descriptors gone, there is **no way to reconstruct a module graph at run time**. A fat jar runs as one big
-class path: encapsulation is gone, `requires` edges are gone, strong module boundaries are gone. Modular
-libraries silently degrade to running as unnamed-module code.
+class path: encapsulation is gone, `requires` edges are gone. Modular libraries silently degrade to running
+as unnamed-module code.
 
 A launcher jar rebuilds the graph instead. At start-up it resolves the `modulepath/` subfolders into a fresh
 `ModuleLayer`, so the modules come back as **real named modules** with their `requires` and `exports` edges

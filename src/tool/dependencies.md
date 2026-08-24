@@ -180,7 +180,7 @@ does not `requires` is an error rather than a silent no-op, because it is a typo
 
 Either way the artifact takes the whole subtree it pulled in with it. Because it never enters the resolved
 closure, there is nothing left to leak: it is off the compile and test paths, absent from the generated POM,
-and absent from the bill of materials and the compliance reports. The build genuinely never fetched it.
+and absent from the bill of materials and the compliance reports. The build never fetched it.
 
 <div class="note">
   The strict <code>modular</code> layout is the one place this does not apply. Resolution there matches module

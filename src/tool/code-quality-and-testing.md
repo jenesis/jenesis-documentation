@@ -33,7 +33,7 @@ build. Nothing else is needed - the file's presence is the switch, and its conte
 The source linters run **in parallel with compilation**, since they read sources rather than classes;
 SpotBugs runs once the classes exist. Each tool resolves in its own dependency group (named after the tool,
 kept apart from your project's own dependencies), floats a `RELEASE` version until pinned, and runs in a
-forked JVM. A tool whose language is not present simply skips itself: a stray `detekt.yml` in a pure-Java
+forked JVM. A tool whose language is not present skips itself: a stray `detekt.yml` in a pure-Java
 project does nothing.
 
 ### Report-only by default
@@ -155,7 +155,7 @@ anything the comparison cannot decide, because a skipped test is not a passed te
 
 Jenesis already skips a module's whole test step when none of that module's inputs changed. **Test selection**
 is the finer-grained companion: within a module that *did* change, it runs only the test classes the change
-can actually reach and leaves the rest cached. Turn it on with `-Djenesis.test.incremental`:
+can reach and leaves the rest cached. Turn it on with `-Djenesis.test.incremental`:
 
 ```bash
 java -Djenesis.project.watch=true -Djenesis.test.incremental build/jenesis/Project.java

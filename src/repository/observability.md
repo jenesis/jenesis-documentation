@@ -7,7 +7,7 @@ description: How a running Jenesis Repository reports on itself - recent logs ov
 A repository you depend on needs to answer three questions: what is it doing, is it healthy, and is it
 configured safely. Jenesis Repository answers them over plain HTTP, so a console, a script or a monitoring
 system reads the same endpoints. This chapter covers the log tail, the health and metrics endpoints, the
-security-posture report, and the consistency check that keeps several nodes honest.
+security-posture report, and the consistency check across several nodes.
 
 ## Who may read these endpoints
 
@@ -73,7 +73,7 @@ serves, and forwarding the numbers to a monitoring system means adding that syst
 Beside those meters, each installed module reports signals of its own, named `jenreg.<area>.<signal>`. The
 console's **Metrics overview** panel lists them with their current values and a line of description each. A
 module that is absent, or whose feature is switched off, reports nothing rather than an empty row - so the
-panel shows what this deployment is actually doing, not a fixed catalogue.
+panel shows what this deployment is doing, not a fixed catalogue.
 
 | Signal | Kind | Reports |
 |---|---|---|

@@ -33,7 +33,7 @@ Two conventions cover most keys:
   backend, the upstream fetcher - `jenreg.<kind>=<name>` names it. A selection that names an implementation
   nobody provides fails the boot rather than falling back. Where the capability may also be absent - the
   fetcher, the rate limiter - two enabled implementations are ambiguous and fail the boot as well. The
-  store is the one selection with a default, `filesystem`, which simply wins when you select nothing.
+  store is the one selection with a default, `filesystem`, which wins when you select nothing.
 
 <div class="note">
   Durations are ISO-8601 (<code>PT90S</code>) unless a row says otherwise; <code>jenreg.proxy-miss-ttl</code>
