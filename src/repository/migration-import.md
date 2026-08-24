@@ -38,12 +38,14 @@ The request fields:
 | `source` | yes | The connector to walk with: `nexus`, `artifactory`, `maven`, `index` or `jenesis`. |
 | `url` | yes | The base URL of the source. It must be `https` and resolve to a public host (see below). |
 | `repository` | yes | The source repository to read - a Nexus or Artifactory repository name, or the path under the base URL. |
-| `format` | Artifactory and index | The ecosystem of the source repository: `maven`, `docker` or `raw`. The other connectors report a format per asset. |
+| `format` | Artifactory | The ecosystem of the source repository: `maven`, `docker` or `raw`. |
+| `format` | index | The installed format whose own index is walked: `maven`, `oci` or `raw`. Only the OCI format can enumerate one today, so `oci` is the working choice. |
 | `username`, `password` | no | Credentials sent to the source. The `jenesis` connector takes its API key as the `password`. |
-| `resume` | no | The id of an earlier job; the new job continues from that job's recorded position and counts. |
+| `resume` | no | The id of an earlier job. The walk continues under that same id, from its recorded position. |
 
-Only `POST` starts a job; any other method on `/repository/admin/import` answers `405`. A deployment in
-read-only mode refuses imports with `403`.
+The other connectors report a format per asset, so they take none. Only `POST` starts a job; any other
+method on `/repository/admin/import` answers `405`. A deployment in read-only mode refuses imports with
+`403`.
 
 <div class="warning">
   The import URL is screened before anything is fetched: it must be <code>https</code>, and it must not resolve
@@ -71,21 +73,24 @@ curl http://localhost:8080/repository/admin/import/a1b2c3…
 | Field | Meaning |
 |---|---|
 | `state` | `running`, `completed` or `failed`. |
-| `imported`, `skipped`, `held`, `rejected` | Running counts. An asset is skipped when no installed importer handles its format. |
+| `imported`, `skipped`, `held`, `rejected` | Running counts. An asset is skipped when no installed importer handles its format, and when that format is switched off. |
 | `skippedFormats` | The formats that were skipped, so you can see what a missing format module cost you. |
 | `cursor` | The walk's last checkpoint, kept for a resume. `null` once the walk is finished. |
 | `asset` | The last asset imported. |
 | `error` | The failure message when `state` is `failed`. |
 
 A job that stopped - a network fault, a restart - is continued by submitting the same request again with
-`"resume": "<job id>"`. The new job picks up the recorded cursor and counts, and the content-addressed store
-makes any overlap free: re-importing bytes that are already stored needs no space and changes nothing, so a
-re-run after a partial migration is always safe.
+`"resume": "<job id>"`. The walk resumes under that same job id, from its recorded cursor, carrying
+`imported` and `skipped` forward; `held` and `rejected` restart at zero and count the resumed run alone.
+
+The content-addressed store makes any overlap free: re-importing bytes that are already stored needs no
+space and changes nothing, so a re-run after a partial migration is always safe.
 
 ## The connectors
 
-Each connector reads one kind of source. All of them stream every artifact straight into the store, and
-all of them checkpoint as they go.
+Each connector reads one kind of source. All of them stream every artifact straight into the store, and all
+but one checkpoint as they go: the Artifactory Pro deep listing arrives as a single response, so a job
+walking it has no mid-walk resume point.
 
 ### Nexus
 
@@ -98,8 +103,9 @@ URL on another host is fetched without them.
 
 `artifactory` lists a repository with the storage API and downloads each file. An Artifactory repository has
 a single package type, so the request must name its `format`. Against Artifactory Pro it uses the deep file
-listing; against an OSS instance, which refuses that API, it falls back to the per-folder listing and
-checkpoints after every top-level folder, so an interrupted OSS migration resumes without re-walking.
+listing, which is one response and carries no resume point; against an OSS instance, which refuses that
+API, it falls back to the per-folder listing and checkpoints after every top-level entry, folder or file,
+so an interrupted OSS migration resumes without re-walking.
 
 ### Maven
 

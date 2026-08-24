@@ -50,8 +50,8 @@ The bridge runs one way: a module published directly to the module layout stays 
 
 ## The module layout
 
-The module layout resolves artifacts **by Java module name**, under the same URL shapes as the
-[Jenesis Module Index](/modules/):
+The module layout resolves artifacts **by Java module name**, under the `/module/` and `/artifact/` shapes
+the [Jenesis Module Index](/modules/) also serves:
 
 ```
 GET /repository/module/<name>/<version>/<name>.jar     a specific version
@@ -59,9 +59,11 @@ GET /repository/module/<name>/<name>.jar               the latest version
 ```
 
 A Jenesis build reaches it through `jenesis.module.uri`, exactly as it reaches the public index - so a
-private server and the public index are interchangeable from the build's point of view. A `PUT` under
-`/repository/module/` or `/repository/artifact/` stores a file at that path; most modules arrive through
-the Maven cross-publish above instead, which links the two `/module/` shapes shown.
+private server and the public index are interchangeable from the build's point of view. The `<version>`
+segment is the Maven version the jar was published under, not one read from its `module-info`.
+
+A `PUT` under `/repository/module/` or `/repository/artifact/` stores a file at that path; most modules
+arrive through the Maven cross-publish above instead, which links the two `/module/` shapes shown.
 
 ## The OCI registry
 
@@ -108,7 +110,7 @@ activating, exactly as if its module were absent: its paths answer `404` and its
 |---|---|---|
 | `jenreg.maven` / `jenreg.jenesis` / `jenreg.oci` / `jenreg.raw` | `true` | Switch a format off with `false`. |
 | `jenreg.maven-metadata-compute` | `false` | Derive `maven-metadata.xml` from stored versions instead of serving the uploaded file. |
-| `jenreg.proxy.<id>` | *(unset)* | The upstream a format pulls through from; see *[Proxying](/repository/proxying/)*. |
+| `jenreg.proxy.maven` / `jenreg.proxy.oci` / `jenreg.proxy.raw` | *(unset)* | The upstream a format pulls through from; the module layout does not proxy. See *[Proxying](/repository/proxying/)*. |
 
 A server with every format switched off is still a valid server - it answers `404` to every artifact
 request until a format is on to claim it.

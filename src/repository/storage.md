@@ -164,4 +164,4 @@ restart.
 | `jenreg.tenant` / `jenreg.repository` | `default` | The prefix every artifact is stored under. |
 
 Every key is also an environment variable in upper case with underscores (`JENREG_S3_BUCKET`), a `-D`
-system property, or an `application.properties` entry.
+system property, or an `allinone.properties` entry.

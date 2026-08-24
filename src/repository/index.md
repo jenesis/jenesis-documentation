@@ -46,7 +46,7 @@ Maven repository is built in, and a web console lets you browse what the server 
    cache.
 7. **Authentication & access** - the bootstrap key, issuing and revoking keys and their grants, running
    open or read-only, anonymous read rights, and signing in to the console.
-8. **Rate limiting** - the per-caller request ceiling and what it sheds.
+8. **Rate limiting** - the per-tenant request ceiling and what it sheds.
 9. **Migration & import** - importing from Nexus, Artifactory, a Maven repository or another Jenesis
    Repository, batch uploads, and listing everything the server holds so you can leave with it.
 10. **Observability** - logs, metrics, the security-posture report, and the multi-node consistency check.
