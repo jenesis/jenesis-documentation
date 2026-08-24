@@ -91,7 +91,8 @@ format because it reads the repository's own listing rather than knowing about M
   `oci/…`, `raw/…` - not the content-addressed storage underneath, so what you see is what a client requests.
 - Each row is a **folder** or an **artifact**; artifacts show their stored size. A folder's children are
   listed only when you open it, one level at a time, so a large repository browses as quickly as a small one.
-  A folder with more than 1 000 children is cut off with a notice.
+  A folder is cut off with a notice once 1 000 children are listed, or once 50 000 have been examined to
+  fill them - the second cap is what bounds a folder whose children are mostly withheld.
 - No artifact is ever opened to render a row, and the browse never reaches outside the published tree: a
   `path` that tries `..` is cleaned, and an artifact the server currently withholds is omitted, so the browse
   and a plain `GET` always agree.
@@ -110,15 +111,16 @@ and version per entry; see [Migration & import](/repository/migration-import/).
 The **Logs** panel tails `GET /api/logs` and the **Consistency** panel reads `GET /api/consistency`. Both
 endpoints show deployment-wide state, so the server gates them to a key with a deployment-wide `*` grant; each
 panel has a field to paste one, and sends it as the `Jenesis-Repository-Key` header. On a server running with
-authentication off, leave the field empty. Before a key is entered, or against an empty log ring, a panel
-shows an empty state rather than an error. [Observability](/repository/observability/) describes both
-endpoints and their fields.
+authentication off, leave the field empty. Neither panel fetches anything until you press **Refresh**, so
+it opens empty rather than erroring; refreshing without a key against an enforcing server reports
+`error: status 401`. [Observability](/repository/observability/) describes both endpoints and their fields.
 
 ## Issuing keys
 
 The **Credentials** panel is the console's view of `/api/credentials`. Paste a key that carries
-`manage:write` - the bootstrap key does - and the panel lists the tenant's credentials with their labels,
-expiry, use and grants. **Issue a key** mints one with the label you typed and shows the secret **once**: only
+`manage:read` and the panel lists the tenant's credentials with their labels, expiry, use and grants;
+issuing and revoking need `manage:write`, which does not confer the read. The bootstrap key holds `*`, so
+it covers both. **Issue a key** mints one with the label you typed and shows the secret **once**: only
 its hash is stored, so copy it before you leave the page. **Revoke** removes a key at once. A freshly issued
 key has no rights until it is granted some, which - like rotation and address allowlists - is an API call;
 [Authentication & access](/repository/authentication/) covers the whole surface.
@@ -126,5 +128,5 @@ key has no rights until it is granted some, which - like rotation and address al
 ## Theme and accessibility
 
 The theme switch in the header offers **Auto**, **Light** and **Dark**; Auto follows the operating system,
-and the choice is remembered per browser. Every page starts with a skip-to-content link for keyboard users,
-and every interactive element shows a visible focus ring.
+and the choice is remembered per browser. Every console page starts with a skip-to-content link for
+keyboard users, and every interactive element shows a visible focus ring.

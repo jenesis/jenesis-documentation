@@ -17,8 +17,8 @@ does, and the same value can be given in any of these forms:
 |---|---|
 | An environment variable | `JENREG_PROXY_MAVEN=https://repo1.maven.org/maven2/` |
 | A system property | `-Djenreg.proxy.maven=https://repo1.maven.org/maven2/` |
-| An `application.properties` file next to the launch | `jenreg.proxy.maven=https://repo1.maven.org/maven2/` |
-| A Spring profile | `SPRING_PROFILES_ACTIVE=dev` selects `application-dev.properties` |
+| An `allinone.properties` file next to the launch | `jenreg.proxy.maven=https://repo1.maven.org/maven2/` |
+| A Spring profile | `SPRING_PROFILES_ACTIVE=dev` selects the `dev` profile's properties file |
 
 The environment spelling follows Spring's relaxed binding: upper case, dots and hyphens become underscores, so
 `jenreg.block-private-import-hosts` is `JENREG_BLOCK_PRIVATE_IMPORT_HOSTS`. The tables below spell a variable
@@ -31,8 +31,9 @@ Two conventions cover most keys:
   setting to enable one.
 - **A selection picks one implementation.** Where exactly one implementation may be active - the store
   backend, the upstream fetcher - `jenreg.<kind>=<name>` names it. A selection that names an implementation
-  nobody provides fails the boot rather than falling back; so does leaving two enabled implementations to
-  compete. The store is the one selection with a default, `filesystem`.
+  nobody provides fails the boot rather than falling back. Where the capability may also be absent - the
+  fetcher, the rate limiter - two enabled implementations are ambiguous and fail the boot as well. The
+  store is the one selection with a default, `filesystem`, which simply wins when you select nothing.
 
 <div class="note">
   Durations are ISO-8601 (<code>PT90S</code>) unless a row says otherwise; <code>jenreg.proxy-miss-ttl</code>
@@ -53,8 +54,8 @@ See [Getting started](/repository/getting-started/) and [Storage](/repository/st
 | `jenreg.repository` | `default` | The repository half of the artifact space. |
 | `jenreg.quota` | *(unset - no cap)* | The storage ceiling, as a byte count or a number with a `K`/`M`/`G`/`T` suffix; a write past it answers `507`. |
 | `jenreg.read-only` | `false` | Refuse every write - publishes, imports, deletes and internal cache fills - with `403`, while reads work normally. |
-| `jenreg.rebuild.interval` | `P1D` | How often the server walks its repository and streams every retained artifact pointer to the installed walk consumers (the Maven module index, among them), so a derived view converges without a republish, and regenerates every stored listing (`tags/list`, `_catalog`, a computed `maven-metadata.xml`). An ISO-8601 duration (`PT6H`) or a short one (`6h`, `30m`); `off` disables the pass. The first pass runs a minute after start. |
-| `jenreg.demo` | `false` | Seed a completely empty repository with real artifacts through the configured upstreams; a no-op on a repository that holds anything. |
+| `jenreg.rebuild.interval` | `P1D` | How often the server regenerates every stored listing (`tags/list`, `_catalog`, a computed `maven-metadata.xml`), so a write that could not land is repaired without a read ever paying for it. An ISO-8601 duration (`PT6H`) or a short one (`6h`, `30m`); `off` disables the pass. The first pass runs a minute after start. |
+| `jenreg.demo` | `false` | Seed a completely empty repository with real artifacts, pulled through each format's own default upstream, so it needs no proxy configured. A no-op on a repository that holds anything, and skipped entirely under `jenreg.read-only=true`. |
 | `jenreg.filesystem.root` | `/var/lib/jenesis-repository` | The directory the filesystem backend stores under. |
 | `jenreg.s3.bucket` | *(required for `s3`)* | The bucket. |
 | `jenreg.s3.region` | `us-east-1` | The signing region. |
@@ -70,6 +71,8 @@ See [Getting started](/repository/getting-started/) and [Storage](/repository/st
 | `jenreg.azure-blob.connection-string` | *(required for `azure-blob`)* | The storage-account connection string (or the Azurite development string). |
 | `jenreg.azure-blob.container` | `jenesis-repository` | The container. |
 | `jenreg.azure-blob.allow-insecure-endpoint` | `false` | Permit a plain-`http` blob endpoint. |
+| `jenreg.archive.largest-entry` | `1048576` (1 MiB) | The most one archive member may decompress to when a format reads a declaration out of it. |
+| `jenreg.archive.largest-walk` | `67108864` (64 MiB) | The most bytes one walk may draw from a single archive. |
 
 ## Formats
 
@@ -118,6 +121,9 @@ See [Rate limiting](/repository/rate-limiting-usage/).
 |---|---|---|
 | `jenreg.rate-limit` | `0` *(no limit)* | Permits per minute per tenant (and for the shared anonymous bucket); excess answers `429` with `Retry-After`. Unset raises the `jenreg.ratelimit.unset` advisory. |
 | `jenreg.track-key-usage` | `false` | Record each credential's last use and running count. Off by default; the accounting is batched, and its `jenreg.usage.*` signals report nothing until it is on. |
+| `jenreg.token-bucket` | `true` | Switch the in-memory token-bucket limiter off with `false`; every request is then unmetered. |
+| `jenreg.rate-limiter` | *(the one installed)* | Select the rate limiter by name (`token-bucket`); naming one that is not installed fails the boot. |
+| `jenreg.key-usage` | *(the one installed)* | Select the credential-usage tracker by name (`batching`). |
 
 ## Migration & import
 
