@@ -95,9 +95,13 @@ Each node shows the version every parent requested, the **negotiated** version i
 this project rather than fetched. A per-module *Resolved dependencies* list and a licence summary follow the
 tree. It is the fastest way to answer "why is this version on my class path?" before you pin anything.
 
-When the external closure is just noise, `-Djenesis.tree.format=compact` keeps only the `local` modules and
-folds everything external into a count per branch, so a large multi-module project shows its own shape at a
-glance.
+When the whole closure is more than you want to read, `-Djenesis.tree.format` narrows what the trees show:
+
+| Value | What it prints |
+| --- | --- |
+| `full` | *(the default)* Every module's graph in full, external closure and all. |
+| `compact` | Only the `local` modules, with everything external folded into a count per branch, so a large multi-module project shows its own shape at a glance. |
+| `main` | The same compacted graph with the test modules (see *[Building and running](/tool/building-and-running/)*) left out, so neither the trees nor the licence summary count what only a test run pulls in. |
 
 ## Version negotiation
 
