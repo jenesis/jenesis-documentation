@@ -225,6 +225,7 @@ Read by the `release` target - see *[Publishing](/tool/publishing/)*.
 | `jenesis.executor.aggregate` | `false` | Let independent step failures aggregate into one report instead of failing at the first. |
 | `jenesis.executor.concurrency` | `0` | The most build steps that run at once across the whole build; `0` means no limit. |
 | `jenesis.process.factory` | `tool` | How JDK tool steps launch: `tool` (in-process) or `fork`. |
+| `jenesis.process.concurrency` | `0` | The most JDK tool runs that happen at once across the whole build; `0` means no limit. |
 | `JAVA_HOME` (env) | *(from `java.home`)* | Locates the JDK binaries when the runtime is not a JDK. |
 
 ## Built-in steps
