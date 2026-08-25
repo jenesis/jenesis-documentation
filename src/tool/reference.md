@@ -217,7 +217,8 @@ Read by the `release` target - see *[Publishing](/tool/publishing/)*.
 | `jenesis.print.cache` | `false` | Print `[LOADED]`/`[STORED]` lines for the build cache, local and shared. |
 | `jenesis.print.checksum` | `false` | Append input/output checksums under each `[EXECUTED]` line. |
 | `jenesis.print.jreleaser` | `false` | Stream the release tool's output. |
-| `jenesis.tree.format` | `full` | The `dependencies` tree rendering: `full`, `compact`, or `main` (compact, without the test modules). |
+| `jenesis.tree.format` | `full` | The `dependencies` tree rendering: `full` or `compact`. |
+| `jenesis.tree.tests` | `true` | Include the test modules in the `dependencies` trees and their licence summary. |
 | `jenesis.executor.digest` | `MD5` | Digest for the per-file content and per-step config hashes. |
 | `jenesis.executor.timeout` | `PT0S` | ISO-8601 per-step timeout; `PT0S` disables it. |
 | `jenesis.executor.rebuild` | `false` | Delete `target/` first, forcing a full rebuild. |
