@@ -121,7 +121,7 @@ variable as a fallback. Defaults apply when the key is unset.
 | `jenesis.test.tag` | *(unset)* | Comma-separated test tags / groups to include. |
 | `jenesis.test.engine` | *(auto)* | Force the engine: `junit-platform`, `junit4`, or `testng`. |
 | `jenesis.test.parallel` | `false` | Run tests in parallel where the framework supports it. |
-| `jenesis.test.reporting` | `false` | Emit Open Test Reporting XML under `reports/tests/`. |
+| `jenesis.test.reporting` | `false` | Emit test reports under `reports/tests/`: legacy JUnit XML and Open Test Reporting XML for `junit-platform`, TestNG's own report for `testng`. |
 | `jenesis.test.incremental` | *(off)* | Run only the tests a change can reach; the value names the digest algorithm. |
 | `jenesis.test.force` | `false` | `true` runs the tests even when nothing changed and the recorded scope already covers the request. |
 | `jenesis.stage.tests` | `false` | Include test-variant artifacts when staging. |
