@@ -163,7 +163,8 @@ Jpx modular = new Jpx(PathPlacement.MODULE_PATH); // resolve over module descrip
 was built.
 
 The long constructor names all five. A storage folder of your own keeps installs out of `~/.jenesis/jpx`,
-which is what a test, a sandboxed tool, or a demo wants. Here are the defaults spelled out, with
+which is what a test, a sandboxed tool, or a demo wants; installations land under a layout folder inside it,
+the same way they do under the default root. Here are the defaults spelled out, with
 `target/jpx` as the storage folder:
 
 ```java
