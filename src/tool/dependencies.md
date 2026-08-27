@@ -210,12 +210,14 @@ module demo.cli {
 
 The tag maps a module name onto a `<groupId>/<artifactId>` the resolved closure already contains, and the name
 is then a module name like any other; the `opens` above is what lets args4j set the annotated fields by
-reflection. Nothing is synthesised and no jar is rewritten. The artifact is placed under the aliased file
-name, which is exactly the name the JDK derives an automatic module from, so a pinned checksum keeps
-describing the bytes on the command line.
+reflection. Nothing is synthesised and no jar is rewritten. The artifact is placed under
+`<alias>-<version>.jar`, which is exactly the name the JDK derives that automatic module and its version
+from, so a stack trace out of it reads `org.kohsuke.args4j@2.33` and a pinned checksum keeps describing the
+bytes on the command line.
 
-Two rules keep an alias predictable. It carries **no version**: the version comes from a pin, a bill of
-materials, or the closure the alias names, and is stated in one place only. And it only ever *renames*: a jar
+Two rules keep an alias predictable. The declaration carries **no version**: the version comes from a pin, a
+bill of materials, or the closure the alias names, is stated in one place only, and is what the file name
+then carries. And it only ever *renames*: a jar
 that already declares a `module-info` or an `Automatic-Module-Name` is rejected, because it is addressable
 under that name already. An alias also travels. A project that depends on a module which declared one
 inherits the name without redeclaring it.
