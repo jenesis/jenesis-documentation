@@ -37,8 +37,8 @@ place here:
    copied; the launcher's own `module-info` and manifest are left out, so at run time those classes are the
    unnamed module that hosts your application.
 2. **Each dependency is exploded into its own subfolder.** The resolved jar file name becomes the folder name:
-   `modulepath/org.slf4j%2Fslf4j-api%2F2.0.16.jar/` for a modular or automatic dependency, `classpath/…/`
-   for a plain one, and `classes.jar/` for the application's own module. The split follows the same rule as
+   `modulepath/org.slf4j-2.0.16.jar/` for a modular or automatic dependency, `classpath/…/` for one that
+   names no module, and `classes.jar/` for the application's own module. The split follows the same rule as
    the build's `Execute` launcher and its `bundle.zip`: a jar is placed on the module path only when the
    application is modular and the jar describes a module. A `pom.xml` application without a module
    therefore gets everything under `classpath/`.

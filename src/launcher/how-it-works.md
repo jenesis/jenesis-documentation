@@ -21,9 +21,9 @@ app.jar
 ├── application.properties                        the descriptor: mainClass, mainModule, classpath
 ├── modulepath/
 │   ├── classes.jar/…                             the application's own module, exploded
-│   └── org.slf4j%2Fslf4j-api%2F2.0.16.jar/…      a modular or automatic dependency, exploded
+│   └── org.slf4j-2.0.16.jar/…                    a modular or automatic dependency, exploded
 └── classpath/
-    └── <group>%2F<artifact>%2F<version>.jar/…    a plain (non-modular) dependency, exploded
+    └── <group>%2F<artifact>%2F<version>.jar/…    a dependency that names no module, exploded
 ```
 
 Each dependency is **exploded into its own subfolder**, so nothing is merged: every dependency keeps its own
@@ -32,8 +32,11 @@ the outer jar**, the launcher can read it later with a plain `java.util.zip.ZipF
 addressing.
 
 The subfolder name is the file name the dependency had when the build resolved it. The Jenesis build tool
-names a resolved jar after its coordinate, URL-encoded (`org.slf4j%2Fslf4j-api%2F2.0.16.jar`), keeps the
-application's own module as `classes.jar`, and renames an aliased jar to `<alias>.jar`. A jar goes under
+names a resolved jar after the module it carries, at the version the closure resolved
+(`org.slf4j-2.0.16.jar`), names an aliased jar `<alias>-<version>.jar`, keeps the application's own module as
+`classes.jar`, and falls back to the URL-encoded coordinate (`<group>%2F<artifact>%2F<version>.jar`) for a jar
+that declares no module at all. The name follows what the jar declares, not where it lands: a jar with an
+`Automatic-Module-Name` is named for that module even when it goes on the class path. A jar goes under
 `modulepath/` when the application is modular and the jar describes a module; everything else goes under
 `classpath/`. A non-modular application therefore has every dependency under `classpath/` and no module
 layer at all.
@@ -94,7 +97,9 @@ faithful to the JDK's own rules:
 
 The in-memory module finder builds a descriptor for each `modulepath/` jar: from its `module-info.class`, or
 derived for an automatic module from its `Automatic-Module-Name` or its file name, with the providers in
-`META-INF/services` scanned in. The boot layer is immutable, so a fresh child layer is the only way to add
+`META-INF/services` scanned in. A version behind the first dash in the file name is derived too, exactly as a
+module path derives it, so a bundled automatic module reports the identity it would report under `java -p` -
+in `Module::getDescriptor` and in stack traces alike. The boot layer is immutable, so a fresh child layer is the only way to add
 modules at run time - and the right one, because they stay real named modules. What these rules mean in
 practice is the subject of [*Running & troubleshooting*](/launcher/running-and-troubleshooting/).
 
@@ -102,9 +107,9 @@ practice is the subject of [*Running & troubleshooting*](/launcher/running-and-t
 
 A dependency that declares neither a `module-info` nor an `Automatic-Module-Name` has no name to derive. The
 build tool gives such a jar a name through a [module alias](/tool/dependencies/), and it renames the
-resolved file to `<alias>.jar` before packaging. Inside the launcher jar the subfolder is then
-`modulepath/<alias>.jar/`, and the automatic-module rule derives the declared name from it. Nothing else is
-needed.
+resolved file to `<alias>-<version>.jar` before packaging. Inside the launcher jar the subfolder is then
+`modulepath/<alias>-<version>.jar/`, and the automatic-module rule derives both the declared name and that
+version from it. Nothing else is needed.
 
 The launcher also understands a manifest header for a jar that kept its coordinate-encoded name. The module
 that declared the alias carries, in its own manifest:
