@@ -1,12 +1,12 @@
 // The Jenesis build-tool demos, grouped for the Demos page. Each demo is a self-contained project in the
 // jenesis repository under demo/<slug>; `repo` builds the link to its folder on GitHub.
 //
-// Keep this in sync with the demo/ directory of raphw/jenesis (the list is stable and numbered). It is a
+// Keep this in sync with the demo/ directory of jenesis/jenesis (the list is stable and numbered). It is a
 // committed data file rather than a build-time fetch so the docs build stays offline and can never be
 // broken by a GitHub API hiccup.
 
 export default {
-  repo: "https://github.com/raphw/jenesis/tree/main/demo",
+  repo: "https://github.com/jenesis/jenesis/tree/main/demo",
   groups: [
     {
       title: "Getting started",

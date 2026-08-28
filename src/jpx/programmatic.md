@@ -208,7 +208,7 @@ silently reaching the public default.
   Installation is idempotent and safe to run from several processes at once, so a program does not have to
   track whether a target is present: call <code>install</code> every time and pay for the download only on the
   first run. The
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-47-jpx">jpx demo</a> is this whole chapter as
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-47-jpx">jpx demo</a> is this whole chapter as
   one runnable file - it installs the JUnit console launcher into its own <code>target/jpx/</code>, verifies
   it, and launches it.
 </div>

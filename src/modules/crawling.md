@@ -117,7 +117,7 @@ resolves against yours without knowing the difference.
 </div>
 
 <div class="tip">
-  The crawler lives in <a href="https://github.com/raphw/jenesis-modules">raphw/jenesis-modules</a>,
+  The crawler lives in <a href="https://github.com/jenesis/jenesis-modules">jenesis/jenesis-modules</a>,
   whose README documents the remaining properties, the scheduled runs that keep the public index
   current, and the on-disk file formats - the detail you need when running a crawl of your own.
 </div>

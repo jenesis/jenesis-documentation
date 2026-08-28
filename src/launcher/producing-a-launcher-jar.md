@@ -96,9 +96,9 @@ shaded into your jar are [verified](/tool/pinning/) on every build, and the prod
 the same sources yield the same bytes.
 
 <div class="tip">
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-05-java-pom-executable">demo-05</a> (a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-05-java-pom-executable">demo-05</a> (a
   <code>pom.xml</code> application) and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-06-java-modular-executable">demo-06</a> (a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-06-java-modular-executable">demo-06</a> (a
   modular one) each ship a <code>build/DemoLauncher.java</code> that switches the launcher on through a
   profile, builds the jar, and runs it: <code>java build/DemoLauncher.java Ada Lovelace</code>. Their pinned
   <code>module-info.java</code> and <code>pom.xml</code> show the pin line in both forms.

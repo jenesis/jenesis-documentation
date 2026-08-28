@@ -175,8 +175,8 @@ cache as expected.
 
 <div class="tip">
   Two runnable projects show this chapter end to end:
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-04-java-modular-multi">demo-04</a> builds a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-04-java-modular-multi">demo-04</a> builds a
   multi-module modular project and prints its module graph, and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-29-module-layout">demo-29</a> is a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-29-module-layout">demo-29</a> is a
   single-module project under the pure <code>modular</code> layout. See <a href="/tool/demos/">Demos</a>.
 </div>
