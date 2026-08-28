@@ -73,6 +73,7 @@ export default {
         { slug: "demo-29-module-layout", name: "Pure modular layout", blurb: "A strictly modular layout that resolves by module name and emits no POM." },
         { slug: "demo-30-module-classifier", name: "Module classifier", blurb: "Pinning a classified variant of a module." },
         { slug: "demo-31-module-alias", name: "Module alias", blurb: "Giving a plain jar a module name, then rewriting the closure into named modules so jlink accepts it." },
+        { slug: "demo-32-module-override", name: "Module override", blurb: "Reading a shaded API under its own module name, so a modular library and Tomcat Embed share a module path." },
         { slug: "demo-33-module-override", name: "Module override", blurb: "Reading a shaded API under its own module name, so a modular library and Tomcat Embed share a module path." },
         { slug: "demo-34-platform-guard", name: "Platform guard", blurb: "Selecting a dependency variant per platform." },
         { slug: "demo-35-platform-guard-pom", name: "Platform guard (Maven)", blurb: "The platform guard in a Maven layout." },
