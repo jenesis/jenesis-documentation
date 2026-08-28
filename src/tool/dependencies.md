@@ -231,12 +231,77 @@ inherits the name without redeclaring it.
 Aliases are a `modular_to_maven` feature: they reach an artifact by its Maven coordinate, which the strict
 `modular` layout does not use.
 
+## Replacing a module another artifact already carries
+
+A package belongs to exactly one module, and a library that needs an API `requires` the module owning it.
+Occasionally one does not: it copies the API's classes into its own jar and exports those packages under its
+own name. Tomcat Embed is the notable case. `org.apache.tomcat.embed.core` exports the `jakarta.servlet`
+packages itself, `org.apache.tomcat.embed.el` exports `jakarta.el`, and none of them depends on the API
+artifact.
+
+That leaves two modules exporting one package, which a module descriptor is meant to prevent. It breaks more
+than your own code. A modular library names the API the only way a module can, in its descriptor - the
+Jakarta Server Pages API states `requires transitive jakarta.servlet` - so a module of that name has to be on
+the path or it does not resolve at all. Tomcat supplies the packages but not the name, and adding the API
+artifact beside it carries the packages twice:
+
+```
+error: module not found: jakarta.el
+error: module demo.override reads package jakarta.servlet
+       from both jakarta.servlet and org.apache.tomcat.embed.core
+```
+
+An **override** states the relationship once, naming the module to replace and the modules that already carry
+its packages:
+
+```java
+/**
+ * @jenesis.override jakarta.servlet org.apache.tomcat.embed.core
+ * @jenesis.override jakarta.el org.apache.tomcat.embed.el
+ */
+module demo.override {
+    requires jakarta.servlet;
+    requires jakarta.servlet.jsp;
+    requires org.apache.tomcat.embed.core;
+    requires org.apache.tomcat.embed.el;
+}
+```
+
+Jenesis then places a module of that name which holds no packages of its own and requires each carrier
+transitively. Reading it reads the carrier's copy under the API's name, because readability is what a
+`requires` grants and the packages come from the carrier's own exports. One line names one module and any
+number of carriers, repeated lines add up, and a carrier no resolved dependency declares is an error rather
+than a silent no-op.
+
+The declaration also drops every resolved artifact that declares the overridden module, whether it was
+required directly or arrived through somebody else's POM. The closure therefore carries those packages once,
+and so does the generated POM - a Maven consumer flattening this project onto a class path gets the carrier's
+copy and no second one. Your published descriptor still says `requires jakarta.servlet`, which is the point:
+it names the API rather than the server implementing it here. Consumers that build with Jenesis inherit the
+declaration through the `Jenesis-Overrides` manifest attribute of the produced jar.
+
+Two limits follow from the placed module holding no code. A qualified `exports … to jakarta.servlet` or
+`opens … to jakarta.servlet` grants access to that module, not to the carrier that does the reflecting, so
+open to the carrier or leave the directive unqualified. And requiring it reads everything the carrier exports,
+so code can compile against `org.apache.catalina` while declaring only `requires jakarta.servlet`.
+
+Overrides are a `modular_to_maven` feature, for the same reason aliases are: dropping the replaced artifact
+means reaching it by its Maven coordinate. The strict `modular` layout rejects the tag.
+
+<div class="note">
+  Two artifacts that declare the same module name are refused wherever they meet, override or not. A module
+  path resolves whichever of them comes first, so the build names both coordinates and stops rather than
+  compiling against one and running against the other.
+</div>
+
 <div class="tip">
-  Two runnable projects cover this chapter:
+  Three runnable projects cover this chapter:
   <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-27-maven-exclusions">demo-27</a> excludes
   Commons Lang from Commons Text and proves with a test that it is gone - in a POM, with the tag form beside
   it; and
   <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-31-module-alias">demo-31</a> gives args4j -
-  a library with no module identity at all - a name of its own and opens a package to it. Each is a runnable
-  project - see <a href="/tool/demos/">Demos</a>.
+  a library with no module identity at all - a name of its own and opens a package to it; and
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-32-module-override">demo-32</a> puts the
+  Jakarta Server Pages API, a modular library, on a module path with Tomcat Embed, which carries the servlet
+  packages itself. Each is a runnable project - see <a href="/tool/demos/">Demos</a>.
 </div>
