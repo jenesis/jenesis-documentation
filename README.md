@@ -154,4 +154,12 @@ Never hard-code a colour, a font size or a spacing value in a page. Everything i
 
 ## License
 
-Apache License 2.0.
+Apache License 2.0 - see [LICENSE](LICENSE). Copyright Rafael Winterhalter.
+
+The license covers this site's own work: the prose, the templates and the build configuration. Two bundled
+third-party assets keep the terms their own authors chose, and both licenses ship beside the file they
+cover, because each asks to accompany every copy: [Pico CSS](https://picocss.com) 2.1.1
+(`src/assets/css/pico.min.css`) is MIT, see [`pico.LICENSE.txt`](src/assets/css/pico.LICENSE.txt), and
+[Archivo](https://github.com/Omnibus-Type/Archivo) 2.001 (`src/assets/fonts/Archivo-ExtraBold.ttf`) is
+under the SIL Open Font License 1.1, see [`OFL.txt`](src/assets/fonts/OFL.txt). The Jenesis name and
+logos are marks, which section 6 of the license does not grant.
