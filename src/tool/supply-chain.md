@@ -179,6 +179,6 @@ pinning is recommended for builds in unsecured environments and for releases.
   permissive-only licence policy,
   <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-14-vulnerabilities">demo-14</a> catches
   Log4Shell in a pinned <code>log4j-core</code>, and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-42-supply-chain-security">demo-42</a> proves
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-43-supply-chain-security">demo-43</a> proves
   the pinning guarantees by getting them wrong on purpose. See <a href="/tool/demos/">Demos</a>.
 </div>

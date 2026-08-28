@@ -51,7 +51,7 @@ published module too.
 
 <div class="tip">
   Prefer to read it running? The
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-46-jpx">jpx demo</a> is a single file that
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-47-jpx">jpx demo</a> is a single file that
   installs the JUnit console launcher, names it once as a module and once as a coordinate, and verifies both
   against a digest before launching them.
 </div>

@@ -140,7 +140,7 @@ build.
 </div>
 
 <div class="tip">
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-43-publishing">demo-43</a> stages a
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-44-publishing">demo-44</a> stages a
   Central-ready bundle - POM metadata, sources and javadoc jars - and then resolves the coordinate straight
   back out of the staged tree to prove it is complete, entirely offline;
   <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-28-bom">demo-28</a> publishes a BOM of its own

@@ -229,15 +229,15 @@ yourself.
 
 <div class="tip">
   Six runnable projects cover this chapter:
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-34-custom-assembler">demo-34</a> wraps the
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-35-custom-assembler">demo-35</a> wraps the
   assembler to preprocess sources before they compile,
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-36-internal-module">demo-36</a> and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-37-external-module">demo-37</a> move that
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-37-internal-module">demo-37</a> and
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-38-external-module">demo-38</a> move that
   same pass into a build module - one compiled from local source, one resolved as a published coordinate,
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-38-custom-maven">demo-38</a> and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-39-custom-modular">demo-39</a> drive a
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-39-custom-maven">demo-39</a> and
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-40-custom-modular">demo-40</a> drive a
   multi-module Maven and modular build from a convenience <code>make</code>, and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-40-custom-build">demo-40</a> wires a
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-41-custom-build">demo-41</a> wires a
   code-generating graph entirely by hand on the <code>BuildExecutor</code> API. See
   <a href="/tool/demos/">Demos</a>.
 </div>
