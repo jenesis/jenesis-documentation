@@ -33,8 +33,8 @@ Install once with SDKMAN, Homebrew, or Scoop, then initialise each project from 
 
 ```bash
 sdk install jenesis                # SDKMAN
-brew install raphw/tap/jenesis     # Homebrew
-scoop bucket add raphw https://github.com/raphw/scoop-bucket && scoop install jenesis   # Scoop
+brew install jenesis/tap/jenesis   # Homebrew
+scoop bucket add jenesis https://github.com/jenesis/scoop-bucket && scoop install jenesis   # Scoop
 
 jenesis-init                       # run from your project root
 java build/jenesis/Project.java
@@ -81,7 +81,7 @@ its pinned commit and its history is never browsed from your project, so record 
 every fresh checkout stays cheap:
 
 ```bash
-git submodule add --depth 1 https://github.com/raphw/jenesis.git .jenesis
+git submodule add --depth 1 https://github.com/jenesis/jenesis.git .jenesis
 git config -f .gitmodules submodule..jenesis.shallow true   # the submodule is named ".jenesis"
 ln -s ../.jenesis/sources/build/jenesis build/jenesis
 java build/jenesis/Project.java
@@ -92,11 +92,11 @@ build/jenesis` and refresh the copy after each submodule update.
 
 ## Building an example end to end
 
-The `raphw/jenesis` repository ships a runnable example for every feature under `demo/`. Clone it and build
+The `jenesis/jenesis` repository ships a runnable example for every feature under `demo/`. Clone it and build
 the simplest one - a single-module Java project described by a `pom.xml`:
 
 ```bash
-git clone https://github.com/raphw/jenesis.git
+git clone https://github.com/jenesis/jenesis.git
 cd jenesis/demo/demo-01-java-pom
 java build/jenesis/Project.java
 ```

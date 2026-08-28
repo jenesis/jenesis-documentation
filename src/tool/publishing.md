@@ -31,13 +31,13 @@ a module declaration cannot express:
 
 ```properties
 # project.properties
-url=https://github.com/raphw/jenesis
+url=https://github.com/jenesis/jenesis
 license.apache-2_0.name=Apache-2.0
 license.apache-2_0.url=https://www.apache.org/licenses/LICENSE-2.0.txt
 developer.raphw.name=Rafael Winterhalter
 developer.raphw.email=rafael.wth@gmail.com
-scm.connection=scm:git:https://github.com/raphw/jenesis.git
-scm.url=https://github.com/raphw/jenesis
+scm.connection=scm:git:https://github.com/jenesis/jenesis.git
+scm.url=https://github.com/jenesis/jenesis
 ```
 
 <div class="tip">
@@ -140,9 +140,9 @@ build.
 </div>
 
 <div class="tip">
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-44-publishing">demo-44</a> stages a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-44-publishing">demo-44</a> stages a
   Central-ready bundle - POM metadata, sources and javadoc jars - and then resolves the coordinate straight
   back out of the staged tree to prove it is complete, entirely offline;
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-28-bom">demo-28</a> publishes a BOM of its own
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-28-bom">demo-28</a> publishes a BOM of its own
   closure. Each is a runnable project - see <a href="/tool/demos/">Demos</a>.
 </div>

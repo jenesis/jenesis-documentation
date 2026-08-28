@@ -1,6 +1,6 @@
 # Jenesis documentation
 
-![deploy](https://github.com/raphw/jenesis-documentation/actions/workflows/deploy.yml/badge.svg)
+![deploy](https://github.com/jenesis/jenesis-documentation/actions/workflows/deploy.yml/badge.svg)
 
 > ### [Jenesis](https://jenesis.build) - a modern Java build tool
 > _Java-native config, plugin-free, with `module-info.java` treated as a feature, not an afterthought._
@@ -31,7 +31,7 @@ passes - publishes to GitHub Pages. A broken link fails the deploy, so run `npm 
   `modules` (Jenesis Module Index), `repository` (Jenesis Repository). Each folder's `<section>.json` sets the
   shared layout and menu title.
 - `src/_includes/` - the page shell (`base.njk`) and the documentation layout with the sidebar (`docs.njk`).
-- `src/_data/` - `demos.js` (the demo index, kept in step with `raphw/jenesis`'s `demo/`) and `release.js`
+- `src/_data/` - `demos.js` (the demo index, kept in step with `jenesis/jenesis`'s `demo/`) and `release.js`
   (which repository each landing-page tile takes its version from - the version itself is read from the
   GitHub API at page load, never committed, so a tile shows no version rather than a stale one).
 - `src/assets/` - CSS (`pico.min.css`, `app.css`, `docs.css`), the logos and font, and the small theme and
@@ -75,7 +75,7 @@ lines.
 a list once it runs past ~300. Prefer a table over prose when the content is a set of options.
 
 **Show, then explain.** Every feature gets a runnable example - the smallest one that works. Where a demo
-exists in `raphw/jenesis`, link it at the end of the chapter so a reader can run the whole thing.
+exists in `jenesis/jenesis`, link it at the end of the chapter so a reader can run the whole thing.
 
 **User perspective only.** Describe what a tool does and how to use it, never how it is implemented
 internally, and never the class that does it. Internals belong in the tool's README or its source.
@@ -89,7 +89,7 @@ back-references ("the module system") are fine.
 
 **Use the product names strictly.** The service at repo.jenesis.build is **the Jenesis Module Index** (then
 "the module index"); **Jenesis Repository** is only the artifact-repository product; `~/.jenesis` is "the local
-module repository" (as `~/.m2` is the local Maven repository); the GitHub project is "the `raphw/jenesis`
+module repository" (as `~/.m2` is the local Maven repository); the GitHub project is "the `jenesis/jenesis`
 repository". The module runner is **jpx**, lower case even at the start of a sentence; the executable-jar tool
 is **Jenesis Launcher** and its artifact "a launcher jar" (the build tool's `bundle=true` owns the word
 "bundle"). Build extensions are "plugins", the folder is "the configuration folder" (`build.jenesis/`), and

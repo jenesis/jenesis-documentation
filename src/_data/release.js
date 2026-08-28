@@ -7,10 +7,10 @@
 export default {
   install: "curl -fsSL https://get.jenesis.build | bash",
   components: {
-    tool: { repo: "raphw/jenesis" },
-    jpx: { repo: "raphw/jenesis" },
-    launcher: { repo: "raphw/jenesis-launcher" },
-    modules: { repo: "raphw/jenesis-modules" },
-    repository: { repo: "raphw/jenesis-repository" },
+    tool: { repo: "jenesis/jenesis" },
+    jpx: { repo: "jenesis/jenesis" },
+    launcher: { repo: "jenesis/jenesis-launcher" },
+    modules: { repo: "jenesis/jenesis-modules" },
+    repository: { repo: "jenesis/jenesis-repository" },
   },
 };

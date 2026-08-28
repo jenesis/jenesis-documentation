@@ -11,7 +11,7 @@ the right one.
 
 The module index is built by a **crawler** that scans Maven Central and, for every artifact that carries a
 module name, records that name. Everything the service redirects to is derived from that record. The
-crawler and its live progress live in the [`raphw/jenesis-modules`](https://github.com/raphw/jenesis-modules)
+crawler and its live progress live in the [`jenesis/jenesis-modules`](https://github.com/jenesis/jenesis-modules)
 repository.
 
 ## Reading each artifact's real module name
@@ -44,7 +44,7 @@ stream missed.
   build that names the version keeps working in the meantime.
 </div>
 
-You can watch the crawl in progress: [`data/STATUS.md`](https://github.com/raphw/jenesis-modules/blob/main/data/STATUS.md)
+You can watch the crawl in progress: [`data/STATUS.md`](https://github.com/jenesis/jenesis-modules/blob/main/data/STATUS.md)
 is rewritten at every checkpoint with the current position, throughput, and sync mode.
 
 ## How it stays complete and self-heals
