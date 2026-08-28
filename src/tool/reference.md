@@ -124,7 +124,7 @@ variable as a fallback. Defaults apply when the key is unset.
 | `jenesis.test.reporting` | `false` | Emit test reports under `reports/tests/`: legacy JUnit XML and Open Test Reporting XML for `junit-platform`, TestNG's own report for `testng`. |
 | `jenesis.test.incremental` | *(off)* | Run only the tests a change can reach; the value names the digest algorithm. |
 | `jenesis.test.force` | `false` | `true` runs the tests even when nothing changed and the recorded scope already covers the request. |
-| `jenesis.stage.tests` | `false` | Include test-variant artifacts when staging. |
+| `jenesis.stage.tests` | `false` | Include test-variant artifacts when staging; a module tagged `@jenesis.test abstract` is never staged. |
 | `jenesis.sbom.cyclonedx` | `true` | Emit a CycloneDX SBOM; set `false` to skip it. |
 | `jenesis.compliance` | `true` | Run the licence and vulnerability checks; `false` skips both. |
 | `jenesis.source.<tool>` | `true` | Per-linter switch (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`). |
@@ -283,7 +283,7 @@ layout, the POM equivalent named beside it. This is the whole vocabulary:
 | --- | --- | --- |
 | `@jenesis.release <N>` | The Java release to compile against (`maven.compiler.release` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
 | `@jenesis.main <class>` | The module's entry point (`<mainClass>` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
-| `@jenesis.test [<module>]` | Marks this module as the test module of another. | *[Building &amp; running](/tool/building-and-running/)* |
+| `@jenesis.test [<module>\|abstract]` | Marks this module as the test module of another, or as test infrastructure that declares no tests of its own (`abstract`). | *[Building &amp; running](/tool/building-and-running/)* |
 | `@jenesis.plugin [<compiler>] <token>` | An annotation processor, or a compiler plugin for a named compiler. | *[Other JVM languages](/tool/other-jvm-languages/)* |
 | `@jenesis.attach <token> [<options>]` | A library to attach as a Java agent (`<!--jenesis.attach-->` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
 | `@jenesis.exclude <module> <group>/<artifact>…` | Transitives to prune from a requirement (`<exclusions>` in a POM). | *[Dependencies](/tool/dependencies/)* |
