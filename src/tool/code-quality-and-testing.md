@@ -225,12 +225,12 @@ a linter's own closure can run to a hundred artifacts - which is what makes the 
 
 <div class="tip">
   Four runnable demos exercise this chapter:
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-11-java-quality">demo-11</a> wires Checkstyle,
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-11-java-quality">demo-11</a> wires Checkstyle,
   PMD, SpotBugs and the Java formatter into one project;
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-23-code-coverage">demo-23</a> measures
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-23-code-coverage">demo-23</a> measures
   coverage with JaCoCo;
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-24-test-selection">demo-24</a> edits one class
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-24-test-selection">demo-24</a> edits one class
   and re-runs only that class's test; and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-25-pitest">demo-25</a> runs pitest, killing
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-25-pitest">demo-25</a> runs pitest, killing
   both mutants of a covered method. See <a href="/tool/demos/">Demos</a>.
 </div>

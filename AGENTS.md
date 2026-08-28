@@ -14,11 +14,11 @@ repositories next to this one; the paths below are relative to such a checkout.
 
 | Section | Tool | Repository | Where to look | How to verify |
 |---|---|---|---|---|
-| `src/tool/` | Jenesis, the build tool | [raphw/jenesis](https://github.com/raphw/jenesis) | `sources/build/jenesis/**`, `demo/**` (one README per demo), `install.sh`, `jreleaser.yml`, `sdk/` | `grep -rn` over `sources/`; run a demo with `java build/jenesis/Project.java`; the tool's own `help` output |
-| `src/jpx/` | jpx, the module runner | [raphw/jenesis](https://github.com/raphw/jenesis) | `sources/build/jenesis/Jpx.java`, `sources/build/jenesis/docker/`, `sdk/jpx/`, `demo/demo-47-jpx` | `java build/jenesis/Jpx.java <target>` from a project that carries `build/jenesis/` |
-| `src/launcher/` | Jenesis Launcher | [raphw/jenesis-launcher](https://github.com/raphw/jenesis-launcher) | `sources/build/jenesis/launcher/**`; what the build writes into a jar is `sources/build/jenesis/step/Launcher.java` in raphw/jenesis | `demo-05` and `demo-06` ship a `build/DemoLauncher.java` |
-| `src/modules/` | the Jenesis Module Index | [raphw/jenesis-modules](https://github.com/raphw/jenesis-modules) | `worker/index.js` (the service), `sources/build/jenesis/crawler/**`, `data/**`, `.github/workflows/` (schedules) | `curl -sI https://repo.jenesis.build/...` - the live service answers |
-| `src/repository/` | Jenesis Repository | [raphw/jenesis-repository](https://github.com/raphw/jenesis-repository) | `source/**`, `test/**`, `Dockerfile`, `source/bundle/module-info.java`, each module's `application.properties`, `RepositoryProperties.java` | `java -Djenesis.execute.module=source+bundle build/jenesis/Execute.java`, then `curl` against it |
+| `src/tool/` | Jenesis, the build tool | [jenesis/jenesis](https://github.com/jenesis/jenesis) | `sources/build/jenesis/**`, `demo/**` (one README per demo), `install.sh`, `jreleaser.yml`, `sdk/` | `grep -rn` over `sources/`; run a demo with `java build/jenesis/Project.java`; the tool's own `help` output |
+| `src/jpx/` | jpx, the module runner | [jenesis/jenesis](https://github.com/jenesis/jenesis) | `sources/build/jenesis/Jpx.java`, `sources/build/jenesis/docker/`, `sdk/jpx/`, `demo/demo-47-jpx` | `java build/jenesis/Jpx.java <target>` from a project that carries `build/jenesis/` |
+| `src/launcher/` | Jenesis Launcher | [jenesis/jenesis-launcher](https://github.com/jenesis/jenesis-launcher) | `sources/build/jenesis/launcher/**`; what the build writes into a jar is `sources/build/jenesis/step/Launcher.java` in jenesis/jenesis | `demo-05` and `demo-06` ship a `build/DemoLauncher.java` |
+| `src/modules/` | the Jenesis Module Index | [jenesis/jenesis-modules](https://github.com/jenesis/jenesis-modules) | `worker/index.js` (the service), `sources/build/jenesis/crawler/**`, `data/**`, `.github/workflows/` (schedules) | `curl -sI https://repo.jenesis.build/...` - the live service answers |
+| `src/repository/` | Jenesis Repository | [jenesis/jenesis-repository](https://github.com/jenesis/jenesis-repository) | `source/**`, `test/**`, `Dockerfile`, `source/bundle/module-info.java`, each module's `application.properties`, `RepositoryProperties.java` | `java -Djenesis.execute.module=source+bundle build/jenesis/Execute.java`, then `curl` against it |
 
 What is not in those repositories is not documented. A capability has to be findable in the tool's source
 tree, on its current default branch, before a chapter describes it.
@@ -39,7 +39,7 @@ tree, on its current default branch, before a chapter describes it.
    exist.
 5. **Check the whole site**, not only the chapter: a concept carries one name across sections (see Naming), a
    property documented in a chapter also appears in that section's reference table, `src/_data/demos.js`
-   matches the `demo/` folder of raphw/jenesis, and the landing page (`src/index.njk` and the taglines in
+   matches the `demo/` folder of jenesis/jenesis, and the landing page (`src/index.njk` and the taglines in
    `eleventy.config.js`) claims nothing a chapter contradicts.
 6. `npm run check` builds the site and crawls it, validating every internal link and every `#fragment` on
    every page - not just the ones the landing page reaches. It must pass before a push; the deploy runs only
@@ -72,7 +72,7 @@ tree, on its current default branch, before a chapter describes it.
 | repo.jenesis.build and its data | **the Jenesis Module Index**, then "the module index" | catalogue (as a name), module repository, mirror of Maven Central, the worker |
 | the artifact-repository product | **Jenesis Repository** | the registry, the artifact manager (as a name) |
 | `~/.jenesis` | the local module repository (`~/.jenesis`) | the Jenesis repository |
-| raphw/jenesis on GitHub | the `raphw/jenesis` repository | the Jenesis repository |
+| jenesis/jenesis on GitHub | the `jenesis/jenesis` repository | the Jenesis repository |
 | the module runner | **jpx**, lower case even at a sentence start; section title "Jenesis jpx" | JPX, Jpx (the class is `Jpx.java`) |
 | the executable-jar tool / its artifact | **Jenesis Launcher** / a launcher jar | bundle, bundler (the build tool's `bundle=true` owns "bundle") |
 | `Project.java` | `Project.java`, the build | the launcher |
@@ -106,7 +106,7 @@ so a heading link written out of habit fails the build rather than the reader.
 ## Section notes
 
 - **Tool.** Staged paths carry an `output/` segment and the module's build identity (`module`,
-  `module-sources`), not its name. Demo links are `https://github.com/raphw/jenesis/tree/main/demo/<slug>`;
+  `module-sources`), not its name. Demo links are `https://github.com/jenesis/jenesis/tree/main/demo/<slug>`;
   every demo folder is in `demos.js` and vice versa. The reference tables follow `Project.java`,
   `BuildExecutor.Configuration` and the property reads in the step classes - a property added to the tool is
   added to the reference and mentioned where a reader would look for it.

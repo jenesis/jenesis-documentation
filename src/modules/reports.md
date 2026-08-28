@@ -9,13 +9,13 @@ Jenesis Module Index publishes a handful of **human-readable reports** so you ca
 instead. They show how much of Maven Central is modular, which of the most-used libraries ship a module,
 and where a module name is claimed by more than one publisher.
 
-The reports live in the [`raphw/jenesis-modules`](https://github.com/raphw/jenesis-modules) repository
+The reports live in the [`jenesis/jenesis-modules`](https://github.com/jenesis/jenesis-modules) repository
 under `data/`, are regenerated **once a day**, and each states the date it was generated for. The front
 door is the **module summary**, which links the top-modules reports; the drift report stands on its own.
 
 ## The module summary
 
-[`SUMMARY.md`](https://github.com/raphw/jenesis-modules/blob/main/data/SUMMARY.md) is the coverage report
+[`SUMMARY.md`](https://github.com/jenesis/jenesis-modules/blob/main/data/SUMMARY.md) is the coverage report
 for all of Maven Central. Its opening **Totals** table is the headline. In a recent crawl it counted about
 **18 million** artifacts scanned, of which about **1.65 million** are modular - roughly **360 000** named
 and **1.3 million** automatic - spread across roughly **41 000** distinct module names and **5 300**
@@ -43,8 +43,8 @@ version count and groupIds by module count.
 Coverage across the whole index understates what you meet in practice, because most of Maven
 Central is a long tail of artifacts almost nothing depends on. The **top-modules** reports fix that. Each
 ranks the 1000 **most downloaded** artifacts of a given year and shows how many of them ship a module.
-There is one report per year - [2019](https://github.com/raphw/jenesis-modules/blob/main/data/top/2019.md)
-through [2025](https://github.com/raphw/jenesis-modules/blob/main/data/top/2025.md) - so you can watch
+There is one report per year - [2019](https://github.com/jenesis/jenesis-modules/blob/main/data/top/2019.md)
+through [2025](https://github.com/jenesis/jenesis-modules/blob/main/data/top/2025.md) - so you can watch
 adoption move over time.
 
 Each report opens with two summary tables, **by artifact** and **by groupId**, counted in three columns:
@@ -79,7 +79,7 @@ The symbols in that table:
 
 ## The bleeding-edge report
 
-[`BLEEDING.md`](https://github.com/raphw/jenesis-modules/blob/main/data/top/BLEEDING.md) is the same
+[`BLEEDING.md`](https://github.com/jenesis/jenesis-modules/blob/main/data/top/BLEEDING.md) is the same
 report pointed at **now** rather than at a past year end. It takes the most recent popularity list and
 assesses it against current data: the module columns describe each artifact's latest version as it stands
 today, and the ⚠️ / 🚩 activity flags use rolling 12- and 36-month windows. Read the per-year reports for
@@ -89,7 +89,7 @@ the trend; read this one for where modularisation stands right now.
 
 A module name is not owned by anyone on Maven Central. It is just a string a jar carries, and unrelated
 artifacts routinely declare the same one. The
-[**drift report**](https://github.com/raphw/jenesis-modules/blob/main/data/DRIFTERS.md) lists every module
+[**drift report**](https://github.com/jenesis/jenesis-modules/blob/main/data/DRIFTERS.md) lists every module
 name published by **more than one groupId** whose ownership has not been fully decided - that is,
 whose `owners.tsv` does not mark every publisher as `allowed` or `rejected`.
 

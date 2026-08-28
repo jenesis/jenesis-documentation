@@ -24,7 +24,7 @@ links into it - and start the all-in-one server. The all-in-one is the `source/b
 module that carries every format, every storage backend, the import connectors and the web console.
 
 ```bash
-git clone --recurse-submodules https://github.com/raphw/jenesis-repository.git
+git clone --recurse-submodules https://github.com/jenesis/jenesis-repository.git
 cd jenesis-repository
 JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
   java -Djenesis.execute.module=source+bundle build/jenesis/Execute.java
