@@ -72,6 +72,24 @@ The tag is what makes it a test module: it is compiled and run as part of `build
 published. Its folder name is how you select it, so with the module under test in `greeter/` and its tests
 in `greeter-test/`, `+greeter` builds the library alone and `+greeter-test` builds it *and* runs the tests.
 
+A module that only supplies infrastructure to the tests - fixtures, fakes, shared assertions - carries the
+same tag with the value `abstract` instead of a module name:
+
+```java
+/**
+ * @jenesis.test abstract
+ */
+module demo.greeter.testing {
+    requires demo.greeter;
+    exports greetertesting;
+}
+```
+
+Such a module is compiled and put on the module path of the test modules that `requires` it, but no test run
+is wired for it, and it is never staged - not even under `jenesis.stage.tests`, which does publish the test
+modules beside the modules they test. Since `abstract` is a Java keyword it can never be a module name, so
+the two forms of the tag never collide.
+
 ### Skipping the tests
 
 To compile and package without running the test suite - a fast inner loop, or a machine that only builds
