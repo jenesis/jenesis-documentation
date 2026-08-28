@@ -330,10 +330,10 @@ footprint matter more.
   container context (and, for the modular one, a <code>.jmod</code> and a jlink runtime);
   <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-07-bundle">demo-07</a> unpacks a bundle and
   runs it on a stock JRE;
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-35-custom-jmod">demo-35</a> packs extra
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-36-custom-jmod">demo-36</a> packs extra
   content into a <code>.jmod</code> and carries it through jlink into a jpackage image;
   <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-31-module-alias">demo-31</a> makes an
   unlinkable closure linkable with a <code>modules.properties</code>; and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-44-native-image">demo-44</a> builds a GraalVM
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-45-native-image">demo-45</a> builds a GraalVM
   native image end to end. See <a href="/tool/demos/">Demos</a>.
 </div>

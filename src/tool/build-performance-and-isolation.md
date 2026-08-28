@@ -224,9 +224,9 @@ Eviction runs on write and goes by file timestamp, which `touch` keeps fresh on 
 
 <div class="tip">
   Two runnable projects cover this chapter:
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-41-docker-isolation">demo-41</a> leaks a
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-42-docker-isolation">demo-42</a> leaks a
   credentials file and an environment secret on the host, then confines both the build and the launched program
   with Docker, and
-  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-45-build-cache">demo-45</a> serves a forced full
+  <a href="https://github.com/raphw/jenesis/tree/main/demo/demo-46-build-cache">demo-46</a> serves a forced full
   rebuild entirely from the build cache. See <a href="/tool/demos/">Demos</a>.
 </div>
