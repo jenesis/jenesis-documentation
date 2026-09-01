@@ -40,11 +40,12 @@ The chapters build up from zero knowledge:
 6. **Dependencies** - resolution, module-name lookup, exclusions, and module aliases.
 7. **Pinning & bills of materials** - exact versions and checksums in your sources, shared and enforced.
 8. **Code quality & testing** - formatting, coverage, test selection, and mutation testing.
-9. **Other JVM languages** - Kotlin, Scala, and Groovy.
-10. **Supply-chain features** - SBOM, dependency licensing, and vulnerability scanning.
-11. **Packaging** - executables, bundles, jlink/jpackage, container contexts, native images, launcher jars.
-12. **Publishing** - staging a release bundle, publishing it, and driving a release tool.
-13. **Build performance & isolation** - Docker isolation and the build cache.
-14. **Extending the build** - custom assemblers and build definitions.
-15. **Reference** - the command line, configuration keys, and the built-in steps.
-16. **Demos** - a runnable example project for every feature.
+9. **Generating sources** - compiling a schema or a service contract into Java as part of the build.
+10. **Other JVM languages** - Kotlin, Scala, and Groovy.
+11. **Supply-chain features** - SBOM, dependency licensing, and vulnerability scanning.
+12. **Packaging** - executables, bundles, jlink/jpackage, container contexts, native images, launcher jars.
+13. **Publishing** - staging a release bundle, publishing it, and driving a release tool.
+14. **Build performance & isolation** - Docker isolation and the build cache.
+15. **Extending the build** - custom assemblers and build definitions.
+16. **Reference** - the command line, configuration keys, and the built-in steps.
+17. **Demos** - a runnable example project for every feature.

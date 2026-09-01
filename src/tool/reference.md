@@ -1,5 +1,5 @@
 ---
-order: 15
+order: 16
 title: Reference
 description: A lookup for the command line - targets and selectors - a grouped table of every configuration key with its default, and the built-in steps a selector can name.
 ---
@@ -134,10 +134,12 @@ variable as a fallback. Defaults apply when the key is unset.
 | `jenesis.observe.jacoco` | `true` | Run JaCoCo coverage when its file is present. |
 | `jenesis.observe.native` | `true` | Run the GraalVM tracing agent when its file is present. |
 | `jenesis.mutate.pitest` | `true` | Run PIT mutation testing when its file is present. |
+| `jenesis.generate.<tool>` | `true` | Per-generator switch (`xjc`, `protoc`, `avro`, `wsimport`, `openapi`). |
 
 The quality and packaging *files* these keys gate (`checkstyle.xml`, `packaging.properties`, and the like)
-are covered in *[Code quality &amp; testing](/tool/code-quality-and-testing/)*, *[Supply-chain
-features](/tool/supply-chain/)*, and *[Packaging](/tool/packaging/)*.
+are covered in *[Code quality &amp; testing](/tool/code-quality-and-testing/)*, *[Generating
+sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chain/)*, and
+*[Packaging](/tool/packaging/)*.
 
 ### Dependencies & pinning
 

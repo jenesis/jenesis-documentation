@@ -212,13 +212,13 @@ migration: the BOM declarations go and the closure is pinned in full.
 
 <div class="tip">
   Every demo ships already pinned, so any of them shows the result. Four are about pinning itself:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-30-module-classifier">demo-30</a> pins a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-33-module-classifier">demo-30</a> pins a
   classified variant of a module and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-33-platform-guard">demo-33</a> switches
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-36-platform-guard">demo-33</a> switches
   between two variants with a guard;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-28-bom">demo-28</a> imports a Maven BOM and a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-31-bom">demo-28</a> imports a Maven BOM and a
   local pin file side by side and builds under strict pinning with almost no pin lines of its own, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-43-supply-chain-security">demo-43</a> proves
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-46-supply-chain-security">demo-43</a> proves
   both guarantees by getting them wrong on purpose - an unpinned dependency and a wrong checksum, each
   rejected. See <a href="/tool/demos/">Demos</a>.
 </div>
