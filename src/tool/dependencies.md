@@ -296,12 +296,12 @@ means reaching it by its Maven coordinate. The strict `modular` layout rejects t
 
 <div class="tip">
   Three runnable projects cover this chapter:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-27-maven-exclusions">demo-27</a> excludes
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-30-maven-exclusions">demo-27</a> excludes
   Commons Lang from Commons Text and proves with a test that it is gone - in a POM, with the tag form beside
   it; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-31-module-alias">demo-31</a> gives args4j -
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-34-module-alias">demo-31</a> gives args4j -
   a library with no module identity at all - a name of its own and opens a package to it; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-32-module-override">demo-32</a> puts the
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-35-module-override">demo-32</a> puts the
   Jakarta Server Pages API, a modular library, on a module path with Tomcat Embed, which carries the servlet
   packages itself. Each is a runnable project - see <a href="/tool/demos/">Demos</a>.
 </div>
