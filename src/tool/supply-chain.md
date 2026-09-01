@@ -1,5 +1,5 @@
 ---
-order: 10
+order: 11
 title: Supply-chain features
 description: Build-time supply-chain support - generating a CycloneDX SBOM, checking dependency licences against a policy, scanning for known vulnerabilities, and hardening the whole build.
 ---
@@ -174,11 +174,11 @@ pinning is recommended for builds in unsecured environments and for releases.
 
 <div class="tip">
   Four runnable projects cover this chapter:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-12-sbom">demo-12</a> emits an SBOM,
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-13-compliance">demo-13</a> gates a build on a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-14-sbom">demo-12</a> emits an SBOM,
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-15-compliance">demo-13</a> gates a build on a
   permissive-only licence policy,
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-14-vulnerabilities">demo-14</a> catches
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-16-vulnerabilities">demo-14</a> catches
   Log4Shell in a pinned <code>log4j-core</code>, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-43-supply-chain-security">demo-43</a> proves
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-46-supply-chain-security">demo-43</a> proves
   the pinning guarantees by getting them wrong on purpose. See <a href="/tool/demos/">Demos</a>.
 </div>

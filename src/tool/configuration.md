@@ -99,7 +99,7 @@ Select profiles with the `jenesis.project.properties` property - a comma-separat
   profile can carry its own `checkstyle.xml`, `packaging.properties`, and so on.
 
 Profiles **chain**: any loaded file may itself set `jenesis.project.properties` to pull in more, transitively.
-The [`profiles`](https://github.com/jenesis/jenesis/tree/main/demo/demo-15-profiles) demo ships a `release`
+The [`profiles`](https://github.com/jenesis/jenesis/tree/main/demo/demo-17-profiles) demo ships a `release`
 profile that turns on source jars and chains to a `supply-chain` profile that enforces strict pinning:
 
 ```properties
@@ -155,7 +155,7 @@ holds that file. Set to an empty string, it switches the user-global layer off e
 command line or in the project's `jenesis.properties`, but not in a profile or in the user-global file itself.
 
 <div class="tip">
-  The <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-15-profiles">demo-15</a> project is a
+  The <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-17-profiles">demo-15</a> project is a
   complete, runnable example of everything here - a base build with no extras, and a <code>release</code>
   profile that chains to <code>supply-chain</code> to add source jars and strict pinning without changing a
   single command-line flag. See <a href="/tool/demos/">Demos</a>.
