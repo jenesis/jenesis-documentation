@@ -346,7 +346,7 @@ change can reach - a development-loop optimisation covered in *[Code quality & t
   <code>javac</code> a <code>-parameters</code> flag through <code>process-javac.properties</code>;
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-10-annotations">demo-10</a> runs an annotation
   processor (Immutables); and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-29-agents">demo-26</a> attaches Mockito to
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-29-agents">demo-29</a> attaches Mockito to
   its tests and the OpenTelemetry agent to its application run. Each is a runnable project - see
   <a href="/tool/demos/">Demos</a>.
 </div>
