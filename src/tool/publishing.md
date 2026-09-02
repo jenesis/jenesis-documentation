@@ -140,9 +140,9 @@ build.
 </div>
 
 <div class="tip">
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-47-publishing">demo-44</a> stages a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-47-publishing">demo-47</a> stages a
   Central-ready bundle - POM metadata, sources and javadoc jars - and then resolves the coordinate straight
   back out of the staged tree to prove it is complete, entirely offline;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-31-bom">demo-28</a> publishes a BOM of its own
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-31-bom">demo-31</a> publishes a BOM of its own
   closure. Each is a runnable project - see <a href="/tool/demos/">Demos</a>.
 </div>
