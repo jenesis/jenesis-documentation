@@ -46,9 +46,14 @@ a JDK.
 
 The install also puts a `jenesis` command on your path. It reads the version recorded in
 `build/jenesis/jenesis.version` and runs **that** version, installing it first where the package manager can,
-so the project decides which Jenesis builds it rather than whichever one your shell happens to have. The
-lookup is a single file read, and a project that records nothing falls through to the installed version.
-`jenesis-run` skips the lookup and runs the installed version as it stands.
+so the project decides which Jenesis builds it rather than whichever one your shell happens to have.
+
+The recorded version is a claim, so `jenesis` checks it. Before running a compiled engine it digests the
+sources under `build/jenesis/` and the sources that version ships, and runs the engine only when the two
+agree. A stale version file, or a `build/jenesis/` you have edited, therefore never silently gets you a
+different engine: the build falls back to the vendored sources, which is slower but is always what your
+project carries. A project that records nothing falls through to the installed version, and `jenesis-run`
+skips the whole lookup and runs the installed version as it stands.
 
 <div class="tip">
   You can skip embedding entirely and run <code>jenesis</code> from a project root with no
@@ -59,8 +64,8 @@ lookup is a single file read, and a project that records nothing falls through t
 
 The install ships a few companion commands. `jenesis-exec` runs a module's `main` the way `jenesis` runs the
 build. `jenesis-version` and `jenesis-validate` check that a project's embedded `build/jenesis/` matches the
-installed version - `jenesis` trusts the recorded version, so `jenesis-validate` is how you confirm the
-sources behind it are unmodified. `jenesis-switch` moves the whole shell to the version a project records,
+installed version, and `jenesis-validate` names the files that differ where `jenesis` only decides whether
+to trust them. `jenesis-switch` moves the whole shell to the version a project records,
 for when you want every command aligned rather than one invocation; source it, as `. jenesis-switch`, since
 it changes the calling shell.
 
