@@ -166,15 +166,15 @@ each remaining language in its own subfolder. Either way the produced `-javadoc.
 
 <div class="tip">
   Seven runnable demos exercise this chapter - a language mixed with Java, its quality tools, and a plugin:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-18-kotlin">demo-16</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-19-kotlin-quality">demo-17</a> build and lint a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-18-kotlin">demo-18</a> and
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-19-kotlin-quality">demo-19</a> build and lint a
   Kotlin/Java module, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-20-kotlin-plugin">demo-18</a> runs a Kotlin
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-20-kotlin-plugin">demo-20</a> runs a Kotlin
   compiler plugin (kotlinx.serialization);
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-21-scala">demo-19</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-22-scala-quality">demo-20</a> do the same for
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-21-scala">demo-21</a> and
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-22-scala-quality">demo-22</a> do the same for
   Scala; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-23-groovy">demo-21</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-24-groovy-quality">demo-22</a> for Groovy. See
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-23-groovy">demo-23</a> and
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-24-groovy-quality">demo-24</a> for Groovy. See
   <a href="/tool/demos/">Demos</a>.
 </div>

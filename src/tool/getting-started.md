@@ -120,6 +120,19 @@ nothing at all, falling back to the installed version. **This is the recommended
 keep `java build/jenesis/Project.java` as the canonical command in your README and CI, where reproducibility
 matters more than startup.
 
+Where installing is not an option - a locked-down machine, a container image you would rather not extend -
+you can compile the vendored engine yourself and run the classes instead:
+
+```bash
+javac -d .jenesis/launcher $(find build/jenesis/ -name '*.java')
+java -cp .jenesis/launcher build.jenesis.Project
+```
+
+That is the same engine the source command builds, compiled once instead of on every invocation. Recompile
+after changing or updating `build/jenesis/`, and add the output folder to `.gitignore` - nothing about it
+belongs in the repository. Compiling *into* the source tree works too, since `javac` writes each class beside
+its source, but a build output mixed into a checkout is harder to clean and easier to leave stale.
+
 ## Building an example end to end
 
 The `jenesis/jenesis` repository ships a runnable example for every feature under `demo/`. Clone it and build

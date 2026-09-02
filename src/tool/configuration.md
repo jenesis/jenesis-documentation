@@ -155,7 +155,7 @@ holds that file. Set to an empty string, it switches the user-global layer off e
 command line or in the project's `jenesis.properties`, but not in a profile or in the user-global file itself.
 
 <div class="tip">
-  The <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-17-profiles">demo-15</a> project is a
+  The <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-17-profiles">demo-17</a> project is a
   complete, runnable example of everything here - a base build with no extras, and a <code>release</code>
   profile that chains to <code>supply-chain</code> to add source jars and strict pinning without changing a
   single command-line flag. See <a href="/tool/demos/">Demos</a>.

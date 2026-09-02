@@ -227,17 +227,36 @@ cached outputs whose inputs are unchanged. The `generate` step above synthesises
 There is no phase lifecycle to fit into: a build is just steps wired to steps, and here you wire them
 yourself.
 
+## Compiling your build
+
+A custom entry point is the one thing the installed `jenesis` command cannot run: it launches the published
+engine, not the `Build.java` or assembler wrapper you wrote, so a customised build is always launched in
+source mode - and source mode recompiles the engine *and* your build code on every invocation.
+
+Compile both once and the loop gets its speed back:
+
+```bash
+javac -d .jenesis/launcher $(find build/ -name '*.java')
+java -cp .jenesis/launcher build.Demo
+```
+
+`find build/` picks up the vendored engine and your own build classes together, and the class you name is
+your entry point rather than `build.jenesis.Project`. Recompile whenever you edit either; that recompile is
+the whole cost, and it is paid when you change the build rather than every time you run it. Keep
+`java build/Demo.java` as the documented command - it needs nothing but a JDK - and treat the compiled
+launcher as a local convenience, ignored by git.
+
 <div class="tip">
   Six runnable projects cover this chapter:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-38-custom-assembler">demo-35</a> wraps the
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-38-custom-assembler">demo-38</a> wraps the
   assembler to preprocess sources before they compile,
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-40-internal-module">demo-37</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-41-external-module">demo-38</a> move that
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-40-internal-module">demo-40</a> and
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-41-external-module">demo-41</a> move that
   same pass into a build module - one compiled from local source, one resolved as a published coordinate,
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-42-custom-maven">demo-39</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-43-custom-modular">demo-40</a> drive a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-42-custom-maven">demo-42</a> and
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-43-custom-modular">demo-43</a> drive a
   multi-module Maven and modular build from a convenience <code>make</code>, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-44-custom-build">demo-41</a> wires a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-44-custom-build">demo-44</a> wires a
   code-generating graph entirely by hand on the <code>BuildExecutor</code> API. See
   <a href="/tool/demos/">Demos</a>.
 </div>
