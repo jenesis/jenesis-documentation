@@ -44,10 +44,11 @@ java build/jenesis/Project.java
 several projects at once). From then on the project builds with the canonical command, and needs nothing but
 a JDK.
 
-The install also puts a `jenesis` command on your path. It runs the *installed* engine, not the copy under
-`build/jenesis/`, so `jenesis +sources` builds the current directory with the installed version. The two
-give the same result whenever the embedded copy and the installed copy are the same version, which is what
-`jenesis-version` and `jenesis-validate` check for you.
+The install also puts a `jenesis` command on your path. It reads the version recorded in
+`build/jenesis/jenesis.version` and runs **that** version, installing it first where the package manager can,
+so the project decides which Jenesis builds it rather than whichever one your shell happens to have. The
+lookup is a single file read, and a project that records nothing falls through to the installed version.
+`jenesis-run` skips the lookup and runs the installed version as it stands.
 
 <div class="tip">
   You can skip embedding entirely and run <code>jenesis</code> from a project root with no
@@ -58,8 +59,10 @@ give the same result whenever the embedded copy and the installed copy are the s
 
 The install ships a few companion commands. `jenesis-exec` runs a module's `main` the way `jenesis` runs the
 build. `jenesis-version` and `jenesis-validate` check that a project's embedded `build/jenesis/` matches the
-installed version. `jenesis-switch` moves the current shell to the version a project records; source it, as
-`. jenesis-switch`, since it changes the calling shell.
+installed version - `jenesis` trusts the recorded version, so `jenesis-validate` is how you confirm the
+sources behind it are unmodified. `jenesis-switch` moves the whole shell to the version a project records,
+for when you want every command aligned rather than one invocation; source it, as `. jenesis-switch`, since
+it changes the calling shell.
 
 ### curl bootstrap
 
@@ -89,6 +92,33 @@ java build/jenesis/Project.java
 
 On a platform without symlinks, replace the `ln -s` with `cp -r .jenesis/sources/build/jenesis
 build/jenesis` and refresh the copy after each submodule update.
+
+### The vendored source, and when to install the command
+
+`build/jenesis/` plays the part that a wrapper script plays in other build tools. It travels with the
+repository, so a fresh clone builds with the version the project chose, a contributor needs nothing installed
+beyond a JDK, and CI needs no setup step. What it does not do is fetch anything. A wrapper downloads a tool
+distribution on first use and every machine has to trust that download; here the engine *is* the source in
+your repository, compiled by the JDK you already have. Nothing is fetched to obtain the build tool, so the
+step cannot fail offline and there is no distribution to verify. A build still resolves your project's own
+dependencies as usual - it is the tool itself that arrives with the clone.
+
+The cost is that source mode recompiles that engine on every invocation. For a one-off build, or in CI where
+each job is a fresh machine anyway, that is the right trade. For the edit-build-edit loop it is pure
+overhead, and it dominates a build that has little else to do.
+
+So locally, install the command and use it:
+
+```bash
+jenesis                     # runs the version recorded in build/jenesis/
+java build/jenesis/Project.java    # the same build, recompiling the engine first
+```
+
+`jenesis` reads `build/jenesis/jenesis.version` and runs the compiled engine of that exact version, so you
+keep the project's choice of Jenesis and skip the recompile. The same command builds a project that vendors
+nothing at all, falling back to the installed version. **This is the recommended way to work day to day**;
+keep `java build/jenesis/Project.java` as the canonical command in your README and CI, where reproducibility
+matters more than startup.
 
 ## Building an example end to end
 
