@@ -83,13 +83,12 @@ traffic.
 The comparison changes shape on a store that charges nothing per request and little for transfer. On Scaleway the
 operations line disappears and the same 30 TB of egress is about €300; on a self-hosted S3-compatible store such
 as MinIO or Ceph behind your own network, both lines are your hardware and your bandwidth. The server does not
-care which: every backend in [Storage](/repository/storage/) sees the same operation counts, and the
-observability report counts them for you - `jenreg.store.ops.reads` and `jenreg.store.ops.writes` on the
-[metrics endpoint](/repository/observability/) say what a running node paid, so the figures above can be checked
-against your own traffic rather than taken on trust.
+care which: every backend in [Storage](/repository/storage/) sees the same operation counts. Your provider
+counts them for you - S3 request metrics, and the request counters Cloud Storage and Azure Blob Storage
+publish - so the figures above can be checked against your own traffic rather than taken on trust.
 
 <div class="tip">
-  Watch the two counters across one day of your real traffic before choosing a region or a provider: the
-  ratio of writes to reads is the whole difference between the price columns, and a repository that is
-  read a thousand times for every publish sits almost entirely in the cheapest column.
+  Watch your provider's request counts across one day of your real traffic before choosing a region or a
+  provider: the ratio of writes to reads is the whole difference between the price columns, and a repository
+  that is read a thousand times for every publish sits almost entirely in the cheapest column.
 </div>
