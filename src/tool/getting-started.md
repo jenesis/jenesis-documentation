@@ -198,9 +198,9 @@ Dependencies and pinning each have their own chapter later.
 
 ## The Project model
 
-Everything you ran above went through one file: `build/jenesis/Make.java`. It is the launcher, and it carries
-no build logic of its own - that is the point, because the Java launcher compiles the file you name before
-any of its code runs, and a file naming no engine class compiles in a fraction of the time. The build itself
+Everything you ran above went through one file: `build/jenesis/Make.java`. It is the entry point, and it
+carries no build logic of its own - that is the point, because the Java launcher compiles the file you name
+before any of its code runs, and a file naming no engine class compiles in a fraction of the time. The build itself
 is configured by `Project`, a small Java **record** - so a build is configured as code, not markup. You
 almost never edit either. Instead you flip system properties on the command line or, for code-level control,
 write a tiny entry point of your own next to it (covered in *[Extending the build](/tool/extending-the-build/)*).
