@@ -108,10 +108,10 @@ variable as a fallback. Defaults apply when the key is unset.
 | `jenesis.project.watch` | `false` | Keep the process alive and rebuild on every source change (see *[Building &amp; running](/tool/building-and-running/)*). |
 | `jenesis.project.properties` | *(unset)* | Comma-separated **profile** names to activate. |
 
-### The launcher (`build/jenesis/Make.java`)
+### The entry point (`build/jenesis/Make.java`)
 
-`Make` is the entry point. It carries no build logic and names no engine class, so the Java launcher compiles
-one small file rather than the whole engine before the build starts. These settings are read from the command
+`Make` is the entry point every command names. It carries no build logic and names no engine class, so the
+Java launcher compiles one small file rather than the whole engine before the build starts. These settings are read from the command
 line and from `jenesis.properties` at the project root.
 
 | Property | Default | Effect |
