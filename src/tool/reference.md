@@ -118,7 +118,15 @@ line and from `jenesis.properties` at the project root.
 | --- | --- | --- |
 | `jenesis.make.compile` | `true` | Compile the build sources once and run the build from those classes, over a class loader of their own. One batch compile beats the launcher compiling class by class as it loads them, so this is faster even for a build that runs a single time. |
 | `jenesis.make.classes` | beside the sources | Where those classes land, relative to the project root. Name a folder when `build/jenesis` sits inside something that is packaged - a symlink into the project's own sources, say. |
-| `jenesis.make.daemon` | `false` | Hand the build to a reused JVM, which keeps a warm JIT between calls. Worth it for repeated local builds of a project large enough for the JIT to matter; a build that runs once pays only the daemon's start. `--stop` as the sole selector shuts it down. |
+| `jenesis.make.daemon` | `false` | Hand the build to a reused JVM, which keeps a warm JIT between calls. `--stop` as the sole selector shuts it down. |
+
+What a daemon saves is compiling speed, not setup. A Jenesis build has no script to parse - the project is
+described by `pom.xml` or `module-info.java` and configured by properties files - so nothing parsed or
+compiled is held between calls. What is held is a warm JIT, and a build spends its time inside `javac`, which
+a JVM that has already compiled a few modules runs faster. The daemon therefore pays in proportion to how
+much a build compiles: nothing on a build that compiles little, where the socket costs more than the warm
+code saves, and about a third off a five-module project. Compiling the build sources once, which is on by
+default, is what removes the large fixed cost; the daemon is the increment after that.
 
 Only `jenesis.*` properties travel with a call to a daemon, which clears and sets them again around every
 build. Everything a running JVM cannot change is the daemon's identity instead - the build sources, the
