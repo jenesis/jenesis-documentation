@@ -21,17 +21,15 @@ choose, which the server provisions at boot with every right on every repository
 you then use to issue the keys you want.
 
 A key is a self-describing string, `jenk_<tenant>.<secret><checksum>`, and the bootstrap key has to be
-well-formed because the server reads the tenant out of it. Generate one with a few lines of Python (the
-checksum is the CRC32 of everything before it, base64url-encoded without padding):
+well-formed because the server reads the tenant out of it. The clone mints one; the checksum is the CRC32 of
+everything before it, base64url-encoded without padding, so a leaked key is recognisable offline:
 
 ```bash
-python3 - <<'EOF'
-import base64, os, zlib
-body = "jenk_default." + base64.urlsafe_b64encode(os.urandom(24)).rstrip(b"=").decode()
-crc = zlib.crc32(body.encode()) & 0xffffffff
-print(body + base64.urlsafe_b64encode(crc.to_bytes(4, "big")).rstrip(b"=").decode())
-EOF
+java -Djenesis.execute.module=source+server-spi build/jenesis/Execute.java        # a key for the tenant "default"
+java -Djenesis.execute.module=source+server-spi build/jenesis/Execute.java acme   # a key for the tenant "acme"
 ```
+
+It prints the key and nothing else.
 
 Start the server with it, once:
 
