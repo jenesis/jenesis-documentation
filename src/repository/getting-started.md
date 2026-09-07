@@ -1,7 +1,7 @@
 ---
 order: 2
 title: Getting started
-description: Run Jenesis Repository from source against a folder on disk, configure it the Spring Boot way, publish and resolve a Maven artifact, open the console, and see the alternatives - a local container image and the cloud stores.
+description: Run Jenesis Repository from source against a folder on disk, configure it the Spring Boot way, publish and resolve a Maven artifact, open the console, and see the alternatives - a container image built from the clone, the Kubernetes and cloud templates, and the cloud stores.
 ---
 
 This chapter takes you from nothing to a running repository. You start the server from its source against a
@@ -180,10 +180,48 @@ default behind HTTPS.
   or an OpenID Connect provider, configured in <em>The console</em>.
 </div>
 
-## A cloud store instead of a folder
+## The alternatives
 
-The filesystem is the default, but the server runs the same on an object store, which is how you run it
-stateless and behind a load balancer. You select the backend and give it a bucket:
+**A container image, built from the clone.** If you would rather run a container than a JDK, the build writes
+a complete Docker context for the all-in-one module - a `Dockerfile` on the `eclipse-temurin:25-jdk` base
+beside the `modulepath/` and `classpath/` folders it copies in, starting the same main class the source run
+does. Stage it, then build and run the image:
+
+```bash
+java -Djenesis.test.skip=true build/jenesis/Project.java stage
+docker build -t jenesis-repository:free 'target/stage/docker/output/module-source%2Fbundle'
+docker run -p 8080:8080 -e JENREG_AUTH=false -e JENREG_FILESYSTEM_ROOT=/data \
+  -v jenesis-data:/data jenesis-repository:free
+```
+
+Every setting above applies unchanged, because the image is shaped with `-e` rather than rebuilt. It declares
+no volume and no store root of its own, so you name the root and mount a volume there, as you did from source.
+`-Djenesis.test.skip=true` leaves the test suite out of the staging run; [Packaging](/tool/packaging/) in the
+build tool section describes the context the build writes.
+
+**Kubernetes and two clouds, from templates in the clone.** `deploy/helm/jenesis` is a Helm chart over that
+image: a Deployment, a Service, an optional Ingress and, for the filesystem backend, a persistent volume claim
+mounted at `/data` with the store root set to it. `store.backend` selects the store, every `jenreg.*` key
+under `repository:` reaches the server as its environment variable, credentials go in `secrets:` or an
+existing Secret you name, and `ui:` carries the console's sign-in settings. Push the image you built to a
+registry your cluster can pull from, name it in `image.registry`, and install with the values file beside the
+chart:
+
+```bash
+helm install jenesis deploy/helm/jenesis -f deploy/helm/values-free.yaml
+```
+
+More than one replica needs an object store, because the filesystem backend is single-writer; the chart warns
+at install. Beside it, `deploy/gcp` and `deploy/scaleway` are Terraform modules that run the image serverless
+over a bucket: on Google Cloud a Cloud Storage bucket, a service account allowed to use it and a Cloud Run
+service with `JENREG_STORE=gcs`; on Scaleway an Object Storage bucket, an IAM application with one API key and
+a Serverless Container with `JENREG_STORE=s3` against the regional endpoint. Each takes the image reference as
+its `image` variable, so you push the image to the provider's registry first, and each module's README lists
+its variables.
+
+**A cloud store instead of a folder.** The filesystem is the default, but the server runs the same on an
+object store, which is how you run it stateless and behind a load balancer. You select the backend and give
+it a bucket:
 
 | Store | Select with | Then set |
 | --- | --- | --- |
