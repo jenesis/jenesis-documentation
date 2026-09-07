@@ -45,7 +45,7 @@ In a Jenesis build you can also build a narrower server by selecting modules, fo
 only the S3 backend and what it depends on:
 
 ```bash
-java build/jenesis/Project.java +source+store+s3
+java build/jenesis/Project.java +source+store+s3 build
 ```
 
 A server with **no format at all** is still a valid repository: every request is answered `404` until a
@@ -75,7 +75,9 @@ Two properties of the store shape everything above it:
 A third property matters once you run more than one server: the store supports **compare-and-set** writes,
 so several stateless instances agree on a pointer through the store itself, with no lock service. Every
 object lives under a `<tenant>/<repository>/…` scope, both `default` unless you configure otherwise, which is
-why a fresh deployment writes under `default/default/`. *Storage* covers the backends and their settings.
+why a fresh deployment writes under `default/default/`. The server's own records - credentials, settings,
+locks, node markers - live under `.system/` at the root, a name no tenant or repository can be given, so
+they never collide with an artifact space. *Storage* covers the backends and their settings.
 
 ## The publication path
 
@@ -111,8 +113,9 @@ The cost of a write is therefore one rewrite of the listings the artifact belong
 scales with the rest of the repository. Concurrent publishes to the same listing are merged into one rewrite
 per server, and a compare-and-set write keeps several servers consistent. A listing a server has never
 written - a repository from before this layout - is generated from the store the first time it is read and
-stored from then on. The rebuild pass (`jenreg.rebuild.interval`) regenerates every stored listing on its
-cadence, so a write that could not complete is repaired without a read ever paying for it.
+stored from then on. The rebuild pass regenerates every stored listing from the artifacts - weekly by
+default (`jenreg.rebuild.interval`), and at once after a node that stopped unclean starts again, which is
+when a write may not have completed - so a stale listing is repaired without a read ever paying for it.
 
 ## The map
 

@@ -1,5 +1,5 @@
 ---
-order: 5
+order: 6
 title: Formats
 description: The four layouts the server speaks - Maven, the Jenesis module layout, OCI/Docker and raw files - their URLs, what each accepts and serves, and the settings that switch them.
 ---
@@ -78,8 +78,9 @@ docker pull repo.example.com/my-app:1.0
 
 It supports monolithic and chunked blob uploads, manifests addressed by tag or by digest (the media type is
 kept beside the manifest so a pull returns it verbatim), `HEAD` existence checks, `tags/list`, and
-`_catalog`. Both listings are stored documents a tag push keeps current, paged in memory for a client's
-`n` and `last`, so listing a registry of many images costs one read. An OCI blob is addressed by its
+`_catalog`. Both listings are stored documents a tag push keeps current, and a client's `n` and `last`
+window is cut out of the document as it streams, so listing a registry of many images costs one read and a
+page of a hundred names costs a hundred names, however many tags exist. An OCI blob is addressed by its
 `sha256:` digest, which is the very key the store uses, so image layers dedupe against everything else the
 repository holds. With an upstream registry configured, the same
 endpoint is a pull-through mirror (see *[Proxying](/repository/proxying/)*).

@@ -1,5 +1,5 @@
 ---
-order: 7
+order: 8
 title: Authentication & access
 description: How a deployment decides who may read and publish - the bootstrap key that gets you the first credential, issuing and revoking keys, running open on a trusted network, a public read-only mirror, and signing in to the console.
 ---
@@ -130,8 +130,10 @@ verbs and a bare `*` grants everything. Three built-in roles bundle them:
 
 A key expires 90 days after it is created unless given another lifetime (the deployment can set a
 different default and a ceiling - see the settings below), can be restricted to a source-address
-allowlist, and is checked against its stored grants on every request, so a narrowed or revoked key stops
-working at once.
+allowlist, and is checked against its stored grants on every request. A narrowed or revoked key stops
+working at once on the node that made the change, and on every other node within `jenreg.cache.ttl` - five
+minutes by default, `0` to switch the cache off - which is how long a node serves a credential it has
+already read before asking the store again.
 
 <div class="note">
   Maven itself has no bearer-token setting, so a Maven client presents the server's own header: in
@@ -191,7 +193,7 @@ whole deployment rather than to one repository.
 
 ## Signing in to the console
 
-The web console is a separate application with its own sign-in. People authenticate through an identity
+The web console runs in the server's process but has its own sign-in. People authenticate through an identity
 provider, not with repository keys, and the console has two roles: every signed-in user is a **user** who
 can browse, and a user listed as an admin can also act on what the console exposes.
 
@@ -219,10 +221,11 @@ The session cookie is sent only over HTTPS. For a local run over plain http, whe
 the OAuth redirect without TLS, set `JENREG_UI_SECURE_COOKIE=false`.
 
 <div class="tip">
-  For local work, start the console with <code>SPRING_PROFILES_ACTIVE=dev</code>. The profile replaces the
-  provider sign-in with a form login and two built-in accounts, <code>admin</code>/<code>admin</code> and
+  For local work, start the server with <code>SPRING_PROFILES_ACTIVE=dev</code>. The profile adds a form
+  login at <code>/login/dev</code> with two built-in accounts, <code>admin</code>/<code>admin</code> and
   <code>viewer</code>/<code>viewer</code>, so both roles can be tried without an identity provider. It
-  raises the <code>jenreg.profile.dev</code> advisory and is never for a reachable deployment.
+  raises the <code>jenreg.profile.dev</code> advisory, and the server refuses to start under it on anything
+  but the loopback address.
 </div>
 
 ## Settings
@@ -240,10 +243,11 @@ Server-side settings, read at startup from the environment, a `-D` system proper
 | `jenreg.read-only` | `false` | Refuse every write, external or internal, with `403`. Advertised at `GET /api/capabilities`. |
 | `jenreg.tenant` / `jenreg.repository` | `default` | The names of the one artifact space this deployment serves; a key's tenant must match. |
 
-Console settings, read by the console process:
+Console settings:
 
 | Key | Default | Effect |
 |---|---|---|
+| `jenreg.console` | `true` | Serve the console in this process; `false` leaves only the repository's own endpoints. |
 | `jenreg.ui.admins` | *(blank)* | Comma-separated `github/<id>` / `oidc/<sub>` ids granted admin; `*` for everyone. |
 | `jenreg.ui.github.client-id` / `.client-secret` | *(blank - disabled)* | GitHub OAuth app credentials. |
 | `jenreg.ui.oidc.issuer-uri` / `.client-id` / `.client-secret` | *(blank - disabled)* | The OIDC issuer and client. |

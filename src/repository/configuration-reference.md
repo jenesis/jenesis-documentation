@@ -1,5 +1,5 @@
 ---
-order: 12
+order: 13
 title: Configuration reference
 description: Every setting Jenesis Repository and its console read, grouped by the chapter that explains it - the key, its environment-variable spelling, its default, and what it changes.
 ---
@@ -54,23 +54,26 @@ See [Getting started](/repository/getting-started/) and [Storage](/repository/st
 | `jenreg.repository` | `default` | The repository half of the artifact space. |
 | `jenreg.quota` | *(unset - no cap)* | The storage ceiling, as a byte count or a number with a `K`/`M`/`G`/`T` suffix; a write past it answers `507`. |
 | `jenreg.read-only` | `false` | Refuse every write - publishes, imports, deletes and internal cache fills - with `403`, while reads work normally. |
-| `jenreg.rebuild.interval` | `P1D` | How often the server regenerates every stored listing (`tags/list`, `_catalog`, a computed `maven-metadata.xml`), so a write that could not land is repaired without a read ever paying for it. An ISO-8601 duration (`PT6H`) or a short one (`6h`, `30m`); `off` disables the pass. The first pass runs a minute after start. |
+| `jenreg.rebuild.interval` | `P7D` | How often the server regenerates every stored listing (`tags/list`, `_catalog`, a computed `maven-metadata.xml`), so a write that could not land is repaired without a read ever paying for it. An ISO-8601 duration (`PT6H`) or a short one (`6h`, `30m`); `off` disables the pass. The first pass runs a minute after start. |
 | `jenreg.demo` | `false` | Seed a completely empty repository with real artifacts, pulled through each format's own default upstream, so it needs no proxy configured. A no-op on a repository that holds anything, and skipped entirely under `jenreg.read-only=true`. |
-| `jenreg.filesystem.root` | `/var/lib/jenesis-repository` | The directory the filesystem backend stores under. |
+| `jenreg.filesystem.root` | *(required for `filesystem`)* | The directory the filesystem backend stores under; the server refuses to start without one. |
+| `jenreg.cache.ttl` | `PT5M` | How long a node serves a credential or a setting it has already read before asking the store again; another node's change shows within this. `0` switches the cache off. |
 | `jenreg.s3.bucket` | *(required for `s3`)* | The bucket. |
 | `jenreg.s3.region` | `us-east-1` | The signing region. |
 | `jenreg.s3.endpoint` | *(AWS)* | An S3-compatible endpoint (MinIO, Ceph, LocalStack); enables path-style access. Must be `https`. |
 | `jenreg.s3.allow-insecure-endpoint` | `false` | Permit a plain-`http` endpoint. |
 | `jenreg.s3.access-key-id`, `jenreg.s3.secret-access-key` | *(AWS credential chain)* | Static credentials; when both are set they replace the ambient chain. |
 | `jenreg.s3.sse-kms-key-id` | *(SSE-S3)* | Encrypt objects with this KMS key instead of SSE-S3. Encryption is always on. |
-| `jenreg.gcs.bucket` | *(required for `gcs`)* | The Google Cloud Storage bucket, reached through its S3-compatible API. |
-| `jenreg.gcs.access-key-id`, `jenreg.gcs.secret-access-key` | *(AWS credential chain)* | An HMAC key pair from Cloud Storage's Interoperability settings. |
-| `jenreg.gcs.endpoint` | `https://storage.googleapis.com` | The endpoint; must be `https`. |
-| `jenreg.gcs.region` | `auto` | The signing region. |
+| `jenreg.gcs.bucket` | *(required for `gcs`)* | The Google Cloud Storage bucket, reached through its JSON API. |
+| `jenreg.gcs.credentials` | *(Application Default Credentials)* | A service-account key file, or `none` for an emulator. |
+| `jenreg.gcs.project` | *(unset - the bucket must exist)* | The project the bucket is created in on first use. |
+| `jenreg.gcs.endpoint` | *(Google)* | An emulator endpoint; must be `https`. |
 | `jenreg.gcs.allow-insecure-endpoint` | `false` | Permit a plain-`http` endpoint, for an emulator. |
 | `jenreg.azure-blob.connection-string` | *(required for `azure-blob`)* | The storage-account connection string (or the Azurite development string). |
 | `jenreg.azure-blob.container` | `jenesis-repository` | The container. |
 | `jenreg.azure-blob.allow-insecure-endpoint` | `false` | Permit a plain-`http` blob endpoint. |
+| `jenreg.s3.conditional-write-probe`, `jenreg.gcs.conditional-write-probe`, `jenreg.azure-blob.conditional-write-probe` | `true` | Probe at boot that the endpoint honours write preconditions and refuse to start when it does not; `false` skips the probe and warns at every start. |
+| `jenreg.s3.streaming-writes`, `jenreg.gcs.streaming-writes`, `jenreg.azure-blob.streaming-writes` | `true` | Stream a compare-and-set body to the store; `false` buffers it in heap first, for an endpoint that cannot take a streamed one. |
 | `jenreg.archive.largest-entry` | `1048576` (1 MiB) | The most one archive member may decompress to when a format reads a declaration out of it. |
 | `jenreg.archive.largest-walk` | `67108864` (64 MiB) | The most bytes one walk may draw from a single archive. |
 
@@ -154,12 +157,12 @@ See [Observability](/repository/observability/).
 
 ## The console
 
-See [The console](/repository/console/). The console is its own process and reads these on top of the
-store settings above, which it shares with the server.
+See [The console](/repository/console/). The console runs in the server's process, on the server's port,
+and reads these beside the settings above.
 
 | Key | Default | Effect |
 |---|---|---|
-| `PORT` (env) | `8081` | The port the console listens on. |
+| `jenreg.console` | `true` | Serve the console in this process; `false` leaves only the repository's own endpoints. |
 | `jenreg.ui.store` (`JENREG_STORE`) | `filesystem` | The store backend the console reads - the same variable the server reads, so both point at one store. |
 | `jenreg.ui.admins` | *(empty - nobody)* | Comma-separated provider-qualified ids (`github/<id>`, `oidc/<subject>`) that hold the admin role; `*` grants it to every signed-in user and raises the `jenreg.console.wildcard` advisory. |
 | `jenreg.ui.github.client-id`, `jenreg.ui.github.client-secret` | *(empty - GitHub login off)* | A GitHub OAuth app. |

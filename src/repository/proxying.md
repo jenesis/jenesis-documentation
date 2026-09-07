@@ -1,5 +1,5 @@
 ---
-order: 6
+order: 7
 title: Proxying
 description: Serving what the repository does not hold yet - pointing a format at an upstream, how a miss becomes a cached local hit, the negative cache, revalidation, digest checks, and the settings behind them.
 ---
