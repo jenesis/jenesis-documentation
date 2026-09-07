@@ -59,3 +59,11 @@ running without the module, leaves every request unmetered.
 | `jenreg.token-bucket` | `true` | Switch the limiter module off with `false`. |
 | `jenreg.rate-limiter` | *(the one installed)* | Select the limiter by name (`token-bucket`); a name nothing answers to fails the boot. |
 | `jenreg.track-key-usage` | `false` | Record each credential's last use and running count. The accounting is batched, and the `jenreg.usage.*` signals report nothing until it is on. |
+
+Usage tracking answers "is this credential still in use, and from where" - the question that comes up
+before revoking one. With it on, each accepted request notes its credential in memory and a worker folds
+those hits into a durable count at most once a day per credential, so a busy key costs one write a day
+rather than one per request. What it records shows up in `GET /api/credentials` and on the console's
+Credentials screen: the last use, the address it came from, and the running total. A crash forfeits only
+the unflushed tail, which is why this is an operational signal rather than an audit record - the
+[audit trail](/repository/console/) is where a privileged action is recorded.

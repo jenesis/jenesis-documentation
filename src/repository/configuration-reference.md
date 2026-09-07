@@ -55,6 +55,10 @@ See [Getting started](/repository/getting-started/) and [Storage](/repository/st
 | `jenreg.quota` | *(unset - no cap)* | The storage ceiling, as a byte count or a number with a `K`/`M`/`G`/`T` suffix; a write past it answers `507`. |
 | `jenreg.read-only` | `false` | Refuse every write - publishes, imports, deletes and internal cache fills - with `403`, while reads work normally. |
 | `jenreg.rebuild.interval` | `P7D` | How often the server regenerates every stored listing (`tags/list`, `_catalog`, a computed `maven-metadata.xml`), so a write that could not land is repaired without a read ever paying for it. An ISO-8601 duration (`PT6H`) or a short one (`6h`, `30m`); `off` disables the pass. The first pass runs a minute after start. |
+| `jenreg.walk` | *(the one installed)* | Select the artifact walk the rebuild pass enumerates through, by name; a name nothing answers to fails the boot. |
+| `jenreg.walk.checkpoint` | `1000` | Items a walk enumerates before it commits its cursor, so an interrupted pass resumes near where it stopped rather than starting over. |
+| `jenreg.walk.segments` | `32` | Key ranges one pass is split into. Several nodes claim disjoint segments, so they share one pass instead of repeating it. |
+| `jenreg.walk.ttl` | `PT15M` | How long a node's claim on a segment stands before another node may take it, which is what lets a pass survive a node that stops mid-segment. |
 | `jenreg.demo` | `false` | Seed a completely empty repository with real artifacts, pulled through each format's own default upstream, so it needs no proxy configured. A no-op on a repository that holds anything, and skipped entirely under `jenreg.read-only=true`. |
 | `jenreg.filesystem.root` | *(required for `filesystem`)* | The directory the filesystem backend stores under; the server refuses to start without one. |
 | `jenreg.cache.ttl` | `PT5M` | How long a node serves a credential or a setting it has already read before asking the store again; another node's change shows within this. `0` switches the cache off. |

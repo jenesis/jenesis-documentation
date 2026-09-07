@@ -168,7 +168,7 @@ The whole surface, where `<id>` is the 64-character hash the mint returned and t
 
 | Request | Effect |
 |---|---|
-| `GET /api/credentials` | The tenant's credentials - id, label, created, expires, allowed addresses, grants - never a secret. One page per request: at most `limit` (500, the default and the maximum) in id order from `after`; when more remain, the `X-Next-Cursor` response header carries the `after` value of the next page. |
+| `GET /api/credentials` | The tenant's credentials - id, label, created, expires, allowed addresses, grants, and, while `jenreg.track-key-usage` is on, when each was last used, from which address, and how many times - never a secret. One page per request: at most `limit` (500, the default and the maximum) in id order from `after`; when more remain, the `X-Next-Cursor` response header carries the `after` value of the next page. |
 | `POST /api/credentials` | Mint. Body: `label`, `expires` (`P30D` from now, or an instant; blank = the 90-day default), `nonExpiring: true`. Answers `201` with `id`, `key`, `expires`. |
 | `POST /api/credentials/<id>/grants` | Set the rights at one scope. Body: `scope`, `tokens` (a list). |
 | `DELETE /api/credentials/<id>/grants/<scope>` | Remove the rights at one scope. |
