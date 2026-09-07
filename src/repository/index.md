@@ -36,8 +36,8 @@ Maven repository is built in, and the server's own web console lets you browse w
 
 1. **Introduction** - you are here.
 2. **Getting started** - run the server from source, configure it the Spring Boot way, publish and resolve
-   an artifact, open the console, and see the alternatives - a container image and the Kubernetes and
-   cloud templates in the clone, and the cloud stores.
+   an artifact, open the console, and see the alternatives - a container image built from the clone, and
+   the cloud stores.
 3. **Architecture** - the plugin model, the content-addressed store, and the path an upload takes.
 4. **Storage** - the filesystem, S3-compatible, Google Cloud Storage and Azure Blob backends, their
    settings, and the storage quota.
