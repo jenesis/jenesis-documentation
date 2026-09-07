@@ -38,6 +38,11 @@ The `arguments` map carries one entry per predecessor you wired in. Each exposes
 against the previous run. The default behaviour re-runs your step whenever any input changed; override
 `shouldRun(...)` if you want finer control.
 
+A step can also say that its output is not worth sending to a cache server. Override `shouldCacheRemotely()`
+to return `false` when the output is large against what it costs to produce, or when it is re-derivable from
+something the machine already has. The output is still cached locally, so a rebuild on this machine still
+skips the work. See *[the build cache](/tool/build-performance-and-isolation/#the-build-cache)*.
+
 <div class="note">
   Treat a step as a <strong>pure function of its input folders</strong>: read from the argument folders, write
   to <code>next</code>, reach outside neither. That is what makes its output cacheable and safe to share

@@ -193,6 +193,12 @@ java -Djenesis.project.cache \
   tier keeps its own LRU and both stay warm.
 </div>
 
+A step can hold itself back from the shared tier: a custom step that overrides `shouldCacheRemotely()` to
+return `false` is never fetched from, stored in or announced to a cache server, and is still cached locally.
+Use it for a step whose output is large against what it costs to produce, or is re-derivable from what the
+machine already has, so the shared cache carries the results that are worth downloading. See
+*[extending the build](/tool/extending-the-build/)*.
+
 ### Tuning with `cache.properties`
 
 Drop an optional `cache.properties` at the cache root - `.jenesis/cache/cache.properties` for the project-local
