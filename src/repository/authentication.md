@@ -106,7 +106,7 @@ curl -H "Jenesis-Repository-Key: jenk_default.…" \
      -T app-1.0.jar http://repo.example.com/repository/maven/com/example/app/1.0/app-1.0.jar
 
 java -Djenesis.maven.uri=https://repo.example.com/repository/maven/ \
-     -Djenesis.maven.token=jenk_default.… build/jenesis/Project.java
+     -Djenesis.maven.token=jenk_default.… build/jenesis/Make.java
 ```
 
 The `jenk_` prefix and the trailing checksum let a secret scanner recognise a leaked key and let the server

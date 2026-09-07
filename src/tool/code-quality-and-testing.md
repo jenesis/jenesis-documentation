@@ -80,7 +80,7 @@ a source file with a few spare spaces and rebuild: the `format` step fails.
 To apply the formatter and rewrite your sources in place, run the build with the rewrite switch:
 
 ```bash
-java -Djenesis.format.rewrite=true build/jenesis/Project.java
+java -Djenesis.format.rewrite=true build/jenesis/Make.java
 ```
 
 The switch flips the whole chain - the Java formatter, ktlint and scalafmt - from verifying to rewriting.
@@ -129,8 +129,8 @@ While you are chasing one failure, running the whole suite each time is noise. T
 test step executes:
 
 ```bash
-java -Djenesis.test.filter='calc.*Test#addsTwo' build/jenesis/Project.java
-java -Djenesis.test.tag='!(slow)' build/jenesis/Project.java
+java -Djenesis.test.filter='calc.*Test#addsTwo' build/jenesis/Make.java
+java -Djenesis.test.tag='!(slow)' build/jenesis/Make.java
 ```
 
 `jenesis.test.filter` takes a comma-separated list of `<classRegex>[#<method>]` entries and runs only what
@@ -158,7 +158,7 @@ is the finer-grained companion: within a module that *did* change, it runs only 
 can reach and leaves the rest cached. Turn it on with `-Djenesis.test.incremental`:
 
 ```bash
-java -Djenesis.project.watch=true -Djenesis.test.incremental build/jenesis/Project.java
+java -Djenesis.project.watch=true -Djenesis.test.incremental build/jenesis/Make.java
 ```
 
 The value names the digest algorithm used to detect changes; passing the flag bare picks `MD5`, and leaving
@@ -208,7 +208,7 @@ broken module means the rest is moot. When you would rather see the whole pictur
 touches every module), let the failures aggregate:
 
 ```bash
-java -Djenesis.executor.aggregate=true build/jenesis/Project.java
+java -Djenesis.executor.aggregate=true build/jenesis/Make.java
 ```
 
 Every independent branch then runs to completion and the build fails once, reporting every module that broke
@@ -219,7 +219,7 @@ failures aggregate.
 
 Every tool above floats a `RELEASE` version in its own dependency group until you pin it, so a first build
 downloads the latest and later builds reuse the cache. For a reproducible, checksum-verified tool chain, run
-`java build/jenesis/Project.java pin`: it records each resolved tool jar with its SHA-256 exactly as it pins
+`java build/jenesis/Make.java pin`: it records each resolved tool jar with its SHA-256 exactly as it pins
 your compilers and dependencies (see *[Pinning & bills of materials](/tool/pinning/)*). Expect a long list -
 a linter's own closure can run to a hundred artifacts - which is what makes the tool chain reproducible.
 

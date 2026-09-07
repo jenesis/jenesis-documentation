@@ -24,7 +24,7 @@ step runs before the jar is sealed and writes the document in one move, from the
 and licences the build already has.
 
 ```bash
-java build/jenesis/Project.java
+java build/jenesis/Make.java
 ```
 
 The SBOM is a supply-chain counterpart to the `dependencies` selector (see *[Dependencies](/tool/dependencies/)*):

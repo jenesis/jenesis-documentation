@@ -61,7 +61,7 @@ jpackage=app-image
 ```
 
 ```bash
-java build/jenesis/Project.java stage
+java build/jenesis/Make.java stage
 ```
 
 The `--name`, `--main-jar`/`--main-class` (or `--module`) arguments are derived from the module's coordinate
@@ -242,7 +242,7 @@ docker=eclipse-temurin:25-jre
 ```
 
 ```bash
-java build/jenesis/Project.java stage
+java build/jenesis/Make.java stage
 docker build -t sample target/stage/docker/output/module-sources
 ```
 
@@ -294,7 +294,7 @@ Native compilation needs GraalVM. The tool is located through `GRAALVM_HOME`, th
 `bin/`, then `PATH`, so either run the build on a GraalVM JDK or point `GRAALVM_HOME` at one:
 
 ```bash
-GRAALVM_HOME=~/.sdkman/candidates/java/25.0.3-graal java build/jenesis/Project.java stage
+GRAALVM_HOME=~/.sdkman/candidates/java/25.0.3-graal java build/jenesis/Make.java stage
 ```
 
 ### Reachability metadata, captured from tests

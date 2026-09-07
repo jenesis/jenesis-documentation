@@ -149,7 +149,7 @@ A Jenesis build needs no new client. It points both of its repositories at the s
 java -Djenesis.maven.uri=http://localhost:8080/repository/maven/ \
      -Djenesis.module.uri=http://localhost:8080/repository/ \
      -Djenesis.repository.insecure=true \
-     build/jenesis/Project.java
+     build/jenesis/Make.java
 ```
 
 On an enforcing server add `-Djenesis.maven.token=jenk_…` (and `-Djenesis.module.token=jenk_…`): the build
@@ -188,7 +188,7 @@ beside the `modulepath/` and `classpath/` folders it copies in, starting the sam
 does. Stage it, then build and run the image:
 
 ```bash
-java -Djenesis.test.skip=true build/jenesis/Project.java stage
+java -Djenesis.test.skip=true build/jenesis/Make.java stage
 docker build -t jenesis-repository:free 'target/stage/docker/output/module-source%2Fbundle'
 docker run -p 8080:8080 -e JENREG_AUTH=false -e JENREG_FILESYSTEM_ROOT=/data \
   -v jenesis-data:/data jenesis-repository:free

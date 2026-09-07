@@ -62,8 +62,8 @@ the default target (`build`) runs. A selector is really a path through the graph
   module wherever it sits in the tree.
 
 ```bash
-java build/jenesis/Project.java +greeter        # one module's subtree
-java build/jenesis/Project.java '::/test'        # the test step of every module
+java build/jenesis/Make.java +greeter        # one module's subtree
+java build/jenesis/Make.java '::/test'        # the test step of every module
 ```
 
 Wildcards are **lenient**: a branch that does not match is silently skipped. A *literal* path that does not
@@ -122,7 +122,7 @@ You can force a layout for one run with a system property, or record it in a pro
 *[Configuration](/tool/configuration/)*):
 
 ```bash
-java -Djenesis.project.layout=modular build/jenesis/Project.java
+java -Djenesis.project.layout=modular build/jenesis/Make.java
 ```
 
 The property accepts `auto`, `maven`, `modular`, and `modular_to_maven`.
