@@ -88,7 +88,7 @@ The compilers float a latest version by default. Run the `pin` step to record ea
 version and SHA-256, exactly as it pins your Java compilers and dependencies (see *[Pinning & bills of materials](/tool/pinning/)*):
 
 ```bash
-java build/jenesis/Project.java pin
+java build/jenesis/Make.java pin
 ```
 
 <div class="tip">

@@ -20,7 +20,7 @@ You do not write pins by hand. The `pin` selector resolves the closure, hashes e
 sources with the result:
 
 ```bash
-java build/jenesis/Project.java pin
+java build/jenesis/Make.java pin
 ```
 
 `pin` is opt-in (it is not part of the default `build`) and it writes back into your project tree rather than
@@ -138,7 +138,7 @@ Pins freeze the closure, so a pinned project never picks up a newer version on i
 them, run `pin` with the enforcement turned off:
 
 ```bash
-java -Djenesis.dependency.pin=ignore build/jenesis/Project.java pin
+java -Djenesis.dependency.pin=ignore build/jenesis/Make.java pin
 ```
 
 `ignore` drops every existing pin: versions float to the latest the repository offers and the recorded

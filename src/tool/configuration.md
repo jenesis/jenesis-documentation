@@ -28,7 +28,7 @@ target, pinning, every later decision. The file is optional. An explicit `-D` on
 overrides a file entry, so you can still override the project's baseline for a single run:
 
 ```bash
-java -Djenesis.project.sources=false build/jenesis/Project.java
+java -Djenesis.project.sources=false build/jenesis/Make.java
 ```
 
 One key is the exception: `jenesis.project.root` belongs on the command line only, because the root is what
@@ -114,7 +114,7 @@ jenesis.dependency.pin=strict
 Selecting `release` therefore also applies `supply-chain` - one name switches on both:
 
 ```bash
-java -Djenesis.project.properties=release build/jenesis/Project.java stage
+java -Djenesis.project.properties=release build/jenesis/Make.java stage
 ```
 
 A missing `jenesis-<name>.properties` is skipped, not an error, so a profile may contribute only a
@@ -141,7 +141,7 @@ When you are unsure what the layers add up to, ask the build. The `properties` s
 effective `jenesis.*` property, sorted by key:
 
 ```bash
-java -Djenesis.project.properties=release build/jenesis/Project.java properties
+java -Djenesis.project.properties=release build/jenesis/Make.java properties
 ```
 
 ## User-global defaults

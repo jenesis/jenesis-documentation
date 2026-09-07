@@ -20,7 +20,7 @@ on `Project` (`new Project().version("1.0.0")`):
 java -Djenesis.project.version=1.0.0 \
      -Djenesis.project.sources=true \
      -Djenesis.project.documentation=true \
-     build/jenesis/Project.java stage
+     build/jenesis/Make.java stage
 ```
 
 Central also requires the POM to carry `name`, `description`, `url`, `<licenses>`, `<developers>`, and
@@ -60,7 +60,7 @@ scm.url=https://github.com/jenesis/jenesis
 `export` is a genuine publish, into a *local* repository:
 
 ```bash
-java build/jenesis/Project.java export
+java build/jenesis/Make.java export
 ```
 
 It copies the staged tree into the repositories your layout publishes to: the local Maven repository
@@ -102,7 +102,7 @@ every layout, and it depends on `stage`, so what a release tool uploads is alway
 produced:
 
 ```bash
-java build/jenesis/Project.java release
+java build/jenesis/Make.java release
 ```
 
 The target exists whether or not anything is configured; the *tool* is what a file activates. A `jreleaser.yml`

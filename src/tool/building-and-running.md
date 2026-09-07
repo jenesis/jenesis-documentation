@@ -13,7 +13,7 @@ processor, how to run a module's `main`, and how to keep rebuilding as you edit.
 ## The build pipeline
 
 For each module, the inferred build wires the same short chain of steps: **compile → test → jar**. Running
-`build` (or just `java build/jenesis/Project.java` with no selector) walks that chain for every discovered
+`build` (or just `java build/jenesis/Make.java` with no selector) walks that chain for every discovered
 module in dependency order. Steps that do not depend on each other run at the same time; on a machine where
 that is too much - a laptop on battery, a small CI runner - `-Djenesis.executor.concurrency=<n>` caps how
 many run at once (`0`, the default, is no limit). `-Djenesis.executor.concurrency` counts every kind of step;
@@ -96,7 +96,7 @@ To compile and package without running the test suite - a fast inner loop, or a 
 artifacts - set `jenesis.test.skip`:
 
 ```bash
-java -Djenesis.test.skip=true build/jenesis/Project.java
+java -Djenesis.test.skip=true build/jenesis/Make.java
 ```
 
 The bare flag (`-Djenesis.test.skip`) works too. Tests still *compile*; they just do not run.
@@ -144,7 +144,7 @@ Central expects:
 ```bash
 java -Djenesis.project.sources=true \
      -Djenesis.project.documentation=true \
-     build/jenesis/Project.java
+     build/jenesis/Make.java
 ```
 
 `jenesis.project.sources` adds a per-module `-sources.jar`, and `jenesis.project.documentation` runs the
@@ -313,7 +313,7 @@ While you are editing, keep the build process alive and let it rebuild on every 
 `jenesis.project.watch`:
 
 ```bash
-java -Djenesis.project.watch=true build/jenesis/Project.java
+java -Djenesis.project.watch=true build/jenesis/Make.java
 ```
 
 The first build runs as usual. Jenesis then watches the project root and re-runs the requested target whenever
@@ -324,7 +324,7 @@ dot-directories are excluded, so the build's own writes never trigger a rebuild.
 Module selectors still apply, so you can watch just one module's subgraph:
 
 ```bash
-java -Djenesis.project.watch=true build/jenesis/Project.java +mymodule
+java -Djenesis.project.watch=true build/jenesis/Make.java +mymodule
 ```
 
 Setting `jenesis.project.watch=true` in a `jenesis.properties` file makes watch a project's default. Watch mode

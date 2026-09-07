@@ -87,7 +87,7 @@ the variable of the same name:
 The `dependencies` selector prints each module's resolved tree, the way `mvn dependency:tree` does:
 
 ```bash
-java build/jenesis/Project.java dependencies
+java build/jenesis/Make.java dependencies
 ```
 
 Each node shows the version every parent requested, the **negotiated** version inline when it differs

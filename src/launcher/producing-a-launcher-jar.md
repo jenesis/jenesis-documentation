@@ -20,7 +20,7 @@ launcher=true
 ```
 
 ```bash
-java build/jenesis/Project.java
+java build/jenesis/Make.java
 ```
 
 Like every packaging feature, it only runs for a module that declares a main class - the same `@jenesis.main`

@@ -34,7 +34,7 @@ Set `-Djenesis.project.docker=true` to run the entire build inside a throwaway c
 the host JVM:
 
 ```bash
-java -Djenesis.project.docker=true build/jenesis/Project.java
+java -Djenesis.project.docker=true build/jenesis/Make.java
 ```
 
 A minimal image is built on demand the first time and cached for later runs. Inside the container neither
@@ -128,7 +128,7 @@ The simplest form needs only a flag. Jenesis keeps a content-addressed cache und
 the project root:
 
 ```bash
-java -Djenesis.project.cache build/jenesis/Project.java
+java -Djenesis.project.cache build/jenesis/Make.java
 ```
 
 The value is a **filesystem path** (never a URI): an empty value, as above, resolves to `.jenesis/cache` under
@@ -145,7 +145,7 @@ serves them anyway:
 ```bash
 java -Djenesis.project.cache \
      -Djenesis.executor.rebuild=true \
-     build/jenesis/Project.java
+     build/jenesis/Make.java
 ```
 
 The steps still print `[EXECUTED]` - their output *was* produced - but it came from the cache, not from `javac`,
@@ -183,7 +183,7 @@ The shared cache can be used two ways:
 java -Djenesis.project.cache \
      -Djenesis.cache.uri=https://cache.example.com \
      -Djenesis.cache.project=acme -Djenesis.cache.key=alice \
-     build/jenesis/Project.java
+     build/jenesis/Make.java
 ```
 
 <div class="note">

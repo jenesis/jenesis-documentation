@@ -236,15 +236,15 @@ source mode - and source mode recompiles the engine *and* your build code on eve
 Compile both once and the loop gets its speed back:
 
 ```bash
-javac -d .jenesis/launcher $(find build/ -name '*.java')
-java -cp .jenesis/launcher build.Demo
+javac -d .jenesis/tool $(find build/ -name '*.java')
+java -cp .jenesis/tool build.Demo
 ```
 
 `find build/` picks up the vendored engine and your own build classes together, and the class you name is
 your entry point rather than `build.jenesis.Project`. Recompile whenever you edit either; that recompile is
 the whole cost, and it is paid when you change the build rather than every time you run it. Keep
 `java build/Demo.java` as the documented command - it needs nothing but a JDK - and treat the compiled
-launcher as a local convenience, ignored by git.
+classes as a local convenience, ignored by git.
 
 <div class="tip">
   Six runnable projects cover this chapter:

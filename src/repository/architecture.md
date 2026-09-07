@@ -45,7 +45,7 @@ In a Jenesis build you can also build a narrower server by selecting modules, fo
 only the S3 backend and what it depends on:
 
 ```bash
-java build/jenesis/Project.java +source+store+s3 build
+java build/jenesis/Make.java +source+store+s3 build
 ```
 
 A server with **no format at all** is still a valid repository: every request is answered `404` until a

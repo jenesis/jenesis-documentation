@@ -11,18 +11,18 @@ explains it in full.
 
 ## Invoking the build
 
-Every project ships its build as source under `build/jenesis/Project.java`. The canonical invocation
+Every project ships its build as source under `build/jenesis/Make.java`. The canonical invocation
 recompiles that engine and runs it:
 
 ```bash
-java build/jenesis/Project.java [selectors…]
+java build/jenesis/Make.java [selectors…]
 ```
 
 A package-manager install (see *[Getting started](/tool/getting-started/)*) adds a second form:
 
 | Form | Invocation | Notes |
 | --- | --- | --- |
-| Source | `java build/jenesis/Project.java` | The canonical form; compiles the embedded engine on each run. |
+| Source | `java build/jenesis/Make.java` | The canonical form; compiles the embedded engine on each run. |
 | Installed | `jenesis` | The command from SDKMAN, Homebrew or Scoop. It runs the *installed* engine against the current directory, not the sources under `build/jenesis/`, so it also builds a project that embeds none. |
 
 <div class="note">
@@ -62,7 +62,7 @@ module builds without dragging in its siblings. A nested module is named by join
 `pom.xml` that is itself a module; an aggregator-only root or a pure modular project has no such module.
 
 ```bash
-java build/jenesis/Project.java +mymodule      # build just this module's subgraph
+java build/jenesis/Make.java +mymodule      # build just this module's subgraph
 ```
 
 **Path selectors** are a slash-delimited path of `module/step` identities matched against the graph, with two
@@ -77,10 +77,10 @@ inputs are always real folders.
 
 | Invocation | What runs |
 | --- | --- |
-| `java build/jenesis/Project.java` | The whole graph. On a warm cache, every step is `[SKIPPED]`. |
-| `java build/jenesis/Project.java ::/test` | Every `test` step at any depth, plus its predecessors. |
-| `java build/jenesis/Project.java build/::/test` | The same, anchored under the top-level `build` module. |
-| `java build/jenesis/Project.java +mymodule` | Only the named module's subgraph. |
+| `java build/jenesis/Make.java` | The whole graph. On a warm cache, every step is `[SKIPPED]`. |
+| `java build/jenesis/Make.java ::/test` | Every `test` step at any depth, plus its predecessors. |
+| `java build/jenesis/Make.java build/::/test` | The same, anchored under the top-level `build` module. |
+| `java build/jenesis/Make.java +mymodule` | Only the named module's subgraph. |
 
 <div class="tip">
   Selectors are not part of the cache key - they only gate scheduling. A step run under a selector produces
@@ -107,6 +107,29 @@ variable as a fallback. Defaults apply when the key is unset.
 | `jenesis.project.documentation` | `false` | Also assemble a per-module javadoc jar. |
 | `jenesis.project.watch` | `false` | Keep the process alive and rebuild on every source change (see *[Building &amp; running](/tool/building-and-running/)*). |
 | `jenesis.project.properties` | *(unset)* | Comma-separated **profile** names to activate. |
+
+### The launcher (`build/jenesis/Make.java`)
+
+`Make` is the entry point. It carries no build logic and names no engine class, so the Java launcher compiles
+one small file rather than the whole engine before the build starts. These settings are read from the command
+line and from `jenesis.properties` at the project root.
+
+| Property | Default | Effect |
+| --- | --- | --- |
+| `jenesis.make.compile` | `true` | Compile the build sources once and run the build from those classes, over a class loader of their own. One batch compile beats the launcher compiling class by class as it loads them, so this is faster even for a build that runs a single time. |
+| `jenesis.make.classes` | beside the sources | Where those classes land, relative to the project root. Name a folder when `build/jenesis` sits inside something that is packaged - a symlink into the project's own sources, say. |
+| `jenesis.make.daemon` | `false` | Hand the build to a reused JVM, which keeps a warm JIT between calls. Worth it for repeated local builds of a project large enough for the JIT to matter; a build that runs once pays only the daemon's start. `--stop` as the sole selector shuts it down. |
+
+Only `jenesis.*` properties travel with a call to a daemon, which clears and sets them again around every
+build. Everything a running JVM cannot change is the daemon's identity instead - the build sources, the
+environment, the JVM arguments, any other `-D` - and a call differing in one of them replaces the daemon
+rather than being served by one configured for something else.
+
+| Property | Default | Effect |
+| --- | --- | --- |
+| `jenesis.daemon.idle` | `10800` | Seconds of idleness after which the daemon exits. |
+| `jenesis.daemon.options` | `-Xmx2g` | JVM options for the daemon process itself, whitespace separated. |
+
 | `jenesis.project.global` | `$HOME` | Base folder whose `.jenesis/` subfolder holds the user-global `jenesis.properties`; empty string disables it. |
 | `jenesis.project.configuration` | `build.jenesis/` | Path-separated project-wide configuration folders. |
 | `jenesis.project.boms` | the configuration folders | Path-separated list of folders searched for `pin-<name>.properties` files. |

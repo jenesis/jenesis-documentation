@@ -23,7 +23,7 @@ java --version
 A Jenesis build lives *with* your project: its engine ships as plain Java source under `build/jenesis/`, and
 you launch it with the JVM's single-file source mode. Installing is really just populating that
 `build/jenesis/` folder. There are three equivalent ways to do it. All land at the same on-disk state, so
-the canonical `java build/jenesis/Project.java` command works identically afterwards. Pick by how you prefer
+the canonical `java build/jenesis/Make.java` command works identically afterwards. Pick by how you prefer
 to manage versions.
 
 ### A package manager (recommended)
@@ -37,7 +37,7 @@ brew install jenesis/tap/jenesis   # Homebrew
 scoop bucket add jenesis https://github.com/jenesis/scoop-bucket && scoop install jenesis   # Scoop
 
 jenesis-init                       # run from your project root
-java build/jenesis/Project.java
+java build/jenesis/Make.java
 ```
 
 `jenesis-init` writes `build/jenesis/` into the current directory (pass one or more paths to initialise
@@ -50,10 +50,17 @@ so the project decides which Jenesis builds it rather than whichever one your sh
 
 The recorded version is a claim, so `jenesis` checks it. Before running a compiled engine it digests the
 sources under `build/jenesis/` and the sources that version ships, and runs the engine only when the two
-agree. A stale version file, or a `build/jenesis/` you have edited, therefore never silently gets you a
-different engine: the build falls back to the vendored sources, which is slower but is always what your
-project carries. A project that records nothing falls through to the installed version, and `jenesis-run`
-skips the whole lookup and runs the installed version as it stands.
+agree. When they do not - a stale version file, a version it cannot install, or a `build/jenesis/` somebody
+has edited - `jenesis` refuses to run rather than execute code nobody has reviewed, and names the routes
+that do build it, in two groups. `. jenesis-switch` and `jenesis-make` stay on the released engine: the
+project builds as a standard build, no vendored code runs, and for most projects that is enough. Running
+the vendored sources yourself is the other group, in source mode or off classes you compiled once with
+`javac`, and that one does run the modified engine - read the project's build instructions first, since
+`Project.java` is only the usual entry point and the project may drive its build from another, and since a
+modified engine runs with the rights of your build and can break the encapsulation the released engine
+gives you. Only run builds from sources you trust. A project
+that records nothing falls through to the installed version, and `jenesis-make` skips the whole lookup and
+runs the installed version as it stands.
 
 <div class="tip">
   You can skip embedding entirely and run <code>jenesis</code> from a project root with no
@@ -75,7 +82,7 @@ Fastest, with no prerequisite beyond a JDK and `curl`. Run from your project roo
 
 ```bash
 curl -fsSL https://get.jenesis.build | bash
-java build/jenesis/Project.java
+java build/jenesis/Make.java
 ```
 
 Set `JENESIS_VERSION=X.Y.Z` to pin a release, or pass a git ref to install an arbitrary tag, commit, or
@@ -92,7 +99,7 @@ every fresh checkout stays cheap:
 git submodule add --depth 1 https://github.com/jenesis/jenesis.git .jenesis
 git config -f .gitmodules submodule..jenesis.shallow true   # the submodule is named ".jenesis"
 ln -s ../.jenesis/sources/build/jenesis build/jenesis
-java build/jenesis/Project.java
+java build/jenesis/Make.java
 ```
 
 On a platform without symlinks, replace the `ln -s` with `cp -r .jenesis/sources/build/jenesis
@@ -116,27 +123,29 @@ So locally, install the command and use it:
 
 ```bash
 jenesis                     # runs the version recorded in build/jenesis/
-java build/jenesis/Project.java    # the same build, recompiling the engine first
+java build/jenesis/Make.java    # the same build, recompiling the engine first
 ```
 
-`jenesis` reads `build/jenesis/jenesis.version` and runs the compiled engine of that exact version, so you
-keep the project's choice of Jenesis and skip the recompile. The same command builds a project that vendors
-nothing at all, falling back to the installed version. **This is the recommended way to work day to day**;
-keep `java build/jenesis/Project.java` as the canonical command in your README and CI, where reproducibility
-matters more than startup.
+`jenesis` reads `build/jenesis/jenesis.version`, verifies `build/jenesis/` against the published sources of
+that version and runs its compiled engine, so you keep the project's choice of Jenesis and skip the
+recompile. The same command builds a project that vendors nothing at all, falling back to the installed
+version. **This is the recommended way to work day to day**; keep `java build/jenesis/Make.java` as the
+canonical command in your README and CI, where reproducibility matters more than startup.
 
-Where installing is not an option - a locked-down machine, a container image you would rather not extend -
-you can compile the vendored engine yourself and run the classes instead:
+`Make` does that compiling for you and it is on by default, so there is nothing to arrange: the first call
+compiles the build sources once and every later one runs from those classes, until a source changes. One
+batch compile beats the launcher compiling class by class as it loads them, so it is faster even for a build
+that runs a single time. The classes land beside the sources they came from; `jenesis.make.classes` names a
+folder instead, which is what a project whose `build/jenesis` is packaged - a symlink into its own sources,
+say - will want.
+
+To drive those classes yourself, on a locked-down machine or in a container image you would rather not
+extend:
 
 ```bash
-javac -d .jenesis/launcher $(find build/jenesis/ -name '*.java')
-java -cp .jenesis/launcher build.jenesis.Project
+javac -d .jenesis/tool build/jenesis/Project.java
+java -cp .jenesis/tool build.jenesis.Make
 ```
-
-That is the same engine the source command builds, compiled once instead of on every invocation. Recompile
-after changing or updating `build/jenesis/`, and add the output folder to `.gitignore` - nothing about it
-belongs in the repository. Compiling *into* the source tree works too, since `javac` writes each class beside
-its source, but a build output mixed into a checkout is harder to clean and easier to leave stale.
 
 ## Building an example end to end
 
@@ -146,7 +155,7 @@ the simplest one - a single-module Java project described by a `pom.xml`:
 ```bash
 git clone https://github.com/jenesis/jenesis.git
 cd jenesis/demo/demo-01-java-pom
-java build/jenesis/Project.java
+java build/jenesis/Make.java
 ```
 
 There is no build script to write. The project is just a `pom.xml` and a source file that uses Apache
@@ -167,7 +176,7 @@ To see exactly what the build pulled in, ask for the dependency graph instead of
 `dependencies` selector:
 
 ```bash
-java build/jenesis/Project.java dependencies
+java build/jenesis/Make.java dependencies
 ```
 
 ```
@@ -187,11 +196,13 @@ Dependencies and pinning each have their own chapter later.
   read each demo's own README alongside these chapters.
 </div>
 
-## The Project.java model
+## The Project model
 
-Everything you ran above went through one file: `build/jenesis/Project.java`. It is a normal Java source
-file, and `Project` itself is a small Java **record** - so a build is configured as code, not markup. You
-almost never edit it. Instead you flip system properties on the command line or, for code-level control,
+Everything you ran above went through one file: `build/jenesis/Make.java`. It is the launcher, and it carries
+no build logic of its own - that is the point, because the Java launcher compiles the file you name before
+any of its code runs, and a file naming no engine class compiles in a fraction of the time. The build itself
+is configured by `Project`, a small Java **record** - so a build is configured as code, not markup. You
+almost never edit either. Instead you flip system properties on the command line or, for code-level control,
 write a tiny entry point of your own next to it (covered in *[Extending the build](/tool/extending-the-build/)*).
 
 Four fields carry the knobs you reach for first. Three have a `jenesis.project.*` system property that sets
@@ -210,7 +221,7 @@ selector:
 ```bash
 java -Djenesis.test.skip=true \
      -Djenesis.project.layout=maven \
-     build/jenesis/Project.java
+     build/jenesis/Make.java
 ```
 
 ### Layout: how your project is shaped
