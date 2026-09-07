@@ -31,11 +31,22 @@ A backend is a discovered module, chosen **once, at startup, for the whole deplo
 | `gcs` | Google Cloud Storage | `jenreg.gcs.bucket` |
 | `azure-blob` | Azure Blob Storage | `jenreg.azure-blob.connection-string` |
 
+What each request costs a store that charges per operation is the subject of
+[What it costs to run](/repository/cost/).
+
 <div class="warning">
   A selected backend is never silently replaced. Naming a backend whose module is not on the path, or one
   that is missing a required setting, <strong>fails the boot</strong> with a message naming every missing
-  key. Persisting against the wrong store is never the safe default.
+  key - and so does a backend you did not select but configured in full, such as
+  <code>JENREG_S3_BUCKET</code> set while <code>filesystem</code> is selected, because a deployment has
+  exactly one store. Persisting against the wrong store is never the safe default.
 </div>
+
+Every object-store backend also probes its endpoint at boot: four writes of one small key of the server's
+own, checking that the service honours the write preconditions compare-and-set is built on. An endpoint
+that ignores them - some S3-compatible services do - is refused with the reason named, because several
+nodes over such a store would silently overwrite each other. `jenreg.<backend>.conditional-write-probe=false`
+skips the probe, and the server warns at every start that it did.
 
 ## Filesystem - the default
 
@@ -47,7 +58,7 @@ JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
   java -Djenesis.execute.module=source+bundle build/jenesis/Execute.java
 ```
 
-The root defaults to `/var/lib/jenesis-repository`. Point it at durable storage - a mounted volume, an NFS
+The root is required: without `jenreg.filesystem.root` the server refuses to start and names the key, rather than inventing a folder that vanishes with a container. Point it at durable storage - a mounted volume, an NFS
 share - and the server is complete. File permissions on the root are the only access control the backend
 itself applies.
 
@@ -83,22 +94,20 @@ unknown length is spilled to a temporary file rather than to the heap.
 
 ## Google Cloud Storage
 
-The GCS backend speaks Google's S3-compatible XML API with the GCS differences handled for you: the
-compare-and-set token is the object **generation**, and uploads skip the chunked signing GCS does not decode.
+The GCS backend speaks Google's own JSON API, and its compare-and-set token is the object **generation**.
 
 ```bash
 JENREG_STORE=gcs
 JENREG_GCS_BUCKET=my-artifacts
 ```
 
-It authenticates with an HMAC key pair (Cloud Storage → Settings → Interoperability) in
-`JENREG_GCS_ACCESS_KEY_ID` and `JENREG_GCS_SECRET_ACCESS_KEY`; when neither is set, the ambient AWS
-credential chain is used. `JENREG_GCS_ENDPOINT` (default `https://storage.googleapis.com`) points the
-backend at an emulator and must be `https` unless `JENREG_GCS_ALLOW_INSECURE_ENDPOINT=true`;
-`JENREG_GCS_REGION` sets the signing region (default `auto`).
-
-The plain `s3` backend pointed at `https://storage.googleapis.com` works as well. Pick the native backend
-when you want generation-based compare-and-set rather than ETags.
+It authenticates the way Google's clients do. A service-account key file named in `JENREG_GCS_CREDENTIALS`
+is used when set; otherwise the backend takes Application Default Credentials - `GOOGLE_APPLICATION_CREDENTIALS`,
+a `gcloud` login, or the metadata server - so a node on Compute Engine, GKE or Cloud Run runs without a key
+under Workload Identity. `JENREG_GCS_PROJECT` lets the backend create the bucket on first use; without it
+the bucket must exist. `JENREG_GCS_ENDPOINT` points the backend at an emulator and must be `https` unless
+`JENREG_GCS_ALLOW_INSECURE_ENDPOINT=true`; `JENREG_GCS_CREDENTIALS=none` is for an emulator that
+authenticates nobody.
 
 ## Azure Blob
 
@@ -135,9 +144,10 @@ across with their keys unchanged, point `jenreg.store` and the backend's setting
 restart.
 
 <div class="note">
-  The credential objects the server reads for key authentication live under <code>auth/</code> at the store
-  root, outside the <code>&lt;tenant&gt;/&lt;repository&gt;/</code> prefix. A backup of the whole root
-  carries them; a copy of one repository prefix alone does not.
+  The server's own records - the credentials it authenticates keys against, its settings, its locks and
+  node markers - live under <code>.system/</code> at the store root, outside the
+  <code>&lt;tenant&gt;/&lt;repository&gt;/</code> prefix. A backup of the whole root carries them; a copy of
+  one repository prefix alone does not.
 </div>
 
 ## Settings
@@ -145,7 +155,7 @@ restart.
 | Key | Default | Effect |
 |---|---|---|
 | `jenreg.store` | `filesystem` | The backend: `filesystem`, `s3`, `gcs` or `azure-blob`. |
-| `jenreg.filesystem.root` | `/var/lib/jenesis-repository` | Root directory of the filesystem backend. |
+| `jenreg.filesystem.root` | *(required for `filesystem`)* | Root directory of the filesystem backend; the server refuses to start without one. |
 | `jenreg.s3.bucket` | *(required for `s3`)* | The bucket. |
 | `jenreg.s3.region` | `us-east-1` | The signing region. |
 | `jenreg.s3.endpoint` | *(AWS)* | An S3-compatible endpoint; enables path-style access. Must be `https`. |
@@ -153,13 +163,15 @@ restart.
 | `jenreg.s3.sse-kms-key-id` | *(SSE-S3)* | A KMS key for `aws:kms` server-side encryption. |
 | `jenreg.s3.allow-insecure-endpoint` | `false` | Permit a plain-http endpoint. |
 | `jenreg.gcs.bucket` | *(required for `gcs`)* | The bucket. |
-| `jenreg.gcs.access-key-id` / `jenreg.gcs.secret-access-key` | *(ambient chain)* | The HMAC pair; set both or neither. |
-| `jenreg.gcs.endpoint` | `https://storage.googleapis.com` | An emulator endpoint. Must be `https`. |
-| `jenreg.gcs.region` | `auto` | The signing region. |
+| `jenreg.gcs.credentials` | *(Application Default Credentials)* | A service-account key file, or `none` for an emulator. |
+| `jenreg.gcs.project` | *(unset - the bucket must exist)* | The project the bucket is created in on first use. |
+| `jenreg.gcs.endpoint` | *(Google)* | An emulator endpoint. Must be `https`. |
 | `jenreg.gcs.allow-insecure-endpoint` | `false` | Permit a plain-http endpoint. |
 | `jenreg.azure-blob.connection-string` | *(required for `azure-blob`)* | The storage-account connection string. |
 | `jenreg.azure-blob.container` | `jenesis-repository` | The blob container. |
 | `jenreg.azure-blob.allow-insecure-endpoint` | `false` | Permit a plain-http endpoint. |
+| `jenreg.s3.conditional-write-probe` / `jenreg.gcs.conditional-write-probe` / `jenreg.azure-blob.conditional-write-probe` | `true` | Probe at boot that the endpoint honours write preconditions, and refuse to start when it does not; `false` skips the probe and warns at every start. |
+| `jenreg.s3.streaming-writes` / `jenreg.gcs.streaming-writes` / `jenreg.azure-blob.streaming-writes` | `true` | Stream a compare-and-set body to the store; `false` buffers it in heap first, for an endpoint that cannot take a streamed one. |
 | `jenreg.quota` | *(unset - no cap)* | Storage ceiling; a write over it answers `507`. |
 | `jenreg.tenant` / `jenreg.repository` | `default` | The prefix every artifact is stored under. |
 

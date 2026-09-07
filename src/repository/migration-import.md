@@ -1,5 +1,5 @@
 ---
-order: 9
+order: 10
 title: Migration & import
 description: Bringing an existing repository's contents into Jenesis Repository - the import job, the Nexus, Artifactory, Maven, index and Jenesis connectors, archive uploads, and listing everything back out again.
 ---
@@ -146,6 +146,11 @@ published, and a client asking "which versions exist?" gets a `404`. Switch on
 instead. The `maven` connector also skips checksum sidecars (`.sha1`, `.md5`), and the server does not derive
 them, so a client that verifies checksums warns until one is published beside the artifact. The Nexus and
 Artifactory connectors import the sidecars they list.
+
+When a job finishes, the server builds the listings the imported artifacts imply - an OCI repository's tag
+list and catalogue, a raw folder's listing - before it reports `completed`, and regenerates ones that
+already existed, so a client pointed at the new repository sees a correct listing on its first read. A
+listing that cannot be built is a slow first read, never a failed migration.
 
 ## Loading an archive in one request
 

@@ -1,5 +1,5 @@
 ---
-order: 8
+order: 9
 title: Rate limiting
 description: Shedding excess requests with 429 before they reach the repository - the per-tenant token bucket, the shared anonymous bucket, what is never limited, and the one setting that turns it on.
 ---
@@ -32,7 +32,9 @@ while a sustained flood is shed.
   its own, whichever header carried the key - `Jenesis-Repository-Key`, a bearer token, or a Basic
   password. Only the key's checksum is inspected at this point, not its grants - the filter runs before
   authentication so that a flood never costs a grants lookup. The tenant's own ceiling is read from the
-  store and cached ten seconds per bucket.
+  store and cached ten seconds per bucket. At most 50 000 tenants are tracked at once; a request for a
+  tenant beyond that shares the `anonymous` bucket on the deployment's default ceiling rather than minting
+  one, which is what bounds the filter's memory under a flood of invented names.
 - Every request without a well-formed key shares one **`anonymous`** bucket. A shed request is counted
   against the bucket it metered, so a flood arrives already attributed.
 - A request over the ceiling is answered `429` with `Retry-After: 60`.

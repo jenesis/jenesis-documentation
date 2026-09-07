@@ -1,5 +1,5 @@
 ---
-order: 10
+order: 11
 title: Observability
 description: How a running Jenesis Repository reports on itself - recent logs over HTTP, health and metrics endpoints, the security-posture advisories, and the consistency check for a multi-node deployment.
 ---
@@ -71,9 +71,9 @@ serves, and forwarding the numbers to a monitoring system means adding that syst
 ### What the modules report
 
 Beside those meters, each installed module reports signals of its own, named `jenreg.<area>.<signal>`. The
-console's **Metrics overview** panel lists them with their current values and a line of description each. A
-module that is absent, or whose feature is switched off, reports nothing rather than an empty row - so the
-panel shows what this deployment is doing, not a fixed catalogue.
+console's **Metrics** screen (`/observability`, in the Administration menu) lists them with their current
+values and a line of description each. A module that is absent, or whose feature is switched off, reports
+nothing rather than an empty row - so the screen shows what this deployment is doing, not a fixed catalogue.
 
 | Signal | Kind | Reports |
 |---|---|---|
@@ -95,6 +95,8 @@ panel shows what this deployment is doing, not a fixed catalogue.
 | `jenreg.usage.flush` | task | The worker draining those buffered hits. |
 | `jenreg.usage.worker` | health | That the worker thread is running and draining hits off the request path. Needs `jenreg.track-key-usage`. |
 | `jenreg.rebuild.pass` | task | The scheduled rebuild pass; reported as disabled, with the reason, when none is scheduled. |
+| `jenreg.cache.hits` / `.misses` | counter | Reads of the server's own small documents - a credential, a setting - answered from this node's cache, and reads that went to the store (`jenreg.cache.ttl`). |
+| `jenreg.cache.entries` | gauge | Documents this node currently holds in that cache. |
 | `jenreg.consistency.nodes` / `.diverged` | gauge | Live nodes sharing the store, and how many have diverged; both `0` until `jenreg.consistency.enabled` is on. |
 | `jenreg.consistency.divergence` | health | Whether any node has diverged - detect-only, and never blocks a request. |
 
@@ -126,6 +128,7 @@ The advisories the server raises:
 | <span id="jenreg.profile.dev">`jenreg.profile.dev`</span> | critical | The `dev` Spring profile is active, so the console runs its local-only form login. |
 | <span id="jenreg.anonymous.write">`jenreg.anonymous.write`</span> | critical | `jenreg.anonymous-rights` grants a keyless caller write or manage rights. |
 | <span id="jenreg.anonymous.enabled">`jenreg.anonymous.enabled`</span> | warn | `jenreg.anonymous-rights` grants a keyless caller read rights (the public-mirror pattern). |
+| <span id="jenreg.posture.collision">`jenreg.posture.collision`</span> | WARN | Two advisors raised the same advisory id - a fault in the modules on the path, reported as its own advisory rather than merged into one of them. |
 | <span id="jenreg.importer.ssrf">`jenreg.importer.ssrf`</span> | warn | `jenreg.block-private-import-hosts=false` - an import may reach internal hosts or run over plaintext. |
 | <span id="jenreg.ratelimit.unset">`jenreg.ratelimit.unset`</span> | warn | `jenreg.rate-limit` is unset or `0`, so nothing throttles a client. |
 | <span id="jenreg.console.wildcard">`jenreg.console.wildcard`</span> | warn | `jenreg.ui.admins` contains `*`, making every signed-in console user an admin. |
@@ -169,18 +172,20 @@ part in the comparison, and a fleet of one live node is always converged. A node
 than `staleness-window` is flagged `stale` but stays in the comparison until `dead-after`. Three kinds of
 divergence are reported, and each also appears in the security-posture report under its own id:
 
-| Id | Meaning |
-|---|---|
-| <span id="jenreg.consistency.config">`jenreg.consistency.config`</span> | A live node's configuration generation differs from the freshest node's - it missed a configuration change or is split from the fleet. |
-| <span id="jenreg.consistency.stuck">`jenreg.consistency.stuck`</span> | A node's index cursor has lagged behind the furthest node for longer than `sweep-interval × sweep-intervals` without advancing. Lag within that budget is not a divergence. |
-| <span id="jenreg.consistency.pointer">`jenreg.consistency.pointer`</span> | Two live nodes resolve the same pointer to different content - a client would get different bytes depending on which node answers. |
+| Id | Severity | Meaning |
+|---|---|---|
+| <span id="jenreg.consistency.config">`jenreg.consistency.config`</span> | CRITICAL | A live node's configuration generation differs from the freshest node's - it missed a configuration change or is split from the fleet. |
+| <span id="jenreg.consistency.stuck">`jenreg.consistency.stuck`</span> | WARN | A node's index cursor has lagged behind the furthest node for longer than `sweep-interval × sweep-intervals` without advancing. Lag within that budget is not a divergence. |
+| <span id="jenreg.consistency.pointer">`jenreg.consistency.pointer`</span> | CRITICAL | Two live nodes resolve the same pointer to different content - a client would get different bytes depending on which node answers. |
 
 The check only reports; it never blocks a request.
 
 A node names itself with `jenreg.consistency.node-id`; unset, it uses the hostname, and falls back to a
 generated id (with a warning) only when no hostname is available. Give each node a stable id so a restart
-re-uses its fingerprint. Without the setting switched on, a node publishes nothing and writes no operational
-keys into the store.
+re-uses its fingerprint. Without the setting switched on a node publishes no fingerprint, but it still
+writes a small running marker under `.system/nodes/<id>/` at boot and removes it on a clean shutdown - the
+marker is how a node that stopped unclean asks for a repair pass when it starts again - so a stable
+`jenreg.consistency.node-id` is worth setting even on a single node.
 
 A fingerprint whose node has been silent for longer than `jenreg.consistency.forget-after` (a day by default)
 is deleted by a publishing node, which reaps at most once an hour, so a fleet that gives every restart a

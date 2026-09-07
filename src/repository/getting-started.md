@@ -30,9 +30,10 @@ JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
   java -Djenesis.execute.module=source+bundle build/jenesis/Execute.java
 ```
 
-The first run builds the modules it needs, then starts the server on **port 8080**. The **filesystem store is
-the default**, so the only thing you told it was where to keep its data; without `JENREG_FILESYSTEM_ROOT` it
-uses `/var/lib/jenesis-repository`. That folder is the whole repository: artifacts, checksums, indexes and
+The first run builds the modules it needs, then starts the server on **port 8080**, and serves the web console
+on the same port. The **filesystem store is the default** backend, and its root is the one thing it needs:
+without `JENREG_FILESYSTEM_ROOT` the server refuses to start and names the key, rather than inventing a folder
+that vanishes with a container. That folder is the whole repository: artifacts, checksums, indexes and
 settings all live there, and backing it up backs up the server.
 
 <div class="note">
@@ -159,53 +160,40 @@ both settings and their environment-variable forms.
 
 ## Open the console
 
-The web console is a **second process** that reads the same store. Start it from the same clone with the
-console's main class, on its own port:
+The web console is served by the same process: open `http://localhost:8080/console`. With an identity
+provider configured it signs you in through that provider; for a first look without one, restart the server
+with the `dev` profile, which adds a form login with two built-in accounts:
 
 ```bash
-PORT=8081 SPRING_PROFILES_ACTIVE=dev JENREG_UI_SECURE_COOKIE=false \
+SPRING_PROFILES_ACTIVE=dev JENREG_UI_SECURE_COOKIE=false \
 JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
-  java -Djenesis.execute.module=source+bundle \
-       -Djenesis.execute.mainClass=build.jenesis.repository.bundle.Console \
-       build/jenesis/Execute.java
+  java -Djenesis.execute.module=source+bundle build/jenesis/Execute.java
 ```
 
-Open `http://localhost:8081/console` and sign in as `admin` / `admin`. The `dev` profile swaps the console's
-OAuth sign-in for a built-in form login with two accounts, `admin`/`admin` and `viewer`/`viewer`, so you can
-look around without configuring an identity provider. `JENREG_UI_SECURE_COOKIE=false` lets the session cookie
-travel over plain HTTP; leave it at its default behind HTTPS.
+Open `http://localhost:8080/login/dev` and sign in as `admin` / `admin` (an admin) or `viewer` / `viewer`
+(a user). `JENREG_UI_SECURE_COOKIE=false` lets the session cookie travel over plain HTTP; leave it at its
+default behind HTTPS.
 
 <div class="warning">
-  The <code>dev</code> profile is for local use only. A real deployment signs in over GitHub or an OpenID
-  Connect provider, configured in <em>The console</em>.
+  The <code>dev</code> profile is for a laptop: the server refuses to start under it on anything but the
+  loopback address, so the built-in accounts never reach a network. A real deployment signs in over GitHub
+  or an OpenID Connect provider, configured in <em>The console</em>.
 </div>
 
-## The alternatives
+## A cloud store instead of a folder
 
-**A container image, built locally.** If you would rather run a container than a JDK, the clone builds one:
-the `Dockerfile` packages the same all-in-one module, boots the server on 8080, and keeps its data under `/data`.
-
-```bash
-docker build -t jenesis-repository .
-docker run -p 8080:8080 -e JENREG_AUTH=false -v jenesis-data:/data jenesis-repository
-```
-
-Every setting above applies unchanged, because the image is shaped with `-e` rather than rebuilt. The same
-image runs the console instead of the server with `-e MAINCLASS=build.jenesis.repository.bundle.Console -e
-PORT=8081`.
-
-**A cloud store instead of a folder.** The filesystem is the default, but the server runs the same on an
-object store, which is how you run it stateless and behind a load balancer. You select the backend and give
-it a bucket:
+The filesystem is the default, but the server runs the same on an object store, which is how you run it
+stateless and behind a load balancer. You select the backend and give it a bucket:
 
 | Store | Select with | Then set |
 | --- | --- | --- |
-| A directory | `JENREG_STORE=filesystem` *(default)* | `JENREG_FILESYSTEM_ROOT` |
+| A directory | `JENREG_STORE=filesystem` *(default)* | `JENREG_FILESYSTEM_ROOT` *(required)* |
 | S3, or an S3-compatible service such as MinIO | `JENREG_STORE=s3` | `JENREG_S3_BUCKET`, credentials, an endpoint for a compatible service |
 | Google Cloud Storage | `JENREG_STORE=gcs` | `JENREG_GCS_BUCKET` |
 | Azure Blob Storage | `JENREG_STORE=azure-blob` | the connection string and container |
 
-*Storage* covers each backend, its credentials, and the storage quota.
+*Storage* covers each backend, its credentials, and the storage quota, and *What it costs to run* says what
+each request costs a store that charges per operation.
 
 ## Where to go next
 
