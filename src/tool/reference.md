@@ -122,7 +122,7 @@ line and from `jenesis.properties` at the project root.
 | `jenesis.make.root` | `.` | The directory scanned for `module-info.java` / `pom.xml`. Command-line only. |
 | `jenesis.make.profiles` | *(unset)* | Comma-separated **profile** names to activate. |
 | `jenesis.make.compile` | `true` | Compile the build sources once and run the build from those classes, over a class loader of their own. One batch compile beats the launcher compiling class by class as it loads them, so this is faster even for a build that runs a single time. |
-| `jenesis.make.classes` | beside the sources | Where those classes land, relative to the project root. Name a folder when `build/jenesis` sits inside something that is packaged - a symlink into the project's own sources, say. |
+| `jenesis.make.classes` | `.jenesis/classes` | Where those classes land, relative to the project root. They go under `.jenesis/` with the rest of the build's by-products, so nothing lands in the sources. |
 | `jenesis.make.daemon` | `false` | Hand the build to a reused JVM, which keeps a warm JIT between calls. `--stop` as the sole selector shuts it down. |
 
 What a daemon saves is compiling speed, not setup. A Jenesis build has no script to parse - the project is

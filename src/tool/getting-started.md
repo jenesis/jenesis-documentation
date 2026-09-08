@@ -98,24 +98,47 @@ for it and it does the whole thing:
 curl -fsSL https://get.jenesis.build | JENESIS_MODE=submodule bash
 ```
 
-That adds the submodule at `.jenesis/upstream`, records it as shallow, checks it out at the version you asked
+That adds the submodule at `build/.upstream`, records it as shallow, checks it out at the version you asked
 for, links `build/jenesis` into it, and stages all of it for you to commit. Jenesis is read at its pinned
 commit and its history is never browsed from your project, so the shallow flag keeps every fresh checkout
 cheap. By hand, the same thing is:
 
 ```bash
-git submodule add --depth 1 https://github.com/jenesis/jenesis.git .jenesis/upstream
-git config -f .gitmodules submodule..jenesis/upstream.shallow true
-ln -s ../.jenesis/upstream/sources/build/jenesis build/jenesis
+git submodule add --depth 1 https://github.com/jenesis/jenesis.git build/.upstream
+git config -f .gitmodules submodule.build/.upstream.shallow true
+ln -s .upstream/sources/build/jenesis build/jenesis
 java build/jenesis/Make.java
 ```
 
-The submodule sits *under* `.jenesis/` rather than at it because the build writes its own state there - the
-resolved artifacts, the compiled engine, the build cache. A submodule at `.jenesis` would have all of that
-land inside its working tree, permanently dirty and in the way of the next `git submodule update`.
+The submodule sits in `build/`, beside the `build/jenesis` link that points into it, because `build/` is
+already tracked in every Jenesis project - the entry point lives there. That keeps `.jenesis/` free of
+anything git has to keep. The leading dot is not decoration: `Make` compiles the sources under the folder its
+own file sits in, and skips any directory whose name could not be a Java package, so `.upstream` is passed
+over while the `build/jenesis` link into it is followed.
 
-On a platform without symlinks, replace the `ln -s` with `cp -r .jenesis/upstream/sources/build/jenesis
+On a platform without symlinks, replace the `ln -s` with `cp -r build/.upstream/sources/build/jenesis
 build/jenesis` and refresh the copy after each submodule update.
+
+### What to ignore
+
+Jenesis writes in exactly two places under your project root, so two rules cover it:
+
+```gitignore
+target/
+.jenesis/
+```
+
+`target/` is the build output, named by `jenesis.project.target`. `.jenesis/` is everything else the tool
+produces and nothing you write: the resolved artifacts, the build cache, the engine compiled by
+`jenesis.make.compile` and its stamp, and a running daemon's port, token and log. Keeping all of it under one
+hidden folder is deliberate - there is one thing to ignore and one thing to delete when you want a cold start.
+
+Those two rules hold whether Jenesis is vendored as source or tracked as a submodule. A submodule lives at
+`build/.upstream`, outside `.jenesis/` entirely, so nothing has to be carved back out of the rule and
+`rm -rf .jenesis` is always safe - it removes only work the next build redoes.
+
+Nothing needs ignoring inside the vendored engine either. It carries its own `.gitignore`, and the compiled
+engine lands in `.jenesis/classes` rather than beside the sources, so the vendored copy stays as checked out.
 
 ### The vendored source, and when to install the command
 
@@ -147,7 +170,7 @@ canonical command in your README and CI, where reproducibility matters more than
 `Make` does that compiling for you and it is on by default, so there is nothing to arrange: the first call
 compiles the build sources once and every later one runs from those classes, until a source changes. One
 batch compile beats the launcher compiling class by class as it loads them, so it is faster even for a build
-that runs a single time. The classes land beside the sources they came from; `jenesis.make.classes` names a
+that runs a single time. The classes land in `.jenesis/classes`, with the rest of the build's by-products; `jenesis.make.classes` names a
 folder instead, which is what a project whose `build/jenesis` is packaged - a symlink into its own sources,
 say - will want.
 
@@ -155,8 +178,8 @@ To drive those classes yourself, on a locked-down machine or in a container imag
 extend:
 
 ```bash
-javac -d .jenesis/tool build/jenesis/Project.java
-java -cp .jenesis/tool build.jenesis.Make
+javac -d .jenesis/classes build/jenesis/Project.java
+java -cp .jenesis/classes build.jenesis.Make
 ```
 
 ## Building an example end to end
