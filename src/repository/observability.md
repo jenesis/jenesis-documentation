@@ -95,6 +95,9 @@ nothing rather than an empty row - so the screen shows what this deployment is d
 | `jenreg.usage.flush` | task | The worker draining those buffered hits. |
 | `jenreg.usage.worker` | health | That the worker thread is running and draining hits off the request path. Needs `jenreg.track-key-usage`. |
 | `jenreg.rebuild.pass` | task | The scheduled rebuild pass; reported as disabled, with the reason, when none is scheduled. |
+| `jenreg.gc.condemned` | gauge | Blobs marked for deletion and awaiting the confirming pass. Reported once a collection has run; a deployment with no collector reports none of these three. |
+| `jenreg.gc.collected` | counter | Blobs reclaimed so far. |
+| `jenreg.gc.lastrun` | task | The last collection, and when it ran. |
 | `jenreg.walk.segments` | gauge | Key ranges the current pass is split into, against the configured count. |
 | `jenreg.walk.resumes` | counter | Passes that picked a segment up from a committed cursor rather than starting it over. |
 | `jenreg.cache.hits` / `.misses` | counter | Reads of the server's own small documents - a credential, a setting - answered from this node's cache, and reads that went to the store (`jenreg.cache.ttl`). |

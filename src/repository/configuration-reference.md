@@ -55,6 +55,10 @@ See [Getting started](/repository/getting-started/) and [Storage](/repository/st
 | `jenreg.quota` | *(unset - no cap)* | The storage ceiling, as a byte count or a number with a `K`/`M`/`G`/`T` suffix; a write past it answers `507`. |
 | `jenreg.read-only` | `false` | Refuse every write - publishes, imports, deletes and internal cache fills - with `403`, while reads work normally. |
 | `jenreg.rebuild.interval` | `P7D` | How often the server regenerates every stored listing (`tags/list`, `_catalog`, a computed `maven-metadata.xml`), so a write that could not land is repaired without a read ever paying for it. An ISO-8601 duration (`PT6H`) or a short one (`6h`, `30m`); `off` disables the pass. The first pass runs a minute after start. |
+| `jenreg.gc` | `mark-sweep` | The collector that reclaims the blobs no live pointer references, by name; a name nothing answers to fails the boot. See [Reclaiming space](/repository/storage/). |
+| `jenreg.collect` | `true` | Switch off the walk pass that runs the collector. |
+| `jenreg.gc.stride` | `20000` | Items the collector handles between checkpoints. |
+| `jenreg.gc.grace` | `PT0S` | A wall-clock floor on the gap between condemning a blob and deleting it, on top of the two-pass rule. |
 | `jenreg.walk` | *(the one installed)* | Select the artifact walk the rebuild pass enumerates through, by name; a name nothing answers to fails the boot. |
 | `jenreg.walk.checkpoint` | `1000` | Items a walk enumerates before it commits its cursor, so an interrupted pass resumes near where it stopped rather than starting over. |
 | `jenreg.walk.segments` | `32` | Key ranges one pass is split into. Several nodes claim disjoint segments, so they share one pass instead of repeating it. |
