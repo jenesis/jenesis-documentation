@@ -47,10 +47,11 @@ property). The top-level targets the shipped layouts register:
 | `pin` | Rewrite every `pom.xml` / `module-info.java` so the transitive closure is pinned at source (see *[Pinning &amp; bills of materials](/tool/pinning/)*). |
 | `dependencies` | Print each module's resolved dependency graph with licences. |
 | `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata at the project root. |
-| `help` | Print the human usage screen. |
-| `skill` | Print an agent-oriented briefing of the same material. |
+| `help` | Print a one-screen orientation: how to start, the selectors, and how to make a step verbose. |
+| `skill` | Print the briefing a coding agent works from. |
 | `metadata` | Refresh the metadata module outputs without building artifacts. |
-| `properties` | Print the active `-Djenesis.*` system properties, sorted by key. |
+| `configuration` | Print every setting with the value in force, one per line: `jenesis.<key>=<value> [set\|default\|unset] <what it does>`. Built to grep, and the tool's own property reference. |
+| `properties` | Print only the `-Djenesis.*` system properties that are set, sorted by key. |
 
 ## Selectors
 
@@ -93,6 +94,10 @@ inputs are always real folders.
 Every knob is a system property, passed with `-D` or set in a `jenesis.properties` file - see
 *[Configuration](/tool/configuration/)* for files, profiles, and precedence. Some also read an environment
 variable as a fallback. Defaults apply when the key is unset.
+
+The build prints this same catalogue for itself: `configuration` lists every key with the value in force and
+where it came from, one line each, so `configuration | grep cache` answers what is available and what is set
+in one step.
 
 ### Project & layout
 
