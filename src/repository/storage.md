@@ -135,6 +135,30 @@ JENREG_QUOTA=10G       # a byte count, or a K/M/G/T suffix (1024-based)
 The quota counts the bytes held: content blobs, plus the chunks of an OCI upload that is still in
 progress. A deduplicated re-deploy of bytes already stored needs no new space and is never refused.
 
+## Reclaiming space
+
+Content is stored once and addressed by its hash, so deleting a version removes the pointer that named it and
+leaves the bytes: another version may name the same bytes. What frees them is a collector, which marks every
+blob a live pointer references and sweeps the rest. It rides the rebuild walk the server already runs
+(`jenreg.rebuild.interval`, weekly by default), so reclaiming costs no enumeration of its own.
+
+Deletion is the one act that cannot be undone, so the collector is deliberately slow to it. A blob is
+**condemned** on one pass and deleted on the next, and a pointer that links it in between clears the mark, so a
+blob has to be unreferenced across two whole passes before it goes. `jenreg.gc.grace` adds a wall-clock floor on
+top of that when several nodes collect, and only ever delays a deletion.
+
+| Key | Default | Effect |
+|---|---|---|
+| `jenreg.gc` | `mark-sweep` | The collector, by name. A name nothing answers to fails the boot rather than quietly reclaiming nothing. |
+| `jenreg.collect` | `true` | Switch off the walk pass that runs the collector; the store then only grows. |
+| `jenreg.gc.stride` | `20000` | Items the collector's own pass handles between checkpoints - the reference batch it holds, the re-work a crash costs, and how often it renews a segment claim. |
+| `jenreg.gc.grace` | `PT0S` | A wall-clock floor on the condemned-to-deleted gap, on top of the two-pass rule. |
+
+Three signals report it once a collection has run: `jenreg.gc.condemned` (blobs marked and awaiting the
+confirming pass), `jenreg.gc.collected` (blobs reclaimed so far) and the `jenreg.gc.lastrun` task status. A
+deployment with no collector contributes none of them, which the capability surface reports rather than leaving
+as a silent zero.
+
 ## Backing up and moving
 
 Because the store is the server's only state, a backup is a copy of the store: the root directory on the
