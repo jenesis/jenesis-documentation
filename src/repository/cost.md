@@ -78,12 +78,63 @@ database is a second monthly bill and a second thing to operate, and what it wou
 markers, the listings - costs cents a month to keep as objects and a dollar or two a month to read at this
 traffic.
 
+## Why a large store changes the answer
+
+Two of the three lines on the bill scale with your traffic. Storage scales with what you keep, and transfer out
+scales with what people download. Both are the same on any design, because the bytes are the bytes.
+
+The operations line does not. A pass that reads the store whole costs a number of requests proportional to the
+number of objects in it, not to how busy the repository is. A repository nobody touched all week still pays for
+the pass, and it pays more every week as it grows. That is the line to watch, and it is the reason the pass is
+weekly rather than hourly.
+
+Reclaiming storage is the expensive part of that pass. Deciding that a stored blob is unreferenced means
+establishing that nothing anywhere points at it, which cannot be answered from the blob itself: it takes an
+enumeration. The design pays for that deliberately, because the alternative is a database holding the reference
+counts, which is a second system to run, to back up and to keep consistent with the store. On a store that
+charges per request, that choice shows up on the bill; on one that does not, it costs nothing at all.
+
+So the arithmetic turns over somewhere. A small repository on a hyperscaler pays a few pounds a month for its
+passes and should not think about it. A large one - millions of objects - pays for every one of them on every
+pass, and at that size the operations line can exceed what serving your users costs. When it does, moving to a
+store that does not charge per request removes the line rather than reducing it, and no amount of tuning the
+software competes with that.
+
+## Running your own S3-compatible store
+
+Self-hosting is a supported deployment, not a workaround: the S3-compatible backend is tested against MinIO on
+every build, so the same server binary and the same configuration work against your own store.
+
+The realistic options differ in what they are built for.
+
+- **MinIO** is the usual choice. Distributed mode spreads erasure-coded data across nodes and drives, it handles
+  small objects well, and it is the implementation this project tests against. Check its current licence terms
+  before committing to it.
+- **Ceph**, through its S3 gateway, is the heavyweight: proven at very large scale, self-healing, with erasure
+  coding and replication you configure. It asks the most of whoever operates it, and its per-object overhead
+  makes very small objects relatively expensive.
+- **SeaweedFS** is built for enormous numbers of small files and offers an S3 gateway over that. A repository
+  stores a great deal of small metadata beside the artifacts, so this suits the shape of the data well.
+- **Garage** is worth considering for smaller or geographically spread deployments, where simple operation
+  matters more than peak throughput.
+
+What you take on is durability: replication or erasure coding, failure domains, capacity planning and upgrades
+are yours. What you remove is a bill that grows with your object count whether or not anyone is using the
+repository. For a large store that trade is usually worth making, and it is worth making before the store gets
+large, because migrating a repository is easier when there is less of it.
+
+<div class="tip">
+  You do not have to guess where the turn is. The operation counts are the same on every backend, so measure a
+  week of your own passes against your provider's request metrics, and compare the operations line with what the
+  same hardware would cost you. The point at which they cross is specific to your repository, not to this table.
+</div>
+
 ## When a request-free store wins
 
 The comparison changes shape on a store that charges nothing per request and little for transfer. On Scaleway the
-operations line disappears and the same 30 TB of egress is about €300; on a self-hosted S3-compatible store such
-as MinIO or Ceph behind your own network, both lines are your hardware and your bandwidth. The server does not
-care which: every backend in [Storage](/repository/storage/) sees the same operation counts. Your provider
+operations line disappears and the same 30 TB of egress is about €300; on a store you run yourself, as described
+above, both lines become your hardware and your bandwidth. The server does not care which: every backend in
+[Storage](/repository/storage/) sees the same operation counts. Your provider
 counts them for you - S3 request metrics, and the request counters Cloud Storage and Azure Blob Storage
 publish - so the figures above can be checked against your own traffic rather than taken on trust.
 
