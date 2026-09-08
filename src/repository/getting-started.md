@@ -19,7 +19,7 @@ java --version      # must report 25 or above
 
 ## Run it from source
 
-Clone the project with its submodule - the build tool is pinned under `.jenesis/upstream` and `build/jenesis`
+Clone the project with its submodule - the build tool is pinned under `build/upstream` and `build/jenesis`
 links into it - and start the all-in-one server. The all-in-one is the `source/bundle` module: one launchable
 module that carries every format, every storage backend, the import connectors and the web console.
 
