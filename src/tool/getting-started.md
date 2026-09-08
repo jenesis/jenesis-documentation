@@ -91,18 +91,30 @@ branch: `curl -fsSL https://get.jenesis.build | bash -s -- main`.
 ### Git submodule
 
 Most explicit, and the most reproducible: the pinned submodule commit is the anchor, so a fresh clone plus
-`git submodule update --init --depth 1` is the entire setup, with no separate install step. Jenesis is read at
-its pinned commit and its history is never browsed from your project, so record the submodule as shallow and
-every fresh checkout stays cheap:
+`git submodule update --init --depth 1` is the entire setup, with no separate install step. Ask the installer
+for it and it does the whole thing:
 
 ```bash
-git submodule add --depth 1 https://github.com/jenesis/jenesis.git .jenesis
-git config -f .gitmodules submodule..jenesis.shallow true   # the submodule is named ".jenesis"
-ln -s ../.jenesis/sources/build/jenesis build/jenesis
+curl -fsSL https://get.jenesis.build | JENESIS_MODE=submodule bash
+```
+
+That adds the submodule at `.jenesis/upstream`, records it as shallow, checks it out at the version you asked
+for, links `build/jenesis` into it, and stages all of it for you to commit. Jenesis is read at its pinned
+commit and its history is never browsed from your project, so the shallow flag keeps every fresh checkout
+cheap. By hand, the same thing is:
+
+```bash
+git submodule add --depth 1 https://github.com/jenesis/jenesis.git .jenesis/upstream
+git config -f .gitmodules submodule..jenesis/upstream.shallow true
+ln -s ../.jenesis/upstream/sources/build/jenesis build/jenesis
 java build/jenesis/Make.java
 ```
 
-On a platform without symlinks, replace the `ln -s` with `cp -r .jenesis/sources/build/jenesis
+The submodule sits *under* `.jenesis/` rather than at it because the build writes its own state there - the
+resolved artifacts, the compiled engine, the build cache. A submodule at `.jenesis` would have all of that
+land inside its working tree, permanently dirty and in the way of the next `git submodule update`.
+
+On a platform without symlinks, replace the `ln -s` with `cp -r .jenesis/upstream/sources/build/jenesis
 build/jenesis` and refresh the copy after each submodule update.
 
 ### The vendored source, and when to install the command
