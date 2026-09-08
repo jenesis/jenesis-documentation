@@ -121,7 +121,7 @@ MultiProjectAssembler<ProjectModuleDescriptor> withSign = (descriptor, repos, re
             sub.addStep("sign", new Sign(), "assemble"); // Sign is your BuildStep
         });
 
-new Project().assembler(withSign).build(args);
+new Project(Path.of(".")).assembler(withSign).build(args);
 ```
 
 `apply` returns the module's build description; `mapBuild` decorates only its build phase - here registering

@@ -104,14 +104,12 @@ in one step.
 | Key | Default | Effect |
 | --- | --- | --- |
 | `jenesis.project.layout` | `auto` | The layout: `auto`, `maven`, `modular`, `modular_to_maven`. |
-| `jenesis.project.root` | `.` | The directory scanned for `module-info.java` / `pom.xml`. Command-line only. |
 | `jenesis.project.target` | `target` | The per-build output folder. Safe to delete for a clean build. |
 | `jenesis.project.version` | *(unset)* | Stamps this version onto every artifact the build produces. |
 | `jenesis.project.metadata` | *(unset)* | Path-separated list of project-level POM metadata files (conventionally one `project.properties`). |
 | `jenesis.project.sources` | `false` | Also assemble a per-module sources jar. |
 | `jenesis.project.documentation` | `false` | Also assemble a per-module javadoc jar. |
 | `jenesis.project.watch` | `false` | Keep the process alive and rebuild on every source change (see *[Building &amp; running](/tool/building-and-running/)*). |
-| `jenesis.project.properties` | *(unset)* | Comma-separated **profile** names to activate. |
 
 ### The entry point (`build/jenesis/Make.java`)
 
@@ -121,6 +119,8 @@ line and from `jenesis.properties` at the project root.
 
 | Property | Default | Effect |
 | --- | --- | --- |
+| `jenesis.make.root` | `.` | The directory scanned for `module-info.java` / `pom.xml`. Command-line only. |
+| `jenesis.make.profiles` | *(unset)* | Comma-separated **profile** names to activate. |
 | `jenesis.make.compile` | `true` | Compile the build sources once and run the build from those classes, over a class loader of their own. One batch compile beats the launcher compiling class by class as it loads them, so this is faster even for a build that runs a single time. |
 | `jenesis.make.classes` | beside the sources | Where those classes land, relative to the project root. Name a folder when `build/jenesis` sits inside something that is packaged - a symlink into the project's own sources, say. |
 | `jenesis.make.daemon` | `false` | Hand the build to a reused JVM, which keeps a warm JIT between calls. `--stop` as the sole selector shuts it down. |
@@ -143,7 +143,7 @@ rather than being served by one configured for something else.
 | `jenesis.daemon.idle` | `10800` | Seconds of idleness after which the daemon exits. |
 | `jenesis.daemon.options` | `-Xmx2g` | JVM options for the daemon process itself, whitespace separated. |
 
-| `jenesis.project.global` | `$HOME` | Base folder whose `.jenesis/` subfolder holds the user-global `jenesis.properties`; empty string disables it. |
+| `jenesis.make.global` | `$HOME` | Base folder whose `.jenesis/` subfolder holds the user-global `jenesis.properties`; empty string disables it. |
 | `jenesis.project.configuration` | `build.jenesis/` | Path-separated project-wide configuration folders. |
 | `jenesis.project.boms` | the configuration folders | Path-separated list of folders searched for `pin-<name>.properties` files. |
 | `jenesis.project.artifacts` | `.jenesis/artifacts` | The project-local folder resolved artifacts are materialised into (hard-linked from `~/.m2` where possible), in every layout. |
