@@ -131,7 +131,7 @@ See [Rate limiting](/repository/rate-limiting-usage/).
 | Key | Default | Effect |
 |---|---|---|
 | `jenreg.rate-limit` | `0` *(no limit)* | Permits per minute per tenant (and for the shared anonymous bucket); excess answers `429` with `Retry-After`. Unset raises the `jenreg.ratelimit.unset` advisory. |
-| `jenreg.track-key-usage` | `false` | Record each credential's last use and running count. Off by default; the accounting is batched, and its `jenreg.usage.*` signals report nothing until it is on. |
+| `jenreg.track-key-usage` | `true` | Record each credential's last use and running count. The accounting is batched into at most one write per credential per day; `false` switches it off, and the `jenreg.usage.*` signals then report nothing. |
 | `jenreg.token-bucket` | `true` | Switch the in-memory token-bucket limiter off with `false`; every request is then unmetered. |
 | `jenreg.rate-limiter` | *(the one installed)* | Select the rate limiter by name (`token-bucket`); naming one that is not installed fails the boot. |
 | `jenreg.key-usage` | *(the one installed)* | Select the credential-usage tracker by name (`batching`). |
