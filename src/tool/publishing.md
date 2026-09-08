@@ -14,7 +14,7 @@ it** - and Jenesis owns the first while deliberately leaving the signed upload t
 The `stage` target materialises the full release tree in Maven repository layout under
 `target/stage/maven/output/`: the main jar, the POM, and - when you ask for them - the `-sources.jar` and
 `-javadoc.jar` that Central demands. You enable those and set the version from the command line, or in code
-on `Project` (`new Project().version("1.0.0")`):
+on `Project` (`new Project(Path.of(".")).version("1.0.0")`):
 
 ```bash
 java -Djenesis.project.version=1.0.0 \

@@ -205,12 +205,14 @@ is configured by `Project`, a small Java **record** - so a build is configured a
 almost never edit either. Instead you flip system properties on the command line or, for code-level control,
 write a tiny entry point of your own next to it (covered in *[Extending the build](/tool/extending-the-build/)*).
 
-Four fields carry the knobs you reach for first. Three have a `jenesis.project.*` system property that sets
-them before the build starts; all four have a matching in-code method for a custom entry point.
+Four fields carry the knobs you reach for first. Two have a `jenesis.project.*` system property that sets them
+before the build starts, and the root has a `jenesis.make.*` one, because finding the project is the entry
+point's job rather than the build's. All four are settable in code as well: the root is the argument
+`Project` requires, the rest are withers.
 
 | Field | Property | Default | What it is |
 | --- | --- | --- | --- |
-| `root` | `jenesis.project.root` | `.` | The directory Jenesis scans for `module-info.java` / `pom.xml`. Command line only. |
+| `root` | `jenesis.make.root` | `.` | The directory Jenesis scans for `module-info.java` / `pom.xml`. Command line only; `Make` reads it and hands it to `Project`, whose constructor requires it. |
 | `target` | `jenesis.project.target` | `target` | Where every build output is written. Safe to delete for a clean build. |
 | `layout` | `jenesis.project.layout` | `auto` | How the project is shaped and how dependencies resolve. |
 | `defaultTarget` | *(none)* | `build` | What runs when you pass no selector. |

@@ -31,8 +31,14 @@ overrides a file entry, so you can still override the project's baseline for a s
 java -Djenesis.project.sources=false build/jenesis/Make.java
 ```
 
-One key is the exception: `jenesis.project.root` belongs on the command line only, because the root is what
+One key is the exception: `jenesis.make.root` belongs on the command line only, because the root is what
 locates the file in the first place. Setting it in a file is reported as an error.
+
+Keys fall into two namespaces, split by who reads them. `jenesis.make.*` is read by the entry point, before a
+build exists: where the project is, which profiles to layer, where the user-global file lives, and how the
+engine itself is compiled and reused. `jenesis.project.*` is read by the build. That is why the root sits
+under `make` - finding the project is the entry point's job, and the build is handed the answer rather than
+looking it up.
 
 <div class="warning">
   A few switches are read by <em>presence</em>, not by value - <code>jenesis.test.skip</code> is one: writing
@@ -90,7 +96,7 @@ presence switches its feature on.
 A **profile** is a named set of configuration you switch on in one move - the development-versus-release split,
 without repeating long `-D` lists. There is no registry and no plugin: a profile is just a name.
 
-Select profiles with the `jenesis.project.properties` property - a comma-separated list of names. Each name
+Select profiles with the `jenesis.make.profiles` property - a comma-separated list of names. Each name
 `<name>` designates two things, both optional:
 
 - a **`jenesis-<name>.properties`** file at the project root, whose entries feed the same `jenesis.*` system
@@ -98,14 +104,14 @@ Select profiles with the `jenesis.project.properties` property - a comma-separat
 - a **`<name>/` subfolder** inside each configuration folder, searched *ahead of* the folder itself - so a
   profile can carry its own `checkstyle.xml`, `packaging.properties`, and so on.
 
-Profiles **chain**: any loaded file may itself set `jenesis.project.properties` to pull in more, transitively.
+Profiles **chain**: any loaded file may itself set `jenesis.make.profiles` to pull in more, transitively.
 The [`profiles`](https://github.com/jenesis/jenesis/tree/main/demo/demo-17-profiles) demo ships a `release`
 profile that turns on source jars and chains to a `supply-chain` profile that enforces strict pinning:
 
 ```properties
 # jenesis-release.properties
 jenesis.project.sources=true
-jenesis.project.properties=supply-chain
+jenesis.make.profiles=supply-chain
 
 # jenesis-supply-chain.properties
 jenesis.dependency.pin=strict
@@ -114,7 +120,7 @@ jenesis.dependency.pin=strict
 Selecting `release` therefore also applies `supply-chain` - one name switches on both:
 
 ```bash
-java -Djenesis.project.properties=release build/jenesis/Make.java stage
+java -Djenesis.make.profiles=release build/jenesis/Make.java stage
 ```
 
 A missing `jenesis-<name>.properties` is skipped, not an error, so a profile may contribute only a
@@ -141,7 +147,7 @@ When you are unsure what the layers add up to, ask the build. The `properties` s
 effective `jenesis.*` property, sorted by key:
 
 ```bash
-java -Djenesis.project.properties=release build/jenesis/Make.java properties
+java -Djenesis.make.profiles=release build/jenesis/Make.java properties
 ```
 
 ## User-global defaults
@@ -150,7 +156,7 @@ The weakest layer is a **user-global `jenesis.properties`**, read from `~/.jenes
 project - your shared personal defaults. It is optional and ignored when absent, and it may declare its own
 profiles, resolved relative to its `.jenesis` folder.
 
-The `jenesis.project.global` property names the base folder (default `$HOME`) whose `.jenesis/` subfolder
+The `jenesis.make.global` property names the base folder (default `$HOME`) whose `.jenesis/` subfolder
 holds that file. Set to an empty string, it switches the user-global layer off entirely. It can be set on the
 command line or in the project's `jenesis.properties`, but not in a profile or in the user-global file itself.
 
