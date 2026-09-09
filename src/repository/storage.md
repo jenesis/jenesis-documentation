@@ -152,8 +152,12 @@ progress. A deduplicated re-deploy of bytes already stored needs no new space an
 
 Content is stored once and addressed by its hash, so deleting a version removes the pointer that named it and
 leaves the bytes: another version may name the same bytes. What frees them is a collector, which marks every
-blob a live pointer references and sweeps the rest. It rides the rebuild walk the server already runs
-(`jenreg.rebuild.interval`, weekly by default), so reclaiming costs no enumeration of its own.
+blob a live pointer references and sweeps the rest. It is *triggered* by the rebuild walk the server already runs
+(`jenreg.rebuild.interval`, weekly by default) rather than scheduling itself, but the marking and the sweeping are
+its own two passes over the store: one reading every pointer to learn which blob it names, one streaming the pool
+in hash order. That is the cost of the question it answers - deciding a blob is unreferenced means establishing
+that nothing anywhere points at it, which cannot be read off the blob - and it is why the pass is weekly rather
+than hourly. See [What it costs to run](/repository/cost/) for what that comes to.
 
 Deletion is the one act that cannot be undone, so the collector is deliberately slow to it. A blob is
 **condemned** on one pass and deleted on the next, and a pointer that links it in between clears the mark, so a
