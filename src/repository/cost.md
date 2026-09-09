@@ -66,10 +66,8 @@ same way the bill does:
   floor. Write-class operations are priced around twelve times a read on every hyperscaler, so a pass that reclaims
   a lot is dominated by its writes, and a pass that reclaims nothing is dominated by its reads.
 
-The design pays for the enumeration deliberately. The alternative is a database holding reference counts - a second
-system to run, back up, and keep consistent with the store, whose disagreement with the store is a data-loss bug
-rather than a stale number. Where the store charges per request, that choice shows up on the bill. Where it does
-not, it costs nothing at all.
+The design pays for the enumeration deliberately, and the alternative is costed out below rather than waved away.
+Where the store charges per request, the choice shows up on the bill. Where it does not, it costs nothing at all.
 
 The practical consequence: **the operations line matters most for a large, quiet repository.** A busy one drowns it
 in egress. An archive of ten million artifacts that nobody downloads pays for its passes and little else, and that
@@ -106,6 +104,43 @@ larger too; at a hundred million, the background half alone is worth a deploymen
   ten and a hundred times everything else combined. Optimising the store's operations while paying full egress to a
   build farm in another region is polishing the smallest line on the invoice.
 </div>
+
+## What a database would save, and what it would cost
+
+Keeping no database is a design choice with a price, and the price is on the table above: the background half of
+the operations line exists because the server answers "is this blob unreferenced?" by enumerating rather than by
+querying. It is fair to ask what the other choice would cost, so here it is, honestly.
+
+**What a database would actually remove.** One line, and only part of it: the background half. Reference counts in
+a table turn reclamation into a query, and a table of what each listing should contain turns the repair walk into a
+rebuild of one row. Against the worked month above, that is *a few dollars a month at a million artifacts*, growing
+linearly - the whole of what is on offer.
+
+**What it would not touch.** Storage and transfer out, which are between ten and a hundred times larger, and which
+are the same on every design because they are the artifacts themselves. The request half stays too: a pointer read
+becomes a row read, which is a query against something you are paying for rather than a GET against something you
+are paying for. Nothing about serving a download gets cheaper.
+
+**What it would add.** A second bill and a second system. A managed Postgres with a standby - and a standby is what
+"available" means, since a repository whose database is down is a repository that is down - starts in the tens of
+dollars a month for the smallest instance and rises with size, before its own storage, its IOPS and its backups.
+Verify the current figures with your provider; the point is the order of magnitude, which is *larger than the line
+it removes* until the repository is very large indeed. On the numbers above the two cross somewhere in the tens of
+millions of artifacts, and only if you value the operational work at zero.
+
+That work is the part that does not appear on any invoice: backups that are taken *and* restored in a rehearsal,
+schema migrations on every upgrade, failover tested rather than assumed, connection limits sized to the fleet, and
+one more thing to monitor, patch and secure. And a specific hazard this design does not have - **two systems of
+record that can disagree.** When a reference count and the store diverge, the result is not a stale number on a
+dashboard; it is either a blob deleted while something still points at it, or storage that is never reclaimed and
+no way to tell which. Keeping the store the single source of truth is what makes "the bytes are the answer" always
+true.
+
+**And there is a cheaper answer to the same line.** If the background operations are what bother you, a store that
+does not meter requests removes them entirely - at any scale, with no second system, no second bill and no second
+thing to keep consistent. That is the trade the last section of this page is about, and it dominates the database
+option on every axis except one: a database can answer questions the store cannot, and this product does not ask
+any of them.
 
 ## The traps
 
