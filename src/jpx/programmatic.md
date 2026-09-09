@@ -21,7 +21,7 @@ module demo.tooling {
 ```
 
 A project that already embeds Jenesis as source under `build/jenesis/` has the class in the tree, so an entry
-point next to `Project.java` can call it with nothing resolved at all.
+point of its own can call it with nothing resolved at all.
 
 ## Install, then launch
 
