@@ -16,23 +16,26 @@ jpx org.junit.platform.console --version
 That resolves the JUnit console launcher and its dependencies, installs them, and runs the tool. The
 `--version` is passed straight through to the launched program.
 
-## Where jpx comes from
+## Getting jpx
 
-jpx ships inside the [Jenesis build tool](/tool/). Every project that carries the tool's sources under
+SDKMAN installs jpx as a command of its own, with no project and no build tool around it. A JDK, version 25
+or newer, is the only prerequisite:
+
+```bash
+sdk install jpx
+jpx org.junit.platform.console --version
+```
+
+jpx also ships inside the [Jenesis build tool](/tool/). Every project that carries the tool's sources under
 `build/jenesis/` - whether they arrived through `jenesis-init`, the curl bootstrap, or the git submodule
 described in the tool's [Getting started](/tool/getting-started/) - has jpx as a single-file program next to
-`Project.java`. It needs a JDK, version 25 or newer, and nothing else:
+`Project.java`, launched by the JDK directly:
 
 ```bash
 java build/jenesis/Jpx.java org.junit.platform.console --version
 ```
 
-The examples in this section abbreviate that command to `jpx`. A shell alias makes the abbreviation real:
-
-```bash
-alias jpx='java build/jenesis/Jpx.java'          # bash, zsh
-function jpx { java build/jenesis/Jpx.java @args } # PowerShell
-```
+Both run the same program and take the same arguments. The examples in this section write `jpx`.
 
 The same three steps - resolve, install, launch - are also a public API, so a program of your own can run a
 published module too.
