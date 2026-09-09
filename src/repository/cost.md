@@ -1,111 +1,219 @@
 ---
 order: 5
 title: What it costs to run
-description: Where the bill of a Jenesis Repository deployment comes from - the store's storage, egress and operations - with the operation counts the server makes per request and the providers' list prices they meet.
+description: Where the bill of a Jenesis Repository deployment comes from - the store's storage, transfer and operations - which lines grow with your traffic and which grow with your repository, where the traps are on each provider, and when a store that does not charge per request is the cheaper choice.
 ---
 
 Jenesis Repository keeps no database. Everything it knows - an artifact's bytes, the pointer that names them, a
 hold marker, a credential, a listing - is an object in the store you configured in [Storage](/repository/storage/).
-That makes the bill unusually easy to read: it is the store's bill, and nothing else. Storage is charged per
-gigabyte-month, transfer out per gigabyte, and every request the server makes to the store per thousand
-operations. This chapter says how many operations a request costs, what that comes to at the providers' list
-prices, and when a store without request charges is the cheaper choice.
+That makes the bill unusually easy to read: it is the store's bill, and nothing else. There are three lines on it,
+they grow with entirely different things, and knowing which is which is most of what this page is for.
 
-## What a request costs the store
-
-The bytes of an artifact are one object read per download and one object write per publish, on any design - a
-repository with a database stores and serves them from the same kind of bucket. What a design decides is the
-metadata traffic around them: the reads that resolve a path to a blob, and the writes that make a publish visible.
-Those are counted here, for the Maven layout, over an idle server.
-
-| Request | Read-class operations | Write-class operations |
+| Line | Charged for | Grows with |
 |---|---|---|
-| Download an artifact (`GET`) | 4 - the pointer, the hold marker, the blob's length, the bytes | 0 |
-| Probe an artifact (`HEAD`) | 3 - the same without the bytes | 0 |
-| Read a listing (`maven-metadata.xml`, an OCI tag list) | 1 - the stored document, however many versions it lists | 0 |
-| Publish a POM | 2 | 2 |
-| Publish a jar | 12 | 10 |
+| Storage | Gigabyte-months held | **What you keep** |
+| Transfer out | Gigabytes leaving the provider | **What people download** |
+| Operations | Requests the server makes to the store | Partly your traffic, partly **the size of your repository** |
 
-A download writes nothing and reads only small objects before the bytes, so its cost is the read class every
-provider prices lowest. A publish is where the write class is paid: a POM is its bytes and the pointer that names them; a jar adds the module name the server records for it and the module-layout view of a modular jar, which is what makes the jar cost more. A proxied miss is a
-download from the upstream followed by the same writes a publish makes, and every later download is a local hit.
+The first two are the same on any repository design, because the bytes are the bytes: a product with a database in
+front of the same bucket stores and serves exactly what this one does. The third is where a design shows, and it is
+the only line that can grow while nobody is using the repository at all.
 
-Two things keep those counts from growing with the repository. A listing is a stored document that each publish
-updates in place, so reading it costs one read over ten versions or ten thousand. And a request never enumerates a
-namespace: a folder page reads one level, a version page reads one coordinate, and both resume from a cursor.
+<div class="tip">
+  Deliberately no per-request operation counts appear on this page. They are a property of a release rather than of
+  the design, they improve, and a number written here would be quietly wrong within a version or two. What is stable
+  is the <em>shape</em>: which line grows with what, and what makes one of them surprise you. Your provider counts the
+  operations for you - S3 request metrics, and the request counters Cloud Storage and Azure Blob Storage publish - so
+  measure your own rather than trusting a table.
+</div>
 
-## What the background costs
+## What each line does as you grow
 
-One scheduled pass reads the store whole: the rebuild walk that regenerates every stored listing from the
-artifacts, so a listing a crash left stale is repaired. It runs weekly by default (`jenreg.rebuild.interval`,
-`P7D`), and at once after a node that stopped unclean starts again. It is the one line of the bill that grows
-with the store rather than with the traffic, which is why it is weekly and not hourly, and why it can be switched
-off (`false`) on a deployment whose listings are never left stale.
+**Storage** is linear in what you keep and holds no surprises, other than the traps further down this page. A
+repository that never deletes anything grows for ever, which is what retention policies and the collector are for.
 
-## The providers' list prices
+**Transfer out** is linear in what people download, and for almost every deployment it is the largest line by a wide
+margin. It is also the one that has nothing to do with this software: the same artifacts served by any other tool
+cost the same to send. A caching proxy in front of your build agents, or agents in the same region as the bucket,
+moves this line far more than any choice made here.
 
-The figures below are the providers' published prices for their standard storage class in one region, read on
-**7 September 2026** from the sources named. They change; the sources are where to check them.
+**Operations** has two halves that behave differently, and conflating them is the usual mistake.
 
-| Provider and region | Write-class operation (put, list, delete) | Read-class operation (get, head) | Storage | Transfer out to the internet |
-|---|---|---|---|---|
-| Amazon S3 Standard, US East (N. Virginia) | $5.00 per million | $0.40 per million | $0.023 per GB-month (first 50 TB) | 100 GB per month free, then $0.09 per GB (first 10 TB) |
-| Azure Blob Storage, hot tier, LRS, East US | $5.00 per million | $0.40 per million | $0.0208 per GB-month (first 50 TB) | 100 GB per month free, then $0.08 per GB (first 10 TB) |
-| Google Cloud Storage Standard, single region | $5.00 per million (class A) | $0.40 per million (class B) | $0.023 per GiB-month (the page's default region; varies by region) | $0.12 per GiB (first 10 TiB) |
-| Scaleway Object Storage Standard, Multi-AZ | included | included | €0.016 per GB-month (€0.000022 per GB-hour) | 75 GB per month free, then €0.01 per GB |
+- The **request half** is what serving a download or accepting a publish costs. It is a small, fixed number of small
+  object reads per request, and it does *not* grow as the repository fills: a listing is a stored document that each
+  publish updates in place, so reading it costs the same over ten versions or ten thousand, and no request ever walks
+  a namespace - a folder page reads one level and resumes from a cursor. Ten times the artifacts, same cost per
+  download.
+- The **background half** is what the scheduled passes cost, and this one *is* proportional to the number of
+  artifacts you hold. It is charged whether or not anybody used the repository that week.
 
-Sources: the AWS Price List API's Amazon S3 and data-transfer offer files for `us-east-1`, published 31 August
-2026; the Azure Retail Prices API for *General Block Blob v2, Hot LRS* and *Bandwidth, Routing Preference: Internet*
-in East US (the operation meters are effective since 2016 and the egress meter since 2022); the Cloud Storage
-pricing page at `cloud.google.com/storage/pricing`; and the storage pricing page at `scaleway.com/en/pricing/storage`.
-Prices are without tax, and each provider's tiers fall with volume.
+## Reclaiming space is the line that grows with the store
 
-## A worked month
+One pass reads the store whole: the rebuild walk that regenerates every stored listing from the artifacts, so a
+listing a crash left stale is repaired (`jenreg.rebuild.interval`, weekly by default, `off` to disable). Where the
+[garbage collector](/repository/storage/) is enabled, its pass reads the store whole too, and for a reason worth
+understanding before you tune anything.
 
-Take a repository serving a million downloads and a hundred publishes a day, with an average artifact of one
-megabyte, on Amazon S3 in US East.
+Deciding that a stored blob is unreferenced means establishing that *nothing anywhere* points at it. That cannot be
+answered from the blob: it takes an enumeration of everything that could name it. So a collection's cost splits the
+same way the bill does:
 
-| Line | Operations or bytes per month | At list price |
+- **Its reads grow with what you hold.** Every pointer is read to learn which blob it names, and the pool is listed
+  to find the blobs. A repository that deletes nothing and reclaims nothing still pays this, in full, every pass -
+  which is the single most counter-intuitive thing on this page. The enumeration is the price of knowing, not the
+  price of deleting.
+- **Its writes grow with what you reclaim.** Deleting N blobs costs at least N deletes, and no design avoids that
+  floor. Write-class operations are priced around twelve times a read on every hyperscaler, so a pass that reclaims
+  a lot is dominated by its writes, and a pass that reclaims nothing is dominated by its reads.
+
+The design pays for the enumeration deliberately. The alternative is a database holding reference counts - a second
+system to run, back up, and keep consistent with the store, whose disagreement with the store is a data-loss bug
+rather than a stale number. Where the store charges per request, that choice shows up on the bill. Where it does
+not, it costs nothing at all.
+
+The practical consequence: **the operations line matters most for a large, quiet repository.** A busy one drowns it
+in egress. An archive of ten million artifacts that nobody downloads pays for its passes and little else, and that
+is exactly the deployment that should either lengthen the cadence, switch the passes off, or move to a store that
+does not meter requests.
+
+## A worked month, per million artifacts
+
+Assumptions, all of them arguable and all of them yours to change:
+
+- **one million artifacts**, averaging **1 MB** each, so **1 TB** stored;
+- a few small metadata objects per artifact - a pointer, checksums, a listing entry - which cost almost nothing to
+  store and are counted by every pass;
+- **3,000 publishes a month**;
+- Amazon S3 Standard in US East at the list prices in the next section;
+- and two traffic levels, because this is where deployments differ most: a **quiet** internal repository where each
+  artifact is fetched about once a month (1 TB out), and a **busy** one serving a million downloads a day (30 TB out).
+
+| Line | Quiet (1 TB out) | Busy (30 TB out) |
 |---|---|---|
-| Download reads | 30 million × 4 = 120 million read-class | about $48 |
-| Publish reads and writes | 3,000 publishes × (2 reads + 2 writes) | under $1 |
-| Transfer out | 30 TB | about $2,600 |
-| Storage of a 500 GB repository | 500 GB-months | about $12 |
+| Storage, 1 TB | about $24 | about $24 |
+| Transfer out | about $85 | about $2,700 |
+| Operations, request half | pennies | a few tens of dollars |
+| Operations, background half (weekly passes over a million artifacts) | a few dollars | a few dollars |
 
-The operations are a footnote next to the egress, and the egress is the same for any repository design because
-it is the artifacts themselves. That is the rationale for keeping no database: a highly available managed
-database is a second monthly bill and a second thing to operate, and what it would hold - the pointers, the
-markers, the listings - costs cents a month to keep as objects and a dollar or two a month to read at this
-traffic.
+Read the columns rather than the cells. On the busy repository the store's own bill is a rounding error against
+egress, and the background passes are invisible. On the quiet one, egress still dominates - but the background is
+now a visible fraction, and it is the line that will keep growing as the repository fills while the others stand
+still. At ten million artifacts the background half is ten times what it is here and the storage line is ten times
+larger too; at a hundred million, the background half alone is worth a deployment decision.
 
-## Why a large store changes the answer
+<div class="tip">
+  If you take one number away, take the ratio rather than the total: for most repositories, transfer out is between
+  ten and a hundred times everything else combined. Optimising the store's operations while paying full egress to a
+  build farm in another region is polishing the smallest line on the invoice.
+</div>
 
-Two of the three lines on the bill scale with your traffic. Storage scales with what you keep, and transfer out
-scales with what people download. Both are the same on any design, because the bytes are the bytes.
+## The traps
 
-The operations line does not. A pass that reads the store whole costs a number of requests proportional to the
-number of objects in it, not to how busy the repository is. A repository nobody touched all week still pays for
-the pass, and it pays more every week as it grows. That is the line to watch, and it is the reason the pass is
-weekly rather than hourly.
+These are the ways a bill comes out several times larger than the arithmetic above, and none of them is specific to
+this software. Every one of them has bitten somebody.
 
-Reclaiming storage is the expensive part of that pass. Deciding that a stored blob is unreferenced means
-establishing that nothing anywhere points at it, which cannot be answered from the blob itself: it takes an
-enumeration. The design pays for that deliberately, because the alternative is a database holding the reference
-counts, which is a second system to run, to back up and to keep consistent with the store. On a store that
-charges per request, that choice shows up on the bill; on one that does not, it costs nothing at all.
+**Deleting does not free space on a versioned bucket.** This is the big one, because the collector will report
+blobs reclaimed while your storage line does not move - both statements true, about different things. On a bucket
+with versioning enabled, an ordinary delete writes a *delete marker*: the object stops being listed and served, and
+every prior version stays, and is still billed. Only a delete that names a version, or a lifecycle rule that expires
+noncurrent versions, frees the bytes. The server deliberately does not issue versioned deletes: versioning is a
+safety net you turned on, and reaching past it would destroy the protection you are paying for. **If you enable
+versioning, add a noncurrent-version expiration rule**, or storage grows without bound.
 
-So the arithmetic turns over somewhere. A small repository on a hyperscaler pays a few pounds a month for its
-passes and should not think about it. A large one - millions of objects - pays for every one of them on every
-pass, and at that size the operations line can exceed what serving your users costs. When it does, moving to a
-store that does not charge per request removes the line rather than reducing it, and no amount of tuning the
-software competes with that.
+The same shape appears under other names, and the default differs by provider, so check the bucket rather than
+assuming:
 
-## Running your own S3-compatible store
+| Provider | The retention feature to check | What it does to reclamation |
+|---|---|---|
+| Amazon S3 | Bucket versioning; Object Lock | Deletes become delete markers; under Object Lock a version cannot be removed at all until its retention expires |
+| Google Cloud Storage | Object versioning; **soft delete** | Soft delete retains and bills deleted objects for its retention window; it has been enabled by default on new buckets, so verify yours rather than assuming it is off |
+| Azure Blob Storage | Blob soft delete; blob versioning | Deleted blobs and prior versions are retained and billed for the configured retention period |
 
-Self-hosting is a supported deployment, not a workaround: the S3-compatible backend is tested against MinIO on
-every build, so the same server binary and the same configuration work against your own store.
+**Cold storage classes are a trap for this workload specifically.** A repository stores a great many small objects
+beside the artifacts. The colder classes bill a **minimum object size** - 128 KB on S3 Standard-IA and Glacier
+Instant Retrieval, with comparable rules on the other providers - so a two-hundred-byte pointer moved there is
+billed as 128 KB, several hundred times its size. They also bill a **minimum storage duration** (30, 90 or 180 days
+depending on the class), and a collector reclaims exactly the short-lived objects, so early-deletion charges land on
+precisely the wrong ones. And they charge **per gigabyte retrieved**, which a repository does constantly. If you
+tier at all, tier the artifact bytes and leave the metadata namespaces in the standard class.
 
-The realistic options differ in what they are built for.
+**Incomplete multipart uploads bill until they are aborted**, and they do not appear in an ordinary listing. A
+lifecycle rule to abort them after a few days is worth having on any bucket that receives large artifacts.
+
+**Lifecycle transitions are themselves charged per object.** Moving a million small objects to a cheaper class costs
+a million write-class operations, which can exceed the storage saved for a year.
+
+**Egress is charged per region boundary, not per internet boundary.** Build agents in a different region from the
+bucket pay for every download, at rates comparable to internet egress. Co-locating them is usually the largest
+saving available to any deployment on this page.
+
+## What each backend must support, and what is checked at boot
+
+Everything the server does across nodes - leases, listing edits, counters, the identity fold - rests on the store
+honouring two write preconditions: *create only if absent*, and *replace only if unchanged*. Each protocol spells
+them differently:
+
+| Backend | How the precondition is expressed | Version token |
+|---|---|---|
+| `s3` (and S3-compatible) | `If-None-Match: *` on create, `If-Match: <etag>` on replace | the object ETag |
+| `azure-blob` | `If-None-Match: *` on upload, `If-Match: <etag>` on replace | the blob ETag |
+| `gcs` | `ifGenerationMatch=0` on insert, the current generation on replace | the object generation |
+| `filesystem` | the local file system's own atomicity | last-modified paired with a digest of the bytes |
+
+"S3-compatible" is a spectrum, and this is the part of it that matters. Some endpoints accept both headers and
+ignore them; some honour the first and not the second. Over such an endpoint two nodes would each believe they won
+every compare-and-set and overwrite one another without a trace, and **nothing at request time can tell** - the write
+succeeds either way.
+
+So the server asks once, at boot, and refuses to start if the answer is wrong. The probe writes one fresh key under
+the system namespace four times: a create that must land, the same create again that must be refused, a replace under
+the token the create left that must land, and the same replace under that now-stale token that must be refused. Any
+other answer names the endpoint and stops the node. The key is deleted afterwards whatever happened.
+
+It can be switched off per backend - `jenreg.s3.conditional-write-probe`, `jenreg.azure-blob.conditional-write-probe`,
+`jenreg.gcs.conditional-write-probe`, all `false` - for an endpoint you have satisfied yourself about by other means,
+or one that refuses writes under the system namespace. The node then boots with a warning saying what you have given
+up. A single-node deployment is the case where that is defensible.
+
+Two related switches exist for the same reason. `jenreg.<backend>.streaming-writes=false` buffers a conditional
+write's body instead of streaming it, for an implementation that mishandles a streamed conditional PUT; it restores a
+heap cost and does nothing else, so use it to work around a store and expect the memory ceiling to fall.
+`jenreg.<backend>.allow-insecure-endpoint=true` permits a plain-HTTP endpoint, which is for an emulator on a
+developer's machine and not for a deployment.
+
+Beyond the preconditions, each backend needs only what any object store offers: ranged reads, prefix listing with
+pagination, delete, and the object's length. The credentials each one takes, and the rest of its settings, are in
+[Storage](/repository/storage/).
+
+## The filesystem is a real answer for a small store
+
+The filesystem backend is not a development-only mode. For a single node serving a team, with backups you already
+take, it is the cheapest and simplest thing that works: no request charges, no egress inside your network, no
+provider to reason about, and the traps above do not exist. Its limit is honest and absolute - **one node**. The
+compare-and-set the multi-node story rests on is the local file system's, so a second server over the same directory
+is not a supported deployment, whatever the directory is mounted from. Network file systems do not change that; they
+change which failure you get.
+
+Take the filesystem when the repository fits on one machine and one machine is enough. Move to an object store when
+you need more than one node, not when the directory gets large.
+
+## When a store that does not meter requests wins
+
+On a provider that includes operations in the price, the entire operations line disappears - both halves, the
+background passes included - and the calculus above collapses to storage and transfer. From the table below, the
+same 30 TB of egress that costs about $2,700 on S3 is about €300 on Scaleway, and the passes cost nothing whatever
+the repository's size.
+
+Running the store yourself removes both lines and replaces them with your hardware and your bandwidth. Be honest
+about the trade: durability, replication or erasure coding, failure domains, capacity planning and upgrades become
+yours, and that is real operational work rather than a line item. It is worth it when the object count is large
+enough that the background passes are a standing charge you resent - tens of millions of objects, not one million -
+and it is worth doing *before* the store gets large, because migrating a repository is easier when there is less of
+it.
+
+Self-hosting is a supported deployment rather than a workaround: the S3-compatible backend is tested against MinIO
+on every build, so the same server binary and the same configuration work against your own store. The realistic
+options differ in what they are built for.
 
 - **MinIO** is the usual choice. Distributed mode spreads erasure-coded data across nodes and drives, it handles
   small objects well, and it is the implementation this project tests against. Check its current licence terms
@@ -118,28 +226,29 @@ The realistic options differ in what they are built for.
 - **Garage** is worth considering for smaller or geographically spread deployments, where simple operation
   matters more than peak throughput.
 
-What you take on is durability: replication or erasure coding, failure domains, capacity planning and upgrades
-are yours. What you remove is a bill that grows with your object count whether or not anyone is using the
-repository. For a large store that trade is usually worth making, and it is worth making before the store gets
-large, because migrating a repository is easier when there is less of it.
+Whichever you choose, run the conditional-write probe against it - that is, leave it on and let the node start. An
+endpoint that fails it is one you would otherwise discover through silent data loss under two nodes.
+
+## The providers' list prices
+
+The figures below are the providers' published prices for their standard storage class in one region, read on
+**7 September 2026** from the sources named. They change; the sources are where to check them.
+
+| Provider and region | Write-class operation (put, list, delete) | Read-class operation (get, head) | Storage | Transfer out to the internet |
+|---|---|---|---|---|
+| Amazon S3 Standard, US East (N. Virginia) | $5.00 per million | $0.40 per million | $0.023 per GB-month (first 50 TB) | 100 GB per month free, then $0.09 per GB (first 10 TB) |
+| Azure Blob Storage, hot tier, LRS, East US | $5.00 per million | $0.40 per million | $0.0208 per GB-month (first 50 TB) | 100 GB per month free, then $0.08 per GB (first 10 TB) |
+| Google Cloud Storage Standard, single region | $5.00 per million (class A) | $0.40 per million (class B) | $0.023 per GiB-month (the page's default region; varies by region) | $0.12 per GiB (first 10 TiB) |
+| Scaleway Object Storage Standard, Multi-AZ | included | included | EUR 0.016 per GB-month (EUR 0.000022 per GB-hour) | 75 GB per month free, then EUR 0.01 per GB |
+
+Sources: the AWS Price List API's Amazon S3 and data-transfer offer files for `us-east-1`, published 31 August
+2026; the Azure Retail Prices API for *General Block Blob v2, Hot LRS* and *Bandwidth, Routing Preference: Internet*
+in East US (the operation meters are effective since 2016 and the egress meter since 2022); the Cloud Storage
+pricing page at `cloud.google.com/storage/pricing`; and the storage pricing page at `scaleway.com/en/pricing/storage`.
+Prices are without tax, and each provider's tiers fall with volume.
 
 <div class="tip">
-  You do not have to guess where the turn is. The operation counts are the same on every backend, so measure a
-  week of your own passes against your provider's request metrics, and compare the operations line with what the
-  same hardware would cost you. The point at which they cross is specific to your repository, not to this table.
-</div>
-
-## When a request-free store wins
-
-The comparison changes shape on a store that charges nothing per request and little for transfer. On Scaleway the
-operations line disappears and the same 30 TB of egress is about €300; on a store you run yourself, as described
-above, both lines become your hardware and your bandwidth. The server does not care which: every backend in
-[Storage](/repository/storage/) sees the same operation counts. Your provider
-counts them for you - S3 request metrics, and the request counters Cloud Storage and Azure Blob Storage
-publish - so the figures above can be checked against your own traffic rather than taken on trust.
-
-<div class="tip">
-  Watch your provider's request counts across one day of your real traffic before choosing a region or a
-  provider: the ratio of writes to reads is the whole difference between the price columns, and a repository
-  that is read a thousand times for every publish sits almost entirely in the cheapest column.
+  Watch your provider's request counts across one day of your real traffic before choosing a region or a provider:
+  the ratio of writes to reads is the whole difference between the price columns, and a repository that is read a
+  thousand times for every publish sits almost entirely in the cheapest column.
 </div>
