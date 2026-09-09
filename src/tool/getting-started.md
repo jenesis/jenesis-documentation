@@ -178,12 +178,9 @@ To drive those classes yourself, on a locked-down machine or in a container imag
 extend:
 
 ```bash
-javac -d .jenesis/classes build/jenesis/Make.java build/jenesis/Project.java
+javac -d .jenesis/classes build/jenesis/*.java
 java -cp .jenesis/classes build.jenesis.Make
 ```
-
-Both files are named because `Make` reaches the engine by name rather than by reference, so compiling the
-entry point alone leaves the engine out.
 
 ## Building an example end to end
 
