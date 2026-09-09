@@ -211,7 +211,7 @@ plugin for another language - covered in *Other JVM languages*.
 ## Running a module's main
 
 To *run* a module rather than just build it, declare its entry point and launch it with **`Execute.java`**, the
-companion of `Project.java` in the same folder. Declaring the main class differs by layout but converges on
+companion of `Make.java` in the same folder. Declaring the main class differs by layout but converges on
 the same result:
 
 - a **modular** project uses a `@jenesis.main` tag on `module-info.java`:
