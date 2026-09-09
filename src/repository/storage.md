@@ -159,6 +159,16 @@ confirming pass), `jenreg.gc.collected` (blobs reclaimed so far) and the `jenreg
 deployment with no collector contributes none of them, which the capability surface reports rather than leaving
 as a silent zero.
 
+<div class="tip">
+  <strong>On a versioned bucket, none of this frees any space</strong>, and the signals above will not tell you so:
+  they count what the collector did, which is not what the bucket kept. An ordinary delete against a bucket with
+  versioning - or GCS soft delete, or Azure blob soft delete - leaves the prior version in place and still billed.
+  That is the correct behaviour: versioning is a safety net you enabled, and reaching past it with versioned deletes
+  would destroy the protection you are paying for. Freeing the bytes is the bucket owner's half of the job, through a
+  noncurrent-version expiration rule. See
+  <a href="/repository/cost/">What it costs to run</a> for what to check on each provider.
+</div>
+
 ## Backing up and moving
 
 Because the store is the server's only state, a backup is a copy of the store: the root directory on the
