@@ -185,17 +185,29 @@ Beyond the preconditions, each backend needs only what any object store offers: 
 pagination, delete, and the object's length. The credentials each one takes, and the rest of its settings, are in
 [Storage](/repository/storage/).
 
-## The filesystem is a real answer for a small store
+## The filesystem is a real answer, and it is not single-node
 
-The filesystem backend is not a development-only mode. For a single node serving a team, with backups you already
-take, it is the cheapest and simplest thing that works: no request charges, no egress inside your network, no
-provider to reason about, and the traps above do not exist. Its limit is honest and absolute - **one node**. The
-compare-and-set the multi-node story rests on is the local file system's, so a second server over the same directory
-is not a supported deployment, whatever the directory is mounted from. Network file systems do not change that; they
-change which failure you get.
+The filesystem backend is not a development-only mode, and it is not limited to one server. For a team's
+repository, with backups you already take, it is the cheapest and simplest thing that works: no request charges,
+no egress inside your network, no provider to reason about, and none of the traps above exist.
 
-Take the filesystem when the repository fits on one machine and one machine is enough. Move to an object store when
-you need more than one node, not when the directory gets large.
+**Several nodes over one shared mount are supported.** The compare-and-set every multi-node mechanism rests on is
+made exclusive across *processes*, not merely across threads: a writer takes an operating-system lock on one of
+sixty-four stripe files under the root, held from the comparison to the move. The stripe is chosen from the key
+relative to the root rather than from the absolute path, so two nodes mounting the same share at different paths
+meet on the same lock. Two nodes over one directory publishing into one listing lose no update, and that is a test
+that runs rather than a claim.
+
+Two conditions, both about the file system rather than about the server:
+
+- **The mount must honour file locks.** They are advisory, as file locks are. An NFS export without its lock
+  daemon is a mount that must not be shared - the writes will appear to succeed and quietly overwrite one another.
+- **Availability is the file system's to provide.** A shared directory is a single point of failure unless what
+  serves it is not; the backend gives you consistency across nodes, and says nothing about what happens when the
+  mount goes away. An object store bundles both, which is most of why it is the usual answer at scale.
+
+So the choice is not one node against many. It is whether you want to run the storage that makes the directory
+durable and available, or rent it - and the cost sections above are the same question asked about money.
 
 ## When a store that does not meter requests wins
 

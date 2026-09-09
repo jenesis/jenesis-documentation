@@ -50,8 +50,8 @@ skips the probe, and the server warns at every start that it did.
 
 ## Filesystem - the default
 
-The filesystem backend keeps objects under a root directory. It is the right choice for a single instance
-or a local run, and it needs only a path:
+The filesystem backend keeps objects under a root directory. It is the right choice for a local run, for a
+single instance, and for several instances over one shared mount - see the note below - and it needs only a path:
 
 ```bash
 JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
@@ -61,6 +61,19 @@ JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
 The root is required: without `jenreg.filesystem.root` the server refuses to start and names the key, rather than inventing a folder that vanishes with a container. Point it at durable storage - a mounted volume, an NFS
 share - and the server is complete. File permissions on the root are the only access control the backend
 itself applies.
+
+**Several nodes may share one mount.** The compare-and-set that every multi-node mechanism rests on is exclusive
+across processes as well as threads: a writer holds an operating-system lock on one of sixty-four stripe files
+under the root, from the comparison to the move, and the stripe comes from the key relative to the root rather
+than from the absolute path - so two nodes mounting one share at different paths meet on the same lock. Before
+that lock existed, two JVMs making three thousand compare-and-set increments to one key over one directory came
+up short, and two nodes publishing versions of one Go module dropped one from the module's list; both now hold.
+
+Two conditions apply, and both are about the mount rather than the server. The lock is advisory, so **an export
+that does not honour file locks - NFS without its lock daemon - must not be shared**: writes will appear to
+succeed and overwrite one another silently. And availability is the file system's own: a shared directory is a
+single point of failure unless whatever serves it is not. The backend gives consistency across nodes and says
+nothing about what happens when the mount goes away.
 
 ## S3 - AWS, MinIO, Ceph
 
