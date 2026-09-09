@@ -31,8 +31,8 @@ jpx org.junit.platform.console --version
 
 jpx also ships inside the [Jenesis build tool](/tool/). Every project that carries the tool's sources under
 `build/jenesis/` - whether they arrived through `jenesis-init`, the curl bootstrap, or the git submodule
-described in the tool's [Getting started](/tool/getting-started/) - has jpx as a single-file program next to
-`Project.java`, launched by the JDK directly:
+described in the tool's [Getting started](/tool/getting-started/) - has jpx as a single-file program in that
+folder, launched by the JDK directly:
 
 ```bash
 java build/jenesis/Jpx.java org.junit.platform.console --version
