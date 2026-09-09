@@ -4,7 +4,7 @@ title: Core concepts
 description: Build steps, the build graph, the layouts that shape a project into one, and how Jenesis decides what to rebuild.
 ---
 
-*[Getting started](/tool/getting-started/)* ran a build and toured `Project.java`. This chapter opens the box:
+*[Getting started](/tool/getting-started/)* ran a build and toured the `Project` model. This chapter opens the box:
 what a build actually *is*, how Jenesis shapes your project into one, and the rule that decides on every
 run what recompiles and what is reused. Three ideas, and everything later in this section rests on them.
 
@@ -50,7 +50,7 @@ a build of fifty are the same machinery at different scales.
 
 ### Selectors: choosing what to run
 
-*Getting started* showed that a positional argument after `Project.java` is a **selector**, and that with none
+*Getting started* showed that a positional argument after `build/jenesis/Make.java` is a **selector**, and that with none
 the default target (`build`) runs. A selector is really a path through the graph. Two things make that precise:
 
 - A `+<module>` selector builds one module's subtree. `+greeter` builds the `greeter` module and whatever it

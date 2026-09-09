@@ -1,11 +1,11 @@
 ---
 order: 2
 title: Getting started
-description: Install Jenesis, build an example project end to end, and take a first tour of the Project.java model.
+description: Install Jenesis, build an example project end to end, and take a first tour of the Project model.
 ---
 
 This chapter takes you from nothing to a built project. You install Jenesis, run the canonical build
-command against a bundled example, read what it printed, and then meet the `Project.java` file that every
+command against a bundled example, read what it printed, and then meet the `Project` model that every
 build runs through. Everything later in this section assumes only what is here.
 
 ## Prerequisites
@@ -56,7 +56,7 @@ that do build it, in two groups. `. jenesis-switch` and `jenesis-make` stay on t
 project builds as a standard build, no vendored code runs, and for most projects that is enough. Running
 the vendored sources yourself is the other group, in source mode or off classes you compiled once with
 `javac`, and that one does run the modified engine - read the project's build instructions first, since
-`Project.java` is only the usual entry point and the project may drive its build from another, and since a
+`Make.java` is only the usual entry point and the project may drive its build from another, and since a
 modified engine runs with the rights of your build and can break the encapsulation the released engine
 gives you. Only run builds from sources you trust. A project
 that records nothing falls through to the installed version, and `jenesis-make` skips the whole lookup and
@@ -178,9 +178,12 @@ To drive those classes yourself, on a locked-down machine or in a container imag
 extend:
 
 ```bash
-javac -d .jenesis/classes build/jenesis/Project.java
+javac -d .jenesis/classes build/jenesis/Make.java build/jenesis/Project.java
 java -cp .jenesis/classes build.jenesis.Make
 ```
+
+Both files are named because `Make` reaches the engine by name rather than by reference, so compiling the
+entry point alone leaves the engine out.
 
 ## Building an example end to end
 

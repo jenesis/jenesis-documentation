@@ -110,8 +110,8 @@ immediately rather than silently breaking cache invalidation. If you see it, hol
 ## Adding a step to the stock pipeline
 
 The lightest way to extend a build is to keep the whole stock toolchain and **wrap the assembler** - the
-callback that wires each module's compile/jar/test sub-graph. You drop a `.java` file next to `Project.java`
-and pass your wrapper to `Project`. This one interposes a `sign` step after the stock build:
+callback that wires each module's compile/jar/test sub-graph. You drop a `.java` file into the project's own `build/`
+folder and pass your wrapper to `Project`. This one interposes a `sign` step after the stock build:
 
 ```java
 MultiProjectAssembler<ProjectModuleDescriptor> base = new InferredMultiProjectAssembler();
@@ -147,7 +147,7 @@ licence-header stamping - fits the same shape.
 
 ## Packaging the extension as a plugin
 
-A wrapper written next to `Project.java` belongs to one project. When the same pass - a code generator, a
+A wrapper written in a project's own `build/` folder belongs to one project. When the same pass - a code generator, a
 source preprocessor - should serve several, package it as a **build module**: a named Java module that
 `provides` a build-executor service, which Jenesis discovers through that declaration alone.
 

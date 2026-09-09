@@ -16,8 +16,8 @@ package. It ships with Jenesis and has [its own section](/jpx/).
 
 Two convictions shape everything here:
 
-- **Configuration is code.** A build is expressed in `Project.java`, a normal Java file the JDK launches
-  directly. You get types, an IDE, and refactoring for your build the same as for your application.
+- **Configuration is code.** A build is expressed in Java and launched by the JDK directly, with
+  `java build/jenesis/Make.java`. You get types, an IDE, and refactoring for your build the same as for your application.
 - **The Java Module System is a feature, not a footnote.** `module-info.java` drives the build: Jenesis reads
   your declared modules, resolves the module path, and carries a real module graph all the way through to
   packaging, instead of flattening it into a class path.
@@ -33,7 +33,7 @@ Two convictions shape everything here:
 The chapters build up from zero knowledge:
 
 1. **Introduction** - you are here.
-2. **Getting started** - install Jenesis, build an example, and read the `Project.java` model.
+2. **Getting started** - install Jenesis, build an example, and read the `Project` model.
 3. **Core concepts** - build steps, the build graph, layouts, and the module-system specifics.
 4. **Configuration** - `jenesis.properties`, per-module configuration, and profiles.
 5. **Building & running** - compile, test, annotation processing, `Execute`, agents, and watch mode.
