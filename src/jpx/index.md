@@ -18,11 +18,14 @@ That resolves the JUnit console launcher and its dependencies, installs them, an
 
 ## Getting jpx
 
-SDKMAN installs jpx as a command of its own, with no project and no build tool around it. A JDK, version 25
-or newer, is the only prerequisite:
+A package manager installs jpx as a command of its own, with no project and no build tool around it. A JDK,
+version 25 or newer, is the only prerequisite:
 
 ```bash
-sdk install jpx
+sdk install jpx                  # SDKMAN
+brew install jenesis/tap/jpx     # Homebrew
+scoop bucket add jenesis https://github.com/jenesis/scoop-bucket && scoop install jpx   # Scoop
+
 jpx org.junit.platform.console --version
 ```
 
