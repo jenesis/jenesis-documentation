@@ -20,7 +20,7 @@ java --version      # must report 25 or above
 ## Run it from source
 
 Clone the project with its submodule - the build tool is pinned under `build/upstream` and `build/jenesis`
-links into it - and start the all-in-one server. The all-in-one is the `source/bundle` module: one launchable
+links into it - and start the server. It is the `source/bundle` module: one launchable
 module that carries every format, every storage backend, the import connectors and the web console.
 
 ```bash
@@ -51,7 +51,7 @@ the usual ways. Pick whichever suits where the server runs - they are all the sa
 | --- | --- | --- |
 | Environment variable | `JENREG_STORE=s3` | Containers and systemd units; dots become underscores, upper-cased |
 | System property | `-Djenreg.store=s3` before `build/jenesis/Execute.java` | A one-off run from the command line |
-| Properties file | `jenreg.store=s3` in `allinone.properties` in the working directory, or its `config/` subfolder | A deployment that keeps its settings in a file |
+| Properties file | `jenreg.store=s3` in `bundle.properties` in the working directory, or its `config/` subfolder | A deployment that keeps its settings in a file |
 | Spring profile | `SPRING_PROFILES_ACTIVE=dev` | Switching a named set of settings on, such as the local-login profile below |
 
 Two conventions cover most of what you will set. `jenreg.<feature>=false` switches a discovered module off as
@@ -60,7 +60,7 @@ if it were not installed - `JENREG_MAVEN=false` drops the Maven layout, `JENREG_
 filesystem. Everything on the module path is on until you configure it off.
 
 <div class="warning">
-  The all-in-one server reads <code>allinone.properties</code>, not <code>application.properties</code>, so
+  The server reads <code>bundle.properties</code>, not <code>application.properties</code>, so
   that the server and the console can share one module path. Name a settings file accordingly.
 </div>
 
@@ -165,14 +165,14 @@ provider configured it signs you in through that provider; for a first look with
 with the `dev` profile, which adds a form login with two built-in accounts:
 
 ```bash
-SPRING_PROFILES_ACTIVE=dev JENREG_UI_SECURE_COOKIE=false \
-JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
+SPRING_PROFILES_ACTIVE=dev JENREG_FILESYSTEM_ROOT=/var/lib/jenesis-repository \
   java -Djenesis.execute.module=source+bundle build/jenesis/Execute.java
 ```
 
 Open `http://localhost:8080/login/dev` and sign in as `admin` / `admin` (an admin) or `viewer` / `viewer`
-(a user). `JENREG_UI_SECURE_COOKIE=false` lets the session cookie travel over plain HTTP; leave it at its
-default behind HTTPS.
+(a user). The `dev` profile also lets the session cookie travel over plain HTTP, which it has to do to survive
+a sign-in without TLS - that is the profile's business and there is no switch for it, because a deployment has
+no reason to want session hardening off.
 
 <div class="warning">
   The <code>dev</code> profile is for a laptop: the server refuses to start under it on anything but the
@@ -183,7 +183,7 @@ default behind HTTPS.
 ## The alternatives
 
 **A container image, built from the clone.** If you would rather run a container than a JDK, the build writes
-a complete Docker context for the all-in-one module - a `Dockerfile` on the `eclipse-temurin:25-jdk` base
+a complete Docker context for the bundle module - a `Dockerfile` on the `eclipse-temurin:25-jdk` base
 beside the `modulepath/` and `classpath/` folders it copies in, starting the same main class the source run
 does. Stage it, then build and run the image:
 
