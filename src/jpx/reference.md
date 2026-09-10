@@ -7,7 +7,7 @@ description: Every jpx flag, the exit codes, and the API surface in one table.
 The whole surface of jpx is one target and a handful of flags:
 
 ```
-jpx [--modular] [--docker[=<image>]] [--hash=<checksum>] <target> [argument...]
+jpx [--modular] [--docker[=<image>]] [--hash=<checksum>] [--pin] <target> [argument...]
 ```
 
 Flags come **before** the target; everything after the target is passed to the launched program. The target
@@ -18,17 +18,19 @@ grammar, `<name>[@<version>][/<main-class>]`, is covered in [Choosing a target](
 | `--modular` | Resolve purely over module descriptors, walking `requires` clauses like the [`modular` layout](/tool/core-concepts/), and place every jar on the module path. Every module must then be explicitly named; a Maven coordinate is refused. |
 | `--docker[=<image>]` | Run the launched process in a container while resolution and installation stay on the host. Without an image, a minimal hardened image is built once and reused; a named image runs as is. An empty value is the same as naming no image. |
 | `--hash=<prefix>` | Verify the installed jars against a known digest before launching. At least 32 hex characters, with or without a leading `SHA-256/`. |
+| `--pin` | Print two commands instead of launching: the jpx command that repeats this run reproducibly - the resolved version spelled out, `--hash` always present at full length, `--pin` itself dropped - and the `java` command it expands to. The jars are verified before anything is printed, against `--hash` where one is given and against the installation's own digest otherwise. |
 | `--help` | Print the usage screen and exit. |
 
 `--modular` is covered under [Choosing a target](/jpx/targets/); `--docker` and `--hash` under
-[Isolation & verification](/jpx/isolation-and-verification/).
+[Isolation & verification](/jpx/isolation-and-verification/); `--pin` under
+[Using jpx from Java](/jpx/programmatic/), whose `pinned` and `command` calls it prints.
 
 ## Exit codes
 
 | Code | When |
 | --- | --- |
 | the program's own | The launched program ran; jpx returns its exit code unchanged. |
-| `0` | `--help`. |
+| `0` | `--help`, or `--pin` once the commands have been printed. |
 | `64` | A usage error: no target, or an unknown option. The usage screen is printed to standard error. |
 | `1` | Resolution failed, a checksum did not match, or the target declares no entry point - reported with the message of the underlying exception. |
 
@@ -48,4 +50,7 @@ Every flag has a counterpart in the API, which [Using jpx from Java](/jpx/progra
 | `installation.launch(arguments)` | Launch the installation's own entry point and return the exit code. |
 | `installation.launch(mainClass, arguments)` | The same with an entry point of your choice (`null` for the installation's own). |
 | `installation.launch(mainClass, arguments, docker)` | The same inside a container; `docker` is a `DockerizedJava`, the API behind `--docker`. |
-| `installation.javaArguments(mainClass, arguments, file)` | Everything after `java`, to start the process yourself. |
+| `installation.pinned(arguments)` / `.pinned(options, mainClass, arguments)` | The first line `--pin` prints: the jpx command that repeats the run, with the resolved version and the installation's digest filled in. |
+| `installation.command(arguments)` / `.command(mainClass, arguments)` | The second line: the same launch spelled out as a list, from the JVM to the last argument, with nothing started. |
+| `installation.command(mainClass, arguments, docker)` | The same for a containerised launch: the `docker run` command that would be issued. |
+| `installation.javaArguments(mainClass, arguments, file)` | Everything after `java`, spilling the long paths into `file` - `null` to keep them on the list. |
