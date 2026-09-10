@@ -136,7 +136,6 @@ The advisories the server raises:
 | <span id="jenreg.posture.collision">`jenreg.posture.collision`</span> | WARN | Two advisors raised the same advisory id - a fault in the modules on the path, reported as its own advisory rather than merged into one of them. |
 | <span id="jenreg.importer.ssrf">`jenreg.importer.ssrf`</span> | warn | `jenreg.block-private-import-hosts=false` - an import may reach internal hosts or run over plaintext. |
 | <span id="jenreg.ratelimit.unset">`jenreg.ratelimit.unset`</span> | warn | `jenreg.rate-limit` is unset or `0`, so nothing throttles a client. |
-| <span id="jenreg.console.wildcard">`jenreg.console.wildcard`</span> | warn | `jenreg.ui.admins` contains `*`, making every signed-in console user an admin. |
 | <span id="jenreg.demo.writable">`jenreg.demo.writable`</span> | warn | `jenreg.demo=true` without `jenreg.read-only=true` - a seeded demo anyone can write to. |
 
 A clean deployment returns an empty list. The same report is shown in the console's **Security posture**

@@ -31,10 +31,16 @@ provider (Google, Keycloak, Okta, Entra ID, Auth0, …), or both, each configure
 settings listed in [Authentication & access](/repository/authentication/). The sign-in page shows one button
 per configured provider; with none configured it shows a notice instead of failing.
 
-Every signed-in person is a **user** and may read everything the console shows. Only an **admin** may perform
-a mutating action, and nobody is an admin until their provider-qualified id - `github/<id>` or `oidc/<subject>`
-- is listed in `jenreg.ui.admins`. Listing `*` makes every signed-in user an admin, which the server reports
-as the `jenreg.console.wildcard` advisory.
+Signing in and holding access are separate. Sign-in succeeds for anyone your identity provider authenticates
+- the provider decides who may authenticate, and the console does not relitigate that - while what a person may
+*see* comes from the rights they hold. Someone who holds nothing gets a screen saying so, carrying the
+provider-qualified id an administrator has to grant to, rather than an error page.
+
+Only an **administrator** may perform a mutating action, and nobody administers the deployment until their
+provider-qualified id - `github/<id>` or `oidc/<subject>` - holds that grant. `jenreg.ui.admins` **seeds** those
+grants on every boot; it is not the record of them, so dropping an id from it does not revoke that person's
+administration, and an administrator granted through the API is equally real. Listing `*` is refused at
+startup: an administrator is a holder of rights, and a wildcard names no holder.
 
 For a local run, the `dev` Spring profile adds a form login at `/login/dev` with two built-in accounts,
 `admin`/`admin` (an admin) and `viewer`/`viewer` (a user); the sign-in page lists it beside any provider you

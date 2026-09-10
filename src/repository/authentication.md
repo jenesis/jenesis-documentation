@@ -170,7 +170,7 @@ The whole surface, where `<id>` is the 64-character hash the mint returned and t
 |---|---|
 | `GET /api/credentials` | The tenant's credentials - id, label, created, expires, allowed addresses, grants, and, while `jenreg.track-key-usage` is on, when each was last used, from which address, and how many times - never a secret. One page per request: at most `limit` (500, the default and the maximum) in id order from `after`; when more remain, the `X-Next-Cursor` response header carries the `after` value of the next page. |
 | `POST /api/credentials` | Mint. Body: `label`, `expires` (`P30D` from now, or an instant; blank = the 90-day default), `nonExpiring: true`. Answers `201` with `id`, `key`, `expires`. |
-| `POST /api/credentials/<id>/grants` | Set the rights at one scope. Body: `scope`, `tokens` (a list). |
+| `POST /api/credentials/<id>/grants` | Set the rights at one scope. Body: `scope`, `tokens` (a list) and an optional `expires` - see *Grants that lapse* below. |
 | `DELETE /api/credentials/<id>/grants/<scope>` | Remove the rights at one scope. |
 | `PUT /api/credentials/<id>/expiry` | Change the expiry. Body: `expires` as above; blank clears it. |
 | `PUT /api/credentials/<id>/allowed-ips` | Restrict the key to source addresses. Body: `addresses`, comma-separated CIDRs or addresses; blank clears it. |
@@ -179,6 +179,76 @@ The whole surface, where `<id>` is the 64-character hash the mint returned and t
 
 The console's **Credentials** panel does the everyday part of this - list, issue with a label, revoke - with
 a managing key pasted into the page; grants and rotation are API calls.
+
+## Groups and people
+
+A key is not the only holder of rights. The same grants - the same scopes, the same `<surface>:<verb>` tokens,
+the same three roles - are held by other kinds of subject, and each is administered through a surface of the
+same shape:
+
+| Holder | Named by | Surface |
+|---|---|---|
+| A key | the 64-character id a mint returns | `/api/credentials` |
+| A person | the sign-in mechanism's own id - `github/<id>`, `oidc/<sub>` | `/api/principals` |
+| A group | a name you choose, or one an identity provider pushes | `/api/groups` |
+| A caller with no key | nothing; it is the request itself | `jenreg.anonymous-rights` |
+
+People and groups are what console sign-in resolves to. Signing in establishes who someone is; what they may
+see is decided from the rights that id holds, directly or through a group they are in - which is why the
+no-access screen shows the signed-in person their own id. That id is exactly what these routes take.
+
+Both surfaces sit under `/api/`, so both need `manage:read` to read and `manage:write` to change, like the
+credentials one, and both page the same way: `after` and `limit`, with an `X-Next-Cursor` response header
+while more remain.
+
+**A person's id is never a path segment.** It carries a slash, so a write takes it in the body and a delete
+takes it as a query parameter, rather than obliging every client to agree on how to encode it.
+
+| Request | Effect |
+|---|---|
+| `GET /api/principals` | The tenant's people - id, label, and the rights granted to them **directly**. What someone holds through a group belongs to the group and is listed there. |
+| `POST /api/principals/grants` | Grant rights at one scope. Body: `id`, `scope`, `tokens`, optional `expires`. |
+| `DELETE /api/principals/grants?id=<id>&scope=<scope>` | Remove the rights at one scope. |
+| `DELETE /api/principals?id=<id>` | Remove the person: every grant made to them directly, and their metadata. Their group memberships are untouched - those belong to the groups. |
+
+| Request | Effect |
+|---|---|
+| `GET /api/groups` | The tenant's groups - name, label, and the rights each grants per scope. |
+| `GET /api/groups/<name>/members` | One group's members, one page per request. |
+| `POST /api/groups/<name>/grants` | Set the group's rights at one scope. Body: `scope`, `tokens`, optional `expires`. |
+| `DELETE /api/groups/<name>/grants/<scope>` | Remove the group's rights at one scope. |
+| `POST /api/groups/<name>/members` | Put a person in the group. Body: `id`. The group need not be created first. |
+| `DELETE /api/groups/<name>/members?id=<id>` | Take a person out of the group. |
+| `DELETE /api/groups/<name>` | Delete the group: its grants, its metadata and its membership. |
+
+```bash
+curl -H "Jenesis-Repository-Key: $ADMIN" -H 'Content-Type: application/json' \
+     -d '{"scope":"*","tokens":["repository:read"]}' \
+     http://localhost:8080/api/groups/engineering/grants
+
+curl -H "Jenesis-Repository-Key: $ADMIN" -H 'Content-Type: application/json' \
+     -d '{"id":"oidc/8f3c1a…"}' \
+     http://localhost:8080/api/groups/engineering/members
+```
+
+A group's rights reach its members because the write re-derives them before it returns: the next request that
+member makes already sees the change, so there is nothing to wait out and nothing to re-run. The same holds
+in reverse - removing a member, or deleting the group, re-derives everyone it touched, so nothing of it is
+left conferring rights.
+
+A group with members and no grants confers nothing, which is why the first `POST` of a member creates it.
+There is no state here in which a decision nobody has made yet reads as access.
+
+### Grants that lapse
+
+Any grant, on any holder, may be given an expiry: `expires` in the body of the write, either an ISO-8601
+duration from now (`P30D`, `PT12H`) or an absolute instant (`2026-12-01T00:00:00Z`). Blank or absent is a
+grant that does not lapse - which is still the usual case, and the default.
+
+It is how a temporary right is given without anyone having to remember to take it back: a contractor's read
+access until the end of the month, a `manage:write` for the length of a migration. When it lapses the holder
+remains and their other grants stand; only that one scope stops being held. An expiry that cannot be read
+back counts as expired rather than as absent, so a damaged record narrows access rather than widening it.
 
 ## What a client can find out
 
@@ -192,8 +262,15 @@ whole deployment rather than to one repository.
 ## Signing in to the console
 
 The web console runs in the server's process but has its own sign-in. People authenticate through an identity
-provider, not with repository keys, and the console has two roles: every signed-in user is a **user** who
-can browse, and a user listed as an admin can also act on what the console exposes.
+provider, not with repository keys.
+
+**Signing in and holding access are two separate decisions.** Sign-in succeeds for anyone your identity
+provider authenticates: the provider owns who may authenticate - app assignment in Entra or Okta, an OAuth app
+scoped to one organisation - and refusing again here would duplicate that control while doing it worse, since
+the console only ever sees an identity the provider has already decided about. What a signed-in person may
+*see* is decided separately, from the rights they hold. Someone who holds nothing gets a screen that says so
+and shows the id an administrator needs to grant to, rather than an error: that id is an opaque provider
+subject, and it is otherwise unobtainable until its owner has signed in once.
 
 Two providers are supported and either or both may be configured; with neither, sign-in is disabled and the
 console shows a notice instead of failing:
@@ -210,10 +287,27 @@ JENREG_UI_OIDC_CLIENT_SECRET=…
 JENREG_UI_OIDC_NAME="Company SSO"          # labels the sign-in button
 ```
 
-Admins are named by provider-qualified id in `JENREG_UI_ADMINS`, comma-separated: `github/<id>` for a
-GitHub user, `oidc/<sub>` for an OIDC subject. The list is empty by default, so an unconfigured console
-grants admin to nobody. A `*` entry makes every signed-in user an admin, which raises the
-`jenreg.console.wildcard` advisory.
+Administrators are named by provider-qualified id in `JENREG_UI_ADMINS`, comma-separated: `github/<id>` for
+a GitHub user, `oidc/<sub>` for an OIDC subject. The list is empty by default, so an unconfigured console
+grants administration to nobody.
+
+**The setting seeds those grants; it is not the record of them.** Each id it names is granted deployment-wide
+administration on every start, exactly as `jenreg.bootstrap-key` is re-provisioned for as long as it is set,
+and every later question is answered from the grant rather than from the setting. Two consequences follow, and
+both are the price of a seed rather than a mirror:
+
+- **Removing an id from the list does not remove that person's administration.** The grant stands until it is
+  revoked through the API. A seed that reconciled would silently undo every grant made through the console,
+  which is the surface operators are told to use.
+- **An administrator granted through the API is a real administrator**, listed and revocable, whether or not
+  the setting ever mentioned them.
+
+A `*` entry is **refused at startup** - the server does not begin. It used to mean "every signed-in user is an
+administrator"; an administrator is a holder of rights, and a wildcard names no holder, so there was nothing to
+read back, revoke, or show in a list of who administers the deployment. Refused rather than ignored, because
+ignoring fails in both directions at once: the operator believes they granted something, and in fact nobody
+holds it. If you want everyone your provider authenticates to hold some right, grant it to a group and put them
+in it.
 
 The session cookie is sent only over HTTPS. For a local run over plain http, where the cookie has to survive
 the OAuth redirect without TLS, set `JENREG_UI_SECURE_COOKIE=false`.
@@ -246,7 +340,7 @@ Console settings:
 | Key | Default | Effect |
 |---|---|---|
 | `jenreg.console` | `true` | Serve the console in this process; `false` leaves only the repository's own endpoints. |
-| `jenreg.ui.admins` | *(blank)* | Comma-separated `github/<id>` / `oidc/<sub>` ids granted admin; `*` for everyone. |
+| `jenreg.ui.admins` | *(blank)* | Comma-separated `github/<id>` / `oidc/<sub>` ids **seeded** as deployment administrators on every boot. Not a mirror: dropping an id does not revoke it. A `*` entry is refused at startup. |
 | `jenreg.ui.github.client-id` / `.client-secret` | *(blank - disabled)* | GitHub OAuth app credentials. |
 | `jenreg.ui.oidc.issuer-uri` / `.client-id` / `.client-secret` | *(blank - disabled)* | The OIDC issuer and client. |
 | `jenreg.ui.oidc.name` | `Single sign-on` | The label on the OIDC sign-in button. |

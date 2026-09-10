@@ -172,7 +172,7 @@ and reads these beside the settings above.
 |---|---|---|
 | `jenreg.console` | `true` | Serve the console in this process; `false` leaves only the repository's own endpoints. |
 | `jenreg.ui.store` (`JENREG_STORE`) | `filesystem` | The store backend the console reads - the same variable the server reads, so both point at one store. |
-| `jenreg.ui.admins` | *(empty - nobody)* | Comma-separated provider-qualified ids (`github/<id>`, `oidc/<subject>`) that hold the admin role; `*` grants it to every signed-in user and raises the `jenreg.console.wildcard` advisory. |
+| `jenreg.ui.admins` | *(empty - nobody)* | Comma-separated provider-qualified ids (`github/<id>`, `oidc/<subject>`) **seeded** as deployment administrators on every boot. A seed rather than a mirror: removing an id does not revoke it, and an administrator granted through the API is equally real. A `*` entry is refused at startup. |
 | `jenreg.ui.github.client-id`, `jenreg.ui.github.client-secret` | *(empty - GitHub login off)* | A GitHub OAuth app. |
 | `jenreg.ui.oidc.issuer-uri`, `jenreg.ui.oidc.client-id`, `jenreg.ui.oidc.client-secret` | *(empty - OIDC login off)* | An OpenID Connect provider; endpoints are discovered from the issuer at startup. |
 | `jenreg.ui.oidc.name` | `Single sign-on` | The label on the OIDC sign-in button. |
