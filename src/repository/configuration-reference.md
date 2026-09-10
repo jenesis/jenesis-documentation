@@ -17,7 +17,7 @@ does, and the same value can be given in any of these forms:
 |---|---|
 | An environment variable | `JENREG_PROXY_MAVEN=https://repo1.maven.org/maven2/` |
 | A system property | `-Djenreg.proxy.maven=https://repo1.maven.org/maven2/` |
-| An `bundle.properties` file next to the launch | `jenreg.proxy.maven=https://repo1.maven.org/maven2/` |
+| A `bundle.properties` file next to the launch | `jenreg.proxy.maven=https://repo1.maven.org/maven2/` |
 | A Spring profile | `SPRING_PROFILES_ACTIVE=dev` selects the `dev` profile's properties file |
 
 The environment spelling follows Spring's relaxed binding: upper case, dots and hyphens become underscores, so
