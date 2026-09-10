@@ -50,6 +50,9 @@ runs on every launch, not only on the run that downloaded it, so a jar swapped u
 installation is caught as readily as a tampered download. A mismatch aborts the launch.
 
 A version and a hash together turn a convenience command into a reproducible one: the same two tokens fetch
-the same bytes on any machine, which is what makes jpx usable in a pipeline and not only at a prompt. The
-check is available to a program as well, as one call between install and launch - see
+the same bytes on any machine, which is what makes jpx usable in a pipeline and not only at a prompt. You do
+not have to write that command yourself: [`--pin`](/jpx/reference/) prints it, filling in the version that was
+resolved and the digest of what was installed. It verifies before it prints - against the `--hash` you passed
+where you passed one, and against the installation's own digest where you did not - so a pinned command is
+one that runs. The check is available to a program as well, as one call between install and launch - see
 [Using jpx from Java](/jpx/programmatic/).

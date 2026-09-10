@@ -111,7 +111,7 @@ jpx.install("org.junit.platform.console@6.1.3")
 It returns the installation, so it chains between install and launch. The prefix rules are the command
 line's: at least 32 hex characters, optionally written with the leading `SHA-256/` the descriptor records.
 
-## Launching in a container, or building the command yourself
+## Launching in a container, or taking the command instead
 
 To run the program in a container, with resolution and installation still on the host, hand `launch` a
 `DockerizedJava` from `build.jenesis.docker`:
@@ -127,8 +127,41 @@ hardening flags. Either way the container runs the host's Java home, mounted rea
 has to provide a compatible operating system, not a JDK. The working directory is mounted read-write at its
 host path.
 
+When you would rather see a run than make it, ask for it. Two calls answer, and they are the two lines
+[`--pin`](/jpx/reference/) prints.
+
+`pinned` gives the **jpx command that repeats the run**, written so it reproduces:
+
+```java
+List<String> pinned = installation.pinned(List.of("--version"));
+System.out.println(String.join(" ", pinned));
+// jpx --hash=SHA-256/ed5600…aa1e2dd org.junit.platform.console@6.1.3 --version
+```
+
+Whatever the target left out, the pinned form fills in: the version is the one that was resolved, even when
+the call asked for none, and `--hash` is always present, taken from the installation's own `checksum`. What
+comes back is therefore the line to paste into a CI step or a script, where a floating version would make the
+run something else tomorrow. A `pinned(options, mainClass, arguments)` overload carries the flags that
+change what is installed or where it runs - `--modular`, `--docker` - and names an entry point.
+
+`command` gives the **java command that one expands to**: everything from the JVM that would run it to the
+last argument the program receives.
+
+```java
+List<String> command = installation.command(List.of("--version"));
+```
+
+It is the same list `launch` would have handed to a `ProcessBuilder`, with one difference: the two long path
+options are spelled out rather than moved into an argument file, because a printed command has to stand on
+its own. A `command(mainClass, arguments)` overload names an entry point, and a
+`command(mainClass, arguments, docker)` overload returns the `docker run` command a containerised launch
+would issue. Reach for this one where jpx should not sit in front of the program at all - a service unit, a
+container image, a profiler's launch configuration.
+
+Both chain after `verify`, so a printed command is one you have vetted.
+
 When you would rather start the process yourself - a different working directory, a redirected stream, an
-extra JVM flag - ask for the argument list instead of a launch. `javaArguments` returns everything that
+extra JVM flag - ask for the argument list instead. `javaArguments` returns everything that
 follows `java`, given a file it may spill long paths into:
 
 ```java
