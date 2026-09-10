@@ -17,7 +17,7 @@ does, and the same value can be given in any of these forms:
 |---|---|
 | An environment variable | `JENREG_PROXY_MAVEN=https://repo1.maven.org/maven2/` |
 | A system property | `-Djenreg.proxy.maven=https://repo1.maven.org/maven2/` |
-| An `allinone.properties` file next to the launch | `jenreg.proxy.maven=https://repo1.maven.org/maven2/` |
+| An `bundle.properties` file next to the launch | `jenreg.proxy.maven=https://repo1.maven.org/maven2/` |
 | A Spring profile | `SPRING_PROFILES_ACTIVE=dev` selects the `dev` profile's properties file |
 
 The environment spelling follows Spring's relaxed binding: upper case, dots and hyphens become underscores, so
@@ -171,10 +171,8 @@ and reads these beside the settings above.
 | Key | Default | Effect |
 |---|---|---|
 | `jenreg.console` | `true` | Serve the console in this process; `false` leaves only the repository's own endpoints. |
-| `jenreg.ui.store` (`JENREG_STORE`) | `filesystem` | The store backend the console reads - the same variable the server reads, so both point at one store. |
 | `jenreg.ui.admins` | *(empty - nobody)* | Comma-separated provider-qualified ids (`github/<id>`, `oidc/<subject>`) **seeded** as deployment administrators on every boot. A seed rather than a mirror: removing an id does not revoke it, and an administrator granted through the API is equally real. A `*` entry is refused at startup. |
 | `jenreg.ui.github.client-id`, `jenreg.ui.github.client-secret` | *(empty - GitHub login off)* | A GitHub OAuth app. |
 | `jenreg.ui.oidc.issuer-uri`, `jenreg.ui.oidc.client-id`, `jenreg.ui.oidc.client-secret` | *(empty - OIDC login off)* | An OpenID Connect provider; endpoints are discovered from the issuer at startup. |
 | `jenreg.ui.oidc.name` | `Single sign-on` | The label on the OIDC sign-in button. |
-| `JENREG_UI_SECURE_COOKIE` (env) | `true` | Send the session cookie over `https` only; set `false` for a plain-`http` local run. |
 | `SPRING_PROFILES_ACTIVE=dev` (env) | *(unset)* | Replace OAuth2 with a form login and the built-in `admin`/`admin` and `viewer`/`viewer` accounts; raises the `jenreg.profile.dev` advisory. |

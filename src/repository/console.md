@@ -44,8 +44,8 @@ startup: an administrator is a holder of rights, and a wildcard names no holder.
 
 For a local run, the `dev` Spring profile adds a form login at `/login/dev` with two built-in accounts,
 `admin`/`admin` (an admin) and `viewer`/`viewer` (a user); the sign-in page lists it beside any provider you
-configured. On plain `http`, also set `JENREG_UI_SECURE_COOKIE=false`, or the session cookie is never sent
-back.
+configured. The profile also lets the session cookie travel over plain `http`, which it must to survive a
+sign-in without TLS.
 
 <div class="warning">
   The <code>dev</code> profile is for a laptop. Its built-in accounts are an authentication bypass anywhere

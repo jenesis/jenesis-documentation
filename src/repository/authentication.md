@@ -309,8 +309,9 @@ ignoring fails in both directions at once: the operator believes they granted so
 holds it. If you want everyone your provider authenticates to hold some right, grant it to a group and put them
 in it.
 
-The session cookie is sent only over HTTPS. For a local run over plain http, where the cookie has to survive
-the OAuth redirect without TLS, set `JENREG_UI_SECURE_COOKIE=false`.
+The session cookie is sent only over HTTPS, and there is no setting that changes it: a deployment has no
+reason to want session hardening off. A local run over plain http, where the cookie has to survive the OAuth
+redirect without TLS, gets that from the `dev` profile below rather than from a switch of its own.
 
 <div class="tip">
   For local work, start the server with <code>SPRING_PROFILES_ACTIVE=dev</code>. The profile adds a form
@@ -323,7 +324,7 @@ the OAuth redirect without TLS, set `JENREG_UI_SECURE_COOKIE=false`.
 ## Settings
 
 Server-side settings, read at startup from the environment, a `-D` system property or
-`allinone.properties`:
+`bundle.properties`:
 
 | Key | Default | Effect |
 |---|---|---|
@@ -344,4 +345,3 @@ Console settings:
 | `jenreg.ui.github.client-id` / `.client-secret` | *(blank - disabled)* | GitHub OAuth app credentials. |
 | `jenreg.ui.oidc.issuer-uri` / `.client-id` / `.client-secret` | *(blank - disabled)* | The OIDC issuer and client. |
 | `jenreg.ui.oidc.name` | `Single sign-on` | The label on the OIDC sign-in button. |
-| `JENREG_UI_SECURE_COOKIE` | `true` | Send the session cookie over HTTPS only. |
