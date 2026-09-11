@@ -201,10 +201,13 @@ OpenPGP/B4AC8CDC141AF0AE468D16921DA784CCB5C46DD5
  */
 ```
 
-Import the key so gpg can check the mathematics, then confirm the fingerprint matches the one above:
+The same key is published as [`/KEYS`](/KEYS) on this site, as a `KEYS` file in each Jenesis repository, and
+by the maintainer's GitHub account at [github.com/raphw.gpg](https://github.com/raphw.gpg). Import it, then
+confirm the fingerprint matches the one above:
 
 ```bash
-gpg --import jenesis.asc
+curl -O https://jenesis.build/KEYS
+gpg --import KEYS
 gpg --fingerprint B4AC8CDC141AF0AE468D16921DA784CCB5C46DD5
 ```
 
