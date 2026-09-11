@@ -28,11 +28,9 @@ anywhere in the engine. It ships as plain Java source under `build/jenesis/` in 
 (see *[Getting started](/tool/getting-started/)*), so the build tool arrives the way your application code
 does: by review, in a diff, under version control.
 
-That removes rather than mitigates a class of risk. There is no plugin resolution before a build can start, no
-plugin closure to pin, and nothing to verify about the engine that reviewing your own repository does not
-already tell you. External tools the build genuinely needs - a Kotlin compiler, PMD, a formatter - are resolved
-as ordinary dependencies in their own group and pinned like any other, so they fall under the same guarantees
-as the libraries you ship.
+That removes a class of risk rather than mitigating it: there is no plugin resolution before a build starts,
+and no plugin closure to pin. External tools a build genuinely needs - a Kotlin compiler, PMD, a formatter -
+resolve as ordinary dependencies in their own group and are pinned like any other.
 
 ## Four questions
 
@@ -59,9 +57,9 @@ That leaves the third question, which no hash can answer.
 
 ## <span id="provenance">Provenance: who produced the bytes</span>
 
-A checksum is computed from whatever the repository served. It proves that an artifact has not changed since
-you first recorded it - not that what you recorded was genuine. An artifact swapped before your first `pin` is
-frozen as an accepted pin just the same, and every later build enforces it faithfully.
+A checksum is computed from whatever the repository served, so it proves an artifact has not changed since you
+recorded it - not that what you recorded was genuine. An artifact swapped before your first `pin` is frozen as
+an accepted pin just the same.
 
 `@jenesis.signature` records the OpenPGP key that signed a dependency's artifact. The `pin` step fetches the
 detached signature published beside the artifact, forks a local `gpg` to check it, and compares the **primary**
@@ -112,16 +110,45 @@ is a fresh, unvetted trust event. `-Djenesis.dependency.signature` chooses how m
 run checks: `none`, `unpinned` (only coordinates that resolved without a checksum - the default wherever a
 declaration exists), `all`, or `strict`, which additionally rejects an artifact publishing no signature.
 
-An undeclared coordinate has its signer **recorded** for you to check against the project's published keys
-before committing. A coordinate signed by some other key **fails**, naming both fingerprints: a signature can be
-cryptographically perfect and still be the wrong signer. Accepting a genuine key rotation is an addition - list
-the new fingerprint alongside the old - so no window exists in which nothing verifies.
+An undeclared coordinate has its signer **recorded** for you to check before committing. A coordinate signed by
+some other key **fails**, naming both fingerprints: a signature can be cryptographically perfect and still be
+the wrong signer. A genuine key rotation is accepted by addition - list the new fingerprint alongside the old -
+so no window exists in which nothing verifies.
 
 <div class="note">
   Verification runs during <code>pin</code>, never during a build. Nothing is ever fetched on your behalf: a
   key gpg does not hold is reported as <code>NO_PUBKEY</code> and <code>pin</code> stops, because obtaining a
   key and checking it against the project's published location is the judgement the whole mechanism rests on.
   An ordinary build then enforces the pin with no gpg, no keys and no keyserver.
+</div>
+
+### Getting hold of a key
+
+`pin` names the key it needs and stops. Find it somewhere the **project controls**: a fingerprint read from the
+signature itself, or from whatever a keyserver returns, tells you which key signed - never whether it should
+have. Best source first:
+
+| Source | Look for |
+| --- | --- |
+| The project's own site, over HTTPS | a `KEYS` file; Apache publishes `downloads.apache.org/<project>/KEYS` |
+| Its source repository | a committed `KEYS` file, or the release documentation |
+| GitHub | `https://github.com/<user>.gpg` serves that account's public keys |
+| A signed release tag | `git verify-tag v1.2.3` names the signing key |
+| Web Key Directory | `gpg --locate-keys someone@example.org`, served from the project's own domain |
+
+A keyserver is fine for fetching bytes and worthless as evidence, since anyone can upload a key under any name.
+Inspect before importing, then compare against the source above:
+
+```bash
+gpg --list-packets some-artifact.jar.asc   # which key signed this
+gpg --show-keys --with-fingerprint key.asc # what a key file contains, without importing it
+gpg --import key.asc                       # only once the fingerprint matches
+```
+
+<div class="warning">
+  <code>gpg --recv-keys</code> followed by <code>gpg --fingerprint</code> proves nothing: it reports the
+  fingerprint of whatever was just downloaded, which is the thing you set out to check. The comparison has to
+  be against a channel an attacker does not control.
 </div>
 
 ## Where each one stops
