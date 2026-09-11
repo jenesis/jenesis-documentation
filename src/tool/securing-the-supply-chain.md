@@ -48,9 +48,8 @@ Each mechanism answers one question, and none answers another's:
 
 The first two are *[Pinning](/tool/pinning/)*: a pin records an exact version and the `SHA-256` of the jar in
 your own sources, every build re-hashes what it downloads, and a mismatch fails. Strict mode additionally
-refuses any third-party coordinate without a checksum, which is what closes the POM gap - POMs are not pinned,
-so a tampered one could introduce a dependency, but that dependency arrives unpinned and strict mode rejects
-it.
+refuses any third-party coordinate without a checksum. That also blunts a tampered POM, since a dependency it
+introduces arrives unpinned and is rejected - though signature verification addresses the POM directly.
 
 The fourth is the *[supply-chain features](/tool/supply-chain/)* chapter, and the fifth is
 *[Build performance & isolation](/tool/build-performance-and-isolation/)*, which confines what test code and
@@ -100,6 +99,12 @@ during a rotation.
   had to download would itself need verifying - which is the problem the mechanism exists to solve. Obtain a
   list the way you would obtain a key: out of band, reviewed once, then committed.
 </div>
+
+A coordinate's **POM is verified with its artifact**, and must carry the same signer. POMs are read during
+resolution but never pinned, because some servers re-serialise them and a byte checksum would mismatch for no
+reason. A signature closes that gap directly, rather than leaving strict pinning to catch what a tampered POM
+adds. The cost is that a repository which re-serialises POMs invalidates their signatures, so resolve from one
+that serves the published bytes.
 
 The line carries **no version**, and that is the point. One key signs every release it signs, so vetting a key
 once covers every future release from that key, where a checksum covers exactly one file and every version bump
