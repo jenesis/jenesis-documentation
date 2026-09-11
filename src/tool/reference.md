@@ -182,7 +182,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | Key | Default | Effect |
 | --- | --- | --- |
 | `jenesis.dependency.pin` | *(lenient)* | Pinning mode: `strict`, `versions`, or `ignore`. |
-| `jenesis.dependency.signature` | *(inferred)* | How much of the closure `pin` verifies signatures for: `none`, `unpinned`, `all`, or `strict`. Defaults to `unpinned` where a `@jenesis.signature` line is declared, `none` otherwise. |
+| `jenesis.dependency.signature` | `none` | How much of the closure `pin` verifies signatures for: `none`, `unpinned`, `all`, or `strict`. |
 | `jenesis.pin.bom` | `keep` | Whether the `pin` step keeps (`keep`) or flattens (`flatten`) BOM references. |
 | `jenesis.pin.checksum` | `true` | Whether `pin` writes SHA checksums alongside versions. |
 | `jenesis.platform.<token>` | *(detected)* | Add (`=true`) or remove (`=false`) a platform token used to select guarded pins. |
