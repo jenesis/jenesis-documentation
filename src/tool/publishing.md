@@ -1,5 +1,5 @@
 ---
-order: 13
+order: 14
 title: Publishing
 description: Staging a correct release bundle, the metadata a repository demands, publishing it locally with export, publishing a bill of materials, and driving a release tool from the build.
 ---
