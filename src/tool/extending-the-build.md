@@ -1,5 +1,5 @@
 ---
-order: 15
+order: 16
 title: Extending the build
 description: Write your own build step, add it to the stock pipeline through a custom assembler, or wire the whole graph by hand - and the serialised-state rule a custom step must respect.
 ---

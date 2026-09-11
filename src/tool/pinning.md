@@ -151,6 +151,8 @@ checksums are not consulted. `pin` then re-resolves that fresh closure and rewri
   written in as an accepted pin just the same. Run it only on a <strong>trusted machine</strong> against a
   <strong>trusted repository</strong>, review the resulting diff, and commit it. Every subsequent build then
   enforces the new pins against the artifacts you just vetted.
+  <em><a href="/tool/securing-the-supply-chain/#provenance">Recording who signed a dependency</a></em> closes
+  exactly this gap: it checks who signed an artifact before a checksum for it is written.
 </div>
 
 ## Sharing pins: a bill of materials

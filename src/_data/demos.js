@@ -71,7 +71,7 @@ export default {
         { slug: "demo-15-compliance", name: "Dependency licensing", blurb: "Checking dependency licences against policy." },
         { slug: "demo-16-vulnerabilities", name: "Vulnerabilities", blurb: "Scanning dependencies for known vulnerabilities." },
         { slug: "demo-31-bom", name: "Bills of materials", blurb: "Importing a Maven BOM and a local pin file, and publishing a BOM of the module's own closure." },
-        { slug: "demo-46-supply-chain-security", name: "Supply-chain security", blurb: "Strict pinning and checksum verification, proven by getting both wrong on purpose." },
+        { slug: "demo-46-supply-chain-security", name: "Supply-chain security", blurb: "Strict pinning, checksum verification and OpenPGP signature verification, proven by getting each wrong on purpose." },
       ],
     },
     {

@@ -1,5 +1,5 @@
 ---
-order: 16
+order: 17
 title: Reference
 description: A lookup for the command line - targets and selectors - a grouped table of every configuration key with its default, and the built-in steps a selector can name.
 ---
@@ -182,10 +182,13 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | Key | Default | Effect |
 | --- | --- | --- |
 | `jenesis.dependency.pin` | *(lenient)* | Pinning mode: `strict`, `versions`, or `ignore`. |
+| `jenesis.dependency.signature` | *(inferred)* | How much of the closure `pin` verifies signatures for: `none`, `unpinned`, `all`, or `strict`. Defaults to `unpinned` where a `@jenesis.signature` line is declared, `none` otherwise. |
 | `jenesis.pin.bom` | `keep` | Whether the `pin` step keeps (`keep`) or flattens (`flatten`) BOM references. |
 | `jenesis.pin.checksum` | `true` | Whether `pin` writes SHA checksums alongside versions. |
 | `jenesis.platform.<token>` | *(detected)* | Add (`=true`) or remove (`=false`) a platform token used to select guarded pins. |
 | `jenesis.project.digest` | `SHA-256` | Digest algorithm the `pin` step uses to checksum artifacts. |
+| `jenesis.signature.command` | `gpg` | Binary `pin` forks to verify detached OpenPGP signatures. |
+| `jenesis.project.signatures` | *(the configuration folders)* | Path-separated locations searched for a local `signature-<name>.properties` key list. |
 | `jenesis.resolver.maven` | `maven` | Maven version strategy: `maven`, `closest`, `latest`, or `release`. |
 | `jenesis.resolver.module` | `first` | What happens when two module descriptors record different versions: `first`, `fail`, or `ignore`. |
 
