@@ -106,9 +106,11 @@ that serves the published bytes.
 
 The line carries **no version**, and that is the point. One key signs every release it signs, so vetting a key
 once covers every future release from that key, where a checksum covers exactly one file and every version bump
-is a fresh, unvetted trust event. `-Djenesis.dependency.signature` chooses how much of the closure each `pin`
-run checks: `none`, `unpinned` (only coordinates that resolved without a checksum - the default wherever a
-declaration exists), `all`, or `strict`, which additionally rejects an artifact publishing no signature.
+is a fresh, unvetted trust event. `-Djenesis.dependency.signature` chooses how much of the closure each `pin` run
+checks and defaults to `none`: `unpinned` takes only coordinates that resolved without a checksum, `all`
+every one, and `strict` additionally rejects an artifact publishing no signature. Verification is opt-in, so
+a declaration alone does not switch it on - set the property in `jenesis.properties` as you would any other
+project default.
 
 An undeclared coordinate has its signer **recorded** for you to check before committing. A coordinate signed by
 some other key **fails**, naming both fingerprints: a signature can be cryptographically perfect and still be
