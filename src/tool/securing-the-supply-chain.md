@@ -142,8 +142,9 @@ and it never adds, removes or reads a signature line. Keeping them apart is what
 from looking safer than it is: a pin refresh re-blesses whatever the repository serves today, and a signature
 is the one check that still has something to say while the checksums are being rewritten.
 
-Verification forks the `gpg` command rather than linking a library, which means **gpg has to be installed and
-on the `PATH`**. That is not a convenience: a Java OpenPGP implementation would have to be resolved from a
+When verification is switched on - and only then - it forks the `gpg` command rather than linking a library,
+so **gpg has to be installed and on the `PATH` of whatever machine runs it**. A build that has not enabled it
+needs none of this. That the verifier is a forked tool is not a convenience: a Java OpenPGP implementation would have to be resolved from a
 repository, which is the very thing being verified, and a verifier you downloaded on trust verifies nothing.
 The same reasoning keeps `build.jenesis` free of third-party libraries, and it is why the tool declines to
 obtain one for you. `-Djenesis.signature.command` names a different binary when yours is not called `gpg`.
@@ -220,8 +221,12 @@ java -Djenesis.dependency.pin=ignore \
      build/jenesis/Make.java pin
 ```
 
-That machine needs two things in place beforehand, and Jenesis can supply neither: a JDK, and a `gpg` on the
-`PATH` that you trust. Bootstrapping either from the network would defeat the exercise - a verifier fetched
+Both flags are needed, and neither is a default. `@jenesis.signature` lines sitting in your sources verify
+nothing on their own; `jenesis.dependency.signature` is `none` until something sets it, which is what keeps
+every ordinary build free of gpg. The run that writes the pins is the one where you ask for it.
+
+That machine then needs two things in place beforehand, and Jenesis can supply neither: a JDK, and a `gpg` on
+the `PATH` that you trust. Bootstrapping either from the network would defeat the exercise - a verifier fetched
 from the repository under verification proves nothing about it - so a hardened image is one where the JDK and
 the OpenPGP tooling are already present and vetted, not one that assembles them on the way.
 
