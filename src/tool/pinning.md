@@ -39,6 +39,21 @@ module demo.app {
 }
 ```
 
+Markdown documentation comments work the same way, so a project on the
+[JEP 467](https://openjdk.org/jeps/467) form declares its pins there instead:
+
+```java
+/// A module documented in Markdown.
+///
+/// @jenesis.pin com.fasterxml.jackson.databind 2.18.2 SHA-256/8f2b...c41
+module demo.app {
+    requires com.fasterxml.jackson.databind;
+}
+```
+
+`pin` writes back in whichever form the comment already uses, and creates a `/** ... */` when there is no
+comment at all, so a project never ends up with one of each.
+
 The grammar is `@jenesis.pin <group>/<repository>/<coordinate> <version> [<algorithm>/<hash>]`, with two
 shorthands for a project's own dependencies (the `main` group):
 

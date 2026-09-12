@@ -318,7 +318,10 @@ each layout wires the `maven` and/or `modular` staging and export sub-steps unde
 ## Source declarations
 
 Everything a module declares about its build is a Javadoc tag on `module-info.java` - or, in the `maven`
-layout, the POM equivalent named beside it. This is the whole vocabulary:
+layout, the POM equivalent named beside it. Tags are read from the module's documentation
+comment in either form - the traditional `/** ... */` and the Markdown `///` of
+[JEP 467](https://openjdk.org/jeps/467) - and `pin` writes back in whichever form the comment
+already uses. This is the whole vocabulary:
 
 | Tag | Declares | Chapter |
 | --- | --- | --- |
