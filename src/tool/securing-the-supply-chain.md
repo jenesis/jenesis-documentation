@@ -53,7 +53,9 @@ The fourth is the *[supply-chain features](/tool/supply-chain/)* chapter, and th
 *[Build performance & isolation](/tool/build-performance-and-isolation/)*, which confines what test code and
 an artifact's `main` can reach. Pinning guarantees *what* runs; isolation limits what it can do.
 
-That leaves the third question, which no hash can answer.
+That leaves the third question, which no hash can answer - and which matters most at one particular moment,
+the run that writes the pins. *[The one build a pin cannot protect](#writing-a-pin)* is that argument; what
+follows is the mechanism.
 
 ## <span id="provenance">Provenance: who produced the bytes</span>
 
@@ -176,6 +178,51 @@ gpg --import key.asc                       # only once the fingerprint matches
   be against a channel an attacker does not control.
 </div>
 
+## <span id="writing-a-pin">The one build a pin cannot protect</span>
+
+A pinned project is easy to reason about. The pins sit in your own sources, so they were reviewed the way any
+other change is, and every later build enforces them: whatever the repository serves must hash to what the pin
+says, or the build fails. Trust the project and you trust its pins; trust the pins and you trust every download
+that follows - on every machine, for every contributor, with no keys, no gpg and no network beyond the bytes
+themselves.
+
+That reasoning holds for every build except the one that writes the pins.
+
+Initialising a project, or updating a dependency, is the moment when there is nothing committed to check
+against. The resolver takes what the repository serves and the pin records it. Whatever arrives *becomes* the
+definition of correct, and every later build then enforces it faithfully - including when what arrived was not
+what the publisher released. `-Djenesis.dependency.pin=ignore` makes this explicit by dropping the existing
+pins first, but the first `pin` on a new project is the same act with nothing to drop.
+
+At that moment a checksum has nothing to say, because it is the thing being written. What can speak is the
+signature: the publisher's key, applied to those bytes, checked against a fingerprint you vetted once and
+committed. This is why verification runs during resolution rather than during the rewrite - the run that
+establishes a pin is exactly the run whose bytes nobody has vouched for yet.
+
+And a key is cheap to keep, because it does not move with the version. One key signs every release a project
+makes until it is rotated, so a declaration written once keeps paying: a routine version bump costs nothing,
+and if a new version arrives signed by somebody else, that is precisely the thing you are told. A checksum
+covers exactly one file, so every bump is a fresh, unvetted trust event; a key covers the publisher.
+
+So the strongest posture is not a stricter everyday build - an ordinary build already enforces the pins and
+needs no gpg at all. It is to make the pin-writing run the careful one, on a machine you trust and against a
+repository you trust:
+
+```bash
+java -Djenesis.dependency.pin=ignore \
+     -Djenesis.dependency.signature=strict \
+     build/jenesis/Make.java pin
+```
+
+`pin` runs after a full build, so the resolution that feeds the rewrite is the verified one. `strict` refuses
+any coordinate no key vouches for, which means the checksums that land in your sources are the ones whose
+signatures were checked. Review the resulting diff, commit it, and the pins carry that verdict forward to
+everyone who trusts your repository.
+
+Getting there is the only fiddly part, and `-Djenesis.print.signatures` is what makes it tractable: under
+`declared` it names every coordinate no declaration covers, which is exactly the list `strict` would refuse.
+Work through that list once, and the run that writes your pins is one you can defend.
+
 ## Where each one stops
 
 Stating the limits plainly matters more than the guarantees:
@@ -203,8 +250,9 @@ Nothing here needs a build script, and the layers are independent, so adopt them
    first acceptance of an artifact is a decision rather than a download. Move to `strict` once every external
    coordinate is covered.
 3. **Refresh deliberately.** `-Djenesis.dependency.pin=ignore` re-blesses whatever the repository serves today,
-   so run it on a trusted machine, with `-Djenesis.dependency.signature=strict`, and review the diff. When the
-   checksums are being rewritten, the signature is the one check that still has something to say.
+   so run it on a trusted machine, with `-Djenesis.dependency.signature=strict`, and review the diff - see
+   *[The one build a pin cannot protect](#writing-a-pin)*, which is the whole argument for why this run, rather
+   than every run, is the one to harden.
 4. **Turn on the checks you will act on** - a licence policy, a vulnerability threshold - and keep the SBOM you
    already get.
 5. **Containerise** the builds you do not trust.
