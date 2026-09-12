@@ -10,6 +10,7 @@ export default function (eleventy) {
   // Static assets pass through untouched (CSS, JS, logos, fonts, the CNAME).
   eleventy.addPassthroughCopy({ "src/assets": "assets" });
   eleventy.addPassthroughCopy({ "src/CNAME": "CNAME" });
+  eleventy.addPassthroughCopy({ "src/KEYS": "KEYS" });
 
   // One collection per tool section, sorted by the page's `order`, so the sidebar and the
   // prev/next links are derived from the files that actually exist.

@@ -7,7 +7,9 @@ description: Build-time supply-chain support - generating a CycloneDX SBOM, chec
 A build is only as trustworthy as the code it pulls in. Jenesis has four build-time features for knowing and
 governing that closure: a **software bill of materials** that records exactly what you shipped, a **licence
 check** that gates the build on your policy, a **vulnerability scan** against the OSV advisory database, and
-the **pinning** that guarantees the bytes you build are the bytes you vetted. None of them needs a plugin or a
+the **pinning** that guarantees the bytes you build are the bytes you vetted - extended by
+[signature verification](/tool/securing-the-supply-chain/#provenance), which checks who signed an artifact as
+it is downloaded. None of them needs a plugin or a
 build script - each turns on from a convention, over the same resolved dependency graph.
 
 <div class="note">
@@ -162,6 +164,8 @@ recorded checksum is rejected outright, which is exactly what happens if a repos
 compromised artifact. *[Pinning & bills of materials](/tool/pinning/)* covers how to record pins, how
 `-Djenesis.dependency.pin=strict` requires them, and how to refresh a frozen closure deliberately. A hardened
 supply chain layers the checks above on top of a fully pinned, strict build.
+*[Securing the supply chain](/tool/securing-the-supply-chain/)* sets out which attack each of these
+answers and where each one stops.
 
 ### Why strict pinning matters
 
