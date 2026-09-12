@@ -8,8 +8,8 @@ A build is only as trustworthy as the code it pulls in. Jenesis has four build-t
 governing that closure: a **software bill of materials** that records exactly what you shipped, a **licence
 check** that gates the build on your policy, a **vulnerability scan** against the OSV advisory database, and
 the **pinning** that guarantees the bytes you build are the bytes you vetted - extended by
-[signature verification](/tool/securing-the-supply-chain/#provenance), which records who signed an artifact before a
-checksum for it is written. None of them needs a plugin or a
+[signature verification](/tool/securing-the-supply-chain/#provenance), which checks who signed an artifact as
+it is downloaded. None of them needs a plugin or a
 build script - each turns on from a convention, over the same resolved dependency graph.
 
 <div class="note">
