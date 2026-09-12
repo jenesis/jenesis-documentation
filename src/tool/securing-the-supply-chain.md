@@ -83,10 +83,31 @@ whole group with `/*` is the same kind of decision. The declaration is a javadoc
 exactly as `@jenesis.bom` is; a `pom.xml` has no equivalent form, since a Maven project states its BOM imports
 in `<dependencyManagement>` and has no place for a key.
 
+One vetted list can serve many modules. A declaration naming a lone `signature-<name>.properties` reads
+`<algorithm>/<fingerprint>=<token>...` lines from a local file instead, the shape `@jenesis.bom` already uses
+for a local `pin-<name>.properties`:
+
+```java
+/**
+ * @jenesis.signature signature-vendor.properties
+ */
+```
+
+```properties
+# build.jenesis/signature-vendor.properties
+OpenPGP/FF6E2C001948C5F2F38B0CC385911F425EC61B51 = org.apiguardian/* org.junit.jupiter/* org.opentest4j/*
+OpenPGP/BE685132AFD2740D9095F9040CC0B712FEE75827 = org.assertj/*
+```
+
+The fingerprint is the properties key rather than the coordinate, so the same coordinate can sit under two
+keys through a rotation. The file is found in `-Djenesis.project.signatures`, which defaults to the
+configuration folders, and its tokens expand by the same grammar as the tag.
+
 <div class="warning">
-  A key is only ever read from the local gpg keyring, and a fingerprint only ever from your own sources. There
-  is no form that resolves a key list from a repository, because a list you had to download would itself need
-  verifying - which is the problem the mechanism exists to solve.
+  A key is only ever read from the local gpg keyring, and a fingerprint only ever from your own sources. A
+  list is only ever read from disk: there is no form that resolves one from a repository, because a list you
+  had to download would itself need verifying - which is the problem the mechanism exists to solve. Obtain a
+  list the way you would obtain a key: out of band, reviewed once, then committed.
 </div>
 
 A coordinate's **POM is verified with its artifact**, and must carry the same signer. POMs are read during
