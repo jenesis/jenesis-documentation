@@ -128,8 +128,10 @@ A coordinate signed by some other key **fails**, naming both fingerprints: a sig
 cryptographically perfect and still be the wrong signer. A genuine key rotation is accepted by addition - list
 the new fingerprint alongside the old - so no window exists in which nothing verifies.
 
-Verification is a step of its own inside the dependency module, so switching the property on re-runs only that
-step rather than re-downloading anything, and the fetched `.asc` files are cached beside the jars they verify.
+Verification is a step of the dependency module rather than something wired beside it, so it rides along with
+every resolution a build performs - a module's own closure, and equally the linter, formatter, alternative
+compiler or test launcher a build module resolves for itself. Switching the property on re-runs only that step
+rather than re-downloading anything, and the fetched `.asc` files are cached beside the jars they verify.
 It is deliberately no part of `pin`: `pin` pins, recording the versions and checksums a resolution produced,
 and it never adds, removes or reads a signature line. Keeping them apart is what stops the dangerous operation
 from looking safer than it is: a pin refresh re-blesses whatever the repository serves today, and a signature
@@ -185,9 +187,6 @@ Stating the limits plainly matters more than the guarantees:
 - **Isolation** limits what code can reach, not whether it should be there.
 - **A declaration** only covers what it names. A coordinate no line mentions is verified by nobody under
   `declared`; only `strict` turns that silence into a failure.
-- **Verification covers a module's own dependency closure** - what it compiles against and ships. A tool a
-  build module resolves for itself, such as a linter, a formatter, an alternative compiler or the test
-  launcher, is pinned like any other coordinate but is not yet signature-checked.
 - **`pin` itself** runs after a full build, because a dependency can be introduced by any step and the closure
   is only complete at the end, so a pin rewrite is not the moment anything is checked.
 
