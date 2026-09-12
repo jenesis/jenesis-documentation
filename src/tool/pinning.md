@@ -54,6 +54,11 @@ module demo.app {
 `pin` writes back in whichever form the comment already uses, and creates a `/** ... */` when there is no
 comment at all, so a project never ends up with one of each.
 
+This is also why a platform guard is written `(windows)` rather than `[windows]`: in a Markdown comment a
+bracketed word is a reference link, so javadoc reports it as an unresolved reference and renders it as a
+broken link in the generated documentation. Parentheses mean the same thing in both forms and nothing in
+either grammar.
+
 The grammar is `@jenesis.pin <group>/<repository>/<coordinate> <version> [<algorithm>/<hash>]`, with two
 shorthands for a project's own dependencies (the `main` group):
 
@@ -96,13 +101,13 @@ directly or transitively - and exactly one variant is ever present, mirroring th
 ### Choosing the variant per machine
 
 Where a classifier commits to one variant, a **platform guard** declares several and lets the build pick. Each
-pin line may end with a bracketed guard, and the line whose guard matches the machine wins:
+pin line may end with a parenthesised guard, and the line whose guard matches the machine wins:
 
 ```java
 /**
  * @jenesis.pin org.openjfx.javafx.base :linux:21.0.3 SHA-256/...
- * @jenesis.pin org.openjfx.javafx.base :win:21.0.3 SHA-256/... [windows]
- * @jenesis.pin org.openjfx.javafx.base :mac-aarch64:21.0.3 SHA-256/... [macos,aarch64]
+ * @jenesis.pin org.openjfx.javafx.base :win:21.0.3 SHA-256/... (windows)
+ * @jenesis.pin org.openjfx.javafx.base :mac-aarch64:21.0.3 SHA-256/... (macos,aarch64)
  */
 ```
 
