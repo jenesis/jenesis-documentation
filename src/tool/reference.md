@@ -182,13 +182,12 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | Key | Default | Effect |
 | --- | --- | --- |
 | `jenesis.dependency.pin` | *(lenient)* | Pinning mode: `strict`, `versions`, or `ignore`. |
-| `jenesis.dependency.signature` | `none` | How much of the closure `pin` verifies signatures for: `none`, `unpinned`, `all`, or `strict`. |
+| `jenesis.dependency.signature` | `none` | Signature verification after each download: `none`, `declared`, or `strict`. |
 | `jenesis.pin.bom` | `keep` | Whether the `pin` step keeps (`keep`) or flattens (`flatten`) BOM references. |
 | `jenesis.pin.checksum` | `true` | Whether `pin` writes SHA checksums alongside versions. |
 | `jenesis.platform.<token>` | *(detected)* | Add (`=true`) or remove (`=false`) a platform token used to select guarded pins. |
 | `jenesis.project.digest` | `SHA-256` | Digest algorithm the `pin` step uses to checksum artifacts. |
-| `jenesis.signature.command` | `gpg` | Binary `pin` forks to verify detached OpenPGP signatures. |
-| `jenesis.project.signatures` | *(the configuration folders)* | Path-separated locations searched for a local `signature-<name>.properties` key list. |
+| `jenesis.signature.command` | `gpg` | Binary forked to verify detached OpenPGP signatures. |
 | `jenesis.resolver.maven` | `maven` | Maven version strategy: `maven`, `closest`, `latest`, or `release`. |
 | `jenesis.resolver.module` | `first` | What happens when two module descriptors record different versions: `first`, `fail`, or `ignore`. |
 
@@ -332,6 +331,7 @@ layout, the POM equivalent named beside it. This is the whole vocabulary:
 | `@jenesis.override <module> <module>…` | A module to replace with the modules that already carry its packages. | *[Dependencies](/tool/dependencies/)* |
 | `@jenesis.pin <token> <version> [<algorithm>/<hash>] [[<guard>]]` | An exact version and checksum (`<!--jenesis.pin-->` / `<dependencyManagement>` in a POM); a trailing `[<token>,…]` guard applies the line only on a matching platform. | *[Pinning &amp; bills of materials](/tool/pinning/)* |
 | `@jenesis.bom <token> [<version> [<algorithm>/<hash>]]` | A bill of materials to import. | *[Pinning &amp; bills of materials](/tool/pinning/)* |
+| `@jenesis.signature <algorithm>/<fingerprint> <token>…` | The OpenPGP key that signs these coordinates' artifacts; a Maven token may end in `/*` to cover a whole groupId. | *[Securing the supply chain](/tool/securing-the-supply-chain/#provenance)* |
 
 <div class="tip">
   Every feature named here has a runnable example. Browse the full set on the

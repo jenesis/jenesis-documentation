@@ -40,7 +40,7 @@ Each mechanism answers one question, and none answers another's:
 | --- | --- | --- |
 | May we use a dependency we cannot verify at all? | strict pinning | every build |
 | Are these the exact bytes we vetted? | pin checksums | every build |
-| Were the bytes we vetted the ones upstream released? | `@jenesis.signature` | `pin` only |
+| Were the bytes we vetted the ones upstream released? | `@jenesis.signature` | every download, opt-in |
 | What did we ship, and is it permitted or known-vulnerable? | SBOM, licence and vulnerability checks | every build |
 | What can a dependency reach when it executes? | container isolation | opt-in |
 
@@ -61,9 +61,9 @@ A checksum is computed from whatever the repository served, so it proves an arti
 recorded it - not that what you recorded was genuine. An artifact swapped before your first `pin` is frozen as
 an accepted pin just the same.
 
-`@jenesis.signature` records the OpenPGP key that signed a dependency's artifact. The `pin` step fetches the
-detached signature published beside the artifact, forks a local `gpg` to check it, and compares the **primary**
-key fingerprint against your declarations before writing a checksum.
+`@jenesis.signature` names the OpenPGP key that signs a dependency's artifacts. Right after an artifact is
+downloaded, Jenesis fetches the detached signature published beside it, forks a local `gpg` to check it, and
+compares the **primary** key fingerprint against your declarations.
 
 ```java
 /**
@@ -74,28 +74,19 @@ key fingerprint against your declarations before writing a checksum.
 
 The fingerprint comes first because one key normally signs many artifacts, and the tokens that follow use the
 same grammar as every other `@jenesis` tag. A Maven token may end in `/*` to cover every artifact of one
-groupId. `pin` never writes a wildcard itself - widening trust across a group is a decision you make by hand -
-but once written, it adds no per-artifact line beneath it. A `pom.xml` carries the same declarations in a
-project-level `<!--jenesis.signature ... -->` comment.
+groupId.
 
-One vetted list can serve many modules. A declaration that names a lone
-`signature-<name>.properties` reads `<algorithm>/<fingerprint>=<token>...` lines from a local file, found in
-the configuration folder or wherever `-Djenesis.project.signatures` points:
-
-```properties
-# build.jenesis/signature-vendor.properties
-OpenPGP/FF6E2C001948C5F2F38B0CC385911F425EC61B51 = org.apiguardian/* org.junit.jupiter/* org.opentest4j/*
-OpenPGP/BE685132AFD2740D9095F9040CC0B712FEE75827 = org.assertj/*
-```
-
-`pin` keeps the reference and never expands it, and adds no line for a coordinate the list already covers. The
-fingerprint is the properties key rather than the coordinate, so the same coordinate can appear under two keys
-during a rotation.
+**Nothing writes these lines.** A fingerprint is obtained out of band, checked against the upstream project's
+published `KEYS`, and added by hand - that judgement is the thing the mechanism rests on, and a tool that
+filled the line in from whatever it downloaded would only be recording its own guess. Widening trust across a
+whole group with `/*` is the same kind of decision. The declaration is a javadoc tag on `module-info.java`,
+exactly as `@jenesis.bom` is; a `pom.xml` has no equivalent form, since a Maven project states its BOM imports
+in `<dependencyManagement>` and has no place for a key.
 
 <div class="warning">
-  A list is only ever read from disk. There is no form that resolves one from a repository, because a list you
-  had to download would itself need verifying - which is the problem the mechanism exists to solve. Obtain a
-  list the way you would obtain a key: out of band, reviewed once, then committed.
+  A key is only ever read from the local gpg keyring, and a fingerprint only ever from your own sources. There
+  is no form that resolves a key list from a repository, because a list you had to download would itself need
+  verifying - which is the problem the mechanism exists to solve.
 </div>
 
 A coordinate's **POM is verified with its artifact**, and must carry the same signer. POMs are read during
@@ -106,29 +97,35 @@ that serves the published bytes.
 
 The line carries **no version**, and that is the point. One key signs every release it signs, so vetting a key
 once covers every future release from that key, where a checksum covers exactly one file and every version bump
-is a fresh, unvetted trust event. `-Djenesis.dependency.signature` chooses how much of the closure each `pin` run
-checks and defaults to `none`: `unpinned` takes only coordinates that resolved without a checksum, `all`
-every one, and `strict` additionally rejects an artifact publishing no signature. Verification is opt-in, so
-a declaration alone does not switch it on - set the property in `jenesis.properties` as you would any other
-project default.
+is a fresh, unvetted trust event. `-Djenesis.dependency.signature` chooses how much is checked and defaults to
+`none`: `declared` verifies every coordinate a line covers, and `strict` additionally rejects one that no line
+covers, or whose artifact or POM publishes no signature. Verification is opt-in, so a declaration alone does
+not switch it on - set the property in `jenesis.properties` as you would any other project default, or pass it
+on the runs that matter: a dependency update, and CI.
 
-An undeclared coordinate has its signer **recorded** for you to check before committing. A coordinate signed by
-some other key **fails**, naming both fingerprints: a signature can be cryptographically perfect and still be
-the wrong signer. A genuine key rotation is accepted by addition - list the new fingerprint alongside the old -
-so no window exists in which nothing verifies.
+A coordinate signed by some other key **fails**, naming both fingerprints: a signature can be
+cryptographically perfect and still be the wrong signer. A genuine key rotation is accepted by addition - list
+the new fingerprint alongside the old - so no window exists in which nothing verifies.
+
+Verification is a step of its own inside the dependency module, so switching the property on re-runs only that
+step rather than re-downloading anything, and the fetched `.asc` files are cached beside the jars they verify.
+It is deliberately no part of `pin`: `pin` pins, recording the versions and checksums a resolution produced,
+and it never adds, removes or reads a signature line. Keeping them apart is what stops the dangerous operation
+from looking safer than it is: a pin refresh re-blesses whatever the repository serves today, and a signature
+is the one check that still has something to say while the checksums are being rewritten.
 
 <div class="note">
-  Verification runs during <code>pin</code>, never during a build. Nothing is ever fetched on your behalf: a
-  key gpg does not hold is reported as <code>NO_PUBKEY</code> and <code>pin</code> stops, because obtaining a
-  key and checking it against the project's published location is the judgement the whole mechanism rests on.
-  An ordinary build then enforces the pin with no gpg, no keys and no keyserver.
+  Nothing is ever fetched on your behalf: a key gpg does not hold is reported as <code>NO_PUBKEY</code> and
+  the build stops, because obtaining a key and checking it against the project's published location is the
+  judgement the whole mechanism rests on. With the property unset, a build enforces the pin with no gpg, no
+  keys and no keyserver, which is what lets everyone who trusts your committed pins build without any of this.
 </div>
 
 ### Getting hold of a key
 
-`pin` names the key it needs and stops. Find it somewhere the **project controls**: a fingerprint read from the
-signature itself, or from whatever a keyserver returns, tells you which key signed - never whether it should
-have. Best source first:
+The build names the key it needs and stops. Find it somewhere the **project controls**: a fingerprint read
+from the signature itself, or from whatever a keyserver returns, tells you which key signed - never whether it
+should have. Best source first:
 
 | Source | Look for |
 | --- | --- |
@@ -165,9 +162,13 @@ Stating the limits plainly matters more than the guarantees:
   on one that was never filed.
 - **A licence check** reads declarations, which can be wrong or absent.
 - **Isolation** limits what code can reach, not whether it should be there.
+- **A declaration** only covers what it names. A coordinate no line mentions is verified by nobody under
+  `declared`; only `strict` turns that silence into a failure.
+- **Verification covers a module's own dependency closure** - what it compiles against and ships. A tool a
+  build module resolves for itself, such as a linter, a formatter, an alternative compiler or the test
+  launcher, is pinned like any other coordinate but is not yet signature-checked.
 - **`pin` itself** runs after a full build, because a dependency can be introduced by any step and the closure
-  is only complete at the end. Tools have executed by the time their signatures are checked, so run `pin` on a
-  clean checkout when that matters.
+  is only complete at the end, so a pin rewrite is not the moment anything is checked.
 
 ## A defensible posture
 
@@ -175,17 +176,18 @@ Nothing here needs a build script, and the layers are independent, so adopt them
 
 1. **Pin everything**, then build under `-Djenesis.dependency.pin=strict` in CI, so no unverified coordinate
    can enter unnoticed.
-2. **Declare a key per upstream project** and let `pin` verify it, so the first acceptance of an artifact is a
-   decision rather than a download.
+2. **Declare a key per upstream project** and build with `-Djenesis.dependency.signature=declared`, so the
+   first acceptance of an artifact is a decision rather than a download. Move to `strict` once every external
+   coordinate is covered.
 3. **Refresh deliberately.** `-Djenesis.dependency.pin=ignore` re-blesses whatever the repository serves today,
-   so run it on a trusted machine and review the diff. It also leaves every coordinate unpinned as it resolves,
-   which means the operation that re-blesses the most is the one that verifies the most.
+   so run it on a trusted machine, with `-Djenesis.dependency.signature=strict`, and review the diff. When the
+   checksums are being rewritten, the signature is the one check that still has something to say.
 4. **Turn on the checks you will act on** - a licence policy, a vulnerability threshold - and keep the SBOM you
    already get.
 5. **Containerise** the builds you do not trust.
 
-What remains is the trust you extend deliberately: your JDK, the repository you resolve from at pin time, the
-keys you vetted, and the gpg that checks them. Naming that list is the useful outcome; a build whose trusted set
+What remains is the trust you extend deliberately: your JDK, the repository you resolve from, the keys you
+vetted, and the gpg that checks them. Naming that list is the useful outcome; a build whose trusted set
 cannot be written down has not been secured, only described.
 
 ## <span id="signing-key">The Jenesis signing key</span>
