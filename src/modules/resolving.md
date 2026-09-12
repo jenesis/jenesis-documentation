@@ -32,7 +32,16 @@ the publisher embedded in `module-info.class`. Pick the route that matches the v
 
 The `<file>` segment is required, and its name must start with the module name. Everything after that
 is the extension, either after a `.` or after `-<classifier>.`. The `/module/`, `/sources/`, and
-`/documentation/` routes accept **`.jar` only**; `/artifact/` accepts any extension.
+`/documentation/` routes accept **`.jar`, optionally followed by `.asc`** for the detached signature;
+`/artifact/` accepts any extension.
+
+<div class="note">
+  A trailing <code>.asc</code> fetches the detached OpenPGP signature the publisher uploaded beside the
+  jar, so provenance can be checked over the same route the artifact came from. On <code>/sources/</code>
+  and <code>/documentation/</code> the suffix follows the <code>-sources</code> / <code>-javadoc</code>
+  decoration, so the signature served is the one over that jar. A checksum sidecar is not served on these
+  three routes - use <code>/artifact/</code>, which passes any extension through.
+</div>
 
 <div class="note">
   Only a <strong>named</strong> module - one that ships a real <code>module-info.class</code> - is
@@ -95,8 +104,8 @@ names and is not a client of this route.
 
 ## `module`, `sources`, and `documentation` routes
 
-These three are keyed by the module-info version, serve named modules only, and accept only `.jar`. They
-map to the main jar, the sources jar, and the javadoc jar of the same artifact:
+These three are keyed by the module-info version, serve named modules only, and accept `.jar` or
+`.jar.asc`. They map to the main jar, the sources jar, and the javadoc jar of the same artifact:
 
 ```
 GET /module/org.slf4j/2.0.9/org.slf4j.jar
@@ -107,6 +116,9 @@ GET /sources/org.slf4j/2.0.9/org.slf4j.jar
 
 GET /documentation/org.slf4j/2.0.9/org.slf4j.jar
 → 302 …/org/slf4j/slf4j-api/2.0.9/slf4j-api-2.0.9-javadoc.jar
+
+GET /module/org.slf4j/2.0.9/org.slf4j.jar.asc
+→ 302 …/org/slf4j/slf4j-api/2.0.9/slf4j-api-2.0.9.jar.asc
 ```
 
 A named release whose declared module-info version differs from its Maven version is left out of these
