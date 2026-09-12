@@ -124,6 +124,9 @@ covers, or whose artifact or POM publishes no signature. Verification is opt-in,
 not switch it on - set the property in `jenesis.properties` as you would any other project default, or pass it
 on the runs that matter: a dependency update, and CI.
 
+`-Djenesis.print.signatures` names each dependency that was checked with the key that signed it, and each one
+no declaration covers, which is how you find out what to declare before moving from `declared` to `strict`.
+
 A coordinate signed by some other key **fails**, naming both fingerprints: a signature can be
 cryptographically perfect and still be the wrong signer. A genuine key rotation is accepted by addition - list
 the new fingerprint alongside the old - so no window exists in which nothing verifies.

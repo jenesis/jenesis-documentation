@@ -256,6 +256,7 @@ Read by the `release` target - see *[Publishing](/tool/publishing/)*.
 | `jenesis.print.tests` | `false` | Stream the test JVM's command and output. |
 | `jenesis.print.fetch` | `false` | Print a `[FETCHED]` line per downloaded artifact. |
 | `jenesis.print.cache` | `false` | Print `[LOADED]`/`[STORED]` lines for the build cache, local and shared. |
+| `jenesis.print.signatures` | `false` | Print a `[VERIFIED]` line per checked dependency with the key that signed it, and `[UNDECLARED]`/`[UNSIGNED]` for the ones no declaration covers. |
 | `jenesis.print.checksum` | `false` | Append input/output checksums under each `[EXECUTED]` line. |
 | `jenesis.print.jreleaser` | `false` | Stream the release tool's output. |
 | `jenesis.tree.format` | `full` | The `dependencies` tree rendering: `full` or `compact`. |
