@@ -28,6 +28,14 @@ under `target/`. In a **modular** project it adds a `@jenesis.pin` tag per depen
 declaration; in a **`pom.xml`** project it fills a `<dependencyManagement>` block, tagging each entry with a
 `<!--Checksum/…-->` comment. Commit the result and the pin set travels with the project.
 
+`pin` is project-wide: it rewrites every module, and a `+<module>` selector beside it narrows `build` rather
+than the pin. To pin one module, name its step instead - `pin` holds one `module-<path>` step per module,
+with `<path>` URL-encoded because a selector splits on `/`:
+
+```bash
+java build/jenesis/Make.java pin/module-api%2Fclient
+```
+
 A pin in `module-info.java` reads:
 
 ```java
@@ -59,6 +67,29 @@ bracketed word is a reference link, so javadoc reports it as an unresolved refer
 broken link in the generated documentation. Parentheses mean the same thing in both forms and nothing in
 either grammar.
 
+<div class="warning">
+  <strong>Explanatory prose goes above the tag block, never below or between the tags.</strong> A javadoc tag
+  owns every line beneath it until the next tag, so a paragraph written under a <code>@jenesis.pin</code>
+  arrives as part of that pin's value. Jenesis rejects such a declaration and quotes the absorbed text back
+  at you; the fix is always to move the description into the comment's body.
+</div>
+
+```java
+/**
+ * <p>Why this dependency is here and what it does for us.
+ *
+ * @jenesis.pin com.fasterxml.jackson.databind 2.18.2 SHA-256/8f2b...c41
+ */
+module demo.app {
+    requires com.fasterxml.jackson.databind;
+}
+```
+
+The same holds for `@jenesis.signature` and every other `@jenesis.*` tag: whatever follows a tag is that
+tag's value until the next one begins. A `pom.xml` has the matching rule - every line inside a
+`<!--jenesis.pin ... -->` or `<!--jenesis.signature ... -->` block is a declaration of its own, so a remark
+written among them is read as one, and belongs outside the comment.
+
 The grammar is `@jenesis.pin <group>/<repository>/<coordinate> <version> [<algorithm>/<hash>]`, with two
 shorthands for a project's own dependencies (the `main` group):
 
@@ -75,10 +106,33 @@ section. Everything else `pin` writes and refreshes for you.
 
 <div class="tip">
   Re-run <code>pin</code> whenever you change a dependency; it refreshes the versions and checksums from the
-  new closure and drops entries that no longer resolve. To record versions without checksums, pass
-  <code>-Djenesis.pin.checksum=false</code>. The digest defaults to SHA-256 and is set with
-  <code>-Djenesis.project.digest=&lt;algorithm&gt;</code>.
+  new closure. To record versions without checksums, pass <code>-Djenesis.pin.checksum=false</code>. The
+  digest defaults to SHA-256 and is set with <code>-Djenesis.project.digest=&lt;algorithm&gt;</code>.
 </div>
+
+A pin for a coordinate the closure no longer reaches is **kept**, not dropped, so a line you wrote by hand
+for something resolved only under some conditions survives a refresh. The cost is that a line left over from
+an earlier shape of the module survives too, and a later refresh that moves its version leaves it without a
+checksum - which strict mode accepts, because it never resolves that coordinate at all. `-Djenesis.print.pins=true`
+therefore reports what it carried over:
+
+```
+[UNPINNED]  ./source/store/module-info.java: kept without a checksum, resolved by no closure: org.example/gone 1.2.3
+```
+
+Every line it names is either a deliberate pin worth keeping or a leftover worth deleting; nothing else in
+the build will mention it again.
+
+Each module resolves its own closure, and nothing makes two modules agree on a version. `pin/divergence`
+writes every coordinate the project pins at more than one version into `divergence.properties`, naming the
+versions and the modules holding each, and `-Djenesis.print.divergence=true` prints the same:
+
+```
+[DIVERGED]  main/maven/org.slf4j/slf4j-api is pinned at 2.0.13 (greeter-testing), 2.0.16 (app greeter greeter-test)
+```
+
+That is not a failure - more than one version is legitimate until you decide otherwise - but it is the signal
+that a shared [bill of materials](#sharing-pins-a-bill-of-materials) is overdue.
 
 ## Pinning one variant of a module
 
@@ -97,6 +151,10 @@ module demo.classifier {
 
 The pin stays keyed by the bare module name, so it applies wherever that module turns up in the closure -
 directly or transitively - and exactly one variant is ever present, mirroring the module path's own rule.
+
+A module-name pin carries a checksum like any other. Tool versions before 0.13 wrote these lines bare, so the
+first refresh on a tree pinned by an older Jenesis rewrites every descriptor that has one. Run `pin` on its
+own and commit that before making the change you actually came for, or the checksums will bury it.
 
 ### Choosing the variant per machine
 
