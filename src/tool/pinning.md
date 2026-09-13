@@ -106,10 +106,33 @@ section. Everything else `pin` writes and refreshes for you.
 
 <div class="tip">
   Re-run <code>pin</code> whenever you change a dependency; it refreshes the versions and checksums from the
-  new closure and drops entries that no longer resolve. To record versions without checksums, pass
-  <code>-Djenesis.pin.checksum=false</code>. The digest defaults to SHA-256 and is set with
-  <code>-Djenesis.project.digest=&lt;algorithm&gt;</code>.
+  new closure. To record versions without checksums, pass <code>-Djenesis.pin.checksum=false</code>. The
+  digest defaults to SHA-256 and is set with <code>-Djenesis.project.digest=&lt;algorithm&gt;</code>.
 </div>
+
+A pin for a coordinate the closure no longer reaches is **kept**, not dropped, so a line you wrote by hand
+for something resolved only under some conditions survives a refresh. The cost is that a line left over from
+an earlier shape of the module survives too, and a later refresh that moves its version leaves it without a
+checksum - which strict mode accepts, because it never resolves that coordinate at all. `pin` therefore
+reports what it carried over:
+
+```
+[UNPINNED]  ./source/store/module-info.java: kept without a checksum, resolved by no closure: org.example/gone 1.2.3
+```
+
+Every line it names is either a deliberate pin worth keeping or a leftover worth deleting; nothing else in
+the build will mention it again.
+
+Each module resolves its own closure, and nothing makes two modules agree on a version. `pin/divergence`
+reports every coordinate the project pins at more than one version, naming the versions and the modules
+holding each, and writes the same into `divergence.properties`:
+
+```
+[DIVERGED]  main/maven/org.slf4j/slf4j-api is pinned at 2.0.13 (greeter-testing), 2.0.16 (app greeter greeter-test)
+```
+
+That is not a failure - more than one version is legitimate until you decide otherwise - but it is the signal
+that a shared [bill of materials](#sharing-pins-a-bill-of-materials) is overdue.
 
 ## Pinning one variant of a module
 
@@ -128,6 +151,10 @@ module demo.classifier {
 
 The pin stays keyed by the bare module name, so it applies wherever that module turns up in the closure -
 directly or transitively - and exactly one variant is ever present, mirroring the module path's own rule.
+
+A module-name pin carries a checksum like any other. Tool versions before 0.13 wrote these lines bare, so the
+first refresh on a tree pinned by an older Jenesis rewrites every descriptor that has one. Run `pin` on its
+own and commit that before making the change you actually came for, or the checksums will bury it.
 
 ### Choosing the variant per machine
 
