@@ -28,6 +28,14 @@ under `target/`. In a **modular** project it adds a `@jenesis.pin` tag per depen
 declaration; in a **`pom.xml`** project it fills a `<dependencyManagement>` block, tagging each entry with a
 `<!--Checksum/…-->` comment. Commit the result and the pin set travels with the project.
 
+`pin` is project-wide: it rewrites every module, and a `+<module>` selector beside it narrows `build` rather
+than the pin. To pin one module, name its step instead - `pin` holds one `module-<path>` step per module,
+with `<path>` URL-encoded because a selector splits on `/`:
+
+```bash
+java build/jenesis/Make.java pin/module-api%2Fclient
+```
+
 A pin in `module-info.java` reads:
 
 ```java
@@ -58,6 +66,29 @@ This is also why a platform guard is written `(windows)` rather than `[windows]`
 bracketed word is a reference link, so javadoc reports it as an unresolved reference and renders it as a
 broken link in the generated documentation. Parentheses mean the same thing in both forms and nothing in
 either grammar.
+
+<div class="warning">
+  <strong>Explanatory prose goes above the tag block, never below or between the tags.</strong> A javadoc tag
+  owns every line beneath it until the next tag, so a paragraph written under a <code>@jenesis.pin</code>
+  arrives as part of that pin's value. Jenesis rejects such a declaration and quotes the absorbed text back
+  at you; the fix is always to move the description into the comment's body.
+</div>
+
+```java
+/**
+ * <p>Why this dependency is here and what it does for us.
+ *
+ * @jenesis.pin com.fasterxml.jackson.databind 2.18.2 SHA-256/8f2b...c41
+ */
+module demo.app {
+    requires com.fasterxml.jackson.databind;
+}
+```
+
+The same holds for `@jenesis.signature` and every other `@jenesis.*` tag: whatever follows a tag is that
+tag's value until the next one begins. A `pom.xml` has the matching rule - every line inside a
+`<!--jenesis.pin ... -->` or `<!--jenesis.signature ... -->` block is a declaration of its own, so a remark
+written among them is read as one, and belongs outside the comment.
 
 The grammar is `@jenesis.pin <group>/<repository>/<coordinate> <version> [<algorithm>/<hash>]`, with two
 shorthands for a project's own dependencies (the `main` group):
