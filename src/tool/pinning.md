@@ -113,8 +113,8 @@ section. Everything else `pin` writes and refreshes for you.
 A pin for a coordinate the closure no longer reaches is **kept**, not dropped, so a line you wrote by hand
 for something resolved only under some conditions survives a refresh. The cost is that a line left over from
 an earlier shape of the module survives too, and a later refresh that moves its version leaves it without a
-checksum - which strict mode accepts, because it never resolves that coordinate at all. `pin` therefore
-reports what it carried over:
+checksum - which strict mode accepts, because it never resolves that coordinate at all. `-Djenesis.print.pins=true`
+therefore reports what it carried over:
 
 ```
 [UNPINNED]  ./source/store/module-info.java: kept without a checksum, resolved by no closure: org.example/gone 1.2.3
@@ -124,8 +124,8 @@ Every line it names is either a deliberate pin worth keeping or a leftover worth
 the build will mention it again.
 
 Each module resolves its own closure, and nothing makes two modules agree on a version. `pin/divergence`
-reports every coordinate the project pins at more than one version, naming the versions and the modules
-holding each, and writes the same into `divergence.properties`:
+writes every coordinate the project pins at more than one version into `divergence.properties`, naming the
+versions and the modules holding each, and `-Djenesis.print.divergence=true` prints the same:
 
 ```
 [DIVERGED]  main/maven/org.slf4j/slf4j-api is pinned at 2.0.13 (greeter-testing), 2.0.16 (app greeter greeter-test)
