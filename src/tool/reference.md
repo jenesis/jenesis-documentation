@@ -82,6 +82,13 @@ inputs are always real folders.
 | `java build/jenesis/Make.java ::/test` | Every `test` step at any depth, plus its predecessors. |
 | `java build/jenesis/Make.java build/::/test` | The same, anchored under the top-level `build` module. |
 | `java build/jenesis/Make.java +mymodule` | Only the named module's subgraph. |
+| `java build/jenesis/Make.java pin/module-api%2Fclient` | Only the `api/client` module's pins. |
+
+A `+<module>` selector narrows **`build`** and nothing else. `pin`, `stage` and `export` are entry points of
+their own, so `pin +mymodule` runs the whole project's pin *and* that module's build rather than a pin
+narrowed to one module. To pin a single module, name its step: the `pin` target holds one
+`module-<path>` step per module, where `<path>` is the module's source folder URL-encoded, because a
+selector splits on `/`.
 
 <div class="tip">
   Selectors are not part of the cache key - they only gate scheduling. A step run under a selector produces
@@ -258,6 +265,9 @@ Read by the `release` target - see *[Publishing](/tool/publishing/)*.
 | `jenesis.print.cache` | `false` | Print `[LOADED]`/`[STORED]` lines for the build cache, local and shared. |
 | `jenesis.print.signatures` | `false` | Print a `[VERIFIED]` line per checked dependency with the key that signed it, and `[UNDECLARED]`/`[UNSIGNED]` for the ones no declaration covers. |
 | `jenesis.print.checksum` | `false` | Append input/output checksums under each `[EXECUTED]` line. |
+| `jenesis.print.pins` | `false` | Print an `[UNPINNED]` line per pin a refresh kept that no closure resolves, so it carries no checksum. |
+| `jenesis.print.divergence` | `false` | Print a `[DIVERGED]` line per coordinate the project pins at more than one version; `divergence.properties` is written either way. |
+| `jenesis.print.aliases` | `false` | Print an `[ALIAS]` line per `@jenesis.alias` whose target already declares that module name. |
 | `jenesis.print.jreleaser` | `false` | Stream the release tool's output. |
 | `jenesis.tree.format` | `full` | The `dependencies` tree rendering: `full` or `compact`. |
 | `jenesis.tree.tests` | `true` | Include the test modules in the `dependencies` trees and their licence summary. |
