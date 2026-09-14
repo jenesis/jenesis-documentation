@@ -54,22 +54,43 @@ is the extension, either after a `.` or after `-<classifier>.`. The `/module/`, 
 
 ## Versions are optional
 
-The version segment can always be omitted. Leave it out and the service returns the **newest** version.
-Newest is decided by Maven's version ordering, so a pre-release such as `2.1.0-alpha1` ranks above
-`2.0.17`; name the version when you want a stable release.
+The version segment can always be omitted. Leave it out and the service returns the **newest release**.
+Newest is decided by Maven's version ordering, and a pre-release is passed over: `org.slf4j` resolves to
+`2.0.19` even though `2.1.0-alpha1` ranks above it. Name the version when you want the pre-release.
+
+A version counts as a pre-release when a qualifier of it ranks below the release in Maven's own
+ordering - `alpha`, `beta`, `milestone` (including the `a1`, `b2`, `m3` shorthands), `rc` (and its `cr`
+alias) and `snapshot` - or when it is one of the qualifiers Maven's ordering does not know but
+publishers use for the same purpose: `ea`, `pre`, `prerelease`, `preview`, `dev`, `nightly`, `canary`,
+`next`, `test` and `adhoc`. Every other qualifier is a release, so `1.0.0.Final`, `33.0-jre` and
+`1.0-sp1` all resolve as ordinary versions. This is the same rule the Jenesis build tool applies to a
+`STABLE` version.
+
+A request that wants pre-releases back says so with the **`Jenesis-Prerelease: true`** request header,
+which drops the filter and returns the plain newest version. Without it, a module that has only ever
+published pre-releases has nothing to serve for an unversioned request and answers `404`, with a body
+naming the header that would have answered it. A version asked for by name is always served, header or
+not: naming `2.1.0-alpha1` is already an unambiguous request for it.
 
 ```bash
-# Newest Maven version of org.slf4j
+# 2.0.19, the newest release of org.slf4j
 curl -L -O https://repo.jenesis.build/artifact/org.slf4j/org.slf4j.jar
+
+# 2.1.0-alpha1, the newest version of any kind
+curl -L -O -H 'Jenesis-Prerelease: true' https://repo.jenesis.build/artifact/org.slf4j/org.slf4j.jar
 
 # A specific version, pinned
 curl -L -O https://repo.jenesis.build/artifact/org.slf4j/2.0.9/org.slf4j.jar
 ```
 
+Whenever the version served is a pre-release, the response carries the same header back:
+`Jenesis-Prerelease: true`. Because the answer depends on the request header, every redirect is sent
+with `Vary: Jenesis-Prerelease`.
+
 With the segment present, the service looks for a row whose version matches **exactly** - there is no
 range matching and no normalisation. A version the index has not seen yet is still answered: the service
 assumes it exists on Maven Central under the module's newest coordinate and redirects there anyway,
-flagging the response with an `X-Jenesis-BestEffort: true` header. That is what keeps a release from the
+flagging the response with a `Jenesis-BestEffort: true` header. That is what keeps a release from the
 last few hours resolvable before the crawler has recorded it. If Maven Central has no such file, the
 redirect target answers 404.
 
@@ -150,11 +171,13 @@ fetched without parsing the `Location`:
 
 | Header | When | Value |
 | --- | --- | --- |
-| `X-Jenesis-GroupId` | always | Maven `groupId` of the resolved row. |
-| `X-Jenesis-ArtifactId` | always | Maven `artifactId`. |
-| `X-Jenesis-MavenVersion` | always | Maven coordinate version. |
-| `X-Jenesis-ModuleVersion` | `/module/`, `/sources/`, `/documentation/` | The publisher-declared module-info version. Omitted on `/artifact/`, where the lookup key is already the Maven version. |
-| `X-Jenesis-BestEffort` | a version the index has not recorded | `true` - the redirect was built from the module's newest coordinate rather than from a recorded row. |
+| `Jenesis-GroupId` | always | Maven `groupId` of the resolved row. |
+| `Jenesis-ArtifactId` | always | Maven `artifactId`. |
+| `Jenesis-MavenVersion` | always | Maven coordinate version. |
+| `Jenesis-ModuleVersion` | `/module/`, `/sources/`, `/documentation/` | The publisher-declared module-info version. Omitted on `/artifact/`, where the lookup key is already the Maven version. |
+| `Jenesis-BestEffort` | a version the index has not recorded | `true` - the redirect was built from the module's newest coordinate rather than from a recorded row. |
+| `Jenesis-Prerelease` | the version served carries a pre-release qualifier | `true` - the version was asked for by name, or the request opted in to pre-releases. |
+| `Vary` | always | `Jenesis-Prerelease` - the redirect depends on that request header, so a shared cache must key on it. |
 
 ### When a request fails
 
@@ -169,6 +192,8 @@ A `404` has one of these causes:
 - the path is not one of the four shapes, or the file name does not start with the module name;
 - the file name has no extension, or a `.jar`-only route was asked for another extension;
 - the module name is unknown to the index, or has no named release on a `/module/`-family route;
+- no version was asked for and every version the module has published is a pre-release, without
+  `Jenesis-Prerelease: true` on the request to accept one;
 - the module has no resolved owner in this view.
 
 ## Stability guarantee

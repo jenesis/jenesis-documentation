@@ -1,7 +1,7 @@
 ---
 order: 8
 title: Code quality & testing
-description: The linters, formatters, coverage, test selection and mutation testing Jenesis runs for you - each turned on by dropping its config file in place, no build script and no plugin to register.
+description: The linters, formatters, coverage, test selection, mutation testing and API-compatibility checks Jenesis runs for you - each turned on by dropping its config file in place, no build script and no plugin to register.
 ---
 
 A healthy codebase runs more than a compiler over its sources. Jenesis wires in the usual quality tools
@@ -200,6 +200,69 @@ project's own resolved `junit-platform`, so it always lines up with the test fra
 lands under `reports/pitest/`, and `-Djenesis.mutate.pitest=false` suppresses the run while keeping the file in
 place.
 
+## API compatibility
+
+Coverage and mutation testing ask whether your tests are any good. **API compatibility** asks a different
+question: does the jar you are about to publish still work for everyone who compiled against the last one?
+[japicmp](https://siom79.github.io/japicmp/) answers it by comparing byte code, which is the level that
+matters - a caller linked against class files, not against your sources, so a removed method, a narrowed
+return type or a tightened modifier is what breaks them.
+
+A `japicmp.properties` in a configuration folder switches it on. With no keys at all, japicmp compares the
+module's freshly built jar against the last release of **that module's own coordinate**:
+
+```properties
+# empty: compare against <this module's groupId>:<its artifactId> at RELEASE
+```
+
+The version floats, so the check follows your releases rather than being re-pointed by hand. A `baseline`
+key names a different artifact, read by how many slashes it carries rather than by any suffix:
+
+```properties
+baseline=com.example/library                           # the latest release
+baseline=com.example/library/1.2.3                     # that version
+baseline=modular/com.example/library/1.2.3             # served from a named repository
+```
+
+A module with no Maven coordinate has nothing to default to, so leaving the key out there fails with a
+message naming it. In a multi-module project the file is read per module, so a `japicmp.properties` in the
+project-wide configuration folder with no `baseline` gives every module its own coordinate - which is what
+you want. A `baseline` there would point every module at the same artifact, so a per-module baseline belongs
+in that module's own configuration location.
+
+The remaining keys map onto japicmp's own options:
+
+| Key | Effect | Default |
+| --- | --- | --- |
+| `access` | lowest visibility to compare (`public`, `protected`, `package`, `private`) | japicmp's own |
+| `include` / `exclude` | comma-separated package or class filters | none |
+| `format` | `xml`, `html`, or both | `xml` |
+| `ignore-missing-classes` | tolerate types the baseline's own dependencies would have provided | `true` |
+| `only-incompatible` / `only-modified` | narrow what the report lists | `false` |
+| `semantic-versioning` | report the version increment the changes call for | `false` |
+| `error-on-binary-incompatibility` | fail the build on a binary-incompatible change | `false` |
+| `error-on-source-incompatibility` | fail the build on a source-incompatible change | `false` |
+| `error-on-modifications` | fail the build on any change at all | `false` |
+| `error-on-semantic-incompatibility` | fail the build on a semantic-versioning violation | `false` |
+
+An unknown key fails the build and lists the ones that exist; anything japicmp accepts that the file does not
+model can be appended with a `process-japicmp.properties`, like for every other forked tool.
+
+Like the linters, the check is **report-only** by default: it writes `reports/japicmp/japicmp-report.xml` and
+keeps the build green, so you see what changed before you decide to enforce it. Turning on a gate makes the
+failure name the change that caused it:
+
+```
+E: There is at least one incompatibility:
+   library.Library.farewell(java.lang.String):METHOD_REMOVED
+```
+
+japicmp and the baseline artifact resolve in their own `japicmp` group, kept apart from the module's own
+dependencies; the baseline resolves **without** its transitive dependencies, because only its own byte code
+is compared. It is a released artifact like any other, so `pin` records it with a checksum alongside the
+tool - one line, not a closure. `-Djenesis.artifact.japicmp=false` suppresses the comparison while keeping
+the file in place.
+
 ## Seeing every failure at once
 
 A multi-module build fans out: each module's tests are their own branch of the graph, and those branches run
@@ -224,13 +287,15 @@ your compilers and dependencies (see *[Pinning & bills of materials](/tool/pinni
 a linter's own closure can run to a hundred artifacts - which is what makes the tool chain reproducible.
 
 <div class="tip">
-  Four runnable demos exercise this chapter:
+  Five runnable demos exercise this chapter:
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-13-java-quality">demo-13</a> wires Checkstyle,
   PMD, SpotBugs and the Java formatter into one project;
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-25-code-coverage">demo-25</a> measures
   coverage with JaCoCo;
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-26-test-selection">demo-26</a> edits one class
-  and re-runs only that class's test; and
+  and re-runs only that class's test;
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-27-pitest">demo-27</a> runs pitest, killing
-  both mutants of a covered method. See <a href="/tool/demos/">Demos</a>.
+  both mutants of a covered method; and
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-52-api-compatibility">demo-52</a> compares a
+  built jar against a released one with japicmp. See <a href="/tool/demos/">Demos</a>.
 </div>
