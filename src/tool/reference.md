@@ -177,6 +177,7 @@ rather than being served by one configured for something else.
 | `jenesis.observe.jacoco` | `true` | Run JaCoCo coverage when its file is present. |
 | `jenesis.observe.native` | `true` | Run the GraalVM tracing agent when its file is present. |
 | `jenesis.mutate.pitest` | `true` | Run PIT mutation testing when its file is present. |
+| `jenesis.artifact.japicmp` | `true` | Run the japicmp API comparison when its file is present. |
 | `jenesis.generate.<tool>` | `true` | Per-generator switch (`xjc`, `protoc`, `avro`, `wsimport`, `openapi`). |
 
 The quality and packaging *files* these keys gate (`checkstyle.xml`, `packaging.properties`, and the like)
@@ -195,9 +196,11 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.pin.checksum` | `true` | Whether `pin` writes SHA checksums alongside versions. |
 | `jenesis.platform.<token>` | *(detected)* | Add (`=true`) or remove (`=false`) a platform token used to select guarded pins. |
 | `jenesis.project.digest` | `SHA-256` | Digest algorithm the `pin` step uses to checksum artifacts. |
-| `jenesis.signature.command` | `gpgv` | Binary forked to verify detached OpenPGP signatures. A name is looked up on the `PATH`; a value containing a separator is used as a path. |
-| `jenesis.signature.expiry` | `signing` | What an expired signing key means: `ignored` accepts it whenever it signed, `signing` accepts what it signed before it expired, `current` always rejects it. |
+| `jenesis.openpgp.command` | `gpgv` | Binary forked to verify detached OpenPGP signatures. A name is looked up on the `PATH`; a value containing a separator is used as a path. |
+| `jenesis.openpgp.expiry` | `signing` | What an expired signing key means: `ignored` accepts it whenever it signed, `signing` accepts what it signed before it expired, `current` always rejects it. |
 | `jenesis.project.signatures` | *(the configuration folders)* | Path-separated locations searched for a local `signature-<name>.properties` key list. |
+| `jenesis.sigstore.uri` | *(the trust root the tool carries)* | The Sigstore trust root a bundle is checked against. Jenesis carries the published root of the public instance as source; naming another replaces it, for a private instance or a root that has rotated. |
+| `jenesis.sigstore.issuers` | `github.com=token.actions.githubusercontent.com` | Comma-separated `<host>=<issuer>` pairs for identity hosts whose OpenID Connect issuer is not the host itself. Both sides are written without a scheme. |
 | `jenesis.resolver.maven` | `maven` | Maven version strategy: `maven`, `closest`, `latest`, or `release`. |
 | `jenesis.resolver.module` | `first` | What happens when two module descriptors record different versions: `first`, `fail`, or `ignore`. |
 
@@ -267,7 +270,7 @@ Read by the `release` target - see *[Publishing](/tool/publishing/)*.
 | `jenesis.print.tests` | `false` | Stream the test JVM's command and output. |
 | `jenesis.print.fetch` | `false` | Print a `[FETCHED]` line per downloaded artifact. |
 | `jenesis.print.cache` | `false` | Print `[LOADED]`/`[STORED]` lines for the build cache, local and shared. |
-| `jenesis.print.signatures` | `false` | Print a `[VERIFIED]` line per checked dependency with the key that signed it, `[EXPIRED]` with both dates where the key has since expired, and `[UNDECLARED]`/`[UNSIGNED]` for the ones no declaration covers. |
+| `jenesis.print.signatures` | `false` | Print a `[VERIFIED]` line per checked dependency with the key or the identity that signed it, `[EXPIRED]` with both dates where the key has since expired, and `[UNDECLARED]`/`[UNSIGNED]` for the ones no declaration covers. |
 | `jenesis.print.checksum` | `false` | Append input/output checksums under each `[EXECUTED]` line. |
 | `jenesis.print.pins` | `false` | Print an `[UNPINNED]` line per pin a refresh kept that no closure resolves, so it carries no checksum. |
 | `jenesis.print.divergence` | `false` | Print a `[DIVERGED]` line per coordinate the project pins at more than one version; `divergence.properties` is written either way. |
@@ -351,6 +354,7 @@ already uses. This is the whole vocabulary:
 | `@jenesis.pin <token> <version> [<algorithm>/<hash>] [(<guard>)]` | An exact version and checksum (`<!--jenesis.pin-->` / `<dependencyManagement>` in a POM); a trailing `(<token>,…)` guard applies the line only on a matching platform. Parentheses, not brackets: a bracketed word is a link in a Markdown documentation comment. | *[Pinning &amp; bills of materials](/tool/pinning/)* |
 | `@jenesis.bom <token> [<version> [<algorithm>/<hash>]]` | A bill of materials to import. | *[Pinning &amp; bills of materials](/tool/pinning/)* |
 | `@jenesis.signature <algorithm>/<fingerprint> <token>…` | The OpenPGP key that signs these coordinates' artifacts; a Maven token may end in `/*` to cover a whole groupId, and a lone `[<group>/]signature-<name>.properties` reads the keys from a local list. | *[Securing the supply chain](/tool/securing-the-supply-chain/#provenance)* |
+| `@jenesis.signature Sigstore/<host>/<path> <token>…` | The identity that signs these coordinates, for a repository that publishes a `.sigstore.json` beside the artifact. The path is a prefix of the identity a certificate names, and the host also names the issuer that must have authenticated it. | *[Securing the supply chain](/tool/securing-the-supply-chain/#identities)* |
 
 <div class="tip">
   Every feature named here has a runnable example. Browse the full set on the

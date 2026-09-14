@@ -96,7 +96,7 @@ See [Formats](/repository/formats/).
 | `jenreg.oci` | `true` | Serve the OCI registry at `/v2/`. |
 | `jenreg.raw` | `true` | Serve the raw layout at `/repository/raw/`. |
 | `jenreg.maven-metadata-compute` | `false` | Derive `maven-metadata.xml` from the stored version folders instead of serving only what was published. |
-| `jenreg.batch-upload` | `false` | Honour the `X-Jenesis-Explode: zip` header and publish an uploaded archive entry by entry. |
+| `jenreg.batch-upload` | `false` | Honour the `Jenesis-Explode: zip` header and publish an uploaded archive entry by entry. |
 | `jenreg.batch-upload-max-entries` | `10000` | The most entries one exploded archive may publish. |
 
 ## Proxying

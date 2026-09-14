@@ -61,6 +61,7 @@ export default {
         { slug: "demo-26-test-selection", name: "Test selection", blurb: "Running only the tests a change can affect." },
         { slug: "demo-27-pitest", name: "Mutation testing", blurb: "Mutation testing with PIT, switched on by its configuration file." },
         { slug: "demo-28-jmh", name: "Benchmarks", blurb: "A JMH benchmark the build generates, compiles and runs, printing its result table." },
+        { slug: "demo-52-api-compatibility", name: "API compatibility", blurb: "japicmp compares the built jar's byte code against a released one, so a breaking change shows up before you publish it." },
       ],
     },
     {
@@ -71,7 +72,7 @@ export default {
         { slug: "demo-15-compliance", name: "Dependency licensing", blurb: "Checking dependency licences against policy." },
         { slug: "demo-16-vulnerabilities", name: "Vulnerabilities", blurb: "Scanning dependencies for known vulnerabilities." },
         { slug: "demo-31-bom", name: "Bills of materials", blurb: "Importing a Maven BOM and a local pin file, and publishing a BOM of the module's own closure." },
-        { slug: "demo-46-supply-chain-security", name: "Supply-chain security", blurb: "Strict pinning, checksum verification and OpenPGP signature verification, proven by getting each wrong on purpose." },
+        { slug: "demo-46-supply-chain-security", name: "Supply-chain security", blurb: "Strict pinning, checksum verification, and provenance by an OpenPGP key or a Sigstore identity, proven by getting each wrong on purpose." },
       ],
     },
     {

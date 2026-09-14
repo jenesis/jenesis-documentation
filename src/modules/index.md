@@ -16,7 +16,7 @@ The module index is an **HTTP service, not a file you download**. You ask for a 
 name, and it redirects you to the jar on Maven Central. Anything that can follow a redirect is a client:
 
 ```bash
-# Resolve a module name to its newest jar (follow the redirect with -L):
+# Resolve a module name to its newest released jar (follow the redirect with -L):
 curl -L -O https://repo.jenesis.build/module/com.fasterxml.jackson.databind/com.fasterxml.jackson.databind.jar
 
 # Pin a version:
