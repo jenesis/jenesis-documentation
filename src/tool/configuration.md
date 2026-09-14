@@ -73,6 +73,7 @@ What these folders can hold - presence activates, contents configure:
 - **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`.
 - **Compliance**: `licensing.properties`, `vulnerability.properties`, `spdx.properties`.
 - **Test observability**: `jacoco.properties`, `graal.properties`, `pitest.properties`.
+- **API compatibility**: `japicmp.properties`.
 - **Forked-tool arguments**: `process-<command>.properties` - extra flags for `javac`, `kotlinc`, `jar`, and
   the like (see *[Building & running](/tool/building-and-running/)*).
 

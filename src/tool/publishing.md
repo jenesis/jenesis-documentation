@@ -41,9 +41,11 @@ scm.url=https://github.com/jenesis/jenesis
 ```
 
 <div class="tip">
-  A staged bundle is <strong>reproducible</strong>: jar entries carry a fixed timestamp and Javadoc is
-  generated with <code>-notimestamp</code>, so two independent builds of the same sources hash bit-for-bit
-  identically - a consumer can verify the bytes on Central were built from the published sources.
+  A staged bundle is <strong>reproducible</strong>: jar entries carry a fixed timestamp, the manifest
+  records <code>Created-By: Jenesis</code> rather than the JDK that ran the build, and Javadoc is generated
+  with <code>-notimestamp</code>, so two independent builds of the same sources hash bit-for-bit identically -
+  a consumer can verify the bytes on Central were built from the published sources. Declare your own
+  <code>Created-By</code> and it is kept.
 </div>
 
 <div class="note">

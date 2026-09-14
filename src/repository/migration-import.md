@@ -157,11 +157,11 @@ listing that cannot be built is a slow first read, never a failed migration.
 For a one-off load without a source to walk - a backup, a hand-built tree - upload a zip and let the server
 publish each entry as if it had been deployed on its own. The feature is off by default; switch it on with
 `jenreg.batch-upload=true`, then `PUT` or `POST` the archive to the repository path the entries are relative
-to, with the `X-Jenesis-Explode: zip` header:
+to, with the `Jenesis-Explode: zip` header:
 
 ```bash
 curl -X PUT http://localhost:8080/repository/maven/ \
-  -H 'X-Jenesis-Explode: zip' \
+  -H 'Jenesis-Explode: zip' \
   --data-binary @artifacts.zip
 ```
 
@@ -205,7 +205,7 @@ the paths the listing returns, so any HTTP client can copy a repository out.
 | Key | Default | Effect |
 |---|---|---|
 | `jenreg.block-private-import-hosts` | `true` | Refuse an import URL that is not `https` or that resolves to a private, loopback or link-local address. |
-| `jenreg.batch-upload` | `false` | Honour the `X-Jenesis-Explode` header and publish an archive entry by entry. |
+| `jenreg.batch-upload` | `false` | Honour the `Jenesis-Explode` header and publish an archive entry by entry. |
 | `jenreg.batch-upload-max-entries` | `10000` | The most entries one exploded archive may publish; the walk stops there and reports `capped`. |
 | `jenreg.maven-metadata-compute` | `false` | Derive `maven-metadata.xml` from the stored version folders instead of serving only what was published. |
 
