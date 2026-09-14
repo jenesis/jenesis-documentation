@@ -290,6 +290,26 @@ By default it writes no `@jenesis.pin` line for a coordinate a BOM already suppl
 become redundant, and pins the BOM reference itself by content. `-Djenesis.pin.bom=flatten` inverts the
 migration: the BOM declarations go and the closure is pinned in full.
 
+### Refreshing a bill of materials
+
+A project that keeps its pins in a local BOM had nowhere for `pin` to write: the goal rewrites module
+declarations, so the shared file was maintained by hand. `-Djenesis.pin.file` names a properties file to
+write **instead**:
+
+```bash
+java -Djenesis.pin.file=build.jenesis/pin-project.properties build/jenesis/Make.java pin
+```
+
+The run then adds a single step over the union of every module's closure rather than one per module, so one
+writer produces one file, and it emits the keys `@jenesis.bom` reads: a module under its own name, a Maven
+artifact as `<groupId>/<artifactId>`, and anything carrying a type or a classifier under its repository. The
+module declarations are left alone.
+
+Only the `main` group is written. A BOM is read under the group its declaration names, so a coordinate
+belonging to a tool's own group - the linter or alternative compiler a build module resolves for itself -
+would be read back as a repository name, and is left out rather than written wrong. First-party modules of
+the project are left out too, for the same reason a pin never records them: they are built, not resolved.
+
 <div class="tip">
   Every demo ships already pinned, so any of them shows the result. Four are about pinning itself:
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-33-module-classifier">demo-33</a> pins a
