@@ -29,8 +29,8 @@ tree, on its current default branch, before a chapter describes it.
    one verification pass per section, each listing the claims it checked and where, has worked well.
 2. **Run what can be run.** A command in the docs is a command you executed: a demo, the repository server
    started from source, a `curl` against the module index. Property semantics are checked in code rather than
-   assumed - some keys are read by presence (`jenesis.test.skip` skips even when set to `false`), others need
-   an explicit `=true` (`jenesis.test.force`).
+   assumed. Every boolean key reads the same way: absent is the default, the key named with no value at all
+   is `true`, `=true` and `=false` mean what they say, and any other value is refused.
 3. **Write only what you confirmed.** Anything you could not confirm is left out, or reported to the maintainer
    as unverified - never written with a hedge. Numbers that go stale (statistics, version numbers) are rounded
    or omitted.
