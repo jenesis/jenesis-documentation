@@ -118,7 +118,7 @@ so a heading link written out of habit fails the build rather than the reader.
   Subfolder names are URL-encoded coordinates; the application's own classes sit under `classes.jar/`.
 - **Module index.** Every URL needs the trailing file segment (`/module/<name>/<name>.jar`); `/module/`,
   `/sources/` and `/documentation/` serve named modules only, `/artifact/` also automatic ones; an unknown
-  version answers a best-effort 302 with `X-Jenesis-BestEffort: true`. The service is not a Maven
+  version answers a best-effort 302 with `Jenesis-BestEffort: true`. The service is not a Maven
   `<repository>` URL.
 - **Repository.** The launchable module is `source/bundle` (`AllInOne`; the console is `…bundle.Console` on
   port 8081, a separate process). Settings are Spring Boot settings bound from `jenreg.*` (`JENREG_*`, `-D`,
