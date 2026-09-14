@@ -133,6 +133,36 @@ A coordinate signed by some other key **fails**, naming both fingerprints: a sig
 cryptographically perfect and still be the wrong signer. A genuine key rotation is accepted by addition - list
 the new fingerprint alongside the old - so no window exists in which nothing verifies.
 
+### A signing key that has since expired
+
+Keys expire; the releases they signed do not change. An old artifact is commonly signed by a key that lapsed
+years later, and where the keyservers publish no extended expiry there is nothing to update - so treating
+every expired key as a failure would mean deleting the declaration, which verifies nothing at all.
+`-Djenesis.signature.expiry` says what an expired signing key means:
+
+| Value | An expired signing key |
+| --- | --- |
+| `ignored` | is accepted, whenever it signed |
+| `signing` | is accepted for what it signed **before** it expired - the default |
+| `current` | is always rejected, however old the signature |
+
+The default reads the signature's own date against the key's expiry, both of which gpg reports while it
+verifies, so nothing extra is fetched or asked. A signature made *after* the key expired still fails under
+`signing`, and so does one whose expiry gpg does not report - an expiry that cannot be established is refused
+rather than assumed. Revocation is never affected: a revoked key fails under every value, because revocation
+says the key should not have been trusted, where expiry only says it is no longer current.
+
+`-Djenesis.print.signatures` marks a coordinate accepted this way `[EXPIRED]` rather than `[VERIFIED]`, with
+the date it was signed and the date the key lapsed, so the ones resting on an unmaintained key can be found
+and reviewed rather than passing silently.
+
+<div class="note">
+  A fingerprint carries no expiry, and neither does the <code>.asc</code>. The fingerprint hashes the public
+  key itself, while the expiry is an assertion in the key's self-signature, which is why extending a key's
+  expiry leaves its fingerprint - and so your <code>@jenesis.signature</code> line - untouched, and why the
+  expiry has to come from the keyring at the moment of verification.
+</div>
+
 Verification is a step of the dependency module rather than something wired beside it, so it rides along with
 every resolution a build performs - a module's own closure, and equally the linter, formatter, alternative
 compiler or test launcher a build module resolves for itself. Switching the property on re-runs only that step
@@ -147,7 +177,9 @@ so **gpg has to be installed and on the `PATH` of whatever machine runs it**. A 
 needs none of this. That the verifier is a forked tool is not a convenience: a Java OpenPGP implementation would have to be resolved from a
 repository, which is the very thing being verified, and a verifier you downloaded on trust verifies nothing.
 The same reasoning keeps `build.jenesis` free of third-party libraries, and it is why the tool declines to
-obtain one for you. `-Djenesis.signature.command` names a different binary when yours is not called `gpg`.
+obtain one for you. `-Djenesis.signature.command` names a different binary when yours is not called `gpg`: a plain name is looked
+up on the `PATH`, and a value containing a path separator is used as a path, so a wrapper script can be named
+without rewriting the `PATH`.
 
 <div class="note">
   Nothing is ever fetched on your behalf: a key gpg does not hold is reported as <code>NO_PUBKEY</code> and

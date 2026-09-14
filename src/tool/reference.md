@@ -159,7 +159,7 @@ rather than being served by one configured for something else.
 
 | Key | Default | Effect |
 | --- | --- | --- |
-| `jenesis.test.skip` | *(off)* | Register no test steps, so no tests run. Read by presence: any value, even `false`, skips. |
+| `jenesis.test.skip` | `false` | Register no test steps, so no tests run. Naming the key with no value is `true`; `=false` runs the tests. |
 | `jenesis.test.filter` | *(unset)* | Comma-separated `<classRegex>[#<method>]` list; runs only matching tests. |
 | `jenesis.test.tag` | *(unset)* | Comma-separated test tags / groups to include. |
 | `jenesis.test.engine` | *(auto)* | Force the engine: `junit-platform`, `junit4`, or `testng`. |
@@ -191,10 +191,12 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.dependency.pin` | *(lenient)* | Pinning mode: `strict`, `versions`, or `ignore`. |
 | `jenesis.dependency.signature` | `none` | Signature verification after each download: `none`, `declared`, or `strict`. |
 | `jenesis.pin.bom` | `keep` | Whether the `pin` step keeps (`keep`) or flattens (`flatten`) BOM references. |
+| `jenesis.pin.file` | *(unset)* | Write the whole project's pins to this properties file instead of rewriting the module declarations. |
 | `jenesis.pin.checksum` | `true` | Whether `pin` writes SHA checksums alongside versions. |
 | `jenesis.platform.<token>` | *(detected)* | Add (`=true`) or remove (`=false`) a platform token used to select guarded pins. |
 | `jenesis.project.digest` | `SHA-256` | Digest algorithm the `pin` step uses to checksum artifacts. |
-| `jenesis.signature.command` | `gpg` | Binary forked to verify detached OpenPGP signatures. |
+| `jenesis.signature.command` | `gpg` | Binary forked to verify detached OpenPGP signatures. A name is looked up on the `PATH`; a value containing a separator is used as a path. |
+| `jenesis.signature.expiry` | `signing` | What an expired signing key means: `ignored` accepts it whenever it signed, `signing` accepts what it signed before it expired, `current` always rejects it. |
 | `jenesis.project.signatures` | *(the configuration folders)* | Path-separated locations searched for a local `signature-<name>.properties` key list. |
 | `jenesis.resolver.maven` | `maven` | Maven version strategy: `maven`, `closest`, `latest`, or `release`. |
 | `jenesis.resolver.module` | `first` | What happens when two module descriptors record different versions: `first`, `fail`, or `ignore`. |
@@ -263,7 +265,7 @@ Read by the `release` target - see *[Publishing](/tool/publishing/)*.
 | `jenesis.print.tests` | `false` | Stream the test JVM's command and output. |
 | `jenesis.print.fetch` | `false` | Print a `[FETCHED]` line per downloaded artifact. |
 | `jenesis.print.cache` | `false` | Print `[LOADED]`/`[STORED]` lines for the build cache, local and shared. |
-| `jenesis.print.signatures` | `false` | Print a `[VERIFIED]` line per checked dependency with the key that signed it, and `[UNDECLARED]`/`[UNSIGNED]` for the ones no declaration covers. |
+| `jenesis.print.signatures` | `false` | Print a `[VERIFIED]` line per checked dependency with the key that signed it, `[EXPIRED]` with both dates where the key has since expired, and `[UNDECLARED]`/`[UNSIGNED]` for the ones no declaration covers. |
 | `jenesis.print.checksum` | `false` | Append input/output checksums under each `[EXECUTED]` line. |
 | `jenesis.print.pins` | `false` | Print an `[UNPINNED]` line per pin a refresh kept that no closure resolves, so it carries no checksum. |
 | `jenesis.print.divergence` | `false` | Print a `[DIVERGED]` line per coordinate the project pins at more than one version; `divergence.properties` is written either way. |
