@@ -64,7 +64,7 @@ recorded it - not that what you recorded was genuine. An artifact swapped before
 an accepted pin just the same.
 
 `@jenesis.signature` names the OpenPGP key that signs a dependency's artifacts. Right after an artifact is
-downloaded, Jenesis fetches the detached signature published beside it, forks a local `gpg` to check it, and
+downloaded, Jenesis fetches the detached signature published beside it, forks a local `gpgv` to check it, and
 compares the **primary** key fingerprint against your declarations.
 
 ```java
@@ -106,8 +106,7 @@ keys through a rotation. The file is found in `-Djenesis.project.signatures`, wh
 configuration folders, and its tokens expand by the same grammar as the tag.
 
 <div class="warning">
-  A key is only ever read from the local gpg keyring, and a fingerprint only ever from your own sources. A
-  list is only ever read from disk: there is no form that resolves one from a repository, because a list you
+  A fingerprint is only ever read from your own sources, and a list only ever from disk: there is no form that resolves one from a repository, because a list you
   had to download would itself need verifying - which is the problem the mechanism exists to solve. Obtain a
   list the way you would obtain a key: out of band, reviewed once, then committed.
 </div>
@@ -133,6 +132,23 @@ A coordinate signed by some other key **fails**, naming both fingerprints: a sig
 cryptographically perfect and still be the wrong signer. A genuine key rotation is accepted by addition - list
 the new fingerprint alongside the old - so no window exists in which nothing verifies.
 
+### A coordinate that publishes no signature
+
+Under `strict` a coordinate with no signature fails, and one such dependency otherwise costs you the whole
+mode - which is the mode worth having, since the rest of the closure goes back to being taken on trust. An
+`unsigned/` declaration says that this one was looked at, and its value says what to do if a signature turns
+up after all:
+
+| Value | An artifact that publishes no signature |
+| --- | --- |
+| `unsigned/missing` | is accepted, and **fails once a signature appears**, naming the fingerprint seen |
+| `unsigned/ignored` | is accepted, signed or not, and never looked at |
+
+`unsigned/missing` is the one to reach for: an upstream that starts signing is discovered on the next build
+rather than quietly left unverified, and the failure tells you which fingerprint to put in its place. Both
+are ordinary declarations - as narrow as the tokens they name, and sitting in the diff where a reviewer reads
+them.
+
 ### A signing key that has since expired
 
 Keys expire; the releases they signed do not change. An old artifact is commonly signed by a key that lapsed
@@ -146,9 +162,9 @@ every expired key as a failure would mean deleting the declaration, which verifi
 | `signing` | is accepted for what it signed **before** it expired - the default |
 | `current` | is always rejected, however old the signature |
 
-The default reads the signature's own date against the key's expiry, both of which gpg reports while it
+The default reads the signature's own date against the key's expiry, both of which gpgv reports while it
 verifies, so nothing extra is fetched or asked. A signature made *after* the key expired still fails under
-`signing`, and so does one whose expiry gpg does not report - an expiry that cannot be established is refused
+`signing`, and so does one whose expiry gpgv does not report - an expiry that cannot be established is refused
 rather than assumed. Revocation is never affected: a revoked key fails under every value, because revocation
 says the key should not have been trusted, where expiry only says it is no longer current.
 
@@ -172,20 +188,47 @@ and it never adds, removes or reads a signature line. Keeping them apart is what
 from looking safer than it is: a pin refresh re-blesses whatever the repository serves today, and a signature
 is the one check that still has something to say while the checksums are being rewritten.
 
-When verification is switched on - and only then - it forks the `gpg` command rather than linking a library,
-so **gpg has to be installed and on the `PATH` of whatever machine runs it**. A build that has not enabled it
+When verification is switched on - and only then - it forks the `gpgv` command rather than linking a library,
+so **gpgv has to be installed and on the `PATH` of whatever machine runs it**. A build that has not enabled it
 needs none of this. That the verifier is a forked tool is not a convenience: a Java OpenPGP implementation would have to be resolved from a
 repository, which is the very thing being verified, and a verifier you downloaded on trust verifies nothing.
 The same reasoning keeps `build.jenesis` free of third-party libraries, and it is why the tool declines to
-obtain one for you. `-Djenesis.signature.command` names a different binary when yours is not called `gpg`: a plain name is looked
+obtain one for you. `-Djenesis.signature.command` names a different binary when yours is not called `gpgv`: a plain name is looked
 up on the `PATH`, and a value containing a path separator is used as a path, so a wrapper script can be named
 without rewriting the `PATH`.
 
+`gpgv` is the verify-only half of GnuPG. It reads a keyring file and nothing else: no home directory, no
+agent, no trust database, no import step, and so none of the ambient state that makes "it works on my
+machine" a signature problem. **Jenesis builds that keyring itself**, out of the fingerprints your
+declarations name and nothing else - which is why `NO_PUBKEY` means exactly *no line covers this signer*
+rather than *your keyring is incomplete*.
+
+### Where the keys come from
+
+Each declared fingerprint is resolved through the repository registered under the algorithm the line names,
+so `OpenPGP/<hex>` asks the repository registered as `OpenPGP`. By default that is an HKP client over
+`-Djenesis.openpgp.uri`, which names key server roots, comma-separated and asked in order:
+
+    jenesis.openpgp.uri = https://keyserver.ubuntu.com/, https://keys.openpgp.org/
+
+Both defaults are asked because neither is complete: a key published only on one is common enough to break a
+build that names just the other. Ubuntu is asked first because keys.openpgp.org serves a key with its user
+IDs stripped unless the owner has verified an address, and `gpgv` refuses a key that has none.
+
+What is fetched is held in `-Djenesis.openpgp.local`, one file per fingerprint, and a populated folder with
+an empty `jenesis.openpgp.uri` is the offline form - vendored keys, no network. Both settings take
+`OPENPGP_REPOSITORY_URI` and `OPENPGP_REPOSITORY_LOCAL` from the environment, and a containerised build
+forwards them the way it forwards the Maven and module repository settings. A key source that is not an HKP
+server - a corporate key store, a git tree, a service of your own - is a different repository registered
+under the same name, not a different URL in that list.
+
 <div class="note">
-  Nothing is ever fetched on your behalf: a key gpg does not hold is reported as <code>NO_PUBKEY</code> and
-  the build stops, because obtaining a key and checking it against the project's published location is the
-  judgement the whole mechanism rests on. With the property unset, a build enforces the pin with no gpg, no
-  keys and no keyserver, which is what lets everyone who trusts your committed pins build without any of this.
+  Fetching a key by fingerprint is not trust in the server. The comparison that decides the build is against
+  the fingerprint <em>your declaration</em> names, and <code>gpgv</code> reports the primary key's fingerprint
+  for whatever it was given, so a server can withhold a key or serve junk - it cannot serve one that passes.
+  What is never fetched is the <em>fingerprint</em>: that is the judgement the mechanism rests on, and it
+  comes from the project's published location, reviewed once, then committed. With verification unset, a
+  build enforces the pin with no verifier, no keys and no key server at all.
 </div>
 
 ### Getting hold of a key
