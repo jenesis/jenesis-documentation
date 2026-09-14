@@ -159,7 +159,7 @@ rather than being served by one configured for something else.
 
 | Key | Default | Effect |
 | --- | --- | --- |
-| `jenesis.test.skip` | *(off)* | Register no test steps, so no tests run. Read by presence: any value, even `false`, skips. |
+| `jenesis.test.skip` | `false` | Register no test steps, so no tests run. Naming the key with no value is `true`; `=false` runs the tests. |
 | `jenesis.test.filter` | *(unset)* | Comma-separated `<classRegex>[#<method>]` list; runs only matching tests. |
 | `jenesis.test.tag` | *(unset)* | Comma-separated test tags / groups to include. |
 | `jenesis.test.engine` | *(auto)* | Force the engine: `junit-platform`, `junit4`, or `testng`. |

@@ -40,10 +40,12 @@ engine itself is compiled and reused. `jenesis.project.*` is read by the build. 
 under `make` - finding the project is the entry point's job, and the build is handed the answer rather than
 looking it up.
 
-<div class="warning">
-  A few switches are read by <em>presence</em>, not by value - <code>jenesis.test.skip</code> is one: writing
-  <code>jenesis.test.skip=false</code> into a file still skips the tests. Leave such a key out to keep its
-  feature on; the <a href="/tool/reference/">Reference</a> marks them.
+<div class="note">
+  Every boolean setting reads the same way. Leaving the key out keeps the default; naming it with no value at
+  all - <code>-Djenesis.test.skip</code>, or a bare <code>jenesis.test.skip=</code> in a file - is
+  <code>true</code>; <code>=true</code> and <code>=false</code> mean what they say. Any other value is
+  refused, naming the key and what would have been valid, so a typo stops the build instead of quietly
+  reading as off.
 </div>
 
 ## Where tool configuration lives
