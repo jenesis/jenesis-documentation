@@ -233,7 +233,7 @@ checksums are not consulted. `pin` then re-resolves that fresh closure and rewri
   exactly this gap: it checks who signed an artifact before a checksum for it is written.
 </div>
 
-## Sharing pins: a bill of materials
+## <span id="sharing-pins-a-bill-of-materials">Sharing pins: a bill of materials</span>
 
 Pins written per module are exact but repetitive: the same versions recur across modules, and across projects
 that want to stay in step. A **bill of materials** is that same pin set in one file, imported instead of
