@@ -6,8 +6,8 @@ description: Every application.properties key and manifest attribute the launche
 
 Two files drive a launcher jar: the `application.properties` **descriptor** that tells the launcher what to
 run, and the jar **manifest** that tells the JVM to start the launcher. When the build tool
-[produces the jar](/launcher/producing-a-launcher-jar/), it writes `mainClass`, `mainModule` and `classpath`
-into the descriptor and `Main-Class` into the manifest - nothing else. Everything else on this page is what
+[produces the jar](/launcher/producing-a-launcher-jar/), it writes `mainClass`, `mainModule`, `classpath`
+and `modulepath` into the descriptor and `Main-Class` into the manifest - nothing else. Everything else on this page is what
 the launcher itself understands, for a jar you assemble yourself with the same layout: by hand, with a
 script, or with another tool.
 
@@ -20,25 +20,50 @@ describes a [Java agent](#bundled-java-agents) rather than an application.
 | --- | --- | --- |
 | `mainClass` | Fully qualified class whose `main` the launcher invokes. Absent → the jar is an agent, not an application. | yes |
 | `mainModule` | The module owning `mainClass`, when the application is modular. | yes, for a modular application |
-| `classpath` | Comma-separated `classpath/` subfolder names, in the order to search them. | yes |
+| `classpath` | Comma-separated `jars/` entry names to read as the unnamed module, in the order to search them. | yes |
+| `modulepath` | Comma-separated `jars/` entry names to resolve as modules. | yes, for a modular application |
+| `modulepath.<layer>` | Comma-separated `jars/` entry names a [module layer](#module-layers) resolves. | yes, for a project that declares one |
+| `classpath.<layer>` | The same layer's class path, for jars that carry no module identity. | yes, when the layer holds any |
 | `agentClass` | Comma-separated [bundled agents](#bundled-java-agents) to run before `main`. | no |
 | `addExports` | [`--add-exports` grants](#relaxing-module-access) applied to the bundled modules. | no |
 | `addOpens` | [`--add-opens` grants](#relaxing-module-access). | no |
 | `addReads` | [`--add-reads` grants](#relaxing-module-access). | no |
 | `signature.<dep>` | [Base64 PKCS#7 chain](#emulating-a-signed-jar) restoring a class-path dependency's signer identity. | no |
 
-### Class-path order
+### Every path is named
 
-A class path is **ordered**: when two jars carry the same class or resource, the first wins. Exploding the
-dependencies into subfolders would lose that order, so the descriptor records it:
+The jar keeps its dependencies in one `jars/` store, and the descriptor says what each path holds. A jar is
+read because a key names it, never because of the folder it sits in:
 
 ```properties
 mainClass=com.example.Main
 classpath=dep1.jar,dep2.jar
+modulepath=com.example.app.jar,org.slf4j.jar
 ```
 
-The launcher searches its class path in this order; any `classpath/` subfolder the property does not name
-follows, in name order. The build tool lists the subfolders in file-name order.
+That also makes a class path **ordered**, which it must be: when two jars carry the same class or resource,
+the first named wins. A name the store does not hold is refused rather than skipped, and a descriptor that
+names none of the jars it ships is refused too - silence would otherwise surface much later, as a missing
+main class.
+
+### <span id="module-layers">Module layers</span>
+
+A `modulepath.<layer>` key names the jars of one [module layer](/tool/dependencies/#keeping-a-dependency-private):
+a second copy of a library, resolved into a layer of its own so that two versions run in one JVM with no
+package relocated. Its jars are stored among the application's, so a jar both need is stored once and simply
+loaded twice, and what keeps a layer's modules off the application's own module path is that `modulepath`
+does not name them.
+
+```properties
+modulepath=com.example.app.jar,com.example.spi.jar
+modulepath.render=com.example.impl.jar,com.fasterxml.jackson.core-2.15.4.jar
+classpath.render=commons-logging-1.2.jar
+```
+
+A layer is named on its own, so a name identifies one layer. The application asks for it by that name
+through the [layer API](#the-layer-api), and outside a bundle - a deployment that unpacked its dependencies
+- the same two lists arrive as `jlayer.modulepath.<layer>` and `jlayer.classpath.<layer>` system
+properties instead.
 
 ## <span id="bundled-java-agents">Bundled Java agents</span>
 
@@ -115,7 +140,7 @@ honours under `java -jar`.
 A dependency that shipped as a *signed* jar loses its signer identity when exploded: its signature files
 (`META-INF/*.SF`, `*.RSA`/`*.DSA`/`*.EC`) become ordinary entries, so a class-path class would otherwise
 define with a `CodeSource` that has no signers. A `signature.<dependency>` key restores it. The key suffix is
-the dependency's `classpath/<name>/` folder name; the value is Base64 of the signer's PKCS#7 certificate
+the dependency's `jars/<name>/` entry name; the value is Base64 of the signer's PKCS#7 certificate
 chain:
 
 ```properties
@@ -163,3 +188,31 @@ directory of the same layout.
 | `Launcher.run(Path location, String[] args)` | Runs the application at `location` in the current JVM: builds its loader and layer, runs its bundled agents, and invokes `main` with `args`. |
 | `Launcher.runAgents(Path location, boolean attach, String arguments, Instrumentation instrumentation)` | Runs an agent jar's agents against the given `Instrumentation` - `premain` when `attach` is false, `agentmain` when true. Does nothing for an application jar. |
 | `Launcher.runAgents(Class<?> premainClass, …)` | The same, locating the jar from `premainClass`'s code source - the form a delegating `Premain-Class` calls. |
+
+## <span id="the-layer-api">The layer API</span>
+
+A module that keeps a dependency private declares the layer, requires `build.jenesis.launcher`, and asks for
+it by name. The declaration is a build-tool feature -
+[Keeping a dependency private](/tool/dependencies/#keeping-a-dependency-private) covers it - and these three
+calls are how the running application reaches what it declared.
+
+| Call | What it does |
+| --- | --- |
+| `Launcher.instance(String name, Class<S> service)` | The one provider of `service` in the layer `name`, instantiated. Refuses a layer that provides none, and one that provides several. |
+| `Launcher.load(String name, Class<S> service)` | The same layer's providers as a `ServiceLoader`, for the cases that expect more than one. |
+| `Launcher.layer(String name)` | The `ModuleLayer` itself, for anything a service lookup does not cover. |
+
+The calling module needs no `uses` clause: naming the service in the call is the declaration, and the
+launcher adds the service dependence to its own module, which `ServiceLoader` otherwise refuses because it
+checks `uses` against the caller and offers no overload that takes one.
+
+A layer is a child of its caller's, so every module it does not itself hold - the API module above all -
+resolves from the caller and is the very same class on both sides. That is what lets an instance cross the
+boundary as an ordinary interface call. A caller on the class path, in the unnamed module, hangs its layers
+from the application's instead, and reaches them by the same name and the same calls.
+
+The jars come from the jar the caller was loaded from when it declares them, read on demand like every other
+bundled class; otherwise from the files named by `jlayer.modulepath.<layer>` and `jlayer.classpath.<layer>`,
+read the way `java -p … -cp …` reads any module graph. Those keys are deliberately not `jenesis.*`
+properties: a `jenesis.*` property configures a build, and these are read by the application a build
+produced.

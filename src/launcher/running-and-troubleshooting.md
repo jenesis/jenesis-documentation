@@ -51,8 +51,8 @@ itself raises, and what each means:
 | Message | Cause and fix |
 | --- | --- |
 | `No 'mainClass' declared in application.properties of …` | The descriptor has no entry point. A build-produced jar always has one; a hand-assembled jar is missing the key. |
-| `Main module not found on the module path: <name>` | `mainModule` names a module that no `modulepath/` subfolder provides, or the jar that provides it derives a different name. |
-| `Two bundled modules resolve to the same name: <name>` | Two `modulepath/` jars declare or derive the same module name - typically two versions of one library. A module path can carry a name only once; drop one. |
+| `Main module not found on the module path: <name>` | `mainModule` names a module that nothing `modulepath` names provides, or the jar that provides it derives a different name. |
+| `Two bundled modules resolve to the same name: <name>` | Two jars `modulepath` names declare or derive the same module name - typically two versions of one library. A module path can carry a name only once; drop one. |
 | `… is aliased as both <a> and <b>` | Two `Jenesis-Aliases` declarations claim one jar. A jar can carry one module name. |
 
 One further failure comes from the JVM rather than the launcher. **A bundled module `requires` a JDK module
@@ -91,7 +91,7 @@ bundled modules; the first match wins.
 ### "Open my own jar file"
 
 A class the launcher loads has a `CodeSource` whose location points **inside** the outer jar (for example
-`jar:file:/…/app.jar!/classpath/dep.jar/`), so `Package.getImplementationVersion`, sealed packages, and
+`jar:file:/…/app.jar!/jars/dep.jar/`), so `Package.getImplementationVersion`, sealed packages, and
 `getProtectionDomain().getCodeSource()` all report correctly. But a dependency is *not* a standalone jar on
 disk, so the "open my own jar file and read its entries" idiom fails. Code that walks its own jar as a file
 needs another approach.

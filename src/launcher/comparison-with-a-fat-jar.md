@@ -23,7 +23,7 @@ dependencies stop being modules: their descriptors are gone, so nothing at run t
 `requires`, `exports`, or `opens`.
 
 A launcher jar never merges. Each dependency keeps its own `module-info.class` inside its own
-`modulepath/<jar>/` subfolder, so every descriptor survives intact and is read back at start-up.
+`jars/<jar>/` subfolder, so every descriptor survives intact and is read back at start-up.
 
 ## `META-INF/services` must be merged
 
@@ -46,7 +46,7 @@ descriptors gone, there is **no way to reconstruct a module graph at run time**.
 class path: encapsulation is gone, `requires` edges are gone. Modular libraries silently degrade to running
 as unnamed-module code.
 
-A launcher jar rebuilds the graph instead. At start-up it resolves the `modulepath/` subfolders into a fresh
+A launcher jar rebuilds the graph instead. At start-up it resolves the jars `modulepath` names into a fresh
 `ModuleLayer`, so the modules come back as **real named modules** with their `requires` and `exports` edges
 enforced - the faithful equivalent of a real `-p modulepath`. Non-modular dependencies become the unnamed
 module of the same loader, the analogue of `-cp classpath`.
@@ -66,7 +66,7 @@ The two jars run the same way - `java -jar app.jar` - but rebuild very different
 
 | | Fat jar (flat merge) | Launcher jar (subfolders) |
 | --- | --- | --- |
-| Dependency layout | merged into one namespace | each in its own `classpath/` or `modulepath/` subfolder |
+| Dependency layout | merged into one namespace | each in its own `jars/` subfolder, named by the descriptor |
 | `module-info.class` | collides - kept once, dropped or renamed | kept, one per module subfolder |
 | `META-INF/services` | collides - needs a merge transformer | kept, no merge needed |
 | Module graph at run time | gone; everything is one class path | reconstructed into a real `ModuleLayer` |
