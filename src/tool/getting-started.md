@@ -44,6 +44,10 @@ java build/jenesis/Make.java
 several projects at once). From then on the project builds with the canonical command, and needs nothing but
 a JDK.
 
+That command names no selector, so it runs the **default target**, `build` - resolve, compile, package and
+test every module. Everything else is asked for by name (`pin`, `stage`, `dependencies`), which is why the
+command for an ordinary build is the short one.
+
 The install also puts a `jenesis` command on your path. It reads the version recorded in
 `build/jenesis/jenesis.version` and runs **that** version, installing it first where the package manager can,
 so the project decides which Jenesis builds it rather than whichever one your shell happens to have.

@@ -78,7 +78,7 @@ inputs are always real folders.
 
 | Invocation | What runs |
 | --- | --- |
-| `java build/jenesis/Make.java` | The whole graph. On a warm cache, every step is `[SKIPPED]`. |
+| `java build/jenesis/Make.java` | The **default target**, `build`: the whole graph. On a warm cache, every step is `[SKIPPED]`. |
 | `java build/jenesis/Make.java ::/test` | Every `test` step at any depth, plus its predecessors. |
 | `java build/jenesis/Make.java build/::/test` | The same, anchored under the top-level `build` module. |
 | `java build/jenesis/Make.java +mymodule` | Only the named module's subgraph. |
