@@ -107,6 +107,7 @@ export default {
         { slug: "demo-48-external-module", name: "External build module", blurb: "The same plugin resolved as a published coordinate." },
         { slug: "demo-43-docker-isolation", name: "Docker isolation", blurb: "Confining the build and the launched program in a throwaway container." },
         { slug: "demo-42-build-cache", name: "Build cache", blurb: "Sharing build outputs through a cache." },
+        { slug: "demo-05-startup", name: "Startup cost", blurb: "What a build pays to launch, and what a reused JVM saves on the calls after it." },
       ],
     },
   ],
