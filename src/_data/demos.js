@@ -10,7 +10,7 @@ export default {
   groups: [
     {
       title: "Getting started",
-      blurb: "The four foundational project shapes, and what a build costs to start - begin here.",
+      blurb: "The four project shapes, and what a build costs to start - begin here.",
       demos: [
         { slug: "demo-01-java-pom", name: "Java (Maven layout)", blurb: "A single-module Java project in the classic Maven layout." },
         { slug: "demo-02-java-modular", name: "Java (modular layout)", blurb: "The same, as a real Java Module System module with a module-info." },
@@ -21,47 +21,20 @@ export default {
     },
     {
       title: "Executables & packaging",
-      blurb: "Turning a project into something you can ship and run - and running what somebody else shipped.",
+      blurb: "Turning a build's output into something that runs on its own.",
       demos: [
         { slug: "demo-06-java-pom-executable", name: "Executable (Maven)", blurb: "A runnable Maven project packaged with jpackage, plus bundle, launcher jar, and a container context." },
         { slug: "demo-07-java-modular-executable", name: "Executable (modular)", blurb: "The same for a module: an app image, a .jmod and jlink runtime, a bundle, a launcher jar, and a Dockerfile." },
         { slug: "demo-08-bundle", name: "Bundle", blurb: "Ship only the jars as a bundle.zip and run them on a stock JRE." },
-        { slug: "demo-46-custom-jmod", name: "jlink & jpackage", blurb: "A custom .jmod carrying extra content, linked into a runtime and packaged into an app." },
-        { slug: "demo-52-publishing", name: "Publishing", blurb: "A Maven Central ready bundle - POM metadata, sources and javadoc jars - resolved back to prove it." },
-        { slug: "demo-53-native-image", name: "Native image", blurb: "A GraalVM native binary built end to end, with reachability metadata captured from the tests." },
-        { slug: "demo-54-jpx", name: "Running a released program", blurb: "jpx installs and launches a published tool - named as a module and as a coordinate, pinned and hash-verified." },
-      ],
-    },
-    {
-      title: "The module system",
-      blurb: "Working with the Java Module System in earnest.",
-      demos: [
         { slug: "demo-09-java-multi-release", name: "Multi-release JAR", blurb: "A multi-release jar that ships a Java 25 override of one class beside its Java 21 baseline." },
-        { slug: "demo-16-module-alias", name: "Module alias", blurb: "Giving a plain jar a module name, then rewriting the closure into named modules so jlink accepts it." },
-        { slug: "demo-17-module-classifier", name: "Module classifier", blurb: "Pinning a classified variant of a module." },
-        { slug: "demo-18-module-layout", name: "Pure modular layout", blurb: "A strictly modular layout that resolves by module name and emits no POM." },
-        { slug: "demo-19-module-override", name: "Module override", blurb: "Reading a shaded API under its own module name, so a modular library and Tomcat Embed share a module path." },
-        { slug: "demo-20-platform-guard", name: "Platform guard", blurb: "Selecting a dependency variant per platform." },
-        { slug: "demo-21-platform-guard-pom", name: "Platform guard (Maven)", blurb: "The platform guard in a Maven layout." },
       ],
     },
     {
-      title: "Build customisation",
-      blurb: "Reaching past the defaults.",
+      title: "Compiler control",
+      blurb: "Reaching past the compiler defaults.",
       demos: [
         { slug: "demo-10-javac-arguments", name: "Compiler arguments", blurb: "Passing custom arguments to javac." },
         { slug: "demo-11-annotations", name: "Annotation processing", blurb: "Running an annotation processor." },
-        { slug: "demo-14-maven-exclusions", name: "Exclusions", blurb: "Dropping an unwanted transitive, in a POM and with a tag." },
-        { slug: "demo-41-profiles", name: "Build profiles", blurb: "Switching configuration with profiles." },
-        { slug: "demo-42-build-cache", name: "Build cache", blurb: "Sharing build outputs through a cache." },
-        { slug: "demo-43-docker-isolation", name: "Docker isolation", blurb: "Confining the build and the launched program in a throwaway container." },
-        { slug: "demo-44-agents", name: "Java agents", blurb: "Attaching agents to the test run and to the application run." },
-        { slug: "demo-45-custom-assembler", name: "Custom assembler", blurb: "Wrapping the stock assembler so sources are preprocessed before they compile." },
-        { slug: "demo-47-internal-module", name: "Internal build module", blurb: "A reusable build plugin compiled from local source." },
-        { slug: "demo-48-external-module", name: "External build module", blurb: "The same plugin resolved as a published coordinate." },
-        { slug: "demo-49-custom-maven", name: "Custom Maven build", blurb: "Driving a multi-module Maven-layout build from your own entry point with the convenience factory." },
-        { slug: "demo-50-custom-modular", name: "Custom modular build", blurb: "The same for a modular project." },
-        { slug: "demo-51-custom-build", name: "Custom build", blurb: "A code-generating build graph wired entirely by hand." },
       ],
     },
     {
@@ -73,10 +46,23 @@ export default {
       ],
     },
     {
-      title: "Supply chain & security",
-      blurb: "Knowing, pinning and governing what your build depends on.",
+      title: "Dependencies",
+      blurb: "Naming what a project depends on, and shaping the closure that arrives.",
       demos: [
+        { slug: "demo-14-maven-exclusions", name: "Exclusions", blurb: "Dropping an unwanted transitive, in a POM and with a tag." },
         { slug: "demo-15-bom", name: "Bills of materials", blurb: "Importing a Maven BOM and a local pin file, and publishing a BOM of the module's own closure." },
+        { slug: "demo-16-module-alias", name: "Module alias", blurb: "Giving a plain jar a module name, then rewriting the closure into named modules so jlink accepts it." },
+        { slug: "demo-17-module-classifier", name: "Module classifier", blurb: "Pinning a classified variant of a module." },
+        { slug: "demo-18-module-layout", name: "Pure modular layout", blurb: "A strictly modular layout that resolves by module name and emits no POM." },
+        { slug: "demo-19-module-override", name: "Module override", blurb: "Reading a shaded API under its own module name, so a modular library and Tomcat Embed share a module path." },
+        { slug: "demo-20-platform-guard", name: "Platform guard", blurb: "Selecting a dependency variant per platform." },
+        { slug: "demo-21-platform-guard-pom", name: "Platform guard (Maven)", blurb: "The platform guard in a Maven layout." },
+      ],
+    },
+    {
+      title: "Supply chain & security",
+      blurb: "Which bytes arrived, who produced them, and what they carry.",
+      demos: [
         { slug: "demo-22-pinning", name: "Pinning", blurb: "A version and a checksum in your own sources, and the two ways a build refuses what does not match." },
         { slug: "demo-23-openpgp", name: "OpenPGP signatures", blurb: "Declaring the key that signs a dependency, checked against the signature its project published." },
         { slug: "demo-24-sigstore", name: "Sigstore identities", blurb: "Declaring the workflow that released a dependency, verified from the bundle beside it with no key at all." },
@@ -87,7 +73,7 @@ export default {
     },
     {
       title: "Quality & testing",
-      blurb: "Keeping a codebase healthy and tests fast.",
+      blurb: "The gates a build can hold its own output to.",
       demos: [
         { slug: "demo-28-java-quality", name: "Code quality", blurb: "Formatting and static analysis for Java." },
         { slug: "demo-29-code-coverage", name: "Code coverage", blurb: "Measuring test coverage." },
@@ -99,7 +85,7 @@ export default {
     },
     {
       title: "JVM languages",
-      blurb: "Kotlin, Scala and Groovy - alone, mixed with Java, and with quality tooling.",
+      blurb: "The same build, for Kotlin, Scala and Groovy.",
       demos: [
         { slug: "demo-34-kotlin", name: "Kotlin", blurb: "A Kotlin (and mixed Java/Kotlin) project." },
         { slug: "demo-35-kotlin-quality", name: "Kotlin quality", blurb: "Kotlin with formatting and static-analysis checks." },
@@ -108,6 +94,38 @@ export default {
         { slug: "demo-38-scala-quality", name: "Scala quality", blurb: "Scala with code-quality checks." },
         { slug: "demo-39-groovy", name: "Groovy", blurb: "A Groovy (and mixed Java/Groovy) project." },
         { slug: "demo-40-groovy-quality", name: "Groovy quality", blurb: "Groovy with code-quality checks." },
+      ],
+    },
+    {
+      title: "Running the build",
+      blurb: "How a build is configured, cached, confined and instrumented.",
+      demos: [
+        { slug: "demo-41-profiles", name: "Build profiles", blurb: "Switching configuration with profiles." },
+        { slug: "demo-42-build-cache", name: "Build cache", blurb: "Sharing build outputs through a cache." },
+        { slug: "demo-43-docker-isolation", name: "Docker isolation", blurb: "Confining the build and the launched program in a throwaway container." },
+        { slug: "demo-44-agents", name: "Java agents", blurb: "Attaching agents to the test run and to the application run." },
+      ],
+    },
+    {
+      title: "Extending the build",
+      blurb: "Wrapping the template, adding build modules, or replacing it entirely.",
+      demos: [
+        { slug: "demo-45-custom-assembler", name: "Custom assembler", blurb: "Wrapping the stock assembler so sources are preprocessed before they compile." },
+        { slug: "demo-46-custom-jmod", name: "jlink & jpackage", blurb: "A custom .jmod carrying extra content, linked into a runtime and packaged into an app." },
+        { slug: "demo-47-internal-module", name: "Internal build module", blurb: "A reusable build plugin compiled from local source." },
+        { slug: "demo-48-external-module", name: "External build module", blurb: "The same plugin resolved as a published coordinate." },
+        { slug: "demo-49-custom-maven", name: "Custom Maven build", blurb: "Driving a multi-module Maven-layout build from your own entry point with the convenience factory." },
+        { slug: "demo-50-custom-modular", name: "Custom modular build", blurb: "The same for a modular project." },
+        { slug: "demo-51-custom-build", name: "Custom build", blurb: "A code-generating build graph wired entirely by hand." },
+      ],
+    },
+    {
+      title: "Delivery",
+      blurb: "Publishing what a build produced, and running what somebody else published.",
+      demos: [
+        { slug: "demo-52-publishing", name: "Publishing", blurb: "A Maven Central ready bundle - POM metadata, sources and javadoc jars - resolved back to prove it." },
+        { slug: "demo-53-native-image", name: "Native image", blurb: "A GraalVM native binary built end to end, with reachability metadata captured from the tests." },
+        { slug: "demo-54-jpx", name: "Running a released program", blurb: "jpx installs and launches a published tool - named as a module and as a coordinate, pinned and hash-verified." },
       ],
     },
   ],
