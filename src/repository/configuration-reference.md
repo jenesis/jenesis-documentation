@@ -122,6 +122,7 @@ See [Authentication & access](/repository/authentication/).
 | `jenreg.credential-default-lifetime` | *(empty)* | The lifetime of a key minted without an explicit expiry, as an ISO-8601 duration (`P30D`, `PT12H`). Empty keeps the 90-day default. |
 | `jenreg.credential-max-lifetime` | *(empty)* | The ceiling on any key's lifetime, as an ISO-8601 duration; a mint or an expiry change asking for more is pulled back to it. Empty leaves lifetimes uncapped. |
 | `jenreg.anonymous-rights` | *(empty)* | The rights a keyless caller holds under `jenreg.auth=true`: a comma list of `<surface>:<verb>` tokens (`repository:read`, `repository:write`, `manage:read`, `manage:write`, `<surface>:*`, `*`), each optionally scoped as `<repository>=<token>`. |
+| `jenreg.auth.cache-ttl` | `PT15M` | How long a node serves a credential's documents before asking the store again. Deliberately longer than the general store cache: an authorisation happens on every request, while what bounds how long a revocation takes to reach another node is the auth epoch - one small document that every credential change bumps and every node re-reads within seconds. So this bounds only how often a busy node re-reads a credential it already holds, not how long a withdrawn key keeps working. |
 | `jenreg.read-only` | `false` | See *Server & storage*; paired with `anonymous-rights=repository:read` this is the public-mirror pattern. |
 
 ## Rate limiting
