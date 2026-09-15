@@ -351,6 +351,8 @@ already uses. This is the whole vocabulary:
 | `@jenesis.exclude <module> <group>/<artifact>…` | Transitives to prune from a requirement (`<exclusions>` in a POM). | *[Dependencies](/tool/dependencies/)* |
 | `@jenesis.alias <module> <group>/<artifact>[/<type>[/<classifier>]]` | A module name for an artifact that has none. | *[Dependencies](/tool/dependencies/)* |
 | `@jenesis.override <module> <module>…` | A module to replace with the modules that already carry its packages. | *[Dependencies](/tool/dependencies/)* |
+| `@jenesis.layer <name> api <module>` | The one module this module shares with the layer `<name>`. | *[Dependencies](/tool/dependencies/#keeping-a-dependency-private)* |
+| `@jenesis.layer <name> provider <coordinate>` | A root the layer `<name>` isolates, with its whole closure. Repeat for more roots. | *[Dependencies](/tool/dependencies/#keeping-a-dependency-private)* |
 | `@jenesis.pin <token> <version> [<algorithm>/<hash>] [(<guard>)]` | An exact version and checksum (`<!--jenesis.pin-->` / `<dependencyManagement>` in a POM); a trailing `(<token>,…)` guard applies the line only on a matching platform. Parentheses, not brackets: a bracketed word is a link in a Markdown documentation comment. | *[Pinning &amp; bills of materials](/tool/pinning/)* |
 | `@jenesis.bom <token> [<version> [<algorithm>/<hash>]]` | A bill of materials to import. | *[Pinning &amp; bills of materials](/tool/pinning/)* |
 | `@jenesis.signature <algorithm>/<fingerprint> <token>…` | The OpenPGP key that signs these coordinates' artifacts; a Maven token may end in `/*` to cover a whole groupId, and a lone `[<group>/]signature-<name>.properties` reads the keys from a local list. | *[Securing the supply chain](/tool/securing-the-supply-chain/#provenance)* |
