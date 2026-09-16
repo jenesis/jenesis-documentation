@@ -14,15 +14,23 @@ Everything here runs from source with a JDK 25 and no build step, because the JD
 ```bash
 java sources/build/jenesis/crawler/Crawl.java \
      https://maven-central.storage-download.googleapis.com/maven2/ \
-     https://repo.maven.apache.org/maven2/.index/
+     https://maven-central.storage-download.googleapis.com/maven2/.index/
 ```
 
 ## The crawl
 
 `Crawl` is the program that produces an index. It takes two URIs, and neither has a default: the first is
 where artifacts are fetched from, the second where the repository's index is read. Pairing them separately
-is deliberate, so a fast, range-supporting mirror can serve the jars while the canonical location serves
-the index. Give one URI and it is used for both.
+is deliberate, so the jars and the index can come from whichever host serves each best. Give one URI and
+it is used for both.
+
+<div class="note">
+  Both URIs in the example are Google's Maven Central mirror, the index included. Central's own
+  <code>robots.txt</code> disallows <code>/maven2/.index/</code> for every crawler but Googlebot, and that
+  directory enforces a per-IP download limit asking consumers to cache the files rather than re-fetch
+  them. The crawl honours <code>robots.txt</code> and stops rather than read a path it is denied, so
+  pointed at Central's index it refuses to start.
+</div>
 
 From there the crawl streams the index and, for every artifact that looks like a jar, fetches just enough
 of the file to read whether it declares a module name. What it finds lands under `data/`, in the same
@@ -45,6 +53,14 @@ The knobs you are likely to touch:
 | `jenesis.crawler.budget` | `180` | Wall-clock minutes this run may spend scanning before it stops cleanly. |
 | `jenesis.crawler.concurrency` | `64` | Artifact fetches in flight, which is what bounds peak memory. |
 | `jenesis.crawler.resume` | `true` | Set `false` to restart the index sweep; already-scanned artifacts are still skipped. |
+| `jenesis.crawler.probe.incrementals` | `false` | Set `true` to look for the next index chunk even when the index's pointer says there is none. |
+
+The probe is worth enabling against Maven Central. An index announces its newest chunk in a properties
+file beside it, and the crawl follows that pointer. Central has published chunks without advancing it, so
+the crawl finds nothing to do while the repository moves on.
+
+The probe asks for the next chunk anyway and applies one that is already published. It costs a single
+request per run when the pointer is right, and the public index runs with it enabled.
 
 There are more - checkpoint frequency, tail size, git publishing - and the project's README lists them.
 
