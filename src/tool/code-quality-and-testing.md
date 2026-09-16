@@ -1,7 +1,7 @@
 ---
 order: 8
 title: Code quality & testing
-description: The linters, formatters, coverage, test selection, mutation testing and API-compatibility checks Jenesis runs for you - each turned on by dropping its config file in place, no build script and no plugin to register.
+description: The linters, the compiler plugin, formatters, coverage, test selection, mutation testing and API-compatibility checks Jenesis runs for you - each turned on by dropping its config file in place, no build script and no plugin to register.
 ---
 
 A healthy codebase runs more than a compiler over its sources. Jenesis wires in the usual quality tools
@@ -55,6 +55,56 @@ defaults to `true`, so file discovery alone normally decides; the property is an
 
 For example, `-Djenesis.source.checkstyle=false` keeps `checkstyle.xml` in place but skips Checkstyle, while
 PMD and SpotBugs still run.
+
+## Analysis inside the compiler
+
+The linters above read sources or classes beside the compiler. [Error Prone](https://errorprone.info) reads
+neither: it is a `javac` plugin, so it sees the same typed syntax tree the compiler built and reports through
+the compiler's own diagnostics. That is how it catches a mistake the compiler accepts, such as comparing two
+strings with `==`.
+
+Because it is a compiler plugin rather than a tool of its own, it is declared where compiler plugins are
+declared - on the module, with the tag that also declares an annotation processor:
+
+```java
+/**
+ * @jenesis.plugin javac maven/com.google.errorprone/error_prone_core
+ */
+module demo.errorprone {
+    exports demo.errorprone;
+}
+```
+
+`@jenesis.plugin <compiler> <coordinate>` resolves into the `plugin` scope of that compiler's own group, the
+same shape a Kotlin compiler plugin uses, and `javac` reads that group into its processor path. An Error
+Prone plugin such as NullAway is another line of exactly the same form.
+
+An `errorprone.properties` in the configuration folder is what turns the plugin on, and carries its flags:
+
+```properties
+# build.jenesis/errorprone.properties
+arguments=-Xep:ReferenceEquality:ERROR
+```
+
+`arguments` is appended to the `-Xplugin:ErrorProne` option, so every Error Prone flag applies -
+`-Xep:<Check>:OFF|WARN|ERROR` to set one check's severity, `-XepAllErrorsAsWarnings`,
+`-XepDisableWarningsInGeneratedCode`. An empty file runs the default set of checks, where most findings are
+warnings and a handful are errors.
+
+The two halves are independent on purpose, and each fails loudly without the other: with the tag but no
+configuration file the plugin resolves and sits unused, because `javac` runs a plugin only when it is named;
+with the file but no tag the build stops and names the `@jenesis.plugin` line that is missing.
+
+<div class="note">
+  Error Prone reads <code>com.sun.tools.javac</code> internals that <code>jdk.compiler</code> does not
+  export. Only the JVM that runs the compiler can grant them, through <code>-J</code> options that exist
+  only for a <code>javac</code> of its own, so the compile step forks while Error Prone is active whatever
+  <code>jenesis.process.factory</code> says. Every processor also stays on the processor class path, where
+  <code>--add-exports ...=ALL-UNNAMED</code> can reach the plugin.
+</div>
+
+`-Djenesis.compile.errorprone=false` keeps the file and the declaration in place but compiles without the
+plugin.
 
 ## Formatting
 
@@ -288,14 +338,14 @@ a linter's own closure can run to a hundred artifacts - which is what makes the 
 
 <div class="tip">
   Five runnable demos exercise this chapter:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-13-java-quality">demo-13</a> wires Checkstyle,
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-32-java-quality">demo-32</a> wires Checkstyle,
   PMD, SpotBugs and the Java formatter into one project;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-25-code-coverage">demo-25</a> measures
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-33-code-coverage">demo-33</a> measures
   coverage with JaCoCo;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-26-test-selection">demo-26</a> edits one class
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-34-test-selection">demo-34</a> edits one class
   and re-runs only that class's test;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-27-pitest">demo-27</a> runs pitest, killing
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-35-pitest">demo-35</a> runs pitest, killing
   both mutants of a covered method; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-52-api-compatibility">demo-52</a> compares a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-37-api-compatibility">demo-37</a> compares a
   built jar against a released one with japicmp. See <a href="/tool/demos/">Demos</a>.
 </div>

@@ -591,10 +591,10 @@ KRTB+ggRw+EhAJ4ga1XXfN7468J/9712E7ma5oyDvwCgvSG+emf/lBAtb/MAjJNt
 ```
 
 <div class="tip">
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-46-supply-chain-security">demo-46</a>
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-26-pinning">demo-26</a>
   proves three of these guarantees by getting each wrong on purpose: an unpinned dependency rejected by strict
   pinning, a wrong checksum rejected always, and a dependency signed by a key other than the declared one. It
   generates its own key and artifact, so it runs offline.
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-45-docker-isolation">demo-45</a> shows the
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-47-docker-isolation">demo-47</a> shows the
   isolation half. See <a href="/tool/demos/">Demos</a>.
 </div>

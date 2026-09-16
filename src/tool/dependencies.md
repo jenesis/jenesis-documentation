@@ -140,17 +140,48 @@ version always beats what negotiation would have chosen.
 ### Choosing a different strategy
 
 Each repository's rule is the sensible default, and each is selectable when you want another. On the Maven
-side, `-Djenesis.resolver.maven` takes four values:
+side, `-Djenesis.resolver.maven` takes:
 
 | Value | Rule |
 | --- | --- |
 | `maven` | *(the default)* Maven's own: declared versions, ranges and `RELEASE`/`LATEST` resolved from repository metadata, nearest-wins on a conflict, with ranges intersected when one competes. |
 | `closest` | The same minus the range arbitration - the nearest declaration simply stands, and no metadata is fetched to settle a conflict. |
 | `latest` / `release` | Ignore every declared version and take the `<latest>` or `<release>` entry of each coordinate's metadata. |
+| `stable` | Like `release`, but skipping every version whose qualifier marks it a pre-release - a milestone, a release candidate, an early-access build. |
+| `fail` | Refuse to arbitrate: a coordinate two dependencies require at different versions stops the build, naming both versions. |
+| `managed` | `fail`, and additionally refuse any version the project did not name itself - see below. |
 
 On the module side, `-Djenesis.resolver.module` decides what happens when two compiled `module-info` files
 record different versions of the same requirement. `first` (the default) keeps the one nearest the roots,
-`fail` reports the disagreement instead of discarding one, and `ignore` keeps no compiled version at all.
+`fail` reports the disagreement instead of discarding one, `ignore` keeps no compiled version at all, and
+`managed` is `fail` plus the rule below.
+
+### Letting nothing in that you did not name
+
+`fail` turns a silent decision into a stopped build. `managed` goes one step further: every version that
+reaches the closure has to be one the project named.
+
+```
+-Djenesis.resolver.maven=managed
+-Djenesis.resolver.module=managed
+```
+
+On the Maven side that means a coordinate the project neither declares itself nor names in dependency
+management - one that arrived only because a dependency's own POM mentioned it - stops the build:
+
+```
+No managed version for com.fasterxml.jackson.core:jackson-core which resolved to 2.22.1
+as another dependency's POM declares it (add it to dependencyManagement, or run the pin selector)
+```
+
+On the module side it is the same rule one axis up: a module reached through another module's `requires`
+must carry a pin. A module the project declares itself - a sibling of a multi-project build among them - is
+a declaration of the project and passes.
+
+Because `pin` writes the whole resolved closure, a pinned project satisfies `managed` as it stands; the
+strategy is what keeps it that way. It is worth pairing with strict pinning in CI, where the two answer
+different questions: strict pinning asks whether every artifact has a checksum, `managed` asks whether every
+version was a decision somebody wrote down.
 
 <div class="warning">
   <code>latest</code> and <code>release</code> are <strong>upgrade probes, not build modes</strong>. They
@@ -329,12 +360,12 @@ means reaching it by its Maven coordinate. The strict `modular` layout rejects t
 
 <div class="tip">
   Three runnable projects cover this chapter:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-30-maven-exclusions">demo-30</a> excludes
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-16-maven-exclusions">demo-16</a> excludes
   Commons Lang from Commons Text and proves with a test that it is gone - in a POM, with the tag form beside
   it; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-34-module-alias">demo-34</a> gives args4j -
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-18-module-alias">demo-18</a> gives args4j -
   a library with no module identity at all - a name of its own and opens a package to it; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-35-module-override">demo-35</a> puts the
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-21-module-override">demo-21</a> puts the
   Jakarta Server Pages API, a modular library, on a module path with Tomcat Embed, which carries the servlet
   packages itself. Each is a runnable project - see <a href="/tool/demos/">Demos</a>.
 </div>
@@ -445,9 +476,9 @@ Each of these is reported when it is declared, naming what to write instead:
 
 <div class="tip">
   Two runnable projects cover this section:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-20-module-layers">demo-20</a> runs three
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-22-module-layers">demo-22</a> runs three
   versions of Jackson in one JVM - nested, and exercised by tests - with the consumer declaring nothing; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-21-module-layer-legacy">demo-21</a> hides
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-23-module-layer-legacy">demo-23</a> hides
   Commons BeanUtils and the jars it drags, naming only the one its code calls. Each is a runnable project -
   see <a href="/tool/demos/">Demos</a>.
 </div>

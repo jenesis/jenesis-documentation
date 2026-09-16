@@ -1,19 +1,19 @@
 ---
 order: 9
 title: Generating sources
-description: Compiling a schema or a service contract into Java as part of the build - XML Schema, protocol buffers, Avro, WSDL and OpenAPI - each turned on by its configuration file, with the contract kept out of the artifact unless you want it there.
+description: Compiling a schema, a service contract or a grammar into Java as part of the build - XML Schema, protocol buffers, Avro, WSDL, OpenAPI and ANTLR - each turned on by its configuration file, with the contract kept out of the artifact unless you want it there.
 ---
 
 Plenty of Java starts life as something that is not Java: an XML schema, a `.proto` file, an Avro record, a
-WSDL, an OpenAPI document. Jenesis compiles all five into sources and hands them to the compiler in the same
-module, the same way it wires in the quality tools: **there is no plugin to register**. A generator turns
-itself on when its configuration file is present, and stays off when it is not.
+WSDL, an OpenAPI document, a grammar. Jenesis compiles all six into sources and hands them to the compiler in
+the same module, the same way it wires in the quality tools: **there is no plugin to register**. A generator
+turns itself on when its configuration file is present, and stays off when it is not.
 
 The generated package is compiled into the module like any hand-written one, so `module-info.java` may export
 it, and what the generated code imports - `jakarta.xml.bind`, `protobuf-java`, `avro` - stays an ordinary
 declared dependency of the module.
 
-## The five generators
+## The six generators
 
 Each file below lives in a **configuration folder** (`build.jenesis/` by default); *[Configuration](/tool/configuration/)*
 covers where those folders sit. The file's presence is the switch and its contents configure the tool.
@@ -25,6 +25,7 @@ covers where those folders sit. The file's presence is the switch and its conten
 | `avro.properties` | avro-tools | `.avsc` schemas and `.avpr` protocols |
 | `wsimport.properties` | JAX-WS `wsimport` | `.wsdl` descriptions, with `.xjb` bindings |
 | `openapi.properties` | OpenAPI Generator | an OpenAPI document (`.yaml`, `.yml`, `.json`) |
+| `antlr.properties` | ANTLR | `.g4` grammars |
 
 An empty file is a complete configuration. This is a working Avro setup:
 
@@ -132,6 +133,30 @@ The OpenAPI Generator writes a whole project - a POM, a README, documentation, t
 collects **only its source folder** and discards the rest, so no generated `pom.xml` can reach your build.
 That folder is `src/main/java` by default; a generator that writes elsewhere is named with `sources=<path>`.
 
+### Grammars
+
+```properties
+# calc/build.jenesis/antlr.properties
+package=demo.antlr.calc
+arguments=-visitor -no-listener
+```
+
+Every `.g4` in the folders is compiled into a lexer, a parser and, when asked for, a visitor or a listener.
+`arguments` reaches the tool verbatim, so every ANTLR flag applies.
+
+`package=<name>` does double duty. ANTLR takes it as `-package`, which decides the package the generated
+code declares, and the build takes it as the directory the sources are written to - so `package=demo.antlr.calc`
+generates `demo/antlr/calc/CalcParser.java` and it compiles like any other source of the module. Without the
+key the sources land in the default package, which a module declaration cannot export.
+
+ANTLR writes `.tokens` and `.interp` files beside its sources while it runs. **Only the `.java` files survive
+the step**, so nothing but sources reaches the jar.
+
+As with every generator, the tool is not a dependency of your module. ANTLR resolves in its own `antlr`
+group, and what the generated code calls into - `org.antlr.antlr4.runtime` - stays an ordinary `requires` of
+the module, pinned separately. Upgrading the parser generator never moves the runtime your program links
+against.
+
 ## Turning one off
 
 Each generator has a switch, on by default:
@@ -140,13 +165,15 @@ Each generator has a switch, on by default:
 -Djenesis.generate.xjc=false
 ```
 
-The same shape works for `protoc`, `avro`, `wsimport` and `openapi`. All configuration keys are listed in the
+The same shape works for `protoc`, `avro`, `wsimport`, `openapi` and `antlr`. All configuration keys are listed in the
 *[Reference](/tool/reference/)*.
 
 <div class="tip">
-  Two demos exercise this chapter end to end:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-11-data-formats">demo-11-data-formats</a>
+  Three demos exercise this chapter end to end:
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-13-data-formats">demo-13-data-formats</a>
   generates from XML Schema, protocol buffers and Avro, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-12-service-contracts">demo-12-service-contracts</a>
-  generates a SOAP and a REST client - one shipping its contract, one keeping it out of the jar.
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-14-service-contracts">demo-14-service-contracts</a>
+  generates a SOAP and a REST client - one shipping its contract, one keeping it out of the jar, and
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-15-antlr">demo-15-antlr</a>
+  compiles a grammar into a calculator that evaluates an expression you pass on the command line.
 </div>

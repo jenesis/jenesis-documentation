@@ -178,7 +178,8 @@ rather than being served by one configured for something else.
 | `jenesis.observe.native` | `true` | Run the GraalVM tracing agent when its file is present. |
 | `jenesis.mutate.pitest` | `true` | Run PIT mutation testing when its file is present. |
 | `jenesis.artifact.japicmp` | `true` | Run the japicmp API comparison when its file is present. |
-| `jenesis.generate.<tool>` | `true` | Per-generator switch (`xjc`, `protoc`, `avro`, `wsimport`, `openapi`). |
+| `jenesis.compile.errorprone` | `true` | Run Error Prone when an `errorprone.properties` is present; `javac` forks while it does, to grant the plugin the compiler internals it reads. |
+| `jenesis.generate.<tool>` | `true` | Per-generator switch (`xjc`, `protoc`, `avro`, `wsimport`, `openapi`, `antlr`). |
 
 The quality and packaging *files* these keys gate (`checkstyle.xml`, `packaging.properties`, and the like)
 are covered in *[Code quality &amp; testing](/tool/code-quality-and-testing/)*, *[Generating
@@ -201,8 +202,8 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.project.signatures` | *(the configuration folders)* | Path-separated locations searched for a local `signature-<name>.properties` key list. |
 | `jenesis.sigstore.uri` | *(the trust root the tool carries)* | The Sigstore trust root a bundle is checked against. Jenesis carries the published root of the public instance as source; naming another replaces it, for a private instance or a root that has rotated. |
 | `jenesis.sigstore.issuers` | `github.com=token.actions.githubusercontent.com` | Comma-separated `<host>=<issuer>` pairs for identity hosts whose OpenID Connect issuer is not the host itself. Both sides are written without a scheme. |
-| `jenesis.resolver.maven` | `maven` | Maven version strategy: `maven`, `closest`, `latest`, or `release`. |
-| `jenesis.resolver.module` | `first` | What happens when two module descriptors record different versions: `first`, `fail`, or `ignore`. |
+| `jenesis.resolver.maven` | `maven` | Maven version strategy: `maven`, `closest`, `latest`, `release`, `stable`, `fail`, or `managed`. `fail` refuses a coordinate two dependencies require at different versions; `managed` refuses that and every version the project neither declares nor names in dependency management. |
+| `jenesis.resolver.module` | `first` | What happens when two module descriptors record different versions: `first`, `fail`, `ignore`, or `managed`. `managed` additionally refuses a module reached through another module's `requires` that carries no pin. |
 
 ### Repositories
 
@@ -260,6 +261,20 @@ Read by the `release` target - see *[Publishing](/tool/publishing/)*.
 | `jenesis.jreleaser.dryRun` | `true` | Perform every local phase and skip every remote one; `false` publishes. |
 | `jenesis.jreleaser.executable` | `jreleaser` | The executable to locate. |
 | `jenesis.jreleaser.command` | `full-release` | The subcommand to run. |
+
+Read by the signing step - see *[Publishing](/tool/publishing/)*. Naming any of them says the project signs
+its jar, and the build then stops rather than producing an unsigned one if the key store, the alias or the
+password location is missing.
+
+| Key | Default | Effect |
+| --- | --- | --- |
+| `jenesis.jarsigner.keystore` | *(unset)* | The key store `jarsigner` signs the produced jar with, in place of the unsigned one. |
+| `jenesis.jarsigner.alias` | *(unset)* | The name of the key within that store. |
+| `jenesis.jarsigner.storepass` | *(unset)* | Where that store's password is read from: `env <variable>` or `file <path>`, never the password itself. |
+| `jenesis.jarsigner.keypass` | *(unset)* | The same, for a key that carries a password of its own. |
+| `jenesis.jarsigner.storetype` | *(the JDK's own)* | The store's type as `jarsigner` names it, normally `PKCS12`. |
+| `jenesis.jarsigner.tsa` | *(unset)* | A timestamp authority to stamp the signature with, so it outlives the certificate. |
+| `jenesis.jarsigner.arguments` | *(unset)* | Further `jarsigner` arguments, whitespace separated. |
 
 ### Output & the execution engine
 

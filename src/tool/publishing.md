@@ -87,6 +87,66 @@ into the local module repository beside the module jar:
 Another project consumes it with `@jenesis.bom demo.bom`, exactly the way it consumes a hand-written file. The
 BOM travels through the module layout only; the Maven export never carries it.
 
+## Signing the jar itself
+
+There are two signatures around a published jar, and they answer different questions. The detached one the
+next section covers travels *beside* the artifact and says who published it. The other lives **inside** the
+archive: `jarsigner`, the JDK's own signer, writes a manifest of digests and a signature block into the jar,
+which a JVM can check as it loads the classes.
+
+Naming a key store turns it on:
+
+```
+jenesis.jarsigner.keystore     the key store to sign with
+jenesis.jarsigner.alias        the key within that store
+jenesis.jarsigner.storepass    where the store's password is read from
+jenesis.jarsigner.keypass      the same, where the key has a password of its own
+jenesis.jarsigner.storetype    the JDK's own default otherwise, normally PKCS12
+jenesis.jarsigner.tsa          a timestamp authority, so a signature outlives the certificate
+jenesis.jarsigner.arguments    anything else jarsigner accepts
+```
+
+These are properties rather than a configuration file because where the key is and what unlocks it differ
+between a laptop, a release machine and a CI runner, and a developer without the key still has to be able to
+build. They settle in the order everything else does: a `-D` on the command line wins over the project's
+`jenesis.properties`, which wins over the user-global `~/.jenesis/jenesis.properties`. So a project can commit
+the alias it signs with, a machine can hold the key once for everything built on it, and a runner can override
+either.
+
+```properties
+# jenesis-release.properties, selected with -Djenesis.make.profiles=release
+jenesis.jarsigner.alias=release
+```
+
+```bash
+java -Djenesis.make.profiles=release \
+     -Djenesis.jarsigner.keystore=/etc/jenesis/release.p12 \
+     -Djenesis.jarsigner.storepass=env JENESIS_KEYSTORE_PASSWORD \
+     build/jenesis/Make.java
+```
+
+**Naming any of those keys says the project signs its jar.** Saying that and then leaving the key store, the
+alias or the password location unnamed stops the build rather than producing an unsigned jar - a release that
+shipped unsigned because a runner forgot a flag is the one outcome worth refusing. A project that names none
+of them does not sign.
+
+A password is never a value, not even a property value. `storepass` and `keypass` take a location in
+jarsigner's own grammar - `env <variable>` or `file <path>` - and anything else fails the build naming the two
+forms; a password passed as `-D` would otherwise stand in the process list of the machine that runs the build.
+The key store itself is referenced by path and never copied into `target/`, so no private key reaches the
+build tree or a shared build cache.
+
+Signing is part of producing the artifact rather than a step after it: the signer reads the jar the archiver
+wrote and writes the signed jar in its place, so the unsigned jar never leaves the toolchain. The module's
+inventory, both staged repositories, an `export` and a publication all see only the signed jar - and a
+detached signature made afterwards covers the signed bytes.
+
+<div class="note">
+  The step re-runs when the jar changes or when any of those settings change. It does not hash the key
+  store's contents, so replacing the key behind an unchanged path does not by itself invalidate the step:
+  delete <code>target/</code> after a key rotation.
+</div>
+
 ## The last mile: signing and uploading
 
 The remote upload and GPG signing are not Jenesis's job. Point **[JReleaser](https://jreleaser.org/)** at
@@ -142,9 +202,9 @@ build.
 </div>
 
 <div class="tip">
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-47-publishing">demo-47</a> stages a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-57-publishing">demo-57</a> stages a
   Central-ready bundle - POM metadata, sources and javadoc jars - and then resolves the coordinate straight
   back out of the staged tree to prove it is complete, entirely offline;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-31-bom">demo-31</a> publishes a BOM of its own
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-17-bom">demo-17</a> publishes a BOM of its own
   closure. Each is a runnable project - see <a href="/tool/demos/">Demos</a>.
 </div>

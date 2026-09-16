@@ -253,15 +253,15 @@ classes as a local convenience, ignored by git.
 
 <div class="tip">
   Six runnable projects cover this chapter:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-38-custom-assembler">demo-38</a> wraps the
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-49-custom-assembler">demo-49</a> wraps the
   assembler to preprocess sources before they compile,
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-40-internal-module">demo-40</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-41-external-module">demo-41</a> move that
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-51-internal-module">demo-51</a> and
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-52-external-module">demo-52</a> move that
   same pass into a build module - one compiled from local source, one resolved as a published coordinate,
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-42-custom-maven">demo-42</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-43-custom-modular">demo-43</a> drive a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-53-custom-maven">demo-53</a> and
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-54-custom-modular">demo-54</a> drive a
   multi-module Maven and modular build from a convenience <code>make</code>, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-44-custom-build">demo-44</a> wires a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-55-custom-build">demo-55</a> wires a
   code-generating graph entirely by hand on the <code>BuildExecutor</code> API. See
   <a href="/tool/demos/">Demos</a>.
 </div>

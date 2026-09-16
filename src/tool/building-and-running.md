@@ -335,18 +335,18 @@ change can reach - a development-loop optimisation covered in *[Code quality & t
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-03-java-pom-multi">demo-03</a> and
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-04-java-modular-multi">demo-04</a> each carry
   a tested module - one in <code>src/test</code> style, one as a separate test module;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-05-java-pom-executable">demo-05</a> (a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-06-java-pom-executable">demo-06</a> (a
   <code>pom.xml</code> app with <code>&lt;mainClass&gt;</code>) and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-06-java-modular-executable">demo-06</a> (a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-07-java-modular-executable">demo-07</a> (a
   modular app with <code>@jenesis.main</code>) declare an entry point, each driven by its own
   <code>build/Demo.java</code>;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-08-java-multi-release">demo-08</a> builds a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-09-java-multi-release">demo-09</a> builds a
   multi-release jar with a Java 25 override of one class;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-09-javac-arguments">demo-09</a> hands
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-10-javac-arguments">demo-10</a> hands
   <code>javac</code> a <code>-parameters</code> flag through <code>process-javac.properties</code>;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-10-annotations">demo-10</a> runs an annotation
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-11-annotations">demo-11</a> runs an annotation
   processor (Immutables); and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-29-agents">demo-29</a> attaches Mockito to
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-48-agents">demo-48</a> attaches Mockito to
   its tests and the OpenTelemetry agent to its application run. Each is a runnable project - see
   <a href="/tool/demos/">Demos</a>.
 </div>
