@@ -6,7 +6,7 @@ description: The URL shapes that turn a module name into a Maven Central downloa
 
 The Jenesis Module Index is served as an HTTP service at **[repo.jenesis.build](https://repo.jenesis.build/)**.
 You ask for a module name, optionally a version, and a file name. The service answers with a **302
-redirect** to the real file on Maven Central. Nothing is re-hosted: the module index only decides *which*
+redirect** to the real file, on Google's Maven Central mirror by default. Nothing is re-hosted: the module index only decides *which*
 Maven artifact a module name maps to and points you at it.
 
 The whole contract is a small, stable set of URL shapes, so anything that can follow a redirect is a
@@ -160,6 +160,26 @@ GET /artifact/p6spy/p6spy-all.jar
 The same works on every route: `<module>-<classifier>.jar` under `/module/` resolves the classifier's jar
 of a named module.
 
+## Where the redirect points
+
+The `Location` is **Google's Maven Central mirror**, which carries the same artifacts and is not rate
+limited the way Central is. Send **`Jenesis-Mirror: false`** to be redirected to `repo.maven.apache.org`
+instead; the response then carries `Jenesis-Mirror: false` back. No header, or any other value, keeps the
+mirror.
+
+The mirror syncs from Central several times a day, so a release published since its last pass is not there
+yet. That is what the header is for. A redirect carrying `Jenesis-BestEffort: true` is the likeliest case,
+because it was built for a version the index has not recorded, which usually means a very new one.
+
+```bash
+# Google's mirror
+curl -sI https://repo.jenesis.build/artifact/org.slf4j/org.slf4j.jar | grep -i '^location'
+
+# Maven Central itself
+curl -sI -H 'Jenesis-Mirror: false' \
+     https://repo.jenesis.build/artifact/org.slf4j/org.slf4j.jar | grep -i '^location'
+```
+
 ## The 302 response
 
 A successful response is an empty-bodied HTTP `302` whose `Location` points at the Maven URL. It is
@@ -177,7 +197,8 @@ fetched without parsing the `Location`:
 | `Jenesis-ModuleVersion` | `/module/`, `/sources/`, `/documentation/` | The publisher-declared module-info version. Omitted on `/artifact/`, where the lookup key is already the Maven version. |
 | `Jenesis-BestEffort` | a version the index has not recorded | `true` - the redirect was built from the module's newest coordinate rather than from a recorded row. |
 | `Jenesis-Prerelease` | the version served carries a pre-release qualifier | `true` - the version was asked for by name, or the request opted in to pre-releases. |
-| `Vary` | always | `Jenesis-Prerelease` - the redirect depends on that request header, so a shared cache must key on it. |
+| `Jenesis-Mirror` | the redirect targets Maven Central rather than the mirror | `false` - the request asked for Central. |
+| `Vary` | always | `Jenesis-Prerelease, Jenesis-Mirror` - the redirect depends on both request headers, so a shared cache must key on them. |
 
 ### When a request fails
 
@@ -245,12 +266,13 @@ curl -I https://repo.jenesis.build/module/com.fasterxml.jackson.databind/com.fas
 ## Pointing at a mirror
 
 The URL shapes *are* the contract, so any deployment that serves the same shapes is a drop-in replacement.
-The reference service is a small HTTP function that reads four optional environment variables:
+The reference service is a small HTTP function that reads five optional environment variables:
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `DATA_BASE` | the index data on `raw.githubusercontent.com` | An HTTP(S) base URL the resolved-view files are fetched from. Point it at a fork or mirror to serve a different index. |
-| `ARTIFACT_BASE` | `https://repo.maven.apache.org/maven2/` | The base URL the 302 redirects target. Point it at a Maven mirror or proxy. |
+| `ARTIFACT_BASE` | Google's Maven Central mirror | The base URL the 302 redirects target. Point it at a Maven mirror or proxy. |
+| `CENTRAL_BASE` | `ARTIFACT_BASE` when that is set, otherwise `https://repo.maven.apache.org/maven2/` | Where `Jenesis-Mirror: false` redirects instead. A deployment that names only `ARTIFACT_BASE` therefore never redirects outside it, whatever the request asks for. |
 | `HOME_REDIRECT` | the project's GitHub page | Where a request for `/` redirects. |
 | `REDIRECT_TTL` | `3600` (seconds) | The `max-age` on the 302, and the edge-cache TTL for the upstream reads. |
 
