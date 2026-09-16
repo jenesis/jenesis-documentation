@@ -163,12 +163,15 @@ of a named module.
 ## Where the redirect points
 
 The `Location` is **Google's Maven Central mirror**, which carries the same artifacts and is not rate
-limited the way Central is. Send **`Jenesis-Mirror: false`** to be redirected to `repo.maven.apache.org`
-instead; the response then carries `Jenesis-Mirror: false` back. No header, or any other value, keeps the
-mirror.
+limited the way Central is. Send **`Jenesis-Repository: <url>`** to be redirected to another Maven
+repository instead: the URL replaces the mirror as the base the artifact path is appended to, so
+`Jenesis-Repository: https://repo.maven.apache.org/maven2/` redirects to Maven Central itself, and the URL
+of a repository manager redirects to it. A missing trailing slash is added. The value must be an absolute
+`http` or `https` URL without credentials, a query or a fragment; anything else is answered with `400`. No
+header, or a blank one, keeps the mirror.
 
 The mirror syncs from Central several times a day, so a release published since its last pass is not there
-yet. That is what the header is for. A redirect carrying `Jenesis-BestEffort: true` is the likeliest case,
+yet. That is one case for the header. A redirect carrying `Jenesis-BestEffort: true` is the likeliest,
 because it was built for a version the index has not recorded, which usually means a very new one.
 
 ```bash
@@ -176,7 +179,7 @@ because it was built for a version the index has not recorded, which usually mea
 curl -sI https://repo.jenesis.build/artifact/org.slf4j/org.slf4j.jar | grep -i '^location'
 
 # Maven Central itself
-curl -sI -H 'Jenesis-Mirror: false' \
+curl -sI -H 'Jenesis-Repository: https://repo.maven.apache.org/maven2/' \
      https://repo.jenesis.build/artifact/org.slf4j/org.slf4j.jar | grep -i '^location'
 ```
 
@@ -184,7 +187,8 @@ curl -sI -H 'Jenesis-Mirror: false' \
 
 A successful response is an empty-bodied HTTP `302` whose `Location` points at the Maven URL. It is
 cached with `Cache-Control: public, max-age=<ttl>, stale-while-revalidate=86400`, where the TTL is an hour
-on the public service.
+on the public service. A redirect to a repository named by `Jenesis-Repository` is marked `private`
+instead, so a shared cache never hands one client's repository to another.
 
 The resolved coordinate is echoed back as response headers, so a client can record exactly what it
 fetched without parsing the `Location`:
@@ -197,13 +201,13 @@ fetched without parsing the `Location`:
 | `Jenesis-ModuleVersion` | `/module/`, `/sources/`, `/documentation/` | The publisher-declared module-info version. Omitted on `/artifact/`, where the lookup key is already the Maven version. |
 | `Jenesis-BestEffort` | a version the index has not recorded | `true` - the redirect was built from the module's newest coordinate rather than from a recorded row. |
 | `Jenesis-Prerelease` | the version served carries a pre-release qualifier | `true` - the version was asked for by name, or the request opted in to pre-releases. |
-| `Jenesis-Mirror` | the redirect targets Maven Central rather than the mirror | `false` - the request asked for Central. |
-| `Vary` | always | `Jenesis-Prerelease, Jenesis-Mirror` - the redirect depends on both request headers, so a shared cache must key on them. |
+| `Vary` | always | `Jenesis-Prerelease, Jenesis-Repository` - the redirect depends on both request headers, so a shared cache must key on them. |
 
 ### When a request fails
 
 | Status | Meaning |
 | --- | --- |
+| `400` | The `Jenesis-Repository` header is not a usable repository URL. |
 | `404` | Nothing could be served. The body says why when the module or version is the problem. |
 | `405` | The request was not `GET` or `HEAD`. |
 | `502` | The upstream index files are temporarily unreachable. |
@@ -266,13 +270,12 @@ curl -I https://repo.jenesis.build/module/com.fasterxml.jackson.databind/com.fas
 ## Pointing at a mirror
 
 The URL shapes *are* the contract, so any deployment that serves the same shapes is a drop-in replacement.
-The reference service is a small HTTP function that reads five optional environment variables:
+The reference service is a small HTTP function that reads four optional environment variables:
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `DATA_BASE` | the index data on `raw.githubusercontent.com` | An HTTP(S) base URL the resolved-view files are fetched from. Point it at a fork or mirror to serve a different index. |
-| `ARTIFACT_BASE` | Google's Maven Central mirror | The base URL the 302 redirects target. Point it at a Maven mirror or proxy. |
-| `CENTRAL_BASE` | `ARTIFACT_BASE` when that is set, otherwise `https://repo.maven.apache.org/maven2/` | Where `Jenesis-Mirror: false` redirects instead. A deployment that names only `ARTIFACT_BASE` therefore never redirects outside it, whatever the request asks for. |
+| `ARTIFACT_BASE` | Google's Maven Central mirror | The base URL the 302 redirects target when a request does not name one with `Jenesis-Repository`. Point it at a Maven mirror or proxy. |
 | `HOME_REDIRECT` | the project's GitHub page | Where a request for `/` redirects. |
 | `REDIRECT_TTL` | `3600` (seconds) | The `max-age` on the 302, and the edge-cache TTL for the upstream reads. |
 

@@ -153,7 +153,7 @@ rather than being served by one configured for something else.
 | `jenesis.make.global` | `$HOME` | Base folder whose `.jenesis/` subfolder holds the user-global `jenesis.properties`; empty string disables it. |
 | `jenesis.project.configuration` | `build.jenesis/` | Path-separated project-wide configuration folders. |
 | `jenesis.project.boms` | the configuration folders | Path-separated list of folders searched for `pin-<name>.properties` files. |
-| `jenesis.project.artifacts` | `.jenesis/artifacts` | The project-local folder resolved artifacts are materialised into (hard-linked from `~/.m2` where possible), in every layout. |
+| `jenesis.project.artifacts` | `.jenesis/artifacts` | The project-local folder resolved artifacts are materialised into (hard-linked from `~/.m2` where possible), in every layout. It also holds a copy of each repository's `maven-metadata.xml`, so a `RELEASE` or range still resolves when the repository is unreachable. |
 
 ### Building & testing
 
