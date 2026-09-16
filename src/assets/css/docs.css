@@ -81,15 +81,11 @@ body { --pico-line-height: 1.6; }
 .nav-toggle { margin-left: auto; display: none; }
 
 /* ---- Footer --------------------------------------------------------------------------------------------- */
-/* One quiet line under every page, set to the header's width so the two frame the page alike. */
+/* A colophon rather than a footer bar: one small centred line that closes the page without adding a band
+   of its own, so no rule above it and only enough padding to keep it off the viewport's edge. */
 .site-footer {
-  border-top: 1px solid var(--pico-muted-border-color);
-  padding-block: 0;   /* Pico pads body>footer; the inner row carries the spacing instead */
-}
-.site-footer__inner {
-  display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--app-space-2) var(--app-space-4);
-  max-width: 80rem; margin: 0 auto; padding: var(--app-space-5) var(--app-space-4);
-  color: var(--pico-muted-color); font-size: var(--app-font-size-sm);
+  padding: 0 var(--app-space-4) var(--app-space-4);
+  text-align: center; color: var(--pico-muted-color); font-size: var(--app-font-size-xs);
 }
 .site-footer a { color: inherit; }
 .site-footer a:hover { color: var(--pico-primary); }
