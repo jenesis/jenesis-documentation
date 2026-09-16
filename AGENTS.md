@@ -96,12 +96,15 @@ Front matter is `order`, `title`, `description`; the menu, the previous/next lin
 derive from it. Callouts are `<div class="note|tip|warning">`; a closing `tip` links the demos that exercise
 the chapter. No diagrams, no screenshots.
 
-**A heading is not an anchor.** Nothing gives a rendered heading an `id`, so `/repository/storage/#the-store`
-resolves to the page and silently ignores the fragment - it does not fail, it just lands in the wrong place.
-Where a link needs to reach a point inside a page, put the anchor there by hand and link to that:
-`## <span id="the-store">The store</span>`. This is the same span the advisory ids use (see Section notes),
-generalised: it is the only anchor the site has. `npm run check` catches a fragment with nothing behind it,
-so a heading link written out of habit fails the build rather than the reader.
+**Every heading is an anchor, and its words are its id.** The build gives each `##` and `###` an `id` taken
+from the heading's own text, lower case with one hyphen per run of anything else, so *Keeping a dependency
+private* is `#keeping-a-dependency-private` and a reader who clicks the heading copies that link. Link to a
+section by slugging its heading; nothing is written by hand and no heading carries a `<span id>`. Rewording a
+heading therefore moves its anchor: change the wording and the links to it in the same pass. `npm run check`
+catches a fragment with nothing behind it, so a stale link fails the build rather than the reader.
+
+The one anchor still placed by hand is the advisory id (see Section notes), which sits on a table row rather
+than a heading and must match the id the repository server emits, not the wording around it.
 
 ## Section notes
 

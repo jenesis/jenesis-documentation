@@ -46,8 +46,7 @@ the first named wins. A name the store does not hold is refused rather than skip
 names none of the jars it ships is refused too - silence would otherwise surface much later, as a missing
 main class.
 
-### <span id="module-layers">Module layers</span>
-
+### Module layers
 A `modulepath.<layer>` key names the jars of one [module layer](/tool/dependencies/#keeping-a-dependency-private):
 a second copy of a library, resolved into a layer of its own so that two versions run in one JVM with no
 package relocated. Its jars are stored among the application's, so a jar both need is stored once and simply
@@ -65,8 +64,7 @@ through the [layer API](#the-layer-api), and outside a bundle - a deployment tha
 - the same two lists arrive as `jlayer.modulepath.<layer>` and `jlayer.classpath.<layer>` system
 properties instead.
 
-## <span id="bundled-java-agents">Bundled Java agents</span>
-
+## Bundled Java agents
 A launcher jar can carry its own Java agents. `agentClass` is a comma-separated list of fully qualified agent
 class names, each optionally followed by `=<arguments>`, mirroring `-javaagent:<jar>=<arguments>`:
 
@@ -117,8 +115,7 @@ path. The `=args` from the command line reach each agent that declares no `=<arg
   then resolves that class's own jar, with its own descriptor and dependencies.
 </div>
 
-## <span id="relaxing-module-access">Relaxing module access</span>
-
+## Relaxing module access
 A bundled module sometimes needs reflective access that a framework expects but its `module-info` does not
 declare. Three keys grant it - the in-jar equivalent of `--add-exports` / `--add-opens` / `--add-reads`,
 applied to the bundled modules:
@@ -135,8 +132,7 @@ opened this way - while the targets may be bundled, boot, or the unnamed module.
 your code, use the JDK's own executable-jar manifest attributes (`Add-Opens`, `Add-Exports`), which the JVM
 honours under `java -jar`.
 
-## <span id="emulating-a-signed-jar">Emulating a signed jar</span>
-
+## Emulating a signed jar
 A dependency that shipped as a *signed* jar loses its signer identity when exploded: its signature files
 (`META-INF/*.SF`, `*.RSA`/`*.DSA`/`*.EC`) become ordinary entries, so a class-path class would otherwise
 define with a `CodeSource` that has no signers. A `signature.<dependency>` key restores it. The key suffix is
@@ -189,8 +185,7 @@ directory of the same layout.
 | `Launcher.runAgents(Path location, boolean attach, String arguments, Instrumentation instrumentation)` | Runs an agent jar's agents against the given `Instrumentation` - `premain` when `attach` is false, `agentmain` when true. Does nothing for an application jar. |
 | `Launcher.runAgents(Class<?> premainClass, …)` | The same, locating the jar from `premainClass`'s code source - the form a delegating `Premain-Class` calls. |
 
-## <span id="the-layer-api">The layer API</span>
-
+## The layer API
 A module that keeps a dependency private declares the layer, requires `build.jenesis.launcher`, and asks for
 it by name. The declaration is a build-tool feature -
 [Keeping a dependency private](/tool/dependencies/#keeping-a-dependency-private) covers it - and these three
