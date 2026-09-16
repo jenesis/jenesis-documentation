@@ -142,6 +142,22 @@ record different versions of the same requirement. `first` (the default) keeps t
   upgrade would pull in, then record the result with <code>pin</code>.
 </div>
 
+### How fresh the metadata is
+
+Anything that resolves from repository metadata - a range, `RELEASE`, `LATEST`, `STABLE` - is only as current
+as the `maven-metadata.xml` behind it, so Jenesis reads that file from the repository every time it resolves
+one. There is no expiry to tune and no `-U` to remember: a version that appeared five minutes ago is found on
+the next resolution.
+
+The copy kept in `.jenesis/artifacts` is the fallback, not the source. It is rewritten on every successful
+read and used only when the repository cannot be reached, so a build that resolved once keeps resolving
+offline, at the versions it last saw. Nothing is written into `~/.m2/repository`, whose `maven-metadata.xml`
+belongs to Maven.
+
+A resolution is still only repeated when the dependency set changes, because the step that performs it is
+cached like every other. `RELEASE` therefore means *the newest version as of the last resolution*, which is
+what `pin` exists to make explicit.
+
 ## Excluding a transitive
 
 A dependency can drag in a transitive you do not want. Pruning it is a Maven mechanism (an exclusion tells
