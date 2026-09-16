@@ -354,16 +354,16 @@ footprint matter more.
 
 <div class="tip">
   Six runnable projects cover this chapter:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-05-java-pom-executable">demo-05</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-06-java-modular-executable">demo-06</a> ship
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-06-java-pom-executable">demo-06</a> and
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-07-java-modular-executable">demo-07</a> ship
   the whole menu from one project each - an app image, a native installer, a bundle, a launcher jar, and a
   container context (and, for the modular one, a <code>.jmod</code> and a jlink runtime);
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-07-bundle">demo-07</a> unpacks a bundle and
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-08-bundle">demo-08</a> unpacks a bundle and
   runs it on a stock JRE;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-39-custom-jmod">demo-39</a> packs extra
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-50-custom-jmod">demo-50</a> packs extra
   content into a <code>.jmod</code> and carries it through jlink into a jpackage image;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-34-module-alias">demo-34</a> makes an
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-18-module-alias">demo-18</a> makes an
   unlinkable closure linkable with a <code>modules.properties</code>; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-48-native-image">demo-48</a> builds a GraalVM
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-58-native-image">demo-58</a> builds a GraalVM
   native image end to end. See <a href="/tool/demos/">Demos</a>.
 </div>

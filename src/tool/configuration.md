@@ -68,7 +68,9 @@ runs from the most specific per-module location to the project-wide fallback:
 What these folders can hold - presence activates, contents configure:
 
 - **Code quality**: `checkstyle.xml`, `pmd.xml`, `spotbugs-exclude.xml`, `detekt.yml`, `codenarc.xml`,
-  `scalastyle-config.xml`.
+  `scalastyle-config.xml`, `errorprone.properties`.
+- **Generated sources**: `xjc.properties`, `protoc.properties`, `avro.properties`, `wsimport.properties`,
+  `openapi.properties`, `antlr.properties`.
 - **Formatting**: `javaformat.properties`, `.editorconfig`, `.scalafmt.conf`.
 - **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`.
 - **Compliance**: `licensing.properties`, `vulnerability.properties`, `spdx.properties`.
@@ -108,7 +110,7 @@ Select profiles with the `jenesis.make.profiles` property - a comma-separated li
   profile can carry its own `checkstyle.xml`, `packaging.properties`, and so on.
 
 Profiles **chain**: any loaded file may itself set `jenesis.make.profiles` to pull in more, transitively.
-The [`profiles`](https://github.com/jenesis/jenesis/tree/main/demo/demo-17-profiles) demo ships a `release`
+The [`profiles`](https://github.com/jenesis/jenesis/tree/main/demo/demo-45-profiles) demo ships a `release`
 profile that turns on source jars and chains to a `supply-chain` profile that enforces strict pinning:
 
 ```properties
@@ -164,7 +166,7 @@ holds that file. Set to an empty string, it switches the user-global layer off e
 command line or in the project's `jenesis.properties`, but not in a profile or in the user-global file itself.
 
 <div class="tip">
-  The <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-17-profiles">demo-17</a> project is a
+  The <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-45-profiles">demo-45</a> project is a
   complete, runnable example of everything here - a base build with no extras, and a <code>release</code>
   profile that chains to <code>supply-chain</code> to add source jars and strict pinning without changing a
   single command-line flag. See <a href="/tool/demos/">Demos</a>.
