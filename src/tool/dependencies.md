@@ -305,3 +305,116 @@ means reaching it by its Maven coordinate. The strict `modular` layout rejects t
   Jakarta Server Pages API, a modular library, on a module path with Tomcat Embed, which carries the servlet
   packages itself. Each is a runnable project - see <a href="/tool/demos/">Demos</a>.
 </div>
+
+## <span id="keeping-a-dependency-private">Keeping a dependency private</span>
+
+Every section so far assumed the module path can hold what the build resolves. It cannot always. A module
+path admits one module per name, so a library that needs a different version of some dependency than its
+consumer has nowhere to put it. The usual answer elsewhere is shading: rewrite the dependency's bytecode
+under new package names and copy it in. That takes reflection, `Class.forName`, resource lookup,
+`META-INF/services`, jar signatures and stack traces with it, and it leaves the seam implicit.
+
+The Java Module System already has the mechanism for this. A second copy of a library goes in a
+`ModuleLayer` of its own, with its own class loader, and keeps every package name it had. Jenesis lets the
+module that needs the isolation declare it:
+
+```java
+/**
+ * @jenesis.layer render api      my.library.spi
+ * @jenesis.layer render provider maven/com.example/renderer-impl
+ */
+module my.library {
+    requires build.jenesis.launcher;
+    requires my.library.spi;
+}
+```
+
+Two lines, and each says which side it declares. `api` names the one module the library shares with the
+layer; `provider` names a root the layer holds, and its whole closure comes with it. Repeat the `provider`
+line for more roots. A root is an ordinary coordinate, so `module/<name>` and
+`maven/<groupId>/<artifactId>` both work, and the layer resolves in a dependency group of its own,
+`layer:render`, which pins, verifies and reports like every other group:
+
+```java
+ * @jenesis.pin layer:render/maven/com.fasterxml.jackson.core/jackson-core 2.15.4 SHA-256/8dc921…
+```
+
+The library reaches its layer by name, and gets back the implementation:
+
+```java
+Report report = Launcher.instance("render", Report.class);
+```
+
+**Consumers declare nothing.** They require the library and know nothing of what it hides; a consumer may
+even resolve a different version of the same dependency for itself. The declaration travels to them in the
+`Jenesis-Layer` manifest attribute of the produced jar, exactly as an alias or an override does, and any
+build that resolves that jar reconstructs the layer from it. Discovery runs to a fixpoint, so a module
+inside a layer may isolate a dependency of its own, without limit.
+
+### What crosses, and what cannot
+
+A layer's configuration is built from its host's, so any module the layer does not itself hold resolves from
+the host. That is what makes the API module the *same* class on both sides, and what lets an instance cross
+the boundary as an ordinary interface call rather than a proxy. Everything the API module reaches is shared
+for the same reason, derived rather than declared.
+
+The consequence is worth stating plainly, because it is equally true of shading: **a dependency whose types
+your API module reaches is exposed by it and cannot be isolated behind it.** Here the build says so, instead
+of leaving it to a `LinkageError` far from its cause. Keep the API module thin.
+
+### Libraries that name themselves nowhere
+
+A layer splits a module path and a class path exactly as an application does, because the libraries worth
+isolating are usually the ones that were never modularized. What carries a module identity - a
+`module-info`, an `Automatic-Module-Name`, or a name you give it with `@jenesis.alias` - is resolved into
+the layer. The rest is the layer's own class path, read by the layer's automatic modules as they would read
+a plain `-cp`.
+
+So a legacy tree costs one line, for the jar your code actually calls:
+
+```java
+/**
+ * @jenesis.alias commons.beanutils commons-beanutils/commons-beanutils
+ */
+module my.library.impl {
+    requires commons.beanutils;
+    requires my.library.spi;
+
+    provides my.library.spi.Beans with my.library.impl.ConvertingBeans;
+}
+```
+
+Commons Logging and Commons Collections arrive as Commons BeanUtils' own dependencies, are named nowhere,
+and become the layer's class path. One rule of the Java Module System decides how this can be used: only an
+automatic module reads the unnamed module, which is why the alias matters - a jar with no identity becomes
+an *automatic* module when you name it, and an automatic module can read a class path. A module with a
+descriptor of its own cannot, and `javac` will not let it try.
+
+### What the build refuses
+
+Each of these is reported when it is declared, naming what to write instead:
+
+- a layer declared without `requires build.jenesis.launcher`, the module a layer is reached through;
+- a layer that names an API module but nothing to isolate, or something to isolate but no API module;
+- an API module the declaring module does not itself require;
+- a `requires` on a module the same module isolates - it is off that module's path, and `javac` would say
+  so anyway;
+- a layer that isolates nothing, because the API module already shares all of it;
+- a layer that provides a contract it also holds, which would look the service up against a different class
+  of the same name and find no provider;
+- a layer that holds no module at all, since a layer is reached through the modules it holds;
+- two layers of one name, because a name is global - it is the dependency group the layer resolves in.
+
+<div class="note">
+  A layer is defined while the JVM runs, so a packaging that resolves its module graph ahead of time refuses
+  a project that declares one rather than flattening it.
+</div>
+
+<div class="tip">
+  Two runnable projects cover this section:
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-20-module-layers">demo-20</a> runs three
+  versions of Jackson in one JVM - nested, and exercised by tests - with the consumer declaring nothing; and
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-21-module-layer-legacy">demo-21</a> hides
+  Commons BeanUtils and the jars it drags, naming only the one its code calls. Each is a runnable project -
+  see <a href="/tool/demos/">Demos</a>.
+</div>

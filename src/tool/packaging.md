@@ -205,30 +205,49 @@ off-the-shelf JRE base. `bundle=true` wires a step that writes one `bundle.zip` 
 
 ```
 bundle.zip
-|-- application.properties     mainClass=sample.Sample, mainModule=demo.bundle
-|-- modulepath/                jars that are modules (the app jar and its module dependencies)
-`-- classpath/                 any non-modular (plain) jars
+|-- application.unix.args      the launch, as a Java argument file
+|-- application.windows.args   the same launch, with Windows path separators
+`-- jars/                      every jar of the closure, stored once
 ```
 
-The zip carries exactly the runtime closure the `Execute` launcher would run, split the same way: real and
-automatic modules under `modulepath/`, plain jars under `classpath/`. The `application.properties` describes
-the launch with three keys: `mainClass` (always), `mainModule` (only for a modular launcher), and
-`javaOptions` (only when needed - see below). Dropped onto a `-jre` base it needs no JDK and no jpackage. It
-is the input a container image, an init script, or any other deployment builds around.
+The zip carries exactly the runtime closure the `Execute` launcher would run, and the descriptor is not a
+description of that launch but the launch itself - a Java argument file, which every JVM already
+understands:
+
+```
+"--module-path"
+"jars/classes.jar:jars/org.slf4j-2.0.16.jar"
+"--module"
+"demo.bundle/sample.Sample"
+```
+
+So a deployment runs it without a reader or a parser of its own:
+
+```bash
+cd <unpacked> && java @application.unix.args
+```
+
+Every path is spelled out rather than handed over as a folder, so a jar is read because the argument file
+names it and never because of where it sits - and because the whole command lives in a file, no closure is
+too large to launch. The graph's own options are in there too, as are the
+[module layers](/tool/dependencies/#keeping-a-dependency-private) the project declares, each as a
+`-Djlayer.modulepath.<layer>` naming its jars. There are two files because the path separator is the only
+part of a launch a bundle cannot know in advance: it is built once and unpacked wherever, so it carries
+both rather than the separator of whoever built it. Dropped onto a `-jre` base it needs no JDK and no
+jpackage.
 
 The trade against an app-image is the classic one. An app-image is self-contained but duplicates the JVM per
 service. A bundle is tiny and shares one JVM layer across every image built on the same base - leaner in
 aggregate for many services, at the cost of coupling to that base's JVM version.
 
 <div class="note">
-  <strong>What <code>javaOptions</code> means.</strong> A module graph is self-contained when every jar on
-  the module path is an explicit named module, so the launcher reaches all of them through the main module's
-  <code>requires</code>. An automatic module or a plain jar breaks that, because a module it uses only
-  internally is never pulled in. The build detects this and writes
-  <code>javaOptions=--add-modules=ALL-MODULE-PATH,ALL-DEFAULT</code>, which a consumer splices into the
-  <code>java</code> command to root the whole module path and the default platform modules. jpackage, the
-  container context and the native image apply the same correction for you; the key only tells a bundle's
-  consumer which case they are in.
+  <strong>Why <code>--add-modules</code> sometimes appears.</strong> A module graph is self-contained when
+  every jar on the module path is an explicit named module, so the launcher reaches all of them through the
+  main module's <code>requires</code>. An automatic module, a plain jar, or a module layer holding either
+  breaks that, because a module used only internally is never pulled in. The build detects this and writes
+  <code>--add-modules ALL-MODULE-PATH,ALL-DEFAULT</code> into the launch, rooting the whole module path and
+  the default platform modules. jpackage, the container context and the native image apply the same
+  correction; you never splice it in yourself.
 </div>
 
 ## A container build context
@@ -246,10 +265,21 @@ java build/jenesis/Make.java stage
 docker build -t sample target/stage/docker/output/module-sources
 ```
 
-The staged folder holds a generated `Dockerfile` beside the `modulepath/` and `classpath/` folders it copies
-in, split exactly the way a bundle splits them. Its `ENTRYPOINT` is the same entry point every other packaging
-form reads, so a container can never drift from what the app image or the launcher jar starts. When the
-module graph is not self-contained, it carries the same `--add-modules=ALL-MODULE-PATH,ALL-DEFAULT` correction.
+The staged folder holds a generated `Dockerfile` beside the `jars/` folder it copies in and the argument
+file its `ENTRYPOINT` names:
+
+```dockerfile
+FROM eclipse-temurin:25-jre
+WORKDIR /app
+COPY jars/ /app/jars/
+COPY application.args /app/
+ENTRYPOINT ["java", "@/app/application.args"]
+```
+
+The entry point is the same one every other packaging form reads, so a container can never drift from what
+the app image or the launcher jar starts, and it stays this size however many jars the application resolves.
+When the module graph is not self-contained, the argument file carries the same
+`--add-modules=ALL-MODULE-PATH,ALL-DEFAULT` correction.
 
 The base image is the only knob, and deliberately so: `ENV`, `USER`, `EXPOSE` and the rest are inherited from
 the base, so image environment belongs in a base image rather than in build configuration.
@@ -264,9 +294,9 @@ the base, so image environment belongs in a base image rather than in build conf
 
 `launcher=true` produces a **single executable jar** you run with `java -jar app.jar`, without flattening
 dependencies into a fat jar. The build shades the published Jenesis Launcher into the jar as its `Main-Class`
-and explodes each dependency into its own `classpath/<jar>/` or `modulepath/<jar>/` subfolder. At run time the
-launcher rebuilds the module graph from those subfolders in process, so `module-info`s and `META-INF/services`
-never collide.
+and explodes each dependency into its own `jars/<jar>/` subfolder, with an `application.properties` naming
+which of them each path holds. At run time the launcher rebuilds the module graph from those subfolders in
+process, so `module-info`s and `META-INF/services` never collide.
 
 Unlike jpackage and bundle, this carries no JVM and no `jlink` runtime. It is a plain jar that runs on any
 JDK 25 or newer, and unlike a bundle it needs no launch script. The shaded launcher is
