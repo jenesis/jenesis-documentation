@@ -94,6 +94,10 @@ flagging the response with a `Jenesis-BestEffort: true` header. That is what kee
 last few hours resolvable before the crawler has recorded it. If Maven Central has no such file, the
 redirect target answers 404.
 
+A client that would rather be told the index has never seen a version than be handed a guess about it
+says so with **`Jenesis-BestEffort: false`**, which answers `404` for an unrecorded version instead of
+redirecting optimistically. Any other value, the header absent included, keeps the guess.
+
 ## `artifact` route: every file of a coordinate
 
 On the `artifact` route the extension is opaque: whatever follows the module name becomes the suffix of
@@ -199,9 +203,9 @@ fetched without parsing the `Location`:
 | `Jenesis-ArtifactId` | always | Maven `artifactId`. |
 | `Jenesis-MavenVersion` | always | Maven coordinate version. |
 | `Jenesis-ModuleVersion` | `/module/`, `/sources/`, `/documentation/` | The publisher-declared module-info version. Omitted on `/artifact/`, where the lookup key is already the Maven version. |
-| `Jenesis-BestEffort` | a version the index has not recorded | `true` - the redirect was built from the module's newest coordinate rather than from a recorded row. |
+| `Jenesis-BestEffort` | a version the index has not recorded | `true` - the redirect was built from the module's newest coordinate rather than from a recorded row. Sent *to* the service as `false`, it declines such a redirect instead. |
 | `Jenesis-Prerelease` | the version served carries a pre-release qualifier | `true` - the version was asked for by name, or the request opted in to pre-releases. |
-| `Vary` | always | `Jenesis-Prerelease, Jenesis-Repository` - the redirect depends on both request headers, so a shared cache must key on them. |
+| `Vary` | always | `Jenesis-Prerelease, Jenesis-Repository, Jenesis-BestEffort` - the redirect depends on all three request headers, so a shared cache must key on them. |
 
 ### When a request fails
 
@@ -219,6 +223,8 @@ A `404` has one of these causes:
 - the module name is unknown to the index, or has no named release on a `/module/`-family route;
 - no version was asked for and every version the module has published is a pre-release, without
   `Jenesis-Prerelease: true` on the request to accept one;
+- a version was asked for that the index has not recorded, and the request sent
+  `Jenesis-BestEffort: false` rather than accept a redirect built from the newest coordinate;
 - the module has no resolved owner in this view.
 
 ## Stability guarantee

@@ -213,6 +213,8 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.maven.token` (`MAVEN_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the Maven upstream. |
 | `jenesis.module.uri` (`JENESIS_REPOSITORY_URI`) | `https://repo.jenesis.build/` | The Jenesis Module Index URL(s) module names resolve through; same list/filter/`@` grammar. |
 | `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | `~/.jenesis` | The local module repository, read first and written by `export`. |
+| `jenesis.module.prerelease` | *(unset)* | Whether a module asked for without a version may resolve to a pre-release. Unset states no preference, and the index serves the newest release. |
+| `jenesis.module.speculative` | *(unset)* | Whether a version the index has not recorded may be resolved from the module's newest coordinate. Unset states no preference, and the index guesses. |
 | `jenesis.openpgp.uri` (`OPENPGP_REPOSITORY_URI`) | `keyserver.ubuntu.com`, `keys.openpgp.org` | HKP key server roots a declared fingerprint resolves through; same list/`@` grammar, asked in order. |
 | `jenesis.openpgp.local` (`OPENPGP_REPOSITORY_LOCAL`) | `.jenesis/keys` | Where fetched keys are held, one file per fingerprint; an empty `openpgp.uri` makes this the only source. |
 | `jenesis.module.token` (`JENESIS_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the module index. |
