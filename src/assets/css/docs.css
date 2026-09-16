@@ -80,6 +80,20 @@ body { --pico-line-height: 1.6; }
 }
 .nav-toggle { margin-left: auto; display: none; }
 
+/* ---- Footer --------------------------------------------------------------------------------------------- */
+/* One quiet line under every page, set to the header's width so the two frame the page alike. */
+.site-footer {
+  border-top: 1px solid var(--pico-muted-border-color);
+  padding-block: 0;   /* Pico pads body>footer; the inner row carries the spacing instead */
+}
+.site-footer__inner {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--app-space-2) var(--app-space-4);
+  max-width: 80rem; margin: 0 auto; padding: var(--app-space-5) var(--app-space-4);
+  color: var(--pico-muted-color); font-size: var(--app-font-size-sm);
+}
+.site-footer a { color: inherit; }
+.site-footer a:hover { color: var(--pico-primary); }
+
 /* ---- Landing -------------------------------------------------------------------------------------------- */
 .landing { max-width: 60rem; margin: 0 auto; padding: var(--app-space-6) var(--app-space-4); }
 .landing-hero { text-align: center; padding: var(--app-space-6) 0; }
