@@ -36,14 +36,17 @@ place here:
 1. **The launcher's classes go into the jar root.** Only its `build/jenesis/launcher/*.class` files are
    copied; the launcher's own `module-info` and manifest are left out, so at run time those classes are the
    unnamed module that hosts your application.
-2. **Each dependency is exploded into its own subfolder.** The resolved jar file name becomes the folder name:
-   `modulepath/org.slf4j-2.0.16.jar/` for a modular or automatic dependency, `classpath/…/` for one that
-   names no module, and `classes.jar/` for the application's own module. The split follows the same rule as
-   the build's `Execute` launcher and its `bundle.zip`: a jar is placed on the module path only when the
-   application is modular and the jar describes a module. A `pom.xml` application without a module
-   therefore gets everything under `classpath/`.
+2. **Each dependency is exploded into its own subfolder of one `jars/` store.** The resolved jar file name
+   becomes the folder name: `jars/org.slf4j-2.0.16.jar/`, and `jars/classes.jar/` for the application's own
+   module. Every jar is stored once, whatever it is for.
 3. **`application.properties` is written** with `mainClass`, `mainModule` (modular applications only), and
-   `classpath` - the class-path subfolders, listed in file-name order.
+   the two path lists, `classpath` and `modulepath` - because a jar is read on the path that names it, never
+   because of where it sits. Which list a jar lands in follows the same rule as the build's `Execute`
+   launcher and its `bundle.zip`: a jar is on the module path only when the application is modular and the
+   jar describes a module, so a `pom.xml` application without a module has everything on its class path. A
+   project that declares a [module layer](/tool/dependencies/#keeping-a-dependency-private) gets a
+   `modulepath.<layer>` list beside them, and a `classpath.<layer>` when the layer holds jars that name no
+   module.
 4. **The manifest gets one attribute**, `Main-Class: build.jenesis.launcher.Launcher`, so `java -jar` starts
    the launcher.
 
@@ -52,10 +55,9 @@ bundled agents, module-access grants, signer reconstruction - are for a jar you 
 [*Reference*](/launcher/reference/) chapter lists them.
 
 <div class="note">
-  A <a href="/tool/packaging/">bundle</a> (<code>bundle=true</code>) makes the same module-path / class-path
-  split, but keeps each jar whole under <code>modulepath/</code> and <code>classpath/</code> for you to drop
-  onto a JRE. The launcher jar explodes those same jars into subfolders and adds the launcher, so it needs no
-  launch script.
+  A <a href="/tool/packaging/">bundle</a> (<code>bundle=true</code>) names the same two paths, but keeps each
+  jar whole in its <code>jars/</code> folder for you to drop onto a JRE. The launcher jar explodes those same
+  jars into subfolders and adds the launcher, so it needs no launch script.
 </div>
 
 ## Where the jar lands
