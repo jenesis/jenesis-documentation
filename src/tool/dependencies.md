@@ -82,6 +82,23 @@ the variable of the same name:
   different host, so it never leaks to a redirect target.
 </div>
 
+### What the build tells the module index
+
+The [module index](/modules/resolving/) does not serve jars, it redirects to them, and three of its
+choices are the build's to make. Jenesis states each one only when you have configured it, so an
+unconfigured build leaves every choice with the index and gets the same answer any other client gets.
+
+| What you set | What the index is told |
+| --- | --- |
+| `jenesis.maven.uri` (`MAVEN_REPOSITORY_URI`) | Redirect to the same repository Jenesis resolves Maven artifacts from, so module jars and Maven artifacts come from one host rather than two that disagree on what exists yet. |
+| `jenesis.module.prerelease` | Whether a module asked for without a version may resolve to a pre-release. |
+| `jenesis.module.speculative` | Whether a version the index has not recorded may be resolved from the module's newest coordinate, rather than answering that it has never seen it. |
+
+Not every repository can be named to a third party, and Jenesis says nothing rather than guess: an entry
+restricted to some groups cannot stand for the redirect of a module outside them, an `@` reference is not
+expanded here, and a `file:` repository or one carrying credentials has no URL the index could use. Only
+a repository reached over `http` or `https` is told anything at all.
+
 ## Seeing what resolved
 
 The `dependencies` selector prints each module's resolved tree, the way `mvn dependency:tree` does:
