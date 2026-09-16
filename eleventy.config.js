@@ -12,6 +12,42 @@ export default function (eleventy) {
   eleventy.addPassthroughCopy({ "src/CNAME": "CNAME" });
   eleventy.addPassthroughCopy({ "src/KEYS": "KEYS" });
 
+  // Every chapter heading gets an id derived from its own words, so a section can be linked to and the
+  // copy-link affordance in anchor.js has something to copy. A heading that already carries a hand-written
+  // anchor (`## <span id="...">`) keeps only that one: those ids are published link targets, they do not
+  // always match the wording, and a second id on the heading would duplicate them.
+  eleventy.amendLibrary("md", (markdown) => {
+    markdown.core.ruler.push("headingIds", (state) => {
+      const taken = new Set();
+      for (const token of state.tokens) {
+        const html = token.type === "html_block"
+          ? token.content
+          : (token.children ?? [])
+              .filter((child) => child.type === "html_inline")
+              .map((child) => child.content)
+              .join(" ");
+        for (const match of html.matchAll(/\bid="([^"]+)"/g)) taken.add(match[1]);
+      }
+      for (const [index, heading] of state.tokens.entries()) {
+        if (heading.type !== "heading_open" || (heading.tag !== "h2" && heading.tag !== "h3")) continue;
+        const inline = state.tokens[index + 1];
+        if (!inline || inline.type !== "inline" || /\bid="/.test(inline.content)) continue;
+        const slug = (inline.children ?? [])
+          .filter((child) => child.type === "text" || child.type === "code_inline")
+          .map((child) => child.content)
+          .join(" ")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        if (!slug) continue;
+        let id = slug;
+        for (let suffix = 2; taken.has(id); suffix++) id = `${slug}-${suffix}`;
+        taken.add(id);
+        heading.attrSet("id", id);
+      }
+    });
+  });
+
   // One collection per tool section, sorted by the page's `order`, so the sidebar and the
   // prev/next links are derived from the files that actually exist.
   for (const section of ["tool", "jpx", "launcher", "modules", "repository"]) {

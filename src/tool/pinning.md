@@ -229,12 +229,11 @@ checksums are not consulted. `pin` then re-resolves that fresh closure and rewri
   written in as an accepted pin just the same. Run it only on a <strong>trusted machine</strong> against a
   <strong>trusted repository</strong>, review the resulting diff, and commit it. Every subsequent build then
   enforces the new pins against the artifacts you just vetted.
-  <em><a href="/tool/securing-the-supply-chain/#provenance">Recording who signed a dependency</a></em> closes
+  <em><a href="/tool/securing-the-supply-chain/#provenance-who-produced-the-bytes">Recording who signed a dependency</a></em> closes
   exactly this gap: it checks who signed an artifact before a checksum for it is written.
 </div>
 
-## <span id="sharing-pins-a-bill-of-materials">Sharing pins: a bill of materials</span>
-
+## Sharing pins: a bill of materials
 Pins written per module are exact but repetitive: the same versions recur across modules, and across projects
 that want to stay in step. A **bill of materials** is that same pin set in one file, imported instead of
 repeated. A module then declares only *what* it requires while the BOM decides *which version* and *which

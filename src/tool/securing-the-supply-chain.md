@@ -54,18 +54,17 @@ The fourth is the *[supply-chain features](/tool/supply-chain/)* chapter, and th
 an artifact's `main` can reach. Pinning guarantees *what* runs; isolation limits what it can do.
 
 That leaves the third question, which no hash can answer - and which matters most at one particular moment,
-the run that writes the pins. *[The one build a pin cannot protect](#writing-a-pin)* is that argument; what
+the run that writes the pins. *[The one build a pin cannot protect](#the-one-build-a-pin-cannot-protect)* is that argument; what
 follows is the mechanism.
 
-## <span id="provenance">Provenance: who produced the bytes</span>
-
+## Provenance: who produced the bytes
 A checksum is computed from whatever the repository served, so it proves an artifact has not changed since you
 recorded it - not that what you recorded was genuine. An artifact swapped before your first `pin` is frozen as
 an accepted pin just the same.
 
 `@jenesis.signature` says who that is, in one of two ways: an **OpenPGP key** somebody keeps, or a **Sigstore
 identity** nobody keeps a key for at all. The key form comes first here; *[An identity instead of a
-key](#identities)* is the other.
+key](#an-identity-instead-of-a-key)* is the other.
 
 Naming a key, the declaration is the fingerprint of the key that signs a dependency's artifacts. Right after an
 artifact is downloaded, Jenesis fetches the detached signature published beside it, forks a local `gpgv` to
@@ -264,8 +263,7 @@ gpg --import key.asc                       # only once the fingerprint matches
   be against a channel an attacker does not control.
 </div>
 
-## <span id="identities">An identity instead of a key</span>
-
+## An identity instead of a key
 Everything above rests on a maintainer holding a private key for years, and on you obtaining its fingerprint
 through a channel an attacker does not control. Sigstore answers the same question without either. The signer
 authenticates to an identity provider, a certificate authority issues a certificate that is valid for **ten
@@ -343,8 +341,7 @@ a project moving from one to the other declares both and neither is weakened. Wh
 a repository publishes: a detached `.asc` is near-universal on Maven Central, while bundles are still the
 exception, so an identity is an additional answer where one exists rather than a replacement.
 
-## <span id="writing-a-pin">The one build a pin cannot protect</span>
-
+## The one build a pin cannot protect
 A pinned project is easy to reason about. The pins sit in your own sources, so they were reviewed the way any
 other change is, and every later build enforces them: whatever the repository serves must hash to what the pin
 says, or the build fails. Trust the project and you trust its pins; trust the pins and you trust every download
@@ -425,7 +422,7 @@ Nothing here needs a build script, and the layers are independent, so adopt them
    coordinate is covered.
 3. **Refresh deliberately.** `-Djenesis.dependency.pin=ignore` re-blesses whatever the repository serves today,
    so run it on a trusted machine, with `-Djenesis.dependency.signature=strict`, and review the diff - see
-   *[The one build a pin cannot protect](#writing-a-pin)*, which is the whole argument for why this run, rather
+   *[The one build a pin cannot protect](#the-one-build-a-pin-cannot-protect)*, which is the whole argument for why this run, rather
    than every run, is the one to harden.
 4. **Turn on the checks you will act on** - a licence policy, a vulnerability threshold - and keep the SBOM you
    already get.
@@ -435,8 +432,7 @@ What remains is the trust you extend deliberately: your JDK, the repository you 
 vetted, and the gpg that checks them. Naming that list is the useful outcome; a build whose trusted set
 cannot be written down has not been secured, only described.
 
-## <span id="signing-key">The Jenesis signing key</span>
-
+## The Jenesis signing key
 Jenesis artifacts published to Maven Central are signed with this key. Declare its **primary** fingerprint -
 not the signing subkey, which is what `gpg --verify` prints first:
 

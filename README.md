@@ -34,8 +34,8 @@ passes - publishes to GitHub Pages. A broken link fails the deploy, so run `npm 
 - `src/_data/` - `demos.js` (the demo index, kept in step with `jenesis/jenesis`'s `demo/`) and `release.js`
   (which repository each landing-page tile takes its version from - the version itself is read from the
   GitHub API at page load, never committed, so a tile shows no version rather than a stale one).
-- `src/assets/` - CSS (`pico.min.css`, `app.css`, `docs.css`), the logos and font, and the small theme and
-  navigation scripts.
+- `src/assets/` - CSS (`pico.min.css`, `app.css`, `docs.css`), the logos and font, and the small theme,
+  navigation and section-link scripts.
 
 ## Writing a chapter
 

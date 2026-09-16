@@ -370,8 +370,7 @@ means reaching it by its Maven coordinate. The strict `modular` layout rejects t
   packages itself. Each is a runnable project - see <a href="/tool/demos/">Demos</a>.
 </div>
 
-## <span id="keeping-a-dependency-private">Keeping a dependency private</span>
-
+## Keeping a dependency private
 Every section so far assumed the module path can hold what the build resolves. It cannot always. A module
 path admits one module per name, so a library that needs a different version of some dependency than its
 consumer has nowhere to put it. The usual answer elsewhere is shading: rewrite the dependency's bytecode
