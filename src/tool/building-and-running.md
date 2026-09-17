@@ -158,13 +158,14 @@ documentation tool (`javadoc` for Java) and adds a `-javadoc.jar`. Both are off 
 build time you do not want on every inner-loop run. Turn them on for a release, or record them in a profile
 (see *[Configuration](/tool/configuration/)*).
 
-### The time recorded in archives
+### Reproducible archives
 
-Every jar, jmod and zip the build produces records the same date and time on each entry, 1980-02-01 00:00
-UTC unless told otherwise, so an archive does not change with the moment it was built. A zip entry cannot
-record a time before 1980, and the default sits a month after that limit so that no time zone reads it as
-1979. The `jenesis.archive.timestamp` property names another as an ISO-8601 date-time with an offset, for example the
-time of the commit being released:
+Every jar, jmod and zip the build produces comes out the same from the same inputs: its entries follow a
+fixed order, no entry records Unix permissions, and every entry records the same date and time,
+1980-02-01 00:00 UTC unless told otherwise. A zip entry cannot record a time before 1980, and the default
+sits a month after that limit so that no time zone reads it as 1979. The `jenesis.archive.timestamp`
+property names another time as an ISO-8601 date-time with an offset, for example the time of the commit
+being released:
 
 ```bash
 java -Djenesis.archive.timestamp=$(git log -1 --format=%cI) build/jenesis/Make.java
@@ -172,6 +173,26 @@ java -Djenesis.archive.timestamp=$(git log -1 --format=%cI) build/jenesis/Make.j
 
 The value must lie between `1980-01-01T00:00:02Z` and `2099-12-31T23:59:59Z`, the range an archive entry
 records without depending on the time zone of the machine that builds it.
+
+An empty value, `-Djenesis.archive.timestamp=`, turns the fixed time off. `jar` then records when each file
+was last modified and `jmod` when it wrote each entry, an entry copied from another jar keeps the time it
+had, an entry the build generates records when it was written, and `javadoc` and `groovydoc` date every page
+again. Avoid it: every build then produces different archives, so neither you nor anyone else can check a
+release against the sources it came from. It exists only for a tool that reads the time of an archive entry
+and cannot be told otherwise.
+
+The [`reproducible`](https://github.com/jenesis/jenesis/tree/main/demo/demo-58-reproducible) demo builds a jar
+and compares it with a SHA-256 recorded in the demo, a check CI runs on Linux, macOS and Windows.
+
+What the build writes is fixed; what it copies stays yours. A resource goes into the jar byte for byte, and
+so does a source file into the sources jar, so a file checked out with Windows line endings makes a
+different archive than the same file checked out on Linux. Git on Windows commonly converts text files to
+Windows line endings on checkout (`core.autocrlf`). A `.gitattributes` file at the root of the repository
+fixes the line endings of every file Git treats as text, whatever machine checks it out:
+
+```
+* text=auto eol=lf
+```
 
 ## Passing extra arguments to a tool
 
