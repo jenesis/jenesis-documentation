@@ -167,7 +167,7 @@ rather than being served by one configured for something else.
 | `jenesis.test.reporting` | `false` | Emit test reports under `reports/tests/`: legacy JUnit XML and Open Test Reporting XML for `junit-platform`, TestNG's own report for `testng`. |
 | `jenesis.test.incremental` | *(off)* | Run only the tests a change can reach; the value names the digest algorithm. |
 | `jenesis.test.force` | `false` | `true` runs the tests even when nothing changed and the recorded scope already covers the request. |
-| `jenesis.archive.timestamp` | `1980-02-01T00:00:00Z` | The date and time recorded on every entry of the jars, jmods and zips the build produces; an ISO-8601 date-time with an offset between `1980-01-01T00:00:02Z` and `2099-12-31T23:59:59Z` (see *[Building &amp; running](/tool/building-and-running/#the-time-recorded-in-archives)*). |
+| `jenesis.archive.timestamp` | `1980-02-01T00:00:00Z` | The date and time recorded on every entry of the jars, jmods and zips the build produces; an ISO-8601 date-time with an offset between `1980-01-01T00:00:02Z` and `2099-12-31T23:59:59Z` (see *[Building &amp; running](/tool/building-and-running/#reproducible-archives)*). |
 | `jenesis.stage.tests` | `false` | Include test-variant artifacts when staging; a module tagged `@jenesis.test abstract` is never staged. |
 | `jenesis.sbom.cyclonedx` | `true` | Emit a CycloneDX SBOM; set `false` to skip it. |
 | `jenesis.compliance` | `true` | Run the licence and vulnerability checks; `false` skips both. |
