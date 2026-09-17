@@ -265,8 +265,9 @@ installed, but it cannot point the build at a program of its own.
 Before a JDK it found runs, Jenesis checks on Linux and macOS that every file in it belongs to you or to root
 and that no other user can write to it; a group named after the file's owner, the private group many Linux
 systems give each user, may. A JDK that fails the check is refused with the file named, not exchanged for
-another match. Windows has no such check, so there the search relies on the protection of
-`C:\Program Files` and of your user profile.
+another match. GitHub's hosted Linux runners install the JDKs of `actions/setup-java` writable by every user,
+so a job that searches for one restricts it first, with `chmod -R go-w` on its folder. Windows has no such
+check, so there the search relies on the protection of `C:\Program Files` and of your user profile.
 
 The [`toolchain`](https://github.com/jenesis/jenesis/tree/main/demo/demo-61-toolchain) demo names JDK 25 in
 its `jenesis.properties`. CI starts it on JDK 25, asks for 26, and checks that the program reports 26 on
