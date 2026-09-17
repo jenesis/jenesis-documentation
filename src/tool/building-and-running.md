@@ -161,8 +161,9 @@ build time you do not want on every inner-loop run. Turn them on for a release, 
 ### The time recorded in archives
 
 Every jar, jmod and zip the build produces records the same date and time on each entry, 1980-02-01 00:00
-UTC unless told otherwise, so an archive does not change with the moment it was built. The
-`jenesis.archive.timestamp` property names another as an ISO-8601 date-time with an offset, for example the
+UTC unless told otherwise, so an archive does not change with the moment it was built. A zip entry cannot
+record a time before 1980, and the default sits a month after that limit so that no time zone reads it as
+1979. The `jenesis.archive.timestamp` property names another as an ISO-8601 date-time with an offset, for example the
 time of the commit being released:
 
 ```bash
