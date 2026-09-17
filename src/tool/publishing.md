@@ -40,6 +40,12 @@ scm.connection=scm:git:https://github.com/jenesis/jenesis.git
 scm.url=https://github.com/jenesis/jenesis
 ```
 
+The POM's `<scm>` also names the tag a release was built from, so that the sources behind an artifact can be
+found beside the repository URL. The tag is the version set with `jenesis.project.version`, unless
+`jenesis.project.tag` names another, as a repository whose tags carry a prefix needs
+(`-Djenesis.project.tag=v1.0.0`); an empty `jenesis.project.tag` writes no tag at all. When neither property is
+set, a `scm.tag` in `project.properties` or the `<tag>` of the source `pom.xml` is used.
+
 <div class="tip">
   A staged bundle is <strong>reproducible</strong>: jar entries carry a fixed timestamp, the manifest
   records <code>Created-By: Jenesis</code> rather than the JDK that ran the build, and Javadoc is generated
