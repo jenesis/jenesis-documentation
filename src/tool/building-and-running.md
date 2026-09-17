@@ -174,6 +174,13 @@ java -Djenesis.archive.timestamp=$(git log -1 --format=%cI) build/jenesis/Make.j
 The value must lie between `1980-01-01T00:00:02Z` and `2099-12-31T23:59:59Z`, the range an archive entry
 records without depending on the time zone of the machine that builds it.
 
+An empty value, `-Djenesis.archive.timestamp=`, turns the fixed time off. `jar` then records when each file
+was last modified and `jmod` when it wrote each entry, an entry copied from another jar keeps the time it
+had, an entry the build generates records when it was written, and `javadoc` and `groovydoc` date every page
+again. Avoid it: every build then produces different archives, so neither you nor anyone else can check a
+release against the sources it came from. It exists only for a tool that reads the time of an archive entry
+and cannot be told otherwise.
+
 The [`reproducible`](https://github.com/jenesis/jenesis/tree/main/demo/demo-58-reproducible) demo builds a jar
 and compares it with a SHA-256 recorded in the demo, a check CI runs on Linux, macOS and Windows.
 
