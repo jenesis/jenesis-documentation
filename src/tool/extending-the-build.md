@@ -232,6 +232,29 @@ cached outputs whose inputs are unchanged. The `generate` step above synthesises
 There is no phase lifecycle to fit into: a build is just steps wired to steps, and here you wire them
 yourself.
 
+## Running your entry point on the project's JDK
+
+`Make.java` and `Execute.java` start again on the JDK that `jenesis.toolchain.version` names (see
+*[Building &amp; running](/tool/building-and-running/#the-jdk-a-build-runs-on)*). An entry point of your own
+does so only when it asks `Toolchain`, from `build.jenesis`:
+
+```java
+static void main(String... selectors) throws Exception {
+    Make make = new Make("build.jenesis.Project");
+    Toolchain toolchain = new Toolchain();
+    if (!toolchain.home().equals(Path.of(System.getProperty("java.home")))) {
+        System.exit(toolchain.launch(Demo.class, List.of(), List.of(selectors)));
+    }
+    System.exit(make.run(selectors));
+}
+```
+
+`new Make(...)` reads `jenesis.properties` first, so the version can come from the project. `home()` answers
+the JDK the version selects - the running one when it matches or no version is set - and `launch` starts the
+entry point again on it, the same way it was started, and returns the exit code. The first list holds JVM
+options for the new JVM, such as `-D` properties of the command line; the new JVM reads the project's files
+again itself. `version(...)` and `searchpath(...)` return a copy with another version or search path.
+
 ## Compiling your build
 
 A custom entry point is the one thing the installed `jenesis` command cannot run: it launches the published

@@ -123,7 +123,8 @@ Without either, the module compiles for the release of the JDK running the build
 25, and Kotlin and Scala sources target the same release. That keeps the output the same across updates and
 vendors of one JDK, because without `--release` `javac` writes the JDK's full version, such as `25.0.3`, into
 `module-info.class`. `javac` refuses an `--add-exports` or `--add-reads` into a JDK module alongside a
-release, so exporting a JDK package into a compilation is not supported.
+release, so exporting a JDK package into a compilation is not supported. Which JDK runs the build can be
+named as well, as described under [The JDK a build runs on](#the-jdk-a-build-runs-on).
 
 ### One jar, several Java versions
 
@@ -193,6 +194,84 @@ fixes the line endings of every file Git treats as text, whatever machine checks
 ```
 * text=auto eol=lf
 ```
+
+## The JDK a build runs on
+
+A build runs on the JDK that started it, unless the project names one. `jenesis.toolchain.version` does, in
+`jenesis.properties` or with `-D`:
+
+```properties
+jenesis.toolchain.version=25-temurin
+```
+
+`Make.java` and `Execute.java` check the JVM they were started on first. When it matches, the build runs as
+always. When it does not, they look for a matching JDK among those already installed and start again on it,
+with the same selectors and the `-Djenesis.*` properties of the command line, and print a line naming the
+JDK they chose. Nothing is downloaded or installed: when no JDK matches, the build fails and lists what it
+found. Other JVM options, such as `-Xmx`, reach the new JVM through the `JDK_JAVA_OPTIONS` environment
+variable, which every `java` launcher reads. A build started from an entry point of your own runs on the JVM
+that started it, unless that entry point asks (see *[Extending the build](/tool/extending-the-build/)*).
+
+Moving to another JDK compiles again only what depends on it: a module that declares no release now
+compiles for the new JDK's release, while a module that declares one keeps its classes.
+
+### Naming a version
+
+A version is `<feature>[.<interim>[.<update>...]][-<word>...]`:
+
+- **The numbers match as a prefix**, a missing number counting as zero: `25` matches every JDK 25, and
+  `25.0.3` that update and its patches. Jenesis runs on Java 25 or newer, so a lower version is refused; to
+  compile for an older Java, declare the release as described under
+  [Choosing the Java version](#choosing-the-java-version).
+- **Every word must be one the JDK answers to**: a word of the vendor or the vendor version its `release`
+  file records, or of the pre-release and optional parts of its version. Temurin answers to `eclipse`,
+  `adoptium` and `temurin`, Azul Zulu to `azul` and `zulu`, GraalVM Community Edition to `graalvm` and
+  `community`, and a long-term-support build to `lts`. There is no list of vendors, so a JDK built in-house
+  answers to its own name.
+- **A pre-release matches only when the version names its word**: `26-ea` selects an early-access build of
+  26, and `26` never does.
+
+Among several matching JDKs the newest wins. A JDK is identified by reading its `release` file, so none is
+run before one is chosen, and the error for a version nothing matches lists every JDK found with the words
+it answers to.
+
+### Where Jenesis looks
+
+`jenesis.toolchain.searchpath` is a comma-separated list of folders. An entry is absolute or starts with `~`,
+and `*` stands for any one folder name. The default, `@`, stands for the usual locations of the operating
+system, and combines with entries of your own, as in `@,/opt/jdks/*`:
+
+| Operating system | Searched for `@` |
+| --- | --- |
+| Linux | `/usr/lib/jvm/*`, `~/.sdkman/candidates/java/*`, `~/.jdks/*`, `~/.local/share/mise/installs/java/*` |
+| macOS | `/Library/Java/JavaVirtualMachines/*/Contents/Home`, `~/Library/Java/JavaVirtualMachines/*/Contents/Home`, `/opt/homebrew/opt/*/libexec/openjdk.jdk/Contents/Home`, `~/.sdkman/candidates/java/*`, `~/.local/share/mise/installs/java/*` |
+| Windows | `C:\Program Files\<vendor>\*` for Eclipse Adoptium, Java, Microsoft, Zulu, Amazon Corretto and BellSoft, `~\.jdks\*`, `~\scoop\apps\*\current` |
+
+An empty search path searches nothing, so the build only checks the JDK it was started on - the setting for
+a CI job that sets up its own JDK:
+
+```bash
+java -Djenesis.toolchain.searchpath= build/jenesis/Make.java
+```
+
+### What a project cannot set
+
+The search path decides which program the build runs, so it is yours to set, not the project's. It is
+accepted on the command line and in your own `~/.jenesis/jenesis.properties`, and refused in the project's
+`jenesis.properties`, in a profile, and in a user-global file whose location the project's
+`jenesis.properties` chose. A project names the version it needs, and so chooses among the JDKs you
+installed, but it cannot point the build at a program of its own.
+
+Before a JDK it found runs, Jenesis checks on Linux and macOS that every file in it belongs to you or to root
+and that no other user can write to it; a group named after the file's owner, the private group many Linux
+systems give each user, may. A JDK that fails the check is refused with the file named, not exchanged for
+another match. GitHub's hosted Linux runners install the JDKs of `actions/setup-java` writable by every user,
+so a job that searches for one restricts it first, with `chmod -R go-w` on its folder. Windows has no such
+check, so there the search relies on the protection of `C:\Program Files` and of your user profile.
+
+The [`toolchain`](https://github.com/jenesis/jenesis/tree/main/demo/demo-59-toolchain) demo names JDK 25 in
+its `jenesis.properties`. CI starts it on JDK 25, asks for 26, and checks that the program reports 26 on
+Linux, macOS and Windows.
 
 ## Passing extra arguments to a tool
 

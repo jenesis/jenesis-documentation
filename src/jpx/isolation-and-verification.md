@@ -16,7 +16,8 @@ every launch.
 jpx --docker org.junit.platform.console --version
 ```
 
-The container runs the **host's own Java**: the host's Java home is mounted read-only at `/opt/java-home`
+The container runs the **host's own Java**: the host's Java home, the JDK running jpx or the one
+[`--java`](/jpx/reference/) selects, is mounted read-only at `/opt/java-home`
 and the installation folder read-only at its host path, so the containerised run needs no credentials of its
 own. The current working directory is mounted read-write at its host path, so the program can read its
 input and write its output where you started it. Because the host's JDK runs inside the container, the
