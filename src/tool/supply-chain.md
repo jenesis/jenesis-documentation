@@ -44,9 +44,9 @@ places, one per consumer:
 Each component carries its `pkg:maven/…` package URL, its `SHA-256` hash, and its licence, with a `dependsOn`
 relationship back to the project. The document's `metadata.component` describes the project itself from the
 POM - its description, licence, developers (as CycloneDX `authors`), and homepage and source repository (as
-`website` and `vcs` references) - filling in only what the POM declares. The tag the POM names is recorded
-twice: as the comment of the `vcs` reference, which reads `tag <tag>`, and as a `jenesis:scm:tag` property of
-the component, which is present even when no repository URL is declared.
+`website` and `vcs` references) - filling in only what the POM declares. The tag and the revision a release
+was built from, when given, are recorded as well, including a `vcs` reference that locates the sources at that
+revision (see *[Publishing](/tool/publishing/#pointing-a-release-at-its-sources)*).
 
 <div class="tip">
   The SBOM is <strong>reproducible</strong>: its <code>serialNumber</code> is a UUID derived from the
