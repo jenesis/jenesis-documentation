@@ -216,16 +216,16 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 
 | Key (env fallback) | Default | Effect |
 | --- | --- | --- |
-| `jenesis.maven.uri` (`MAVEN_REPOSITORY_URI`) | Maven Central | Upstream Maven repository URL(s); supports filters and references. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.maven.uri` (`MAVEN_REPOSITORY_URI`) | Maven Central | Upstream Maven repository URL(s); supports filters and references. A project's own file may name them, and `jenesis.maven.token` is then not sent. |
 | `jenesis.maven.local` (`MAVEN_REPOSITORY_LOCAL`) | `~/.m2/repository` | Local Maven repository for reads and `export`. Command line or `~/.jenesis/jenesis.properties` only. |
-| `jenesis.maven.token` (`MAVEN_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the Maven upstream. Command line or `~/.jenesis/jenesis.properties` only. |
-| `jenesis.module.uri` (`JENESIS_REPOSITORY_URI`) | `https://repo.jenesis.build/` | The Jenesis Module Index URL(s) module names resolve through; same list/filter/`@` grammar. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.maven.token` (`MAVEN_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the Maven upstream. Command line or `~/.jenesis/jenesis.properties` only. It travels only to a `jenesis.maven.uri` named in the environment, on the command line or there. |
+| `jenesis.module.uri` (`JENESIS_REPOSITORY_URI`) | `https://repo.jenesis.build/` | The Jenesis Module Index URL(s) module names resolve through; same list/filter/`@` grammar. A project's own file may name them, and `jenesis.module.token` is then not sent. |
 | `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | `~/.jenesis` | The local module repository, read first and written by `export`. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.module.prerelease` | *(unset)* | Whether a module asked for without a version may resolve to a pre-release. Unset states no preference, and the index serves the newest release. |
 | `jenesis.module.speculative` | *(unset)* | Whether a version the index has not recorded may be resolved from the module's newest coordinate. Unset states no preference, and the index guesses. |
-| `jenesis.openpgp.uri` (`OPENPGP_REPOSITORY_URI`) | `keyserver.ubuntu.com`, `keys.openpgp.org` | HKP key server roots a declared fingerprint resolves through; same list/`@` grammar, asked in order. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.openpgp.uri` (`OPENPGP_REPOSITORY_URI`) | `keyserver.ubuntu.com`, `keys.openpgp.org` | HKP key server roots a declared fingerprint resolves through; same list/`@` grammar, asked in order. A project's own file may name them. |
 | `jenesis.openpgp.local` (`OPENPGP_REPOSITORY_LOCAL`) | `.jenesis/keys` | Where fetched keys are held, one file per fingerprint; an empty `openpgp.uri` makes this the only source. A project's own file names only a folder inside the project. |
-| `jenesis.module.token` (`JENESIS_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the module index. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.module.token` (`JENESIS_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the module index. Command line or `~/.jenesis/jenesis.properties` only. It travels only to a `jenesis.module.uri` named in the environment, on the command line or there. |
 | `jenesis.repository.insecure` | `false` | Permit plaintext (`http://`) fetches. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.repository.retries` | `2` | Retries for a transient fetch failure (`0` disables). |
 | `jenesis.repository.backoff` | `125` | Initial retry wait in milliseconds, doubling each attempt. |

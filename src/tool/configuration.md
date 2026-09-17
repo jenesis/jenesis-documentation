@@ -39,8 +39,13 @@ error there and in the project's profiles, and belong on the command line or in 
 | any key outside `jenesis.*` | it would configure the JVM that runs the whole build, such as a proxy or a trust store |
 | `jenesis.make.root`, `jenesis.make.global` | the root locates the file, and the user-global folder decides which of your settings apply; both are command-line only |
 | `jenesis.daemon.options`, `jenesis.openpgp.command`, `jenesis.jreleaser.executable`, `jenesis.toolchain.searchpath`, `jenesis.toolchain.installer`, every `jenesis.jarsigner.*` | they name a program the build runs, the options a JVM runs it with, or the signing key it reaches for |
-| `jenesis.maven.*`, `jenesis.module.*`, `jenesis.cache.uri`, `jenesis.cache.key`, `jenesis.sigstore.*`, `jenesis.repository.insecure`, `jenesis.cache.insecure` | they decide where the build fetches from, what it trusts, and where this machine's credentials travel |
+| `jenesis.maven.token`, `jenesis.module.token`, `jenesis.cache.key`, `jenesis.cache.uri`, `jenesis.maven.local`, `jenesis.module.local`, `jenesis.sigstore.*`, `jenesis.repository.insecure`, `jenesis.cache.insecure` | they name this machine's credentials, a cache whose outputs the build runs, a folder it shares between projects, or what it trusts |
 | the `jenesis.project.docker.*` and `jenesis.execute.docker.*` mounts, environment and image | they decide what a containerized build reaches on this machine, which is the point of containing it |
+
+A project **may** name the repositories it resolves from, with `jenesis.maven.uri`, `jenesis.module.uri` and
+`jenesis.openpgp.uri`. A token then stays behind: `jenesis.maven.token` and `jenesis.module.token` are sent
+only to a repository named where the token itself was named - in the environment, on the command line or in
+your user-global file - so a repository a project names never receives one.
 
 A project's file also names only folders inside the project for `jenesis.project.target`,
 `jenesis.project.artifacts`, `jenesis.project.cache`, `jenesis.make.classes`, `jenesis.pin.file` and
