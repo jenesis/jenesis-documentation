@@ -78,7 +78,9 @@ build. `jenesis-version` and `jenesis-validate` check that a project's embedded 
 installed version, and `jenesis-validate` names the files that differ where `jenesis` only decides whether
 to trust them. `jenesis-switch` moves the whole shell to the version a project records,
 for when you want every command aligned rather than one invocation; source it, as `. jenesis-switch`, since
-it changes the calling shell.
+it changes the calling shell. `jenesis-jdk` installs a JDK for the version a project asks for with SDKMAN,
+mise or Scoop, once you name it as the installer (see
+*[Building &amp; running](/tool/building-and-running/#installing-a-missing-jdk)*).
 
 ### curl bootstrap
 
