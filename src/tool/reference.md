@@ -155,7 +155,7 @@ rather than being served by one configured for something else.
 | `jenesis.daemon.idle` | `10800` | Seconds of idleness after which the daemon exits. |
 | `jenesis.daemon.options` | `-Xmx2g` | JVM options for the daemon process itself, whitespace separated. |
 
-| `jenesis.make.global` | `$HOME` | Base folder whose `.jenesis/` subfolder holds the user-global `jenesis.properties`; empty string disables it. |
+| `jenesis.make.global` | `$HOME` | Base folder whose `.jenesis/` subfolder holds the user-global `jenesis.properties`; empty string disables it. Command-line only. |
 | `jenesis.project.configuration` | `build.jenesis/` | Path-separated project-wide configuration folders. |
 | `jenesis.project.boms` | the configuration folders | Path-separated list of folders searched for `pin-<name>.properties` files. |
 | `jenesis.project.artifacts` | `.jenesis/artifacts` | The project-local folder resolved artifacts are materialised into (hard-linked from `~/.m2` where possible), in every layout. It also holds a copy of each repository's `maven-metadata.xml`, so a `RELEASE` or range still resolves when the repository is unreachable. |
