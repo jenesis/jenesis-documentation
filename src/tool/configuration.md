@@ -32,11 +32,14 @@ java -Djenesis.project.sources=false build/jenesis/Make.java
 ```
 
 One key is the exception: `jenesis.make.root` belongs on the command line only, because the root is what
-locates the file in the first place. Setting it in a file is reported as an error.
+locates the file in the first place. Setting it in a file is reported as an error. So is setting
+`jenesis.toolchain.searchpath` in the project's file or its profiles: the folders searched for a JDK decide
+which program the build runs, so only the command line and your user-global file, described below, name them.
 
 Keys fall into two namespaces, split by who reads them. `jenesis.make.*` is read by the entry point, before a
 build exists: where the project is, which profiles to layer, where the user-global file lives, and how the
-engine itself is compiled and reused. `jenesis.project.*` is read by the build. That is why the root sits
+engine itself is compiled and reused. `jenesis.toolchain.*` is read there too, to choose the JDK the build
+runs on. `jenesis.project.*` is read by the build. That is why the root sits
 under `make` - finding the project is the entry point's job, and the build is handed the answer rather than
 looking it up.
 
