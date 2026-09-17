@@ -44,7 +44,9 @@ places, one per consumer:
 Each component carries its `pkg:maven/…` package URL, its `SHA-256` hash, and its licence, with a `dependsOn`
 relationship back to the project. The document's `metadata.component` describes the project itself from the
 POM - its description, licence, developers (as CycloneDX `authors`), and homepage and source repository (as
-`website` and `vcs` references) - filling in only what the POM declares.
+`website` and `vcs` references) - filling in only what the POM declares. The tag and the revision a release
+was built from, when given, are recorded as well, including a `vcs` reference that locates the sources at that
+revision (see *[Publishing](/tool/publishing/#pointing-a-release-at-its-sources)*).
 
 <div class="tip">
   The SBOM is <strong>reproducible</strong>: its <code>serialNumber</code> is a UUID derived from the
@@ -66,6 +68,37 @@ Any other value fails the build. To suppress the SBOM without adding a file, pas
 override `-Djenesis.sbom.cyclonedx=false`. Like every configuration file, `sbom.properties` is profile-aware,
 so a `release` profile can select the XML format while everyday builds keep JSON (see
 *[Configuration](/tool/configuration/)*).
+
+### Identifying the sources
+
+With `swhid=true` in `sbom.properties`, the SBOM also identifies the sources the module was built from: its
+component carries a `jenesis:source:swhid` property whose value is a [SWHID](https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html), the
+identifier Software Heritage defines for a directory. It is one hash over every source root of the module
+together: the source folders and resource folders the project declares, but not what a generator writes during
+the build.
+
+The hash depends on nothing but the files' paths and bytes. It is the same whether the sources come from a Git
+checkout, another version control system or a plain folder, and neither a file's timestamp nor its permissions
+change it. It is computed like this:
+
+1. Every regular file below a source root is taken with its path relative to that root, using `/` as the
+   separator. Roots are merged into one tree; when two roots hold a file at the same path, their bytes must be
+   equal, or the build fails. Empty folders contribute nothing.
+2. A file's id is the SHA-1 of the ASCII header `blob <size>`, a zero byte, and the file's bytes.
+3. A folder's id is the SHA-1 of the ASCII header `tree <length>`, a zero byte, and one entry per file or
+   subfolder. An entry is the mode (`100644` for every file, `40000` for a folder), a space, the name in UTF-8,
+   a zero byte, and the 20 bytes of the file's or subfolder's id. Entries are sorted by the bytes of their name,
+   where a subfolder's name compares as if it ended in `/`.
+4. The value is `swh:1:dir:` followed by the root folder's id in lowercase hexadecimal.
+
+These are the rules Git uses for its tree objects. For a module with a single source root that holds only
+files committed unchanged, none of them executable or a symbolic link, the value therefore equals
+`swh:1:dir:` followed by what `git rev-parse <revision>:<path of the root>` prints.
+
+The hash is off by default because it records the bytes as they were checked out: a file checked out with
+Windows line endings gives a different value than the same file checked out with Unix line endings, where the
+compiled classes would not differ. A `.gitattributes` that fixes line endings keeps the value the same on every
+machine (see *[Building &amp; running](/tool/building-and-running/)*).
 
 ## Licence compliance
 
