@@ -31,8 +31,9 @@ overrides a file entry, so you can still override the project's baseline for a s
 java -Djenesis.project.sources=false build/jenesis/Make.java
 ```
 
-One key is the exception: `jenesis.make.root` belongs on the command line only, because the root is what
-locates the file in the first place. Setting it in a file is reported as an error. So is setting
+Two keys are the exception and belong on the command line only. `jenesis.make.root` does because the root is
+what locates the file in the first place, and `jenesis.make.global` because it chooses which of your own
+settings apply, which no project may decide. Setting either in a file is reported as an error. So is setting
 `jenesis.toolchain.searchpath` in the project's file or its profiles: the folders searched for a JDK decide
 which program the build runs, so only the command line and your user-global file, described below, name them.
 
@@ -165,8 +166,9 @@ project - your shared personal defaults. It is optional and ignored when absent,
 profiles, resolved relative to its `.jenesis` folder.
 
 The `jenesis.make.global` property names the base folder (default `$HOME`) whose `.jenesis/` subfolder
-holds that file. Set to an empty string, it switches the user-global layer off entirely. It can be set on the
-command line or in the project's `jenesis.properties`, but not in a profile or in the user-global file itself.
+holds that file. Set to an empty string, it switches the user-global layer off entirely. It is set on the
+command line only: a project's `jenesis.properties`, a profile or the user-global file that sets it is refused,
+so a project can never put a file of its own in the place of your personal defaults.
 
 <div class="tip">
   The <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-45-profiles">demo-45</a> project is a

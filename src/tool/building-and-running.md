@@ -257,9 +257,8 @@ java -Djenesis.toolchain.searchpath= build/jenesis/Make.java
 ### What a project cannot set
 
 The search path decides which program the build runs, so it is yours to set, not the project's. It is
-accepted on the command line and in your own `~/.jenesis/jenesis.properties`, and refused in the project's
-`jenesis.properties`, in a profile, and in a user-global file whose location the project's
-`jenesis.properties` chose. A project names the version it needs, and so chooses among the JDKs you
+accepted on the command line and in your own `~/.jenesis/jenesis.properties` and its profiles, and refused
+in the project's `jenesis.properties` and in the project's profiles. A project names the version it needs, and so chooses among the JDKs you
 installed, but it cannot point the build at a program of its own.
 
 Before a JDK it found runs, Jenesis checks on Linux and macOS that every file in it belongs to you or to root
