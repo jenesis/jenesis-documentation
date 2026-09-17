@@ -129,8 +129,9 @@ export default {
       demos: [
         { slug: "demo-56-code-signing", name: "Code signing", blurb: "The produced jar signed with jarsigner, with the key named by the machine rather than by the project." },
         { slug: "demo-57-publishing", name: "Publishing", blurb: "A Maven Central ready bundle - POM metadata, sources and javadoc jars - resolved back to prove it." },
-        { slug: "demo-58-native-image", name: "Native image", blurb: "A GraalVM native binary built end to end, with reachability metadata captured from the tests." },
-        { slug: "demo-59-jpx", name: "Running a released program", blurb: "jpx installs and launches a published tool - named as a module and as a coordinate, pinned and hash-verified." },
+        { slug: "demo-58-reproducible", name: "Reproducible builds", blurb: "A jar checked against a SHA-256 recorded in the demo, on Linux, macOS and Windows in CI." },
+        { slug: "demo-59-native-image", name: "Native image", blurb: "A GraalVM native binary built end to end, with reachability metadata captured from the tests." },
+        { slug: "demo-60-jpx", name: "Running a released program", blurb: "jpx installs and launches a published tool - named as a module and as a coordinate, pinned and hash-verified." },
       ],
     },
   ],
