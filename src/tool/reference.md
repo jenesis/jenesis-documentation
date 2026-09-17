@@ -111,7 +111,7 @@ in one step.
 | Key | Default | Effect |
 | --- | --- | --- |
 | `jenesis.project.layout` | `auto` | The layout: `auto`, `maven`, `modular`, `modular_to_maven`. |
-| `jenesis.project.target` | `target` | The per-build output folder. Safe to delete for a clean build. |
+| `jenesis.project.target` | `target` | The per-build output folder. Safe to delete for a clean build. A project's own file names only a folder inside the project. |
 | `jenesis.project.version` | *(unset)* | Stamps this version onto every artifact the build produces. |
 | `jenesis.project.tag` | *(unset)* | The source control tag recorded in the generated POM's `<scm>` and in the SBOM; empty records none, even over a declared `scm.tag` (see *[Publishing](/tool/publishing/#pointing-a-release-at-its-sources)*). |
 | `jenesis.project.revision` | *(unset)* | The source revision, for Git the commit id, recorded in the SBOM; empty records none, even over a declared `scm.revision`. |
@@ -132,7 +132,7 @@ line and from `jenesis.properties` at the project root.
 | `jenesis.make.root` | `.` | The directory scanned for `module-info.java` / `pom.xml`. Command-line only. |
 | `jenesis.make.profiles` | *(unset)* | Comma-separated **profile** names to activate. |
 | `jenesis.make.compile` | `true` | Compile the build sources once and run the build from those classes, over a class loader of their own. One batch compile beats the launcher compiling class by class as it loads them, so this is faster even for a build that runs a single time. |
-| `jenesis.make.classes` | `.jenesis/classes` | Where those classes land, relative to the project root. They go under `.jenesis/` with the rest of the build's by-products, so nothing lands in the sources. |
+| `jenesis.make.classes` | `.jenesis/classes` | Where those classes land, relative to the project root. They go under `.jenesis/` with the rest of the build's by-products, so nothing lands in the sources. A project's own file names only a folder inside the project. |
 | `jenesis.make.daemon` | `false` | Hand the build to a reused JVM, which keeps a warm JIT between calls. `--stop` as the sole selector shuts it down. |
 | `jenesis.toolchain.version` | *(unset)* | The JDK the build runs on, as `25`, `25.0.3` or `25-temurin`. `Make.java` and `Execute.java` start again on a matching installed JDK when the running one does not match (see *[Building &amp; running](/tool/building-and-running/#the-jdk-a-build-runs-on)*). |
 | `jenesis.toolchain.searchpath` | `@` | Comma-separated folders searched for that JDK, absolute or under `~`, with `*` for any one folder name; `@` stands for the operating system's usual locations, and empty only checks the running JDK. Command line or `~/.jenesis/jenesis.properties` only. |
@@ -154,12 +154,12 @@ rather than being served by one configured for something else.
 | Property | Default | Effect |
 | --- | --- | --- |
 | `jenesis.daemon.idle` | `10800` | Seconds of idleness after which the daemon exits. |
-| `jenesis.daemon.options` | `-Xmx2g` | JVM options for the daemon process itself, whitespace separated. |
+| `jenesis.daemon.options` | `-Xmx2g` | JVM options for the daemon process itself, whitespace separated. Command line or `~/.jenesis/jenesis.properties` only. |
 
 | `jenesis.make.global` | `$HOME` | Base folder whose `.jenesis/` subfolder holds the user-global `jenesis.properties`; empty string disables it. Command-line only. |
 | `jenesis.project.configuration` | `build.jenesis/` | Path-separated project-wide configuration folders. |
 | `jenesis.project.boms` | the configuration folders | Path-separated list of folders searched for `pin-<name>.properties` files. |
-| `jenesis.project.artifacts` | `.jenesis/artifacts` | The project-local folder resolved artifacts are materialised into (hard-linked from `~/.m2` where possible), in every layout. It also holds a copy of each repository's `maven-metadata.xml`, so a `RELEASE` or range still resolves when the repository is unreachable. |
+| `jenesis.project.artifacts` | `.jenesis/artifacts` | The project-local folder resolved artifacts are materialised into (hard-linked from `~/.m2` where possible), in every layout. It also holds a copy of each repository's `maven-metadata.xml`, so a `RELEASE` or range still resolves when the repository is unreachable. A project's own file names only a folder inside the project. |
 
 ### Building & testing
 
@@ -200,15 +200,15 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.dependency.pin` | *(lenient)* | Pinning mode: `strict`, `versions`, or `ignore`. |
 | `jenesis.dependency.signature` | `none` | Signature verification after each download: `none`, `declared`, or `strict`. |
 | `jenesis.pin.bom` | `keep` | Whether the `pin` step keeps (`keep`) or flattens (`flatten`) BOM references. |
-| `jenesis.pin.file` | *(unset)* | Write the whole project's pins to this properties file instead of rewriting the module declarations. |
+| `jenesis.pin.file` | *(unset)* | Write the whole project's pins to this properties file instead of rewriting the module declarations. A project's own file names only a folder inside the project. |
 | `jenesis.pin.checksum` | `true` | Whether `pin` writes SHA checksums alongside versions. |
 | `jenesis.platform.<token>` | *(detected)* | Add (`=true`) or remove (`=false`) a platform token used to select guarded pins. |
 | `jenesis.project.digest` | `SHA-256` | Digest algorithm the `pin` step uses to checksum artifacts. |
-| `jenesis.openpgp.command` | `gpgv` | Binary forked to verify detached OpenPGP signatures. A name is looked up on the `PATH`; a value containing a separator is used as a path. |
+| `jenesis.openpgp.command` | `gpgv` | Binary forked to verify detached OpenPGP signatures. A name is looked up on the `PATH`; a value containing a separator is used as a path. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.openpgp.expiry` | `signing` | What an expired signing key means: `ignored` accepts it whenever it signed, `signing` accepts what it signed before it expired, `current` always rejects it. |
 | `jenesis.project.signatures` | *(the configuration folders)* | Path-separated locations searched for a local `signature-<name>.properties` key list. |
-| `jenesis.sigstore.uri` | *(the trust root the tool carries)* | The Sigstore trust root a bundle is checked against. Jenesis carries the published root of the public instance as source; naming another replaces it, for a private instance or a root that has rotated. |
-| `jenesis.sigstore.issuers` | `github.com=token.actions.githubusercontent.com` | Comma-separated `<host>=<issuer>` pairs for identity hosts whose OpenID Connect issuer is not the host itself. Both sides are written without a scheme. |
+| `jenesis.sigstore.uri` | *(the trust root the tool carries)* | The Sigstore trust root a bundle is checked against. Jenesis carries the published root of the public instance as source; naming another replaces it, for a private instance or a root that has rotated. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.sigstore.issuers` | `github.com=token.actions.githubusercontent.com` | Comma-separated `<host>=<issuer>` pairs for identity hosts whose OpenID Connect issuer is not the host itself. Both sides are written without a scheme. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.resolver.maven` | `maven` | Maven version strategy: `maven`, `closest`, `latest`, `release`, `stable`, `fail`, or `managed`. `fail` refuses a coordinate two dependencies require at different versions; `managed` refuses that and every version the project neither declares nor names in dependency management. |
 | `jenesis.resolver.module` | `first` | What happens when two module descriptors record different versions: `first`, `fail`, `ignore`, or `managed`. `managed` additionally refuses a module reached through another module's `requires` that carries no pin. |
 
@@ -216,17 +216,17 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 
 | Key (env fallback) | Default | Effect |
 | --- | --- | --- |
-| `jenesis.maven.uri` (`MAVEN_REPOSITORY_URI`) | Maven Central | Upstream Maven repository URL(s); supports filters and references. |
-| `jenesis.maven.local` (`MAVEN_REPOSITORY_LOCAL`) | `~/.m2/repository` | Local Maven repository for reads and `export`. |
-| `jenesis.maven.token` (`MAVEN_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the Maven upstream. |
-| `jenesis.module.uri` (`JENESIS_REPOSITORY_URI`) | `https://repo.jenesis.build/` | The Jenesis Module Index URL(s) module names resolve through; same list/filter/`@` grammar. |
-| `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | `~/.jenesis` | The local module repository, read first and written by `export`. |
+| `jenesis.maven.uri` (`MAVEN_REPOSITORY_URI`) | Maven Central | Upstream Maven repository URL(s); supports filters and references. A project's own file may name them, and `jenesis.maven.token` is then not sent. |
+| `jenesis.maven.local` (`MAVEN_REPOSITORY_LOCAL`) | `~/.m2/repository` | Local Maven repository for reads and `export`. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.maven.token` (`MAVEN_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the Maven upstream. Command line or `~/.jenesis/jenesis.properties` only. It travels only to a `jenesis.maven.uri` named in the environment, on the command line or there. |
+| `jenesis.module.uri` (`JENESIS_REPOSITORY_URI`) | `https://repo.jenesis.build/` | The Jenesis Module Index URL(s) module names resolve through; same list/filter/`@` grammar. A project's own file may name them, and `jenesis.module.token` is then not sent. |
+| `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | `~/.jenesis` | The local module repository, read first and written by `export`. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.module.prerelease` | *(unset)* | Whether a module asked for without a version may resolve to a pre-release. Unset states no preference, and the index serves the newest release. |
 | `jenesis.module.speculative` | *(unset)* | Whether a version the index has not recorded may be resolved from the module's newest coordinate. Unset states no preference, and the index guesses. |
-| `jenesis.openpgp.uri` (`OPENPGP_REPOSITORY_URI`) | `keyserver.ubuntu.com`, `keys.openpgp.org` | HKP key server roots a declared fingerprint resolves through; same list/`@` grammar, asked in order. |
-| `jenesis.openpgp.local` (`OPENPGP_REPOSITORY_LOCAL`) | `.jenesis/keys` | Where fetched keys are held, one file per fingerprint; an empty `openpgp.uri` makes this the only source. |
-| `jenesis.module.token` (`JENESIS_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the module index. |
-| `jenesis.repository.insecure` | `false` | Permit plaintext (`http://`) fetches. |
+| `jenesis.openpgp.uri` (`OPENPGP_REPOSITORY_URI`) | `keyserver.ubuntu.com`, `keys.openpgp.org` | HKP key server roots a declared fingerprint resolves through; same list/`@` grammar, asked in order. A project's own file may name them. |
+| `jenesis.openpgp.local` (`OPENPGP_REPOSITORY_LOCAL`) | `.jenesis/keys` | Where fetched keys are held, one file per fingerprint; an empty `openpgp.uri` makes this the only source. A project's own file names only a folder inside the project. |
+| `jenesis.module.token` (`JENESIS_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the module index. Command line or `~/.jenesis/jenesis.properties` only. It travels only to a `jenesis.module.uri` named in the environment, on the command line or there. |
+| `jenesis.repository.insecure` | `false` | Permit plaintext (`http://`) fetches. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.repository.retries` | `2` | Retries for a transient fetch failure (`0` disables). |
 | `jenesis.repository.backoff` | `125` | Initial retry wait in milliseconds, doubling each attempt. |
 | `jenesis.repository.connect.timeout` | `10000` | Connect timeout for a repository fetch, in milliseconds. |
@@ -236,13 +236,13 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 
 | Key (env fallback) | Default | Effect |
 | --- | --- | --- |
-| `jenesis.cache.uri` | *(none)* | Shared build cache: a `file://` or `http(s)://` URI (see *[Build performance &amp; isolation](/tool/build-performance-and-isolation/)*). |
-| `jenesis.project.cache` | *(off)* | Project-local on-disk build cache (a path; empty enables `.jenesis/cache`). |
+| `jenesis.cache.uri` | *(none)* | Shared build cache: a `file://` or `http(s)://` URI (see *[Build performance &amp; isolation](/tool/build-performance-and-isolation/)*). Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.project.cache` | *(off)* | Project-local on-disk build cache (a path; empty enables `.jenesis/cache`). A project's own file names only a folder inside the project. |
 | `jenesis.cache.project` (`JENESIS_CACHE_PROJECT`) | *(unset)* | Project header sent to an HTTP cache. |
-| `jenesis.cache.key` (`JENESIS_CACHE_KEY`) | *(unset)* | Auth key sent to an HTTP cache. |
+| `jenesis.cache.key` (`JENESIS_CACHE_KEY`) | *(unset)* | Auth key sent to an HTTP cache. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.cache.connect` | `PT1S` | HTTP cache connect timeout, as an ISO-8601 duration. |
 | `jenesis.cache.read` | `PT10S` | HTTP cache read timeout, as an ISO-8601 duration. |
-| `jenesis.cache.insecure` | `false` | Permit the cache key over plaintext `http://`. |
+| `jenesis.cache.insecure` | `false` | Permit the cache key over plaintext `http://`. Command line or `~/.jenesis/jenesis.properties` only. |
 
 ### Running & containers
 
@@ -251,12 +251,12 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.execute.module` | *(prompt)* | The module to run with `Execute.java`. |
 | `jenesis.execute.mainClass` | *(inferred)* | The main class to run. |
 | `jenesis.project.docker` | `false` | Build inside a throwaway container. |
-| `jenesis.project.docker.image` | *(hardened)* | Image for the build container. |
-| `jenesis.project.docker.mount` | *(none)* | `<host>[:<container>],…` read-only bind mounts. |
-| `jenesis.project.docker.mountWritable` | *(none)* | Writable bind mounts. |
-| `jenesis.project.docker.env` | *(none)* | `<name>[=<value>],…` environment forwarded into the container. |
+| `jenesis.project.docker.image` | *(hardened)* | Image for the build container. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.project.docker.mount` | *(none)* | `<host>[:<container>],…` read-only bind mounts. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.project.docker.mountWritable` | *(none)* | Writable bind mounts. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.project.docker.env` | *(none)* | `<name>[=<value>],…` environment forwarded into the container. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.execute.docker` | `false` | Run the launched program in a container. |
-| `jenesis.execute.docker.image` / `.mount` / `.env` | *(as above)* | The run-side equivalents. |
+| `jenesis.execute.docker.image` / `.mount` / `.env` | *(as above)* | The run-side equivalents. Command line or `~/.jenesis/jenesis.properties` only. |
 
 ### Releasing
 
@@ -266,7 +266,7 @@ Read by the `release` target - see *[Publishing](/tool/publishing/)*.
 | --- | --- | --- |
 | `jenesis.jreleaser.config` | *(discovered)* | The release-tool configuration file; must exist when named. |
 | `jenesis.jreleaser.dryRun` | `true` | Perform every local phase and skip every remote one; `false` publishes. |
-| `jenesis.jreleaser.executable` | `jreleaser` | The executable to locate. |
+| `jenesis.jreleaser.executable` | `jreleaser` | The executable to locate. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.jreleaser.command` | `full-release` | The subcommand to run. |
 
 Read by the signing step - see *[Publishing](/tool/publishing/)*. Naming any of them says the project signs
@@ -275,13 +275,13 @@ password location is missing.
 
 | Key | Default | Effect |
 | --- | --- | --- |
-| `jenesis.jarsigner.keystore` | *(unset)* | The key store `jarsigner` signs the produced jar with, in place of the unsigned one. |
-| `jenesis.jarsigner.alias` | *(unset)* | The name of the key within that store. |
-| `jenesis.jarsigner.storepass` | *(unset)* | Where that store's password is read from: `env <variable>` or `file <path>`, never the password itself. |
-| `jenesis.jarsigner.keypass` | *(unset)* | The same, for a key that carries a password of its own. |
-| `jenesis.jarsigner.storetype` | *(the JDK's own)* | The store's type as `jarsigner` names it, normally `PKCS12`. |
-| `jenesis.jarsigner.tsa` | *(unset)* | A timestamp authority to stamp the signature with, so it outlives the certificate. |
-| `jenesis.jarsigner.arguments` | *(unset)* | Further `jarsigner` arguments, whitespace separated. |
+| `jenesis.jarsigner.keystore` | *(unset)* | The key store `jarsigner` signs the produced jar with, in place of the unsigned one. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.jarsigner.alias` | *(unset)* | The name of the key within that store. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.jarsigner.storepass` | *(unset)* | Where that store's password is read from: `env <variable>` or `file <path>`, never the password itself. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.jarsigner.keypass` | *(unset)* | The same, for a key that carries a password of its own. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.jarsigner.storetype` | *(the JDK's own)* | The store's type as `jarsigner` names it, normally `PKCS12`. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.jarsigner.tsa` | *(unset)* | A timestamp authority to stamp the signature with, so it outlives the certificate. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.jarsigner.arguments` | *(unset)* | Further `jarsigner` arguments, whitespace separated. Command line or `~/.jenesis/jenesis.properties` only. |
 
 ### Output & the execution engine
 

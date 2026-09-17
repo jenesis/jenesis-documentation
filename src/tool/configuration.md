@@ -31,11 +31,26 @@ overrides a file entry, so you can still override the project's baseline for a s
 java -Djenesis.project.sources=false build/jenesis/Make.java
 ```
 
-Two keys are the exception and belong on the command line only. `jenesis.make.root` does because the root is
-what locates the file in the first place, and `jenesis.make.global` because it chooses which of your own
-settings apply, which no project may decide. Setting either in a file is reported as an error. So is setting
-`jenesis.toolchain.searchpath` in the project's file or its profiles: the folders searched for a JDK decide
-which program the build runs, so only the command line and your user-global file, described below, name them.
+A project's file is what a clone brings with it, so it does not set everything. These are reported as an
+error there and in the project's profiles, and belong on the command line or in your user-global file:
+
+| Refused in a project's files | Why |
+| --- | --- |
+| any key outside `jenesis.*` | it would configure the JVM that runs the whole build, such as a proxy or a trust store |
+| `jenesis.make.root`, `jenesis.make.global` | the root locates the file, and the user-global folder decides which of your settings apply; both are command-line only |
+| `jenesis.daemon.options`, `jenesis.openpgp.command`, `jenesis.jreleaser.executable`, `jenesis.toolchain.searchpath`, `jenesis.toolchain.installer`, every `jenesis.jarsigner.*` | they name a program the build runs, the options a JVM runs it with, or the signing key it reaches for |
+| `jenesis.maven.token`, `jenesis.module.token`, `jenesis.cache.key`, `jenesis.cache.uri`, `jenesis.maven.local`, `jenesis.module.local`, `jenesis.sigstore.*`, `jenesis.repository.insecure`, `jenesis.cache.insecure` | they name this machine's credentials, a cache whose outputs the build runs, a folder it shares between projects, or what it trusts |
+| the `jenesis.project.docker.*` and `jenesis.execute.docker.*` mounts, environment and image | they decide what a containerized build reaches on this machine, which is the point of containing it |
+
+A project **may** name the repositories it resolves from, with `jenesis.maven.uri`, `jenesis.module.uri` and
+`jenesis.openpgp.uri`. A token then stays behind: `jenesis.maven.token` and `jenesis.module.token` are sent
+only to a repository named where the token itself was named - in the environment, on the command line or in
+your user-global file - so a repository a project names never receives one.
+
+A project's file also names only folders inside the project for `jenesis.project.target`,
+`jenesis.project.artifacts`, `jenesis.project.cache`, `jenesis.make.classes`, `jenesis.pin.file` and
+`jenesis.openpgp.local`, because the build writes to them and wipes some of them. On the command line they
+name any folder.
 
 Keys fall into two namespaces, split by who reads them. `jenesis.make.*` is read by the entry point, before a
 build exists: where the project is, which profiles to layer, where the user-global file lives, and how the
@@ -142,14 +157,15 @@ With several layers in play, the rule is fixed. Configuration resolves in five t
 | Tier | Source |
 | --- | --- |
 | 1 | an explicit `-D` on the command line |
-| 2 | the **profiles** selected for the project |
-| 3 | the profiles selected by the user-global file (below) |
-| 4 | the project `jenesis.properties` |
-| 5 | the user-global `jenesis.properties` |
+| 2 | the profiles selected by your user-global file (below) |
+| 3 | your user-global `jenesis.properties` |
+| 4 | the **profiles** selected for the project |
+| 5 | the project `jenesis.properties` |
 
 So `-Djenesis.project.sources=false` on a release build switches the source jar back off (the command line
-always wins), and selecting the `release` profile overrides whatever the project's base `jenesis.properties`
-set. The folder search follows the same spirit: a profile's `<name>/` folder beats a plain folder, and a
+always wins), selecting the `release` profile overrides whatever the project's base `jenesis.properties` set,
+and a line in your own file overrides both, because what your machine settles applies to every project it
+builds. The folder search follows the same spirit: a profile's `<name>/` folder beats a plain folder, and a
 module-local folder beats a project-wide one.
 
 When you are unsure what the layers add up to, ask the build. The `properties` selector prints every
@@ -161,9 +177,10 @@ java -Djenesis.make.profiles=release build/jenesis/Make.java properties
 
 ## User-global defaults
 
-The weakest layer is a **user-global `jenesis.properties`**, read from `~/.jenesis/` and applied to *every*
-project - your shared personal defaults. It is optional and ignored when absent, and it may declare its own
-profiles, resolved relative to its `.jenesis` folder.
+A **user-global `jenesis.properties`**, read from `~/.jenesis/` and applied to *every* project, settles how
+this machine builds. It outranks what a project sets, so a `jenesis.dependency.signature=strict` there holds
+for every project you build, and only a `-D` overrides it. It is optional and ignored when absent, and it may
+declare its own profiles, resolved relative to its `.jenesis` folder.
 
 The `jenesis.make.global` property names the base folder (default `$HOME`) whose `.jenesis/` subfolder
 holds that file. Set to an empty string, it switches the user-global layer off entirely. It is set on the
