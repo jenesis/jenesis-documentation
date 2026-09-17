@@ -269,7 +269,7 @@ another match. GitHub's hosted Linux runners install the JDKs of `actions/setup-
 so a job that searches for one restricts it first, with `chmod -R go-w` on its folder. Windows has no such
 check, so there the search relies on the protection of `C:\Program Files` and of your user profile.
 
-The [`toolchain`](https://github.com/jenesis/jenesis/tree/main/demo/demo-61-toolchain) demo names JDK 25 in
+The [`toolchain`](https://github.com/jenesis/jenesis/tree/main/demo/demo-59-toolchain) demo names JDK 25 in
 its `jenesis.properties`. CI starts it on JDK 25, asks for 26, and checks that the program reports 26 on
 Linux, macOS and Windows.
 
