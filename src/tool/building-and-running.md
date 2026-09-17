@@ -119,6 +119,12 @@ module demo.app {
 A `pom.xml` project sets the same thing through the `maven.compiler.release` property in its
 `<properties>` block.
 
+Without either, the module compiles for the release of the JDK running the build: `--release 25` on any JDK
+25, and Kotlin and Scala sources target the same release. That keeps the output the same across updates and
+vendors of one JDK, because without `--release` `javac` writes the JDK's full version, such as `25.0.3`, into
+`module-info.class`. `javac` refuses an `--add-exports` or `--add-reads` into a JDK module alongside a
+release, so exporting a JDK package into a compilation is not supported.
+
 ### One jar, several Java versions
 
 A jar can also carry different bytecode for different Java versions, and the JVM loads the copy that matches
@@ -151,6 +157,21 @@ java -Djenesis.project.sources=true \
 documentation tool (`javadoc` for Java) and adds a `-javadoc.jar`. Both are off by default because they cost
 build time you do not want on every inner-loop run. Turn them on for a release, or record them in a profile
 (see *[Configuration](/tool/configuration/)*).
+
+### The time recorded in archives
+
+Every jar, jmod and zip the build produces records the same date and time on each entry, 1980-02-01 00:00
+UTC unless told otherwise, so an archive does not change with the moment it was built. A zip entry cannot
+record a time before 1980, and the default sits a month after that limit so that no time zone reads it as
+1979. The `jenesis.archive.timestamp` property names another as an ISO-8601 date-time with an offset, for example the
+time of the commit being released:
+
+```bash
+java -Djenesis.archive.timestamp=$(git log -1 --format=%cI) build/jenesis/Make.java
+```
+
+The value must lie between `1980-01-01T00:00:02Z` and `2099-12-31T23:59:59Z`, the range an archive entry
+records without depending on the time zone of the machine that builds it.
 
 ## Passing extra arguments to a tool
 
