@@ -173,6 +173,9 @@ java -Djenesis.archive.timestamp=$(git log -1 --format=%cI) build/jenesis/Make.j
 The value must lie between `1980-01-01T00:00:02Z` and `2099-12-31T23:59:59Z`, the range an archive entry
 records without depending on the time zone of the machine that builds it.
 
+The [`reproducible`](https://github.com/jenesis/jenesis/tree/main/demo/demo-58-reproducible) demo builds a jar
+and compares it with a SHA-256 recorded in the demo, a check CI runs on Linux, macOS and Windows.
+
 ## Passing extra arguments to a tool
 
 Jenesis picks sensible flags for `javac` and the other tools it forks, but sometimes you need one more. You
