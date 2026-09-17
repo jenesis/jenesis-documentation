@@ -113,6 +113,9 @@ in one step.
 | `jenesis.project.layout` | `auto` | The layout: `auto`, `maven`, `modular`, `modular_to_maven`. |
 | `jenesis.project.target` | `target` | The per-build output folder. Safe to delete for a clean build. |
 | `jenesis.project.version` | *(unset)* | Stamps this version onto every artifact the build produces. |
+| `jenesis.project.tag` | *(unset)* | The source control tag recorded in the generated POM's `<scm>` and in the SBOM; empty records none, even over a declared `scm.tag` (see *[Publishing](/tool/publishing/#pointing-a-release-at-its-sources)*). |
+| `jenesis.project.revision` | *(unset)* | The source revision, for Git the commit id, recorded in the SBOM; empty records none, even over a declared `scm.revision`. |
+| `jenesis.project.tree` | *(unset)* | The Git tree id of the release, as `git rev-parse HEAD^{tree}` prints it, recorded in the SBOM as a SWHID; empty records none, even over a declared `scm.tree`. |
 | `jenesis.project.metadata` | *(unset)* | Path-separated list of project-level POM metadata files (conventionally one `project.properties`). |
 | `jenesis.project.sources` | `false` | Also assemble a per-module sources jar. |
 | `jenesis.project.documentation` | `false` | Also assemble a per-module javadoc jar. |

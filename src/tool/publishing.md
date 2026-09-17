@@ -57,6 +57,48 @@ scm.url=https://github.com/jenesis/jenesis
   it.
 </div>
 
+### Pointing a release at its sources
+
+The repository URL says where a project lives, not which revision a release was built from. Three properties
+say that: `jenesis.project.revision` names the revision, for Git the commit id; `jenesis.project.tag` names the
+tag the release carries, if it has one; and `jenesis.project.tree` names the Git tree of that revision, which
+identifies the content of the whole repository independently of its history. Pass them on the command that
+stages the release:
+
+```bash
+java -Djenesis.project.version=1.0.0 \
+     -Djenesis.project.tag=v1.0.0 \
+     -Djenesis.project.revision=$(git rev-parse HEAD) \
+     -Djenesis.project.tree=$(git rev-parse HEAD^{tree}) \
+     build/jenesis/Make.java stage
+```
+
+A GitHub Actions workflow has the first two at hand: `${{ github.sha }}` is the commit the run builds, and
+`${{ github.ref_name }}` is the tag when a pushed tag started the run. The tree comes from the checkout.
+
+```yaml
+- run: >
+    java -Djenesis.project.tag=${{ github.ref_name }}
+    -Djenesis.project.revision=${{ github.sha }}
+    -Djenesis.project.tree=$(git rev-parse HEAD^{tree})
+    build/jenesis/Make.java stage
+```
+
+Neither value is derived: projects name their tags differently, so the tag is not guessed from the version.
+A value that does not change from release to release can also be declared in `project.properties`, as
+`scm.tag`, `scm.revision` or `scm.tree`, and a source `pom.xml` contributes the `<tag>` of its `<scm>`. A property takes
+precedence over a declared value, and an empty property, such as `-Djenesis.project.tag=`, records nothing even
+when a value is declared.
+
+The tag becomes the `<tag>` of the POM's `<scm>`; the POM has no element for a revision or a tree. The SBOM
+records the tag and the revision as the `jenesis:scm:tag` and `jenesis:scm:revision` properties of the project's
+component, and the tree as `jenesis:scm:swhid`, the [SWHID](https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html) `swh:1:dir:<tree>`; a tree
+that is not a 40-character Git tree id fails the build. When
+`scm.connection` names a URL, such as `scm:git:https://github.com/jenesis/jenesis.git`, the SBOM also carries a
+`vcs` reference that locates the sources at the revision, or at the tag when no revision is given, in the
+notation SPDX uses for a download location: `git+https://github.com/jenesis/jenesis.git@<revision>`. A tag of
+`HEAD`, which a `pom.xml` declares for the root of its repository, counts as no tag there.
+
 ## Publishing locally with `export`
 
 `export` is a genuine publish, into a *local* repository:
