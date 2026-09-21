@@ -203,15 +203,18 @@ fingerprints; past that it answers with `"truncated":true` and compares the ones
 | `jenreg.logs-buffer` | `1000` | Entries the in-memory log ring keeps for `GET /api/logs`. |
 | `jenreg.consistency.enabled` | `false` | Publish this node's fingerprint and take part in the consistency check. |
 | `jenreg.consistency.node-id` | the hostname | The node's stable name in the report. |
-| `jenreg.consistency.heartbeat` | the sweep interval | Milliseconds between fingerprint publications (at least 1 000). |
-| `jenreg.consistency.sweep-interval` | `60000` | Milliseconds per sweep; with `sweep-intervals`, the budget a lagging node has before it is stuck. |
-| `jenreg.consistency.sweep-intervals` | `3` | Sweeps a lagging node may take to catch up. |
-| `jenreg.consistency.staleness-window` | `300000` | Milliseconds since a node's last heartbeat after which it is flagged `stale`. |
-| `jenreg.consistency.dead-after` | `900000` | Milliseconds of silence after which a node leaves the live comparison. |
-| `jenreg.consistency.forget-after` | `86400000` | Milliseconds of silence after which a node's fingerprint is deleted; a publishing node reaps at most hourly. |
+| `jenreg.consistency.heartbeat` | the sweep interval | How often a node publishes its fingerprint; never shorter than a second, whatever is asked for. |
+| `jenreg.consistency.sweep-interval` | `PT1M` | How long a sweep is; with `sweep-intervals`, the budget a lagging node has before it is stuck. |
+| `jenreg.consistency.sweep-intervals` | `3` | Sweeps a lagging node may take to catch up - a count of sweeps, not a duration. |
+| `jenreg.consistency.staleness-window` | `PT5M` | Age of a node's last fingerprint after which it is flagged `stale`; it stays in the comparison. |
+| `jenreg.consistency.dead-after` | `PT15M` | Silence after which a node leaves the live comparison. |
+| `jenreg.consistency.forget-after` | `PT24H` | Silence after which a node's fingerprint is deleted; a publishing node reaps at most hourly. |
 | `management.endpoints.web.exposure.include` | `health,info,metrics` | The Actuator endpoints served. |
 | `management.endpoint.health.probes.enabled` | `true` | Serve the liveness and readiness probe groups. |
 | `management.endpoint.health.show-details` | `when-authorized` | Show health detail only to an authorised caller. |
+
+The durations take the ISO-8601 or short form (`PT5M`, `5m`, `30s`); a value set to anything else refuses the
+start naming the key rather than falling back to the default.
 
 Every `jenreg.*` key is also an environment variable (`JENREG_CONSISTENCY_ENABLED=true`) or a `-D` system
 property.

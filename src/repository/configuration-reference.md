@@ -154,15 +154,19 @@ See [Observability](/repository/observability/).
 | `jenreg.logs-buffer` | `1000` | Entries the in-memory log ring keeps for `GET /api/logs`. |
 | `jenreg.consistency.enabled` | `false` | Publish this node's fingerprint and take part in the multi-node consistency check. |
 | `jenreg.consistency.node-id` | the hostname | The node's stable name in the consistency report. |
-| `jenreg.consistency.heartbeat` | the sweep interval | Milliseconds between fingerprint publications (at least 1 000). |
-| `jenreg.consistency.sweep-interval` | `60000` | Milliseconds per sweep. |
-| `jenreg.consistency.sweep-intervals` | `3` | Sweeps a lagging node may take to catch up before it is reported stuck. |
-| `jenreg.consistency.staleness-window` | `300000` | Milliseconds since a node's last heartbeat after which it is flagged `stale`. |
-| `jenreg.consistency.dead-after` | `900000` | Milliseconds of silence after which a node leaves the live comparison. |
-| `jenreg.consistency.forget-after` | `86400000` | Milliseconds of silence after which a node's fingerprint is deleted by the next node that publishes. |
+| `jenreg.consistency.heartbeat` | the sweep interval | How often this node publishes its fingerprint; never shorter than a second, whatever is asked for. |
+| `jenreg.consistency.sweep-interval` | `PT1M` | How often a node publishes its own fingerprint and compares the fleet's. |
+| `jenreg.consistency.sweep-intervals` | `3` | Sweeps a lagging node may take to catch up before it is reported stuck - a count of sweeps, not a duration. |
+| `jenreg.consistency.staleness-window` | `PT5M` | How recently a node must have published to be counted live. One quiet for longer is not yet dead; it is simply not compared, so a restarting node does not read as divergent. |
+| `jenreg.consistency.dead-after` | `PT15M` | Silence after which a node leaves the live comparison and is reported dead. |
+| `jenreg.consistency.forget-after` | `PT24H` | Silence after which a node's fingerprint is deleted by the next node that publishes, so a fleet that schedules a fresh host per restart accumulates nothing. |
 | `management.endpoints.web.exposure.include` | `health,info,metrics` | The Actuator endpoints served. |
 | `management.endpoint.health.probes.enabled` | `true` | Serve the liveness and readiness probe groups. |
 | `management.endpoint.health.show-details` | `when-authorized` | Show health detail only to an authorised caller. |
+
+The five `jenreg.consistency.*` durations take the same ISO-8601 or short form as every other duration here
+(`PT5M`, `5m`, `30s`). A value that is set and cannot be read as one refuses the start naming the key, rather
+than falling back to the default and judging the fleet on a window nobody chose.
 
 ## The console
 
