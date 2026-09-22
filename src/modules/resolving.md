@@ -263,6 +263,9 @@ Three settings move a build to another deployment of the module index; the
 | `-Djenesis.module.token=<token>` | `JENESIS_REPOSITORY_TOKEN` | An `Authorization` header value sent on every request. |
 | `-Djenesis.module.local=<dir>` | `JENESIS_REPOSITORY_LOCAL` | The local module repository consulted first (default `~/.jenesis`). |
 
+A build can also skip the service and read the index itself, which *[Reading the index
+directly](#reading-the-index-directly)* describes.
+
 From the command line, `curl -L` is all a manual lookup needs:
 
 ```bash
@@ -322,6 +325,20 @@ first column is your version and fetch `<artifactId>-<version>` from Maven Centr
 The columns are `moduleVersion`, `groupId`, `artifactId`, `mavenVersion`. Match the first column, then
 fetch the coordinate named by the last three. Classifier-scoped variants live alongside as
 `artifacts-<classifier>.tsv` and `modules-<classifier>.tsv`.
+
+The build tool reads them this way on request, so a project that would rather not depend on the service can
+have its build resolve module names from the data and fetch the coordinates from the Maven repository it
+already uses:
+
+```bash
+java -Djenesis.module.source=git build/jenesis/Make.java
+```
+
+`jenesis.module.index` (or `JENESIS_INDEX_URI`) points that at a fork or a mirror of the data instead of the
+published files, and `jenesis.module.prerelease` and `jenesis.module.speculative` decide the same two
+questions they decide for the service - whether a module asked for without a version may resolve to a
+pre-release, and whether a version the data does not record may be fetched from the module's newest
+coordinate anyway.
 
 <div class="warning">
   A module name is <strong>not</strong> a namespaced or authoritative identifier - it is just a string a

@@ -74,6 +74,8 @@ the variable of the same name:
 | `jenesis.module.uri` (`JENESIS_REPOSITORY_URI`) | The module index base URL (default `https://repo.jenesis.build/`), with the same list/filter/`@` grammar. |
 | `jenesis.module.token` (`JENESIS_REPOSITORY_TOKEN`) | The `Authorization` header for module fetches, when `jenesis.module.uri` points at a server that needs one. |
 | `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | The local module repository directory (default `~/.jenesis`). |
+| `jenesis.module.source` | Who resolves a module name: `service` (the default) asks the index at `jenesis.module.uri`, `git` reads the index's published data itself and fetches what it resolves to from `jenesis.maven.uri`. |
+| `jenesis.module.index` (`JENESIS_INDEX_URI`) | Where that published data is read from when `git` resolves, a folder of per-module files (default: the data published on GitHub). A fork or a mirror of it stands in here, as `jenesis.module.uri` stands in for the index itself. |
 
 <div class="warning">
   Fetches are refused over plaintext <code>http</code> - only <code>https</code> and <code>file</code> are
@@ -93,6 +95,11 @@ unconfigured build leaves every choice with the index and gets the same answer a
 | `jenesis.maven.uri` (`MAVEN_REPOSITORY_URI`) | Redirect to the same repository Jenesis resolves Maven artifacts from, so module jars and Maven artifacts come from one host rather than two that disagree on what exists yet. |
 | `jenesis.module.prerelease` | Whether a module asked for without a version may resolve to a pre-release. |
 | `jenesis.module.speculative` | Whether a version the index has not recorded may be resolved from the module's newest coordinate, rather than answering that it has never seen it. |
+
+The last two are choices rather than questions, so they hold either way: with
+`jenesis.module.source=git` the build reads the published data itself and applies them there, by the same rule
+the index applies - a version counts as a release when the version a module is keyed by and the Maven version
+it resolves to both carry no pre-release qualifier.
 
 Not every repository can be named to a third party, and Jenesis says nothing rather than guess: an entry
 restricted to some groups cannot stand for the redirect of a module outside them, an `@` reference is not

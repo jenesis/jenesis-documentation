@@ -25,6 +25,11 @@ A package-manager install (see *[Getting started](/tool/getting-started/)*) adds
 | Source | `java build/jenesis/Make.java` | The canonical form; compiles the embedded engine on each run. |
 | Installed | `jenesis` | The command from SDKMAN, Homebrew or Scoop. It runs the *installed* engine against the current directory, not the sources under `build/jenesis/`, so it also builds a project that embeds none. |
 
+Settings may lead the arguments after the main class (`java build/jenesis/Make.java
+-Djenesis.project.version=1.0.0 build`), and `@<file>` stands for the arguments a file holds - `#` comments
+to the end of a line, quotes group, `@@<text>` is a literal `@`, and a file names no further file. See
+*[Configuration](/tool/configuration/#a-whole-run-in-a-file)*.
+
 <div class="note">
   How the JDK tool steps launch is set by <code>-Djenesis.process.factory=tool|fork</code>:
   <code>tool</code> (the default) runs <code>javac</code>/<code>jar</code> in-process; <code>fork</code> runs
@@ -51,7 +56,7 @@ property). The top-level targets the shipped layouts register:
 | `skill` | Print the briefing a coding agent works from. |
 | `metadata` | Refresh the metadata module outputs without building artifacts. |
 | `configuration` | Print every setting with the value in force, one per line: `jenesis.<key>=<value> [set\|default\|unset] <what it does>`. Built to grep, and the tool's own property reference. |
-| `properties` | Print only the `-Djenesis.*` system properties that are set, sorted by key. |
+| `properties` | Print every `jenesis.*` setting in force for this run - from the command line, `jenesis.properties` or a profile alike - sorted by key. |
 
 ## Selectors
 
@@ -156,7 +161,7 @@ rather than being served by one configured for something else.
 | `jenesis.daemon.options` | `-Xmx2g` | JVM options for the daemon process itself, whitespace separated. |
 
 | `jenesis.make.global` | `$HOME` | Base folder whose `.jenesis/` subfolder holds the user-global `jenesis.properties`; empty string disables it. |
-| `jenesis.project.configuration` | `build.jenesis/` | Path-separated project-wide configuration folders. |
+| `jenesis.project.configuration` | `build.jenesis/` | Comma-separated project-wide configuration folders; `@` splices the default back in, and `@<name>` splices what `jenesis.<name>` or the environment variable `<name>` holds. |
 | `jenesis.project.boms` | the configuration folders | Path-separated list of folders searched for `pin-<name>.properties` files. |
 | `jenesis.project.artifacts` | `.jenesis/artifacts` | The project-local folder resolved artifacts are materialised into (hard-linked from `~/.m2` where possible), in every layout. It also holds a copy of each repository's `maven-metadata.xml`, so a `RELEASE` or range still resolves when the repository is unreachable. |
 
@@ -220,8 +225,10 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.maven.token` (`MAVEN_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the Maven upstream. |
 | `jenesis.module.uri` (`JENESIS_REPOSITORY_URI`) | `https://repo.jenesis.build/` | The Jenesis Module Index URL(s) module names resolve through; same list/filter/`@` grammar. |
 | `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | `~/.jenesis` | The local module repository, read first and written by `export`. |
-| `jenesis.module.prerelease` | *(unset)* | Whether a module asked for without a version may resolve to a pre-release. Unset states no preference, and the index serves the newest release. |
-| `jenesis.module.speculative` | *(unset)* | Whether a version the index has not recorded may be resolved from the module's newest coordinate. Unset states no preference, and the index guesses. |
+| `jenesis.module.source` | `service` | Who resolves a module name: `service` asks the index at `jenesis.module.uri`, `git` reads its published data itself and fetches from `jenesis.maven.uri`. |
+| `jenesis.module.index` (`JENESIS_INDEX_URI`) | *(the published data)* | Where `git` reads that data from - a fork or mirror of the index's per-module files. |
+| `jenesis.module.prerelease` | *(unset)* | Whether a module asked for without a version may resolve to a pre-release. Unset states no preference: the newest release is served, and a module that has only pre-releases resolves to nothing. |
+| `jenesis.module.speculative` | *(unset)* | Whether a version the index has not recorded may be resolved from the module's newest coordinate. Unset states no preference, and the version is guessed. |
 | `jenesis.openpgp.uri` (`OPENPGP_REPOSITORY_URI`) | `keyserver.ubuntu.com`, `keys.openpgp.org` | HKP key server roots a declared fingerprint resolves through; same list/`@` grammar, asked in order. |
 | `jenesis.openpgp.local` (`OPENPGP_REPOSITORY_LOCAL`) | `.jenesis/keys` | Where fetched keys are held, one file per fingerprint; an empty `openpgp.uri` makes this the only source. |
 | `jenesis.module.token` (`JENESIS_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the module index. |

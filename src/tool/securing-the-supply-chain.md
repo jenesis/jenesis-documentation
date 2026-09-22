@@ -214,6 +214,10 @@ so `OpenPGP/<hex>` asks the repository registered as `OpenPGP`. By default that 
 
     jenesis.openpgp.uri = https://keyserver.ubuntu.com/, https://keys.openpgp.org/
 
+A bare `@` in that list splices back what `OPENPGP_REPOSITORY_URI` names, or the two defaults when it names
+nothing, and `@<name>` splices whatever `jenesis.<name>` or the environment variable `<name>` holds - so a
+machine names its internal key server once and every project reads `jenesis.openpgp.uri = @corp, @`.
+
 Both defaults are asked because neither is complete: a key published only on one is common enough to break a
 build that names just the other. Ubuntu is asked first because keys.openpgp.org serves a key with its user
 IDs stripped unless the owner has verified an address, and `gpgv` refuses a key that has none.

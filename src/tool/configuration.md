@@ -51,6 +51,40 @@ looking it up.
   reading as off.
 </div>
 
+## A whole run, in a file
+
+A `jenesis.properties` file carries what every build of the project should do. A run that is not every build
+- a release, a nightly, the one incantation nobody remembers - can be written down as well, as an **argument
+file** the command line names with `@`:
+
+```
+# release.args
+-Djenesis.project.version=1.0.0
+-Djenesis.make.profiles=release
+stage
+```
+
+```bash
+java build/jenesis/Make.java @release.args
+```
+
+`@<file>` stands for the arguments the file holds, settings and selectors alike, one or more per line. A `#`
+starts a comment that runs to the end of the line, quotes hold what would otherwise split on whitespace, and
+`@@<text>` is an argument that begins with an `@` rather than a file. A file names no further file, so what
+you read is what runs. This is the argument file the JDK's own tools read, and `jpx` and the `jenesis` and
+`jenesis-exec` commands read it the same way.
+
+Settings in such a file are command-line settings: they win over `jenesis.properties` and over a profile,
+exactly as a typed `-D` does. That is possible because a setting may also *follow* the main class, ahead of
+the selectors:
+
+```bash
+java build/jenesis/Make.java -Djenesis.project.version=1.0.0 build
+```
+
+Only `jenesis.*` settings may be written there; any other `-D` is refused, naming what would be valid,
+because a JVM option has to reach the JVM and therefore belongs before the main class.
+
 ## Where tool configuration lives
 
 System properties are the small knobs. A tool like Checkstyle or jpackage needs its own configuration *file*,

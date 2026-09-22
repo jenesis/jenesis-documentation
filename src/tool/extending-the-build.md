@@ -232,6 +232,42 @@ cached outputs whose inputs are unchanged. The `generate` step above synthesises
 There is no phase lifecycle to fit into: a build is just steps wired to steps, and here you wire them
 yourself.
 
+## Running a build inside another program
+
+An entry point of your own is still a process. A program that already runs - an IDE, a test harness, a
+server that builds what it serves - can run a build **in its own JVM** instead, through
+`java.util.spi.ToolProvider`, the JDK's interface for a tool that runs in-process the way `javac` and `jlink`
+do. `build.jenesis` publishes three, named after the commands they answer to:
+
+| Tool | What it does | What follows the settings |
+| --- | --- | --- |
+| `jenesis-make` | Builds the project | Selectors, as on a command line |
+| `jenesis-exec` | Builds, then runs what it built | The program's own arguments |
+| `jpx` | Runs a published program | The target and jpx's options |
+
+```java
+StringWriter log = new StringWriter();
+int code = ToolProvider.findFirst("jenesis-make").orElseThrow().run(
+        new PrintWriter(log), new PrintWriter(log),
+        "-Djenesis.project.version=1.0.0", "build");
+```
+
+The leading `-Djenesis.*` arguments configure **that run** and nothing else: they are never written to the
+JVM's properties, and the run never reads them from there, so two builds in one program can be configured
+differently and neither leaves anything behind. Everything the build prints arrives on the writers you
+passed, which the tool does not flush - they are yours, and an autoflushing `PrintWriter` already drains
+itself. An `@<file>` argument works here as on a command line.
+
+A setting that would replace the process a build runs in cannot be honoured in-process, and is refused by
+name rather than ignored: `jenesis.toolchain.version` and `jenesis.project.docker` for all three, and
+`jenesis.execute.docker` for the program `jenesis-exec` runs. The refusal arrives on `err` with a non-zero
+code rather than as an exception. `jenesis-exec` forks the program it runs, as its command does, so that
+program writes to the JVM's own streams while the build's output goes to the writers.
+
+The tools are found by name when `build.jenesis` is a resolved module or a jar on the class path. Source
+mode registers no service, so a program there constructs `new MakeTool()`, `new ExecuteTool()` or
+`new JpxTool()` itself; the contract is the same.
+
 ## Running your entry point on the project's JDK
 
 `Make.java` and `Execute.java` start again on the JDK that `jenesis.toolchain.version` names (see
@@ -285,6 +321,8 @@ classes as a local convenience, ignored by git.
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-54-custom-modular">demo-54</a> drive a
   multi-module Maven and modular build from a convenience <code>make</code>, and
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-55-custom-build">demo-55</a> wires a
-  code-generating graph entirely by hand on the <code>BuildExecutor</code> API. See
+  code-generating graph entirely by hand on the <code>BuildExecutor</code> API, and
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-56-tools-api">demo-56</a> runs a build, and
+  the program it produced, inside another program's JVM. See
   <a href="/tool/demos/">Demos</a>.
 </div>
