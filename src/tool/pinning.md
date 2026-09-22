@@ -17,20 +17,19 @@ of repeating it.
 ## Recording the pins
 
 You do not write pins by hand. The `pin` selector resolves the closure, hashes each jar, and rewrites your
-sources with the result:
+sources:
 
 ```bash
 java build/jenesis/Make.java pin
 ```
 
-`pin` is opt-in (it is not part of the default `build`) and it writes back into your project tree rather than
-under `target/`. In a **modular** project it adds a `@jenesis.pin` tag per dependency on the module
-declaration; in a **`pom.xml`** project it fills a `<dependencyManagement>` block, tagging each entry with a
-`<!--Checksum/…-->` comment. Commit the result and the pin set travels with the project.
+It is opt-in - not part of `build` - and it writes into your project tree rather than under `target/`: a
+`@jenesis.pin` tag per dependency in a **modular** project, a `<dependencyManagement>` block with a
+`<!--Checksum/…-->` comment per entry in a **`pom.xml`** project. Commit the result and the pin set travels
+with the project.
 
-`pin` is project-wide: it rewrites every module, and a `+<module>` selector beside it narrows `build` rather
-than the pin. To pin one module, name its step instead - `pin` holds one `module-<path>` step per module,
-with `<path>` URL-encoded because a selector splits on `/`:
+`pin` is project-wide, and a `+<module>` selector beside it narrows `build` rather than the pin. To pin one
+module, name its step - `<path>` is URL-encoded because a selector splits on `/`:
 
 ```bash
 java build/jenesis/Make.java pin/module-api%2Fclient
@@ -47,25 +46,11 @@ module demo.app {
 }
 ```
 
-Markdown documentation comments work the same way, so a project on the
-[JEP 467](https://openjdk.org/jeps/467) form declares its pins there instead:
-
-```java
-/// A module documented in Markdown.
-///
-/// @jenesis.pin com.fasterxml.jackson.databind 2.18.2 SHA-256/8f2b...c41
-module demo.app {
-    requires com.fasterxml.jackson.databind;
-}
-```
-
-`pin` writes back in whichever form the comment already uses, and creates a `/** ... */` when there is no
-comment at all, so a project never ends up with one of each.
-
-This is also why a platform guard is written `(windows)` rather than `[windows]`: in a Markdown comment a
-bracketed word is a reference link, so javadoc reports it as an unresolved reference and renders it as a
-broken link in the generated documentation. Parentheses mean the same thing in both forms and nothing in
-either grammar.
+A project on the [JEP 467](https://openjdk.org/jeps/467) Markdown form declares them in `///` comments
+instead, and `pin` writes back in whichever form the comment already uses - creating a `/** … */` only where
+there is no comment at all, so a project never ends up with one of each. It is also why a platform guard is
+written `(windows)` rather than `[windows]`: a bracketed word is a reference link in Markdown, which javadoc
+then reports as unresolved.
 
 <div class="warning">
   <strong>Explanatory prose goes above the tag block, never below or between the tags.</strong> A javadoc tag
