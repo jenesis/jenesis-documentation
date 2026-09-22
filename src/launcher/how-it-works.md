@@ -25,10 +25,9 @@ app.jar
     └── <group>%2F<artifact>%2F<version>.jar/…    a dependency that names no module, exploded
 ```
 
-Each dependency is **exploded into its own subfolder**, so nothing is merged: every dependency keeps its own
-`module-info`, `META-INF/services` files and resources. And because each class is then a **direct entry of
-the outer jar**, the launcher can read it later with a plain `java.util.zip.ZipFile` - there is no nested-jar
-addressing.
+Each dependency is **exploded into its own subfolder**, so nothing is merged: every one keeps its own
+`module-info`, `META-INF/services` files and resources. Each class is then a direct entry of the outer jar,
+readable with a plain `java.util.zip.ZipFile`, so there is no nested-jar addressing.
 
 The subfolder name is the file name the dependency had when the build resolved it. The Jenesis build tool
 names a resolved jar after the module it carries, at the version the closure resolved
@@ -89,20 +88,19 @@ the launcher decides from what the jar contains.
 
 ## One loader, two kinds of module
 
-The reconstruction rebuilds a real module graph, but it deliberately uses a **single class loader** for
-everything: the named modules in the child layer and the unnamed module over the class path. That is the
-arrangement one application loader has under `java -p modulepath -cp classpath`, and it makes the launcher
-faithful to the JDK's own rules:
+The reconstruction rebuilds a real module graph over a **single class loader** - named modules in the child
+layer and the unnamed module over the class path - which is what one application loader has under
+`java -p modulepath -cp classpath`, and what keeps the JDK's own rules:
 
 - an **automatic module can read the class path**, while a **strict named module cannot**;
 - a package **owned by a module shadows** the same package on the class path.
 
-The in-memory module finder builds a descriptor for each `modulepath/` jar: from its `module-info.class`, or
+The in-memory module finder builds a descriptor for each jar the `modulepath` key names: from its `module-info.class`, or
 derived for an automatic module from its `Automatic-Module-Name` or its file name, with the providers in
-`META-INF/services` scanned in. A version behind the first dash in the file name is derived too, exactly as a
-module path derives it, so a bundled automatic module reports the identity it would report under `java -p` -
-in `Module::getDescriptor` and in stack traces alike. The boot layer is immutable, so a fresh child layer is the only way to add
-modules at run time - and the right one, because they stay real named modules. What these rules mean in
+`META-INF/services` scanned in. A version behind the first dash is derived as a module path derives it, so a bundled automatic module
+reports the identity it would report under `java -p`, in `Module::getDescriptor` and in stack traces. The
+boot layer is immutable, so a fresh child layer is the only way to add modules at run time - and the right
+one, because they stay real named modules. What these rules mean in
 practice is the subject of [*Running & troubleshooting*](/launcher/running-and-troubleshooting/).
 
 ### A jar that names no module
@@ -110,7 +108,7 @@ practice is the subject of [*Running & troubleshooting*](/launcher/running-and-t
 A dependency that declares neither a `module-info` nor an `Automatic-Module-Name` has no name to derive. The
 build tool gives such a jar a name through a [module alias](/tool/dependencies/), and it renames the
 resolved file to `<alias>-<version>.jar` before packaging. Inside the launcher jar the subfolder is then
-`modulepath/<alias>-<version>.jar/`, and the automatic-module rule derives both the declared name and that
+`jars/<alias>-<version>.jar/`, and the automatic-module rule derives both the declared name and that
 version from it. Nothing else is needed.
 
 The launcher also understands a manifest header for a jar that kept its coordinate-encoded name. The module
