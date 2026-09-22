@@ -134,11 +134,10 @@ Path workingDirectory = Path.of("").toAbsolutePath();
 installation.launch(command.mainClass(), List.of("--version"), new DockerizedJava(workingDirectory));
 ```
 
-The single-argument constructor builds and reuses the minimal hardened image that `--docker` uses;
-`new DockerizedJava(directory, "<image>")` names an image of your own, which then runs without the
-hardening flags. Either way the container runs the host's Java home, mounted read-only, so the image only
-has to provide a compatible operating system, not a JDK. The working directory is mounted read-write at its
-host path.
+The single-argument constructor builds and reuses the minimal hardened image `--docker` uses;
+`new DockerizedJava(directory, "<image>")` names your own, which runs without the hardening flags. Either way
+the container runs the host's Java home, mounted read-only, so the image needs no JDK, and the working
+directory is mounted read-write at its host path.
 
 When you would rather see a run than make it, ask for it. Two calls answer, and they are the two lines
 [`--pin`](/jpx/reference/) prints.
@@ -151,11 +150,10 @@ System.out.println(String.join(" ", pinned));
 // jpx --hash=SHA-256/ed5600…aa1e2dd org.junit.platform.console@6.1.3 --version
 ```
 
-Whatever the target left out, the pinned form fills in: the version is the one that was resolved, even when
-the call asked for none, and `--hash` is always present, taken from the installation's own `checksum`. What
-comes back is therefore the line to paste into a CI step or a script, where a floating version would make the
-run something else tomorrow. A `pinned(options, mainClass, arguments)` overload carries the flags that
-change what is installed or where it runs - `--modular`, `--docker` - and names an entry point.
+Whatever the target left out is filled in: the version that resolved, and `--hash` from the installation's
+own checksum - the line to paste into a CI step, where a floating version would make tomorrow's run something
+else. A `pinned(options, mainClass, arguments)` overload carries `--modular` or `--docker` and names an entry
+point.
 
 `command` gives the **java command that one expands to**: everything from the JVM that would run it to the
 last argument the program receives.
@@ -196,9 +194,9 @@ try {
 
 ## Choosing where things come from
 
-`Jpx` is a record of five values - the storage folder, the repositories, the resolvers, the hash function,
-and the placement - and it has two constructors. The short one takes a placement and fills the rest in the
-way the command does, installing under `~/.jenesis/jpx`:
+`Jpx` is a record of five values - storage folder, repositories, resolvers, hash function, placement -
+with a short constructor that takes the placement and fills the rest the way the command does, installing
+under `~/.jenesis/jpx`:
 
 ```java
 Jpx jpx = new Jpx(PathPlacement.INFERRED);        // resolve by published coordinates
@@ -208,10 +206,8 @@ Jpx modular = new Jpx(PathPlacement.MODULE_PATH); // resolve over module descrip
 `PathPlacement.CLASS_PATH` is the third value, and the one a Maven coordinate runs under however the instance
 was built.
 
-The long constructor names all five. A storage folder of your own keeps installs out of `~/.jenesis/jpx`,
-which is what a test, a sandboxed tool, or a demo wants; installations land under a layout folder inside it,
-the same way they do under the default root. Here are the defaults spelled out, with
-`target/jpx` as the storage folder:
+The long constructor names all five, which is how a test, a sandboxed tool or a demo keeps installs out of
+`~/.jenesis/jpx`. The defaults, spelled out, with `target/jpx` as the storage folder:
 
 ```java
 MavenPomResolver maven = new MavenPomResolver();
@@ -223,10 +219,9 @@ Jpx jpx = new Jpx(Path.of("target", "jpx"),
         PathPlacement.INFERRED);
 ```
 
-Replacing the repositories is the way to resolve from a private mirror, or from a local folder with no
-network at all. `MavenDefaultRepository` takes the mirror's URI, a local folder to cache downloads in (`null`
-for none), the checksum URIs to validate against, a callback for each fetch, and an optional token sent as
-the `Authorization` header:
+Replacing the repositories resolves from a private mirror, or from a local folder with no network at all.
+`MavenDefaultRepository` takes the URI, a local cache folder (`null` for none), the checksum URIs, a
+per-fetch callback and an optional `Authorization` token:
 
 ```java
 URI mirror = URI.create("https://nexus.example.com/maven2/");
@@ -237,11 +232,10 @@ Jpx jpx = new Jpx(storage,
         PathPlacement.INFERRED);
 ```
 
-Repositories are keyed by the kind of coordinate they serve: `maven` for Maven coordinates and `module` for
-module names. A map that carries only `maven`, as above, supports only Maven coordinates. Resolving a module
-name under `PathPlacement.INFERRED` needs **both** entries, because the module index discovers the
-coordinates and the Maven repository supplies the jars. A target that needs a missing entry fails rather than
-silently reaching the public default.
+Repositories are keyed by the kind of coordinate they serve: `maven` for Maven coordinates, `module` for
+module names. Resolving a module name under `PathPlacement.INFERRED` needs **both**, because the index
+discovers the coordinate and the Maven repository supplies the jar. A target that needs a missing entry
+fails rather than quietly reaching the public default.
 
 <div class="note">
   The defaults are not hard-coded either: they are built from the same environment the build tool reads, so
