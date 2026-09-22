@@ -130,19 +130,15 @@ target/
 .jenesis/
 ```
 
-`target/` is the build output, named by `jenesis.project.target`. `.jenesis/` is what the tool produces: the
-resolved artifacts, the build cache, the engine compiled by `jenesis.make.compile` and its stamp, a running
-daemon's port, token and log, and the OpenPGP keys a build fetched to verify signatures with. Keeping all of
-it under one hidden folder is deliberate - there is one thing to ignore, and one thing to delete when you
-want a cold start.
+`target/` holds the **result** of a build - the jars, the reports, the staged release tree - and is named by
+`jenesis.project.target`. `.jenesis/` holds the **mechanics** that make the next build faster: the
+dependencies and keys it downloaded, so nothing foreign is fetched twice; the cache that lets an unchanged
+step be skipped; the compiled engine; and a running daemon's port, token and log.
 
-Those two rules hold whether Jenesis is vendored as source or tracked as a submodule. A submodule lives at
-`build/.upstream`, outside `.jenesis/` entirely, so nothing has to be carved back out of the rule and
-`rm -rf .jenesis` is a cold start - it removes only what the next build produces again, the keys included,
-since those are fetched from the fingerprints the project declares.
-
-Nothing needs ignoring inside the vendored engine either. It carries its own `.gitignore`, and the compiled
-engine lands in `.jenesis/classes` rather than beside the sources, so the vendored copy stays as checked out.
+Neither is yours to keep. `rm -rf target .jenesis` costs a slower next build and nothing else, and both rules
+hold whether the engine is vendored as source or tracked as a submodule - a submodule sits at
+`build/.upstream`, outside both. The vendored engine needs no rule of its own: it carries its own
+`.gitignore`, and its compiled classes land in `.jenesis/classes` rather than beside the sources.
 
 ### Why the engine lives in your repository
 
