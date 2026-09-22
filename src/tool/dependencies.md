@@ -215,12 +215,9 @@ what `pin` exists to make explicit.
 
 ## Excluding a transitive
 
-A dependency can drag in a transitive you do not want. Pruning it is a Maven mechanism (an exclusion tells
-the resolver to skip a subtree of a POM), so it is available wherever a POM is read: in the `maven` layout,
-and in the default `modular_to_maven` layout, whose `requires` resolve through Maven.
-
-In a `pom.xml` it is an `<exclusions>` block, exactly as in Maven - the excluded artifact never reaches the
-class path, tests included:
+A dependency can drag in a transitive you do not want. Pruning it is a Maven mechanism, so it works wherever
+a POM is read: the `maven` layout, and the default `modular_to_maven`, whose `requires` resolve through
+Maven. In a `pom.xml` it is the usual `<exclusions>` block:
 
 ```xml
 <dependency>
@@ -247,14 +244,13 @@ module demo.sample {
 }
 ```
 
-One line names the module to prune and any number of `<groupId>/<artifactId>` targets. Repeated lines for
-the same module add up, so a growing list of upstream mistakes stays readable. A target is an artifact, never
-one of its variants, so it carries no version, type, or classifier. Excluding from a module the declaration
-does not `requires` is an error rather than a silent no-op, because it is a typo in every case that matters.
+One line names the module to prune and any number of `<groupId>/<artifactId>` targets; repeated lines add up.
+A target is an artifact rather than one of its variants, so it carries no version, type or classifier, and
+excluding from a module the declaration does not `requires` is an error rather than a silent no-op.
 
-Either way the artifact takes the whole subtree it pulled in with it. Because it never enters the resolved
-closure, there is nothing left to leak: it is off the compile and test paths, absent from the generated POM,
-and absent from the bill of materials and the compliance reports. The build never fetched it.
+Either way the artifact takes its whole subtree with it and never enters the resolved closure: off the
+compile and test paths, absent from the generated POM, the bill of materials and the compliance reports. The
+build never fetched it.
 
 <div class="note">
   The strict <code>modular</code> layout is the one place this does not apply. Resolution there matches module
