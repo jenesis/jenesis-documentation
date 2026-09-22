@@ -386,16 +386,14 @@ module demo.agents {
 }
 ```
 
-The token is a module name or a `<groupId>/<artifactId>`, and everything after it is passed to the agent
-verbatim as its option string. There is no version slot: the version comes from a dependency you already
-declare, from a pin, or floats to the latest without one. A `pom.xml` project declares the same lines in a
-project-level `<!--jenesis.attach ... -->` comment block.
+The token is a module name or a `<groupId>/<artifactId>`, and everything after it is passed to the agent as
+its option string. There is no version slot: the version comes from a dependency you declare, from a pin, or
+floats to the latest. A `pom.xml` project declares the same lines in a project-level
+`<!--jenesis.attach ... -->` block.
 
-One tag covers both shapes an agent takes. The OpenTelemetry agent above is **agent-only**: required by
-nothing, compiled against nothing, never on a compile or runtime path. It is attached, and that is all.
-Mockito is the other shape, a **dependency that also attaches**, named by a `requires` *and* by an attach
-declaration. Both resolve to the identical artifact, so the jar on the module path and the jar passed as
-`-javaagent:` are the same file.
+One tag covers both shapes. The OpenTelemetry agent above is **agent-only** - required by nothing, on no
+compile or runtime path. Mockito is the other shape, a **dependency that also attaches**, named by a
+`requires` *and* an attach declaration; both resolve to the same file.
 
 An attachment belongs to the module that declares it and never propagates to a dependent, so a test module
 attaches to its own test run:
@@ -426,10 +424,10 @@ While you are editing, keep the build process alive and let it rebuild on every 
 java -Djenesis.project.watch=true build/jenesis/Make.java
 ```
 
-The first build runs as usual. Jenesis then watches the project root and re-runs the requested target whenever
-a file changes, reusing the content-hash cache so each rebuild only re-executes the steps whose inputs actually
-moved; a no-op change settles in well under a second. The output folders (`target/` and the cache) and
-dot-directories are excluded, so the build's own writes never trigger a rebuild. Press Ctrl+C to stop.
+The first build runs as usual; Jenesis then watches the project root and re-runs the target whenever a file
+changes, reusing the content-hash cache so only the steps whose inputs moved run again - a no-op change
+settles in well under a second. The output folders and dot-directories are excluded, so the build's own
+writes never trigger a rebuild. Press Ctrl+C to stop.
 
 Module selectors still apply, so you can watch just one module's subgraph:
 
