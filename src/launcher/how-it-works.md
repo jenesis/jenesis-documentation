@@ -18,11 +18,10 @@ launcher knows how to read:
 app.jar
 ├── META-INF/MANIFEST.MF                          Main-Class: build.jenesis.launcher.Launcher
 ├── build/jenesis/launcher/…                      the launcher's own classes
-├── application.properties                        the descriptor: mainClass, mainModule, classpath
-├── modulepath/
-│   ├── classes.jar/…                             the application's own module, exploded
-│   └── org.slf4j-2.0.16.jar/…                    a modular or automatic dependency, exploded
-└── classpath/
+├── application.properties                        the descriptor: mainClass, mainModule, classpath, modulepath
+└── jars/
+    ├── classes.jar/…                             the application's own module, exploded
+    ├── org.slf4j-2.0.16.jar/…                    a modular or automatic dependency, exploded
     └── <group>%2F<artifact>%2F<version>.jar/…    a dependency that names no module, exploded
 ```
 
@@ -36,10 +35,12 @@ names a resolved jar after the module it carries, at the version the closure res
 (`org.slf4j-2.0.16.jar`), names an aliased jar `<alias>-<version>.jar`, keeps the application's own module as
 `classes.jar`, and falls back to the URL-encoded coordinate (`<group>%2F<artifact>%2F<version>.jar`) for a jar
 that declares no module at all. The name follows what the jar declares, not where it lands: a jar with an
-`Automatic-Module-Name` is named for that module even when it goes on the class path. A jar goes under
-`modulepath/` when the application is modular and the jar describes a module; everything else goes under
-`classpath/`. A non-modular application therefore has every dependency under `classpath/` and no module
-layer at all.
+`Automatic-Module-Name` is named for that module even when it goes on the class path.
+
+Every dependency sits in that one `jars/` store, and the descriptor decides how each is read: the
+`modulepath` key names the entries resolved as modules - the jars that describe one, when the application is
+modular - and `classpath` names the rest. A non-modular application therefore lists every dependency under
+`classpath` and builds no module layer at all.
 
 ### The descriptor
 
@@ -50,7 +51,8 @@ three keys:
 | --- | --- |
 | `mainClass` | the fully qualified class whose `main` is invoked |
 | `mainModule` | the module owning `mainClass`, when the application is modular |
-| `classpath` | the class-path subfolders in the order the launcher should search them |
+| `classpath` | the `jars/` entries to read as a class path, in search order |
+| `modulepath` | the `jars/` entries to resolve as modules |
 
 The launcher understands a few more - bundled agents, module-access grants, and signer reconstruction -
 which are for a jar you assemble yourself. The [*Reference*](/launcher/reference/) chapter lists them all.
@@ -62,12 +64,12 @@ Running `java -jar app.jar` starts the launcher's `main`, which then:
 1. **finds itself** - it locates the running jar from its own `CodeSource` and opens it. A packaged jar and
    an exploded directory of the same layout both work.
 2. **reads the descriptor and indexes the entries** - it loads `application.properties` and records the
-   *entry names* under each `classpath/<jar>/` and `modulepath/<jar>/` subfolder. It also reads each
-   dependency's manifest, and for a module-path jar its `module-info.class` and `META-INF/services` files,
-   since those describe the module. Class bytes are not read here.
-3. **builds one class loader** over the `classpath/` subfolders. This loader's unnamed module is the analogue
-   of everything a `-cp` class path would carry. It holds no class bytes, only the index.
-4. **reconstructs the module layer**, if there are `modulepath/` jars. An in-memory module finder resolves
+   *entry names* under each `jars/<entry>/` subfolder. It also reads each dependency's manifest, and for a
+   jar the `modulepath` key names, its `module-info.class` and `META-INF/services` files, since those
+   describe the module. Class bytes are not read here.
+3. **builds one class loader** over the entries `classpath` names. This loader's unnamed module is the
+   analogue of everything a `-cp` class path would carry. It holds no class bytes, only the index.
+4. **reconstructs the module layer**, if `modulepath` names any entries. An in-memory module finder resolves
    them and defines a **child `ModuleLayer`** against the boot layer, mapping every module to that *same*
    loader. When a `mainModule` is declared, the layer grants the launcher access to the main class's
    package, so `main` runs even if the package is not exported - exactly as `java -m module/Class` allows.

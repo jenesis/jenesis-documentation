@@ -22,6 +22,10 @@ grammar, `<name>[@<version>][/<main-class>]`, is covered in [Choosing a target](
 | `--pin` | Print two commands instead of launching: the jpx command that repeats this run reproducibly - the resolved version spelled out, `--hash` always present at full length, `--pin` itself dropped - and the `java` command it expands to. The jars are verified before anything is printed, against `--hash` where one is given and against the installation's own digest otherwise. |
 | `--help` | Print the usage screen and exit. |
 
+A whole invocation can live in a file: `jpx @run.args` stands for the arguments that file holds, one or more
+per line, with `#` a comment to the end of a line, quotes holding what would otherwise split, and `@@<text>`
+an argument that begins with an `@`. A file names no further file.
+
 `--modular` is covered under [Choosing a target](/jpx/targets/); `--docker` and `--hash` under
 [Isolation & verification](/jpx/isolation-and-verification/); `--pin` under
 [Using jpx from Java](/jpx/programmatic/), whose `pinned` and `command` calls it prints.
