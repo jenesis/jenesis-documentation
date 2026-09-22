@@ -4,20 +4,32 @@ title: Introduction
 description: What Jenesis is, the problem it solves, and the path through the chapters.
 ---
 
-**Jenesis is a build tool for Java, written in Java.** A build is an ordinary Java program: you
-configure it by writing code against a small API, not by learning a new markup language, and you run it
-with the JDK you already have. There is no plugin ecosystem to install. A build is composed from steps
-that are just objects you can read, extend, and test.
+**Jenesis is a build tool for Java, written in Java.** Most projects need no build script at all. What a
+project already declares - its source layout, its `module-info.java`, the dependencies it names - is what
+the build is inferred from, so `java build/jenesis/Make.java` compiles, tests and packages it with the JDK
+you already have and nothing else installed. Where a convention does not cover what a project needs, the
+extension is a small Java function or module describing one step, read, tested and refactored like the rest
+of your code: no markup language to learn, and no plugin ecosystem to install.
 
-Its companion tool **jpx** resolves and runs a published module or Maven artifact the way `npx` runs a
-package. It ships with Jenesis and has [its own section](/jpx/).
+Three properties are built in rather than added on. A build is **incremental**: each step is keyed by its
+inputs, so a second build redoes only what changed, and a shared cache extends that across machines. It is
+**reproducible**: the same sources produce the same bytes, on every machine and in CI, which is checked
+against a recorded digest. And its **supply chain is accounted for**: dependencies can be pinned to a
+version and a checksum, verified against OpenPGP signatures or Sigstore identities, held to a licence
+policy, checked against known vulnerabilities, and described in an SBOM the build emits.
+
+A project does not have to be modular to be built. Jenesis reads a `pom.xml` as the description of what to
+build, which is the quickest way to try it on a project you already have, and the way to keep building one
+that is not ready for the Java Module System yet.
 
 ## Why another build tool
 
 Two convictions shape everything here:
 
-- **Configuration is code.** A build is expressed in Java and launched by the JDK directly, with
-  `java build/jenesis/Make.java`. You get types, an IDE, and refactoring for your build the same as for your application.
+- **Convention first, Java where it runs out.** A project's own layout and declarations describe the build,
+  so most builds are written nowhere at all. What a convention cannot express is a few lines of Java,
+  launched by the JDK directly with `java build/jenesis/Make.java`, so a build that does need code gets
+  types, an IDE and refactoring, the same as your application.
 - **The Java Module System is a feature, not a footnote.** `module-info.java` drives the build: Jenesis reads
   your declared modules, resolves the module path, and carries a real module graph all the way through to
   packaging, instead of flattening it into a class path.
