@@ -114,7 +114,10 @@ The `dependencies` selector prints each module's resolved tree, the way `mvn dep
 java build/jenesis/Make.java dependencies
 ```
 
-Each node shows the version every parent requested, the **negotiated** version inline when it differs
+Each module gets one tree, headed by the module itself: its path relative to the project, its version, its
+module name, `test` for a test module, and its licence when the project declares one
+(`./sources 1.0.0 (module greeter) {Apache-2.0}`). Every direct dependency hangs below that heading, and each
+node shows the version every parent requested, the **negotiated** version inline when it differs
 (`[1,2] -> 2`), the scope, the dependency's licence (`{Apache-2.0}`), and `local` for a module built inside
 this project rather than fetched. A per-module *Resolved dependencies* list and a licence summary follow the
 tree. It is the fastest way to answer "why is this version on my class path?" before you pin anything.
