@@ -59,7 +59,9 @@ Either form reaches the same repositories a build does, and in the same order: y
 (`~/.jenesis`) and local Maven repository (`~/.m2`) first, then the public ones. A module you just published
 locally with `export` is therefore runnable immediately. `JENESIS_REPOSITORY_URI` and `MAVEN_REPOSITORY_URI`
 point jpx at a mirror or an internal repository exactly as they point a build; the `jenesis.module.uri` and
-`jenesis.maven.uri` system properties do the same and take precedence.
+`jenesis.maven.uri` system properties do the same and take precedence. `jenesis.module.source=git` switches
+jpx to reading the module index's published data itself, as it switches a build (see *[Reading the index
+directly](/modules/resolving/#reading-the-index-directly)*).
 
 ## The version - which release
 

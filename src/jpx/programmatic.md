@@ -9,6 +9,19 @@ small API, and that API is public. Reach for it when a tool of your own has to r
 IDE plugin launching a formatter, a test harness driving a released version of the program under test, or a
 script that resolves a tool once and then runs it many times.
 
+A program that would rather hand jpx a command line than call the API can do that in its own JVM too:
+`build.jenesis` publishes `jpx` as a `java.util.spi.ToolProvider`, beside the build tool's own two (see
+*[Running a build inside another program](/tool/extending-the-build/#running-a-build-inside-another-program)*).
+
+```java
+int status = ToolProvider.findFirst("jpx").orElseThrow()
+        .run(new PrintWriter(System.out), new PrintWriter(System.err), "org.junit.platform.console", "--version");
+```
+
+Leading `-Djenesis.*` arguments configure that run alone, and the usage screen and its errors arrive on the
+writers you passed. What jpx launches is a process either way, so `--java` and `--docker` behave exactly as
+they do on a command line.
+
 ## Where the class lives
 
 The type is **`build.jenesis.Jpx`**, in the module `build.jenesis` - the same artifact the build tool

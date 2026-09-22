@@ -16,8 +16,8 @@ all the classes into one flat jar. The merge is what costs you the modules. Ever
 the same path, `META-INF/services` files collide unless a transformer is configured to merge them, and at run
 time there is no module graph left to rebuild.
 
-A launcher jar keeps each dependency in a subfolder of its own instead - `modulepath/<jar>/…` for a module,
-`classpath/<jar>/…` for a plain jar. Nothing collides: each dependency keeps its own descriptor, service files
+A launcher jar keeps each dependency in a subfolder of its own instead - `jars/<jar>/…`, one store, with the
+descriptor naming which entries are resolved as modules and which are read as a class path. Nothing collides: each dependency keeps its own descriptor, service files
 and resources, and the launcher reads a class straight out of the outer jar when it is first needed. The
 dependencies' class bytes are never copied into memory or unpacked to disk.
 *[Comparison with a fat jar](/launcher/comparison-with-a-fat-jar/)* sets the two approaches side by side.
