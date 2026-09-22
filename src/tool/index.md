@@ -5,9 +5,9 @@ description: What Jenesis is, the problem it solves, and the path through the ch
 ---
 
 **Jenesis is a build tool for Java, written in Java.** Most projects need no build script at all. What a
-project already declares - its source layout, its `module-info.java`, the dependencies it names - is what
-the build is inferred from, so `java build/jenesis/Make.java` compiles, tests and packages it with the JDK
-you already have and nothing else installed. Where a convention does not cover what a project needs, the
+project already declares - its source layout, the dependencies it names, a `module-info.java` where it has
+one - is what the build is inferred from, so `java build/jenesis/Make.java` compiles, tests and packages it
+with the JDK you already have and nothing else installed. Where a convention does not cover what a project needs, the
 extension is a small Java function or module describing one step, read, tested and refactored like the rest
 of your code.
 
@@ -23,11 +23,13 @@ Two convictions shape everything here:
   to install. What a convention cannot express is a few lines of Java, launched by the JDK directly with
   `java build/jenesis/Make.java`, so the build that does need code gets types, an IDE and refactoring, the
   same as your application.
-- **The Java Module System is a feature, not a footnote.** A `module-info.java` already describes a module -
-  what it is called, what it requires, what it exports - so Jenesis reads the one a project has rather than
-  asking for a second descriptor to keep in sync with it. Those declared modules drive the build: they
-  resolve the dependencies, fill the module path, and carry a real module graph through to packaging,
-  instead of being flattened into a class path.
+- **The Java Module System is a feature, never a requirement.** A `module-info.java` already describes a
+  module - what it is called, what it requires, what it exports - so Jenesis reads the one a project has
+  rather than asking for a second descriptor to keep in sync with it. Where a project declares modules they
+  drive the build, resolving dependencies, filling the module path and carrying a real module graph through
+  to packaging instead of flattening it into a class path. Where a project declares none, nothing is asked
+  of it: its jars resolve by coordinate and compile on the class path, and every chapter here applies the
+  same.
 
 And three properties are built in rather than added on:
 
