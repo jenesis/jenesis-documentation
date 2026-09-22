@@ -147,8 +147,9 @@ your repository, compiled by the JDK you already have. A clone builds offline, a
 
 The cost is the recompile on each run. `Make` handles it - the first call compiles the engine into
 `.jenesis/classes` and later calls reuse those classes until a source changes - and the installed `jenesis`
-skips it entirely by running a released engine. Use `jenesis` locally; keep `java build/jenesis/Make.java` in
-the README and in CI, where a fresh machine makes the compile moot and reproducibility outweighs startup.
+skips it entirely by running a released engine. Keep `java build/jenesis/Make.java` in the README and in CI:
+compiling the engine offline is normally faster than downloading a binary distribution over the network, and
+it needs nothing fetched to obtain the build tool at all.
 
 On a machine you cannot install to, drive those classes yourself:
 
