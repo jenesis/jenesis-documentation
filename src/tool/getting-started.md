@@ -23,9 +23,20 @@ java --version
 
 A Jenesis build lives *with* your project: its engine ships as plain Java source under `build/jenesis/`, and
 you launch it with the JVM's source file mode. Installing is really just populating that
-`build/jenesis/` folder. There are three equivalent ways to do it. All land at the same on-disk state, so
-the canonical `java build/jenesis/Make.java` command works identically afterwards. Pick by how you prefer
-to manage versions.
+`build/jenesis/` folder. Three ways do it, in order of how much they ask of you, and all land at the same
+on-disk state - the canonical `java build/jenesis/Make.java` command works identically afterwards.
+
+### curl bootstrap
+
+Fastest, with no prerequisite beyond a JDK and `curl`. Run from your project root:
+
+```bash
+curl -fsSL https://get.jenesis.build | bash
+java build/jenesis/Make.java
+```
+
+Set `JENESIS_VERSION=X.Y.Z` to pin a release, or pass a git ref to install an arbitrary tag, commit, or
+branch: `curl -fsSL https://get.jenesis.build | bash -s -- main`.
 
 ### A package manager
 
@@ -71,18 +82,6 @@ release is no longer trusted. The fix it asks for is to move the project on - `j
   files that differ - and <code>. jenesis-switch</code> moves the whole shell to the version a project
   records, sourced rather than run, since it changes the calling shell.
 </div>
-
-### curl bootstrap
-
-Fastest, with no prerequisite beyond a JDK and `curl`. Run from your project root:
-
-```bash
-curl -fsSL https://get.jenesis.build | bash
-java build/jenesis/Make.java
-```
-
-Set `JENESIS_VERSION=X.Y.Z` to pin a release, or pass a git ref to install an arbitrary tag, commit, or
-branch: `curl -fsSL https://get.jenesis.build | bash -s -- main`.
 
 ### Git submodule
 
