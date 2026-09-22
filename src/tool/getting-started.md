@@ -52,10 +52,19 @@ sources under `build/jenesis/` and the sources that release published, and runs 
 an edited or unreviewed engine is refused rather than executed - and the refusal names the routes that do
 build the project.
 
+It refuses one more thing: a release that is no longer considered safe. Each `jenesis` carries the last such
+version, runs anything newer, and refuses anything at or below it, so a project cannot pull an engine whose
+release is no longer trusted. The fix it asks for is to move the project on - `jenesis-init` re-vendors
+`build/jenesis/` from the installed release, and `jenesis-validate` reports what would change first.
+
 <div class="note">
   <strong>Further information.</strong> <code>jenesis-make</code> runs the installed engine as it stands,
   ignoring anything under <code>build/jenesis/</code>, so it builds a project that vendors nothing at all -
   a standard Maven project is built with it without installing anything into the project.
+  <code>jenesis-unsafe</code> is <code>jenesis</code> without the version floor: it verifies the vendored
+  sources against the published ones exactly as <code>jenesis</code> does, and then runs the recorded
+  version even where that release is no longer considered safe - for reproducing an old build, or a branch
+  that is not moving.
   <code>jenesis-exec</code> runs a module's <code>main</code> the way <code>jenesis</code> runs the build,
   <code>jenesis-version</code> and <code>jenesis-validate</code> report how a project's
   <code>build/jenesis/</code> compares with the installed release - <code>jenesis-validate</code> naming the
