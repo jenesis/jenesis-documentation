@@ -151,13 +151,6 @@ skips it entirely by running a released engine. Keep `java build/jenesis/Make.ja
 compiling the engine offline is normally faster than downloading a binary distribution over the network, and
 it needs nothing fetched to obtain the build tool at all.
 
-On a machine you cannot install to, drive those classes yourself:
-
-```bash
-javac -d .jenesis/classes build/jenesis/*.java
-java -cp .jenesis/classes build.jenesis.Make
-```
-
 ## Build a project from nothing
 
 A module declaration, a class, and the engine you just installed:
