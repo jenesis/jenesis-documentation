@@ -10,9 +10,10 @@ build runs through. Everything later in this section assumes only what is here.
 
 ## Prerequisites
 
-Jenesis needs **a JDK, version 25 or newer, and nothing else** - no daemon, no wrapper, no plugin tree to
-download. A build is an ordinary Java program that the JDK launches directly, so if `java --version` reports
-25 or above, you are ready.
+Jenesis needs **a JDK, version 25 or newer, and nothing else** - no wrapper, no plugin tree to download. A
+build is an ordinary Java program that the JDK launches directly, so if `java --version` reports 25 or
+above, you are ready. What a project carries is under two megabytes of readable Java, where a build tool
+distributed as binaries is commonly tens of megabytes you do not read.
 
 ```bash
 java --version
@@ -28,8 +29,8 @@ to manage versions.
 
 ### A package manager (recommended)
 
-Best when you would rather manage the tool version globally than vendor its sources into every project.
-Install once with SDKMAN, Homebrew, or Scoop, then initialise each project from the installed copy:
+Best when you would rather manage the tool version globally than vendor its sources by hand. Install once,
+then initialise the project from the installed copy:
 
 ```bash
 sdk install jenesis                # SDKMAN
@@ -40,45 +41,27 @@ jenesis-init                       # run from your project root
 java build/jenesis/Make.java
 ```
 
-`jenesis-init` writes `build/jenesis/` into the current directory (pass one or more paths to initialise
-several projects at once). From then on the project builds with the canonical command, and needs nothing but
-a JDK.
+`jenesis-init` writes `build/jenesis/` into the current directory - pass one or more paths to initialise
+several projects at once - and records the version it wrote in `build/jenesis/jenesis.version`. From then
+on the project builds with the canonical command above, and needs nothing but a JDK.
 
-That command names no selector, so it runs the **default target**, `build` - resolve, compile, package and
-test every module. Everything else is asked for by name (`pin`, `stage`, `dependencies`), which is why the
-command for an ordinary build is the short one.
+For repeated builds on your own machine, the installed **`jenesis`** command runs the same build without
+compiling the engine first: it reads the version the project recorded, finds or installs that release, and
+runs it. It is also the way to build a project you do not trust. Before running anything it digests the
+sources under `build/jenesis/` and the sources that release published, and runs only when the two agree, so
+an edited or unreviewed engine is refused rather than executed - and the refusal names the routes that do
+build the project.
 
-The install also puts a `jenesis` command on your path. It reads the version recorded in
-`build/jenesis/jenesis.version` and runs **that** version, installing it first where the package manager can,
-so the project decides which Jenesis builds it rather than whichever one your shell happens to have.
-
-The recorded version is a claim, so `jenesis` checks it. Before running a compiled engine it digests the
-sources under `build/jenesis/` and the sources that version ships, and runs the engine only when the two
-agree. When they do not - a stale version file, a version it cannot install, or a `build/jenesis/` somebody
-has edited - `jenesis` refuses to run rather than execute code nobody has reviewed, and names the routes
-that do build it, in two groups. `. jenesis-switch` and `jenesis-make` stay on the released engine: the
-project builds as a standard build, no vendored code runs, and for most projects that is enough. Running
-the vendored sources yourself is the other group, in source mode or off classes you compiled once with
-`javac`, and that one does run the modified engine - read the project's build instructions first, since
-`Make.java` is only the usual entry point and the project may drive its build from another, and since a
-modified engine runs with the rights of your build and can break the encapsulation the released engine
-gives you. Only run builds from sources you trust. A project
-that records nothing falls through to the installed version, and `jenesis-make` skips the whole lookup and
-runs the installed version as it stands.
-
-<div class="tip">
-  You can skip embedding entirely and run <code>jenesis</code> from a project root with no
-  <code>build/jenesis/</code> at all. That is handy for a quick trial, or for building an untrusted project
-  while keeping Jenesis itself the trusted, installed copy. In that mode you can only tune the build through
-  system properties, not custom build code.
+<div class="note">
+  <strong>Further information.</strong> <code>jenesis-make</code> runs the installed engine as it stands,
+  ignoring anything under <code>build/jenesis/</code>, so it builds a project that vendors nothing at all -
+  a standard Maven project is built with it without installing anything into the project.
+  <code>jenesis-exec</code> runs a module's <code>main</code> the way <code>jenesis</code> runs the build,
+  <code>jenesis-version</code> and <code>jenesis-validate</code> report how a project's
+  <code>build/jenesis/</code> compares with the installed release - <code>jenesis-validate</code> naming the
+  files that differ - and <code>. jenesis-switch</code> moves the whole shell to the version a project
+  records, sourced rather than run, since it changes the calling shell.
 </div>
-
-The install ships a few companion commands. `jenesis-exec` runs a module's `main` the way `jenesis` runs the
-build. `jenesis-version` and `jenesis-validate` check that a project's embedded `build/jenesis/` matches the
-installed version, and `jenesis-validate` names the files that differ where `jenesis` only decides whether
-to trust them. `jenesis-switch` moves the whole shell to the version a project records,
-for when you want every command aligned rather than one invocation; source it, as `. jenesis-switch`, since
-it changes the calling shell.
 
 ### curl bootstrap
 
