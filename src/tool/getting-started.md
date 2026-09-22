@@ -232,7 +232,7 @@ target/stage
 │   └── greeter-1.0.0-cyclonedx.json   # the bill of materials
 ├── modular/output/greeter/1.0.0
 │   ├── greeter.jar   # the same jar, named as the module index serves it
-│   └── greeter.pom   # and the same POM, for a consumer resolving by module name
+│   └── greeter.pom   # its dependencies as coordinates, for a project mixing modules and Maven artifacts
 └── reports/output   # the dependency graph, and what else ran
 ```
 
