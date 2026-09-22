@@ -52,7 +52,7 @@ And three properties are built in rather than added on:
 The chapters build up from zero knowledge:
 
 1. **Introduction** - you are here.
-2. **Getting started** - install Jenesis, build an example, and read the `Project` model.
+2. **Getting started** - install Jenesis, build a project, and learn the settings and selectors it is driven by.
 3. **Core concepts** - build steps, the build graph, layouts, and the module-system specifics.
 4. **Configuration** - `jenesis.properties`, per-module configuration, and profiles.
 5. **Building & running** - compile, test, annotation processing, `Execute`, agents, and watch mode.

@@ -4,7 +4,7 @@ title: Core concepts
 description: Build steps, the build graph, the layouts that shape a project into one, and how Jenesis decides what to rebuild.
 ---
 
-*[Getting started](/tool/getting-started/)* ran a build and toured the `Project` model. This chapter opens the box:
+*[Getting started](/tool/getting-started/)* ran a build and named the settings that drive one. This chapter opens the box:
 what a build actually *is*, how Jenesis shapes your project into one, and the rule that decides on every
 run what recompiles and what is reused. Three ideas, and everything later in this section rests on them.
 
