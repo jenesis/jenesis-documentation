@@ -231,8 +231,8 @@ target/stage
 │   ├── greeter-1.0.0.pom   # generated, so Maven consumers resolve it
 │   └── greeter-1.0.0-cyclonedx.json   # the bill of materials
 ├── modular/output/greeter/1.0.0
-│   ├── greeter.jar   # the same jar, under its module name
-│   └── greeter.pom
+│   ├── greeter.jar   # the same jar, named as the module index serves it
+│   └── greeter.pom   # and the same POM, for a consumer resolving by module name
 └── reports/output   # the dependency graph, and what else ran
 ```
 
