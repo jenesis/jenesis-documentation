@@ -26,51 +26,34 @@ are addressing and which kind of module it can serve:
 | `sources` | `/sources/<module>[/<moduleVersion>]/<file>.jar` | The module-info version; the redirect appends `-sources` to the Maven file name. Named modules only. |
 | `documentation` | `/documentation/<module>[/<moduleVersion>]/<file>.jar` | The module-info version; the redirect appends `-javadoc` to the Maven file name. Named modules only. |
 
-Two version spaces are in play. `/artifact/` is keyed by the **Maven version**, the number you see in a
-POM. `/module/`, `/sources/`, and `/documentation/` are keyed by the **module-info version**, the string
-the publisher embedded in `module-info.class`. Pick the route that matches the version you are holding.
+Two version spaces are in play: `/artifact/` is keyed by the Maven version you see in a POM, the other three
+by the module-info version the publisher embedded. Pick the route that matches the version you hold.
 
-The `<file>` segment is required, and its name must start with the module name. Everything after that
-is the extension, either after a `.` or after `-<classifier>.`. The `/module/`, `/sources/`, and
-`/documentation/` routes accept **`.jar`, optionally followed by `.asc`** for the detached signature;
-`/artifact/` accepts any extension.
-
-<div class="note">
-  A trailing <code>.asc</code> fetches the detached OpenPGP signature the publisher uploaded beside the
-  jar, so provenance can be checked over the same route the artifact came from. On <code>/sources/</code>
-  and <code>/documentation/</code> the suffix follows the <code>-sources</code> / <code>-javadoc</code>
-  decoration, so the signature served is the one over that jar. A checksum sidecar is not served on these
-  three routes - use <code>/artifact/</code>, which passes any extension through.
-</div>
+The `<file>` segment is required and its name must start with the module name; everything after that is the
+extension, either after a `.` or after `-<classifier>.`. `/artifact/` passes any extension through, while the
+other three accept **`.jar`, optionally followed by `.asc`** for the detached signature - which follows the
+`-sources` / `-javadoc` decoration, so the signature served is the one over that jar. For a checksum sidecar,
+use `/artifact/`.
 
 <div class="note">
-  Only a <strong>named</strong> module - one that ships a real <code>module-info.class</code> - is
-  reachable through <code>/module/</code>, <code>/sources/</code>, and <code>/documentation/</code>. An
-  <strong>automatic</strong> module, which only sets <code>Automatic-Module-Name</code> in its manifest,
-  resolves through <code>/artifact/</code> alone. The same goes for the JDK's own module names
-  (<code>java.*</code>, <code>jdk.*</code>): no Maven artifact can supply those on the module path, so
-  <code>/module/</code> refuses them while <code>/artifact/</code> still answers.
+  Only a <strong>named</strong> module - one shipping a real <code>module-info.class</code> - is reachable
+  through <code>/module/</code>, <code>/sources/</code> and <code>/documentation/</code>. An
+  <strong>automatic</strong> module, which only sets <code>Automatic-Module-Name</code>, resolves through
+  <code>/artifact/</code> alone, and so do the JDK's own names (<code>java.*</code>, <code>jdk.*</code>): no
+  Maven artifact supplies those, so <code>/module/</code> refuses them while <code>/artifact/</code> answers.
 </div>
 
 ## Versions are optional
 
-The version segment can always be omitted. Leave it out and the service returns the **newest release**.
-Newest is decided by Maven's version ordering, and a pre-release is passed over: `org.slf4j` resolves to
-`2.0.19` even though `2.1.0-alpha1` ranks above it. Name the version when you want the pre-release.
+Leave the version segment out and the service returns the **newest release**, by Maven's version ordering
+with pre-releases passed over: `org.slf4j` resolves to `2.0.19` even though `2.1.0-alpha1` ranks above it.
 
-A version counts as a pre-release when a qualifier of it ranks below the release in Maven's own
-ordering - `alpha`, `beta`, `milestone` (including the `a1`, `b2`, `m3` shorthands), `rc` (and its `cr`
-alias) and `snapshot` - or when it is one of the qualifiers Maven's ordering does not know but
-publishers use for the same purpose: `ea`, `pre`, `prerelease`, `preview`, `dev`, `nightly`, `canary`,
-`next`, `test` and `adhoc`. Every other qualifier is a release, so `1.0.0.Final`, `33.0-jre` and
-`1.0-sp1` all resolve as ordinary versions. This is the same rule the Jenesis build tool applies to a
-`STABLE` version.
-
-A request that wants pre-releases back says so with the **`Jenesis-Prerelease: true`** request header,
-which drops the filter and returns the plain newest version. Without it, a module that has only ever
-published pre-releases has nothing to serve for an unversioned request and answers `404`, with a body
-naming the header that would have answered it. A version asked for by name is always served, header or
-not: naming `2.1.0-alpha1` is already an unambiguous request for it.
+A version is a pre-release when a qualifier of it ranks below the release in Maven's own ordering - `alpha`,
+`beta`, `milestone` (including the `a1`, `b2`, `m3` shorthands), `rc` and its `cr` alias, `snapshot` - or
+when it is one of the qualifiers Maven's ordering does not know but publishers use for the same purpose:
+`ea`, `pre`, `prerelease`, `preview`, `dev`, `nightly`, `canary`, `next`, `test`, `adhoc`. Everything else is
+a release, so `1.0.0.Final`, `33.0-jre` and `1.0-sp1` resolve as ordinary versions. It is the rule the build
+tool applies to a `STABLE` version.
 
 ```bash
 # 2.0.19, the newest release of org.slf4j
@@ -83,20 +66,16 @@ curl -L -O -H 'Jenesis-Prerelease: true' https://repo.jenesis.build/artifact/org
 curl -L -O https://repo.jenesis.build/artifact/org.slf4j/2.0.9/org.slf4j.jar
 ```
 
-Whenever the version served is a pre-release, the response carries the same header back:
-`Jenesis-Prerelease: true`. Because the answer depends on the request header, every redirect is sent
-with `Vary: Jenesis-Prerelease`.
+`Jenesis-Prerelease: true` drops the filter. Without it, a module that has only ever published pre-releases
+answers `404` with a body naming the header that would have served it, while a version asked for by name is
+served either way. The response carries the header back when what it served is a pre-release, and every
+redirect is sent with `Vary: Jenesis-Prerelease`.
 
-With the segment present, the service looks for a row whose version matches **exactly** - there is no
-range matching and no normalisation. A version the index has not seen yet is still answered: the service
-assumes it exists on Maven Central under the module's newest coordinate and redirects there anyway,
-flagging the response with a `Jenesis-BestEffort: true` header. That is what keeps a release from the
-last few hours resolvable before the crawler has recorded it. If Maven Central has no such file, the
-redirect target answers 404.
-
-A client that would rather be told the index has never seen a version than be handed a guess about it
-says so with **`Jenesis-BestEffort: false`**, which answers `404` for an unrecorded version instead of
-redirecting optimistically. Any other value, the header absent included, keeps the guess.
+A named version matches **exactly** - no ranges, no normalisation. One the index has not recorded is still
+answered: the service assumes it exists under the module's newest coordinate, redirects there, and flags that
+with `Jenesis-BestEffort: true`, which is what keeps a release from the last few hours resolvable before the
+crawl records it. `Jenesis-BestEffort: false` asks for a `404` instead of a guess; any other value, or none,
+keeps it. If Maven Central has no such file, the redirect target answers 404.
 
 ## `artifact` route: every file of a coordinate
 
