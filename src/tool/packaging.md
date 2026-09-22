@@ -70,8 +70,8 @@ of `stage/maven` and `stage/modular`, in a folder named for the module it came f
 
 ```
 target/stage/packages/output/demo.modular.executable/   the image jpackage produced
-|-- bin/demo.modular.executable                         the launcher
-`-- lib/                                                app jars + bundled runtime
+|-- bin/demo.modular.executable   # the launcher
+`-- lib/   # app jars + bundled runtime
 ```
 
 The image bundles the whole runtime *closure*, not just your own code: a dependency your app uses sits next
@@ -205,9 +205,9 @@ off-the-shelf JRE base. `bundle=true` wires a step that writes one `bundle.zip` 
 
 ```
 bundle.zip
-|-- application.unix.args      the launch, as a Java argument file
-|-- application.windows.args   the same launch, with Windows path separators
-`-- jars/                      every jar of the closure, stored once
+|-- application.unix.args   # the launch, as a Java argument file
+|-- application.windows.args   # the same launch, with Windows path separators
+`-- jars/   # every jar of the closure, stored once
 ```
 
 The zip carries exactly the runtime closure the `Execute` launcher would run, and the descriptor is not a

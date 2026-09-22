@@ -16,13 +16,13 @@ launcher knows how to read:
 
 ```
 app.jar
-├── META-INF/MANIFEST.MF                          Main-Class: build.jenesis.launcher.Launcher
-├── build/jenesis/launcher/…                      the launcher's own classes
-├── application.properties                        the descriptor: mainClass, mainModule, classpath, modulepath
+├── META-INF/MANIFEST.MF   # Main-Class: build.jenesis.launcher.Launcher
+├── build/jenesis/launcher/…   # the launcher's own classes
+├── application.properties   # the descriptor: mainClass, mainModule, classpath, modulepath
 └── jars/
-    ├── classes.jar/…                             the application's own module, exploded
-    ├── org.slf4j-2.0.16.jar/…                    a modular or automatic dependency, exploded
-    └── <group>%2F<artifact>%2F<version>.jar/…    a dependency that names no module, exploded
+    ├── classes.jar/…   # the application's own module, exploded
+    ├── org.slf4j-2.0.16.jar/…   # a modular or automatic dependency, exploded
+    └── <group>%2F<artifact>%2F<version>.jar/…   # a dependency that names no module, exploded
 ```
 
 Each dependency is **exploded into its own subfolder**, so nothing is merged: every one keeps its own

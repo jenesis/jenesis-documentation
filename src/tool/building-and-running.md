@@ -135,8 +135,8 @@ its own version at launch. You get one from a source convention: anything under
 ```
 sources/
 ├── module-info.java                           @jenesis.release 21
-├── sample/Platform.java                        the Java 21 baseline
-└── META-INF/versions/25/sample/Platform.java   the Java 25 override
+├── sample/Platform.java   # the Java 21 baseline
+└── META-INF/versions/25/sample/Platform.java   # the Java 25 override
 ```
 
 The jar that comes out runs the baseline on a Java 21 runtime and the override on Java 25 - one artifact, two
