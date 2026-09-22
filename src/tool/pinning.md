@@ -309,7 +309,7 @@ belonging to a tool's own group - the linter or alternative compiler a build mod
 would be read back as a repository name, and is left out rather than written wrong. First-party modules of
 the project are left out too, for the same reason a pin never records them: they are built, not resolved.
 
-<div class="tip">
+<div class="demo">
   Every demo ships already pinned, so any of them shows the result. Four are about pinning itself:
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-19-module-classifier">demo-19</a> pins a
   classified variant of a module and

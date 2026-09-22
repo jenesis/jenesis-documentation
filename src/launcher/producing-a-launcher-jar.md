@@ -97,7 +97,7 @@ A `pom.xml` project carries the same line in its `<!--jenesis.pin … -->` block
 shaded into your jar are [verified](/tool/pinning/) on every build, and the produced jar is reproducible:
 the same sources yield the same bytes.
 
-<div class="tip">
+<div class="demo">
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-06-java-pom-executable">demo-06</a> (a
   <code>pom.xml</code> application) and
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-07-java-modular-executable">demo-07</a> (a

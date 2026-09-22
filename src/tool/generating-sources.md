@@ -168,7 +168,7 @@ Each generator has a switch, on by default:
 The same shape works for `protoc`, `avro`, `wsimport`, `openapi` and `antlr`. All configuration keys are listed in the
 *[Reference](/tool/reference/)*.
 
-<div class="tip">
+<div class="demo">
   Three demos exercise this chapter end to end:
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-13-data-formats">demo-13-data-formats</a>
   generates from XML Schema, protocol buffers and Avro, and

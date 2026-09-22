@@ -310,7 +310,7 @@ the whole cost, and it is paid when you change the build rather than every time 
 `java build/Demo.java` as the documented command - it needs nothing but a JDK - and treat the compiled
 classes as a local convenience, ignored by git.
 
-<div class="tip">
+<div class="demo">
   Six runnable projects cover this chapter:
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-49-custom-assembler">demo-49</a> wraps the
   assembler to preprocess sources before they compile,

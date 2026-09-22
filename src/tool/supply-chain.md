@@ -209,7 +209,7 @@ That leaves one gap: a tampered POM could try to introduce a dependency the jar 
 strict mode rejects, so a manipulated POM cannot quietly pull in an unverified artifact. This is why strict
 pinning is recommended for builds in unsecured environments and for releases.
 
-<div class="tip">
+<div class="demo">
   Four runnable projects cover this chapter:
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-29-sbom">demo-29</a> emits an SBOM,
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-30-compliance">demo-30</a> gates a build on a

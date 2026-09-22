@@ -164,7 +164,7 @@ Kotlin together with Groovy, splits the output, with `javadoc` rendering the Jav
 each remaining language in its own subfolder. Either way the produced `-javadoc.jar` always has a root
 `index.html`, so it satisfies a repository like Maven Central.
 
-<div class="tip">
+<div class="demo">
   Seven runnable demos exercise this chapter - a language mixed with Java, its quality tools, and a plugin:
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-38-kotlin">demo-38</a> and
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-39-kotlin-quality">demo-39</a> build and lint a

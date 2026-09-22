@@ -365,7 +365,7 @@ means reaching it by its Maven coordinate. The strict `modular` layout rejects t
   compiling against one and running against the other.
 </div>
 
-<div class="tip">
+<div class="demo">
   Three runnable projects cover this chapter:
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-16-maven-exclusions">demo-16</a> excludes
   Commons Lang from Commons Text and proves with a test that it is gone - in a POM, with the tag form beside
@@ -480,7 +480,7 @@ Each of these is reported when it is declared, naming what to write instead:
   a project that declares one rather than flattening it.
 </div>
 
-<div class="tip">
+<div class="demo">
   Two runnable projects cover this section:
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-22-module-layers">demo-22</a> runs three
   versions of Jackson in one JVM - nested, and exercised by tests - with the consumer declaring nothing; and

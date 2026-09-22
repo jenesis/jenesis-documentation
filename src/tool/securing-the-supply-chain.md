@@ -595,7 +595,7 @@ vvICkc3m62RNUgkmtjvx8eFFVBJP
 -----END PGP PUBLIC KEY BLOCK-----
 ```
 
-<div class="tip">
+<div class="demo">
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-26-pinning">demo-26</a>
   proves three of these guarantees by getting each wrong on purpose: an unpinned dependency rejected by strict
   pinning, a wrong checksum rejected always, and a dependency signed by a key other than the declared one. It

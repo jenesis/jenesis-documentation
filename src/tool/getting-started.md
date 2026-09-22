@@ -144,95 +144,97 @@ since those are fetched from the fingerprints the project declares.
 Nothing needs ignoring inside the vendored engine either. It carries its own `.gitignore`, and the compiled
 engine lands in `.jenesis/classes` rather than beside the sources, so the vendored copy stays as checked out.
 
-### The vendored source, and when to install the command
+### Why the engine lives in your repository
 
-`build/jenesis/` plays the part that a wrapper script plays in other build tools. It travels with the
-repository, so a fresh clone builds with the version the project chose, a contributor needs nothing installed
-beyond a JDK, and CI needs no setup step. What it does not do is fetch anything. A wrapper downloads a tool
-distribution on first use and every machine has to trust that download; here the engine *is* the source in
-your repository, compiled by the JDK you already have. Nothing is fetched to obtain the build tool, so the
-step cannot fail offline and there is no distribution to verify. A build still resolves your project's own
-dependencies as usual - it is the tool itself that arrives with the clone.
+`build/jenesis/` plays the part of a wrapper script, except nothing is downloaded: the engine *is* source in
+your repository, compiled by the JDK you already have. A clone builds offline, and CI needs no setup step.
 
-The cost is that source mode recompiles that engine on every invocation. For a one-off build, or in CI where
-each job is a fresh machine anyway, that is the right trade. For the edit-build-edit loop it is pure
-overhead, and it dominates a build that has little else to do.
+The cost is the recompile on each run. `Make` handles it - the first call compiles the engine into
+`.jenesis/classes` and later calls reuse those classes until a source changes - and the installed `jenesis`
+skips it entirely by running a released engine. Use `jenesis` locally; keep `java build/jenesis/Make.java` in
+the README and in CI, where a fresh machine makes the compile moot and reproducibility outweighs startup.
 
-So locally, install the command and use it:
-
-```bash
-jenesis                     # runs the version recorded in build/jenesis/
-java build/jenesis/Make.java    # the same build, recompiling the engine first
-```
-
-`jenesis` reads `build/jenesis/jenesis.version`, verifies `build/jenesis/` against the published sources of
-that version and runs its compiled engine, so you keep the project's choice of Jenesis and skip the
-recompile. The same command builds a project that vendors nothing at all, falling back to the installed
-version. **This is the recommended way to work day to day**; keep `java build/jenesis/Make.java` as the
-canonical command in your README and CI, where reproducibility matters more than startup.
-
-`Make` does that compiling for you and it is on by default, so there is nothing to arrange: the first call
-compiles the build sources once and every later one runs from those classes, until a source changes. One
-batch compile beats the launcher compiling class by class as it loads them, so it is faster even for a build
-that runs a single time. The classes land in `.jenesis/classes`, with the rest of the build's by-products; `jenesis.make.classes` names a
-folder instead, which is what a project whose `build/jenesis` is packaged - a symlink into its own sources,
-say - will want.
-
-To drive those classes yourself, on a locked-down machine or in a container image you would rather not
-extend:
+On a machine you cannot install to, drive those classes yourself:
 
 ```bash
 javac -d .jenesis/classes build/jenesis/*.java
 java -cp .jenesis/classes build.jenesis.Make
 ```
 
-## Building an example end to end
+## Build a project from nothing
 
-The `jenesis/jenesis` repository ships a runnable example for every feature under `demo/`. Clone it and build
-the simplest one - a single-module Java project described by a `pom.xml`:
+A module declaration, a class, and the engine you just installed:
 
-```bash
-git clone https://github.com/jenesis/jenesis.git
-cd jenesis/demo/demo-01-java-pom
-java build/jenesis/Make.java
+```
+greeter
+├── build/jenesis          the engine
+└── sources
+    ├── module-info.java
+    └── greeter
+        └── Main.java
 ```
 
-There is no build script to write. The project is just a `pom.xml` and a source file that uses Apache
-Commons Lang. Pointed at that directory, Jenesis:
+```java
+/**
+ * @jenesis.main greeter.Main
+ */
+module greeter {
+    requires org.apache.commons.lang3;
+}
+```
 
-1. **auto-detects the layout** - a `pom.xml` at the root selects the `maven` layout;
-2. **resolves and downloads** the declared `commons-lang3` dependency from Maven Central (or your local
-   `~/.m2`);
-3. **compiles** the sources against it with the JDK's `javac`; and
-4. **packages** a jar under `target/`.
+```java
+package greeter;
 
-Because every step is content-hashed, the first run does the work and a second run reuses it. Nothing
-recompiles until an input actually changes.
+import org.apache.commons.lang3.StringUtils;
+
+public class Main {
+
+    public static void main(String... args) {
+        System.out.println(StringUtils.capitalize("hello from a module"));
+    }
+}
+```
+
+Build it, then build and run it:
+
+```bash
+java build/jenesis/Make.java        # resolve, compile, test, package into target/
+java build/jenesis/Execute.java     # the same, then run @jenesis.main
+```
+
+```
+Hello from a module
+```
+
+`requires org.apache.commons.lang3` is the entire dependency declaration - no `pom.xml`, no coordinate, no
+version. The module name resolves to a Maven artifact, and the version that arrives is the newest release
+unless you [pin](/tool/pinning/) it. A project with a `pom.xml` instead of a `module-info.java` builds the
+same way, from what the POM declares.
 
 ### Reading what it resolved
-
-To see exactly what the build pulled in, ask for the dependency graph instead of a build. Run the
-`dependencies` selector:
 
 ```bash
 java build/jenesis/Make.java dependencies
 ```
 
 ```
-main/compile (module)
-maven/org.apache.commons/commons-lang3 3.14.0 [compile] (module org.apache.commons.lang3) {Apache-2.0}
+main/compile (module-sources)
+maven/org.apache.commons/commons-lang3 3.20.0 [compile] (module org.apache.commons.lang3) {Apache-2.0}
 ```
 
-Each line shows the resolution key, the resolved version, the Maven scope, the resolved **Java module name**,
-and the declared **licence** - Jenesis reads a real module graph, not a flat class path. The `commons-lang3`
-version here is fixed to an exact release and content checksum, because this demo ships *pinned*.
-Dependencies and pinning each have their own chapter later.
+The resolution key, the version that resolved, the Maven scope, the **Java module name** it carries and its
+declared **licence** - a real module graph, not a flat class path. The selector also reports the licences and
+the module shape of the whole closure.
 
-<div class="tip">
-  Want the same project in a modular shape, or spread across several modules? The four foundational
-  layouts - Java with a <code>pom.xml</code>, Java as a real <code>module-info.java</code> module, and the
-  multi-module version of each - are <a href="/tool/demos/">demo-01 through demo-04</a>. Start there and
-  read each demo's own README alongside these chapters.
+<div class="demo">
+  The four project shapes are runnable:
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-01-java-pom">demo-01</a> (Maven layout),
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-02-java-modular">demo-02</a> (this one, with
+  a pinned dependency), and
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-03-java-pom-multi">demo-03</a> and
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-04-java-modular-multi">demo-04</a> for the
+  multi-module versions of each. See <a href="/tool/demos/">Demos</a>.
 </div>
 
 ## The Project model

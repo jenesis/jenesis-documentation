@@ -336,7 +336,7 @@ downloads the latest and later builds reuse the cache. For a reproducible, check
 your compilers and dependencies (see *[Pinning & bills of materials](/tool/pinning/)*). Expect a long list -
 a linter's own closure can run to a hundred artifacts - which is what makes the tool chain reproducible.
 
-<div class="tip">
+<div class="demo">
   Five runnable demos exercise this chapter:
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-32-java-quality">demo-32</a> wires Checkstyle,
   PMD, SpotBugs and the Java formatter into one project;
