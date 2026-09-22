@@ -44,8 +44,8 @@ something the machine already has. The output is still cached locally, so a rebu
 skips the work. See *[the build cache](/tool/build-performance-and-isolation/#the-build-cache)*.
 
 <div class="note">
-  Treat a step as a <strong>pure function of its input folders</strong>: read from the argument folders, write
-  to <code>next</code>, reach outside neither. That is what makes its output cacheable and safe to share
+  Treat a step as a <strong>pure function of its input folders and its identity</strong>, its name in the graph
+  and its serialised state: read from the argument folders, write to <code>next</code>, reach outside neither. That is what makes its output cacheable and safe to share
   between builds - the incremental engine relies on it.
 </div>
 
@@ -128,6 +128,8 @@ new Project(Path.of(".")).assembler(withSign).build(args);
 the stock output under `assemble` and chaining a `sign` step onto it. Wrappers compose freely: stack several
 (sign, stamp licence headers, emit checksums) without ever reimplementing the Java toolchain.
 
+{% demos 49 %}
+
 ### Redirecting a module's inputs
 
 A wrapper can also change *what* the stock steps consume, because the module descriptor is immutable with a
@@ -182,6 +184,8 @@ a second project module.
   <em>dependencies</em> need not be, since a module layer admits automatic modules too.
 </div>
 
+{% demos 51, 52 %}
+
 ## Reusing the toolchain from your own entry point
 
 When you want your own `main` but still the stock compile/jar/test flow, skip `Project` and call the
@@ -210,6 +214,8 @@ This is a middle ground: no layout, no goals, no `Project`, yet you did not wire
 no generated POM). For full control - a custom repository, strict pinning, a different digest, or emitting a
 POM as well - switch to the longer `make(...)` overload that `Project` itself uses.
 
+{% demos 53, 54 %}
+
 ## Wiring the graph by hand
 
 When auto-detection is the wrong starting point entirely - a non-Java pipeline, code generation, a wildly
@@ -231,6 +237,8 @@ cached outputs whose inputs are unchanged. The `generate` step above synthesises
 `Javac`, which reads the `sources/` of *every* predecessor, compiles it next to the hand-written ones.
 There is no phase lifecycle to fit into: a build is just steps wired to steps, and here you wire them
 yourself.
+
+{% demos 55 %}
 
 ## Running a build inside another program
 
@@ -267,6 +275,8 @@ program writes to the JVM's own streams while the build's output goes to the wri
 The tools are found by name when `build.jenesis` is a resolved module or a jar on the class path. Source
 mode registers no service, so a program there constructs `new MakeTool()`, `new ExecuteTool()` or
 `new JpxTool()` itself; the contract is the same.
+
+{% demos 56 %}
 
 ## Running your entry point on the project's JDK
 
@@ -309,20 +319,3 @@ your entry point rather than `build.jenesis.Project`. Recompile whenever you edi
 the whole cost, and it is paid when you change the build rather than every time you run it. Keep
 `java build/Demo.java` as the documented command - it needs nothing but a JDK - and treat the compiled
 classes as a local convenience, ignored by git.
-
-<div class="demo">
-  Six runnable projects cover this chapter:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-49-custom-assembler">demo-49</a> wraps the
-  assembler to preprocess sources before they compile,
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-51-internal-module">demo-51</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-52-external-module">demo-52</a> move that
-  same pass into a build module - one compiled from local source, one resolved as a published coordinate,
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-53-custom-maven">demo-53</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-54-custom-modular">demo-54</a> drive a
-  multi-module Maven and modular build from a convenience <code>make</code>, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-55-custom-build">demo-55</a> wires a
-  code-generating graph entirely by hand on the <code>BuildExecutor</code> API, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-56-tools-api">demo-56</a> runs a build, and
-  the program it produced, inside another program's JVM. See
-  <a href="/tool/demos/">Demos</a>.
-</div>

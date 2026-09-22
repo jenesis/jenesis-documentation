@@ -75,7 +75,7 @@ the variable of the same name:
 | `jenesis.module.token` (`JENESIS_REPOSITORY_TOKEN`) | The `Authorization` header for module fetches, when `jenesis.module.uri` points at a server that needs one. |
 | `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | The local module repository directory (default `~/.jenesis`). |
 | `jenesis.module.source` | Who resolves a module name: `service` (the default) asks the index at `jenesis.module.uri`, `git` reads the index's published data itself and fetches what it resolves to from `jenesis.maven.uri`. |
-| `jenesis.module.index` (`JENESIS_INDEX_URI`) | Where that published data is read from when `git` resolves, a folder of per-module files (default: the data published on GitHub). A fork or a mirror of it stands in here, as `jenesis.module.uri` stands in for the index itself. |
+| `jenesis.module.index` (`JENESIS_INDEX_URI`) | Where that published data is read from when `git` resolves, a folder of per-module files (default: the `data/modules/` folder of the [`jenesis/jenesis-modules`](https://github.com/jenesis/jenesis-modules/tree/main/data/modules) repository). A fork or a mirror of it stands in here, as `jenesis.module.uri` stands in for the index itself. |
 
 <div class="warning">
   Fetches are refused over plaintext <code>http</code> - only <code>https</code> and <code>file</code> are
@@ -83,6 +83,8 @@ the variable of the same name:
   <code>-Djenesis.repository.insecure=true</code>. A credential token is dropped before any redirect to a
   different host, so it never leaks to a redirect target.
 </div>
+
+{% demos 59 %}
 
 ### What the build tells the module index
 
@@ -181,14 +183,9 @@ No managed version for com.fasterxml.jackson.core:jackson-core which resolved to
 as another dependency's POM declares it (add it to dependencyManagement, or run the pin selector)
 ```
 
-On the module side it is the same rule one axis up: a module reached through another module's `requires`
-must carry a pin. A module the project declares itself - a sibling of a multi-project build among them - is
-a declaration of the project and passes.
-
-Because `pin` writes the whole resolved closure, a pinned project satisfies `managed` as it stands; the
-strategy is what keeps it that way. It is worth pairing with strict pinning in CI, where the two answer
-different questions: strict pinning asks whether every artifact has a checksum, `managed` asks whether every
-version was a decision somebody wrote down.
+On the module side the rule is the same: a module reached only through another module's `requires` stops
+the build unless the project names its version itself. A module the project declares itself - a sibling of a
+multi-project build among them - is a declaration of the project and passes.
 
 <div class="warning">
   <code>latest</code> and <code>release</code> are <strong>upgrade probes, not build modes</strong>. They
@@ -258,6 +255,8 @@ build never fetched it.
   rather than ignored. Nothing is lost: a module only ever sees what it <code>requires</code>.
 </div>
 
+{% demos 16 %}
+
 ## Naming a library that has no module name
 
 Some libraries still ship as a plain jar: no `module-info`, and not even an `Automatic-Module-Name`. On the
@@ -297,6 +296,8 @@ inherits the name without redeclaring it.
 
 Aliases are a `modular_to_maven` feature: they reach an artifact by its Maven coordinate, which the strict
 `modular` layout does not use.
+
+{% demos 18 %}
 
 ## Replacing a module another artifact already carries
 
@@ -355,17 +356,7 @@ by its Maven coordinate. The strict `modular` layout rejects the tag.
   against one and running against the other.
 </div>
 
-<div class="demo">
-  Three runnable projects cover this chapter:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-16-maven-exclusions">demo-16</a> excludes
-  Commons Lang from Commons Text and proves with a test that it is gone - in a POM, with the tag form beside
-  it; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-18-module-alias">demo-18</a> gives args4j -
-  a library with no module identity at all - a name of its own and opens a package to it; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-20-module-override">demo-20</a> puts the
-  Jakarta Server Pages API, a modular library, on a module path with Tomcat Embed, which carries the servlet
-  packages itself. Each is a runnable project - see <a href="/tool/demos/">Demos</a>.
-</div>
+{% demos 20 %}
 
 ## Keeping a dependency private
 Every section so far assumed the module path can hold what the build resolves. It cannot always. A module
@@ -381,7 +372,7 @@ module that needs the isolation declare it:
 ```java
 /**
  * @jenesis.layer render api      my.library.spi
- * @jenesis.layer render provider maven/com.example/renderer-impl
+ * @jenesis.layer render provider com.example.renderer
  */
 module my.library {
     requires build.jenesis.launcher;
@@ -391,12 +382,13 @@ module my.library {
 
 Two lines, and each says which side it declares. `api` names the one module the library shares with the
 layer; `provider` names a root the layer holds, and its whole closure comes with it. Repeat the `provider`
-line for more roots. A root is an ordinary coordinate, so `module/<name>` and
-`maven/<groupId>/<artifactId>` both work, and the layer resolves in a dependency group of its own,
-`layer:render`, which pins, verifies and reports like every other group:
+line for more roots. A root is a module name, as here, or any other coordinate, such as
+`maven/<groupId>/<artifactId>`, and the layer resolves in a dependency group of its own,
+`layer:render`. A version for it is named like any other, with the group in front, as
+*[Pinning & bills of materials](/tool/pinning/)* describes:
 
 ```java
- * @jenesis.pin layer:render/maven/com.fasterxml.jackson.core/jackson-core 2.15.4 SHA-256/8dc921…
+ * @jenesis.pin layer:render/maven/com.fasterxml.jackson.core/jackson-core 2.15.4
 ```
 
 The library reaches its layer by name, and gets back the implementation:
@@ -410,6 +402,8 @@ even resolve a different version of the same dependency for itself. The declarat
 `Jenesis-Layer` manifest attribute of the produced jar, exactly as an alias or an override does, and any
 build that resolves that jar reconstructs the layer from it. Discovery runs to a fixpoint, so a module
 inside a layer may isolate a dependency of its own, without limit.
+
+{% demos 21 %}
 
 ### What crosses, and what cannot
 
@@ -450,6 +444,8 @@ automatic module reads the unnamed module, which is why the alias matters - a ja
 an *automatic* module when you name it, and an automatic module can read a class path. A module with a
 descriptor of its own cannot, and `javac` will not let it try.
 
+{% demos 22 %}
+
 ### What the build refuses
 
 Each of these is reported when it is declared, naming what to write instead:
@@ -468,14 +464,4 @@ Each of these is reported when it is declared, naming what to write instead:
 <div class="note">
   A layer is defined while the JVM runs, so a packaging that resolves its module graph ahead of time refuses
   a project that declares one rather than flattening it.
-</div>
-
-<div class="demo">
-  Two runnable projects cover this section:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-21-module-layers">demo-21</a> runs three
-  versions of Jackson in one JVM - nested, and exercised by tests - with the consumer declaring nothing; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-22-module-layer-legacy">demo-22</a> hides
-  Commons BeanUtils and the jars it drags, naming only the one its code calls. Each is a runnable project -
-  see <a href="/tool/demos/">Demos</a>.
-  To also see a dependency resolved from somewhere else, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-59-module-convention">demo-59</a> resolves modules from your own Maven repository, and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-17-bom">demo-17</a> curates versions with a bill of materials.
 </div>

@@ -91,6 +91,8 @@ by default.
   run <code>export</code> on the host.
 </div>
 
+{% demos 47 %}
+
 ## Running the launched program in a container
 
 Isolating the build does not isolate the program it produces, whose `main` runs later with the same host rights.
@@ -113,6 +115,8 @@ image and the runtime image can differ**.
   <code>jenesis.print.docker</code> is on by default and prints the image the JVM is wrapped in; set it
   <code>false</code> to suppress.
 </div>
+
+{% demos 47 %}
 
 ## The build cache
 Every build already has an *incremental* cache: Jenesis content-hashes each step's inputs and outputs under
@@ -227,12 +231,4 @@ Eviction runs on write and goes by file timestamp, which `touch` keeps fresh on 
   <code>false</code> turns the cache off entirely.
 </div>
 
-<div class="demo">
-  Two runnable projects cover this chapter:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-47-docker-isolation">demo-47</a> leaks a
-  credentials file and an environment secret on the host, then confines both the build and the launched program
-  with Docker, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-46-build-cache">demo-46</a> serves a forced full
-  rebuild entirely from the build cache. See <a href="/tool/demos/">Demos</a>.
-  To also see what a build pays to start, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-05-startup">demo-05</a> measures it with and without a reused JVM, and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-34-test-selection">demo-34</a> re-runs only the tests a change can reach.
-</div>
+{% demos 46 %}

@@ -20,9 +20,10 @@ just steps wired to steps, and the engine walks them in dependency order.
 
 ### The build step
 
-A single step is a **pure function of its input folders**. It reads files at well-known paths inside each
-input - `sources/` for Java sources, `classes/` for compiled output, `artifacts/` for produced jars - and
-writes its own output into one new folder. It never edits an input in place and never reaches outside the
+A single step is a **pure function of its input folders and its identity** - its name in the graph and the
+state it was configured with. It reads files at well-known paths inside each input - `sources/` for Java
+sources, `classes/` for compiled output, `artifacts/` for produced jars - and writes its own output into one
+new folder. It never edits an input in place and never reaches outside the
 folders it was handed.
 
 Those folder names are conventions the built-in steps share, so steps compose without knowing how they were
@@ -39,7 +40,7 @@ later chapters. Here the point is only their shape: **folders in, a fresh folder
 ### The build graph and modules
 
 Real projects have more than one line of steps, so the graph is organised into **modules**. A module is a
-named subgraph - typically one compilable unit: its compile, test, jar, and documentation steps grouped under
+named subgraph - typically one compilable unit: its compile, jar, test, and documentation steps grouped under
 one name. A multi-module project is a graph of these subgraphs, and Jenesis builds them in dependency order,
 so a library module is built before the application module that depends on it.
 
@@ -47,6 +48,8 @@ The engine that owns and walks the graph collects every registered step and modu
 from their declared inputs, and runs each one, reusing a cached output when it can (the last section of this
 chapter). The same engine drives one level of the graph and each nested module, so a build of one module and
 a build of fifty are the same machinery at different scales.
+
+{% demos 4 %}
 
 ### Selectors: choosing what to run
 
@@ -74,8 +77,8 @@ per folder segment: the module in `foo/bar` is selected as `+foo+bar`.
 ## Layouts: how your project is shaped
 
 A **layout** is what turns *your* directory of sources into that graph. It decides how modules are discovered,
-how their dependencies resolve, and what artifacts come out. You met it as the `layout` field; here are the
-four values in full.
+how their dependencies resolve, and what artifacts come out. The setting
+`jenesis.project.layout` takes one of four values.
 
 `auto` (the default) inspects the project root and picks one of the concrete layouts for you:
 
@@ -108,8 +111,9 @@ how a `requires` is satisfied:
   project had listed those coordinates in a `pom.xml`. It emits the modular jar **plus a generated `pom.xml`**,
   so the artifact is publishable to Maven Central and consumable by Maven projects. Because it reaches
   dependencies by coordinate, it can also pull in plain class-path and *automatic*-module libraries.
-- **`modular`** resolves dependencies **purely by Java module name** through the Jenesis Module Index, with
-  no Maven coordinates anywhere, and emits **only the modular jar - no `pom.xml`**. Every dependency resolved
+- **`modular`** resolves dependencies **purely by Java module name**, from whichever module repositories the
+  build [points at](/tool/dependencies/#pointing-at-a-different-repository), with no Maven coordinates
+  anywhere, and emits **only the modular jar - no `pom.xml`**. Every dependency resolved
   this way is a named module, so the closure is provably consumable on the module path.
 
 That difference is why `auto` picks `modular_to_maven`: reaching dependencies by coordinate makes it open to
@@ -127,11 +131,13 @@ java -Djenesis.project.layout=modular build/jenesis/Make.java
 
 The property accepts `auto`, `maven`, `modular`, and `modular_to_maven`.
 
+{% demos 19 %}
+
 ### Seeing the difference
 
 The `dependencies` selector prints each module's resolved graph, and it makes the layout choice concrete. The
-same `requires org.slf4j` shows up two ways. Under `modular` it is a Java module name resolved through the
-module index:
+same `requires org.slf4j` shows up two ways. Under `modular` it is a Java module name, resolved as
+such:
 
 ```
 main/compile (module-sources)
@@ -172,12 +178,3 @@ input byte moved.
 Selectors are deliberately *not* part of the hash - they only gate which steps get scheduled. So a step that
 runs under a selector produces exactly the output a full build would have, and a later unselected run hits the
 cache as expected.
-
-<div class="demo">
-  Two runnable projects show this chapter end to end:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-04-java-modular-multi">demo-04</a> builds a
-  multi-module modular project and prints its module graph, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-19-module-layout">demo-19</a> is a
-  single-module project under the pure <code>modular</code> layout. See <a href="/tool/demos/">Demos</a>.
-  To also see the graph bent to a project's own shape, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-49-custom-assembler">demo-49</a> wraps the assembler and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-55-custom-build">demo-55</a> wires a build by hand.
-</div>

@@ -118,6 +118,8 @@ jpackage has flags of its own - an icon, a vendor, a description, a licence file
 the tools below. One flag is derived for you: `--app-version` comes from `jenesis.project.version` with any
 non-numeric suffix stripped, because jpackage accepts only dotted numbers - `1.4.0-SNAPSHOT` becomes `1.4.0`.
 
+{% demos 6, 7 %}
+
 ## Native installers
 
 The other `jpackage` values build a **native installer** - the single artifact you hand a user to install,
@@ -133,6 +135,8 @@ An installer carries the whole bundled runtime, so it is tens of megabytes. Prod
 own packaging tooling on the `PATH`: `dpkg-deb`/`fakeroot` for `deb` and `rpmbuild` for `rpm` on Linux, the
 WiX Toolset on Windows, the bundled `productbuild`/`hdiutil` on macOS. For that reason an installer is usually
 built locally, while the tooling-free `app-image` covers the packaging path in CI.
+
+{% demos 6, 7 %}
 
 ## Runtime images and `.jmod` files
 
@@ -167,6 +171,8 @@ it would be stranded there.
   <code>jlink</code> accepts.
 </div>
 
+{% demos 7, 50 %}
+
 ## Making a closure linkable
 
 A dependency that ships as a plain jar - or that you gave a name with a
@@ -197,6 +203,8 @@ rewrite - which is how a single module opts out of a project-wide file.
   vulnerability checks, and the closure <code>pin</code> records all keep reading the artifacts as they were
   downloaded, so a rewritten jar's bytes can never reach a <code>@jenesis.pin</code> checksum.
 </div>
+
+{% demos 18 %}
 
 ## Bundles for a JRE base
 
@@ -247,6 +255,8 @@ aggregate for many services, at the cost of coupling to that base's JVM version.
   correction; you never splice it in yourself.
 </div>
 
+{% demos 8 %}
+
 ## A container build context
 
 Writing that `Dockerfile` around a bundle by hand is the one step the build can do for you. The `docker` key
@@ -287,6 +297,8 @@ the base, so image environment belongs in a base image rather than in build conf
   <code>buildah bud</code> consume the same folder.
 </div>
 
+{% demos 6, 7 %}
+
 ## A single executable jar
 
 `launcher=true` produces a **single executable jar** you run with `java -jar app.jar`, without flattening
@@ -305,6 +317,8 @@ verified and the build stays reproducible.
   <a href="/launcher/">Jenesis Launcher</a> for how it reconstructs the module layer, the jar layout, and
   troubleshooting.
 </div>
+
+{% demos 6, 7 %}
 
 ## Native images
 
@@ -340,6 +354,8 @@ directory to maintain.
   inside every jar - the way to vet exactly what reflection is baked into a published artifact.
 </div>
 
+{% demos 62 %}
+
 ### native-image or jpackage?
 
 Both turn a modular app into something a user runs without a JDK, but they differ in kind. **jpackage** ships
@@ -348,20 +364,3 @@ compiles the program *and* its runtime into machine code: near-instant startup a
 of GraalVM, a slow compile, and complete reachability metadata. They are alternatives, not a progression.
 Choose jpackage for a faithful bundle of the JVM you tested against, and native-image when startup and
 footprint matter more.
-
-<div class="demo">
-  Six runnable projects cover this chapter:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-06-java-pom-executable">demo-06</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-07-java-modular-executable">demo-07</a> ship
-  the whole menu from one project each - an app image, a native installer, a bundle, a launcher jar, and a
-  container context (and, for the modular one, a <code>.jmod</code> and a jlink runtime);
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-08-bundle">demo-08</a> unpacks a bundle and
-  runs it on a stock JRE;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-50-custom-jmod">demo-50</a> packs extra
-  content into a <code>.jmod</code> and carries it through jlink into a jpackage image;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-18-module-alias">demo-18</a> makes an
-  unlinkable closure linkable with a <code>modules.properties</code>; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-62-native-image">demo-62</a> builds a GraalVM
-  native image end to end. See <a href="/tool/demos/">Demos</a>.
-  To also see what else a build can emit, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-62-native-image">demo-62</a> compiles the application into a GraalVM binary and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-57-code-signing">demo-57</a> signs the jar it produced.
-</div>

@@ -56,6 +56,8 @@ defaults to `true`, so file discovery alone normally decides; the property is an
 For example, `-Djenesis.source.checkstyle=false` keeps `checkstyle.xml` in place but skips Checkstyle, while
 PMD and SpotBugs still run.
 
+{% demos 31 %}
+
 ## Analysis inside the compiler
 
 The linters above read sources or classes beside the compiler. [Error Prone](https://errorprone.info) reads
@@ -106,6 +108,8 @@ with the file but no tag the build stops and names the `@jenesis.plugin` line th
 `-Djenesis.compile.errorprone=false` keeps the file and the declaration in place but compiles without the
 plugin.
 
+{% demos 12 %}
+
 ## Formatting
 
 Formatters are the rewriting counterpart to the linters: where a linter reads your sources and writes a
@@ -141,6 +145,8 @@ After a rewrite, a plain build passes the verify gate again.
   project's <code>codenarc.xml</code> lints but nothing reformats.
 </div>
 
+{% demos 31 %}
+
 ## Where the reports land
 
 Every tool writes its findings into a `reports/<kind>/` folder under its step's output, for example
@@ -172,6 +178,8 @@ line by line. JaCoCo, like every tool here, resolves in its own group (`jacoco`)
   in the report, but the build stays green - coverage tells you where you stand, it does not gate the build.
   Set <code>-Djenesis.observe.jacoco=false</code> to suppress it even when the file is present.
 </div>
+
+{% demos 33 %}
 
 ## Narrowing a test run
 
@@ -227,6 +235,8 @@ on every save and a narrowed test pass keeps the feedback loop tight.
   the whole suite - a plain <code>build</code> with selection off.
 </div>
 
+{% demos 34 %}
+
 ## Mutation testing
 
 Coverage tells you which lines a test *executed*; mutation testing tells you which behaviours a test actually
@@ -249,6 +259,8 @@ PIT and its JUnit 5 plugin resolve in their own `pitest` group; the plugin's ver
 project's own resolved `junit-platform`, so it always lines up with the test framework you use. The report
 lands under `reports/pitest/`, and `-Djenesis.mutate.pitest=false` suppresses the run while keeping the file in
 place.
+
+{% demos 35 %}
 
 ## API compatibility
 
@@ -306,6 +318,8 @@ is compared. It is a released artifact like any other, so `pin` records it with 
 tool - one line, not a closure. `-Djenesis.artifact.japicmp=false` suppresses the comparison while keeping
 the file in place.
 
+{% demos 37 %}
+
 ## Seeing every failure at once
 
 A multi-module build fans out: each module's tests are their own branch of the graph, and those branches run
@@ -328,18 +342,3 @@ downloads the latest and later builds reuse the cache. For a reproducible, check
 `java build/jenesis/Make.java pin`: it records each resolved tool jar with its SHA-256 exactly as it pins
 your compilers and dependencies (see *[Pinning & bills of materials](/tool/pinning/)*). Expect a long list -
 a linter's own closure can run to a hundred artifacts - which is what makes the tool chain reproducible.
-
-<div class="demo">
-  Five runnable demos exercise this chapter:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-31-java-quality">demo-31</a> wires Checkstyle,
-  PMD, SpotBugs and the Java formatter into one project;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-33-code-coverage">demo-33</a> measures
-  coverage with JaCoCo;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-34-test-selection">demo-34</a> edits one class
-  and re-runs only that class's test;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-35-pitest">demo-35</a> runs pitest, killing
-  both mutants of a covered method; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-37-api-compatibility">demo-37</a> compares a
-  built jar against a released one with japicmp. See <a href="/tool/demos/">Demos</a>.
-  To also see a test run shaped by the project, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-32-test-framework">demo-32</a> runs tests whose module names no engine, and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-36-jmh">demo-36</a> generates, compiles and runs a JMH benchmark.
-</div>

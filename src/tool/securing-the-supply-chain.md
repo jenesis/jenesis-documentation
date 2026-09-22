@@ -247,6 +247,8 @@ gpg --import key.asc                       # only once the fingerprint matches
   be against a channel an attacker does not control.
 </div>
 
+{% demos 26 %}
+
 ## An identity instead of a key
 Everything above rests on a maintainer holding a private key for years, and on you obtaining its fingerprint
 through a channel an attacker does not control. Sigstore needs neither: the signer authenticates to an
@@ -324,6 +326,8 @@ a project moving from one to the other declares both and neither is weakened. Wh
 a repository publishes: a detached `.asc` is near-universal on Maven Central, while bundles are still the
 exception, so an identity is an additional answer where one exists rather than a replacement.
 
+{% demos 27 %}
+
 ## The one build a pin cannot protect
 
 A pinned project is easy to reason about: the pins sit in your own sources, reviewed like any other change,
@@ -360,6 +364,8 @@ the diff, commit it, and the pins carry that verdict to everyone who trusts your
 Getting there is the fiddly part, and `-Djenesis.print.signatures` under `declared` makes it tractable: it
 names every coordinate no declaration covers, which is exactly the list `strict` would refuse.
 
+{% demos 47 %}
+
 ## Where each one stops
 
 Stating the limits plainly matters more than the guarantees:
@@ -376,6 +382,8 @@ Stating the limits plainly matters more than the guarantees:
   `declared`; only `strict` turns that silence into a failure.
 - **`pin` itself** runs after a full build, because a dependency can be introduced by any step and the closure
   is only complete at the end, so a pin rewrite is not the moment anything is checked.
+
+{% demos 25 %}
 
 ## A defensible posture
 
@@ -422,143 +430,8 @@ gpg --import KEYS
 gpg --fingerprint B4AC8CDC141AF0AE468D16921DA784CCB5C46DD5
 ```
 
-The block below is that key: the RSA 4096 primary created on 7 November 2019, with the signing subkey that
+[`/KEYS`](/KEYS) holds the RSA 4096 primary created on 7 November 2019, with the signing subkey that
 released until September 2026 and the one that signs releases from now on. A copy exported before the newer
 subkey existed verifies nothing signed with it, and reports an issuer it has never heard of - which is what
 a refresh from any of the three sources above fixes. The primary fingerprint does not change, so nothing that
 names it has to.
-
-```
------BEGIN PGP PUBLIC KEY BLOCK-----
-
-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
-vvICkc3m62RNUgkmtjvx8eFFVBJP
-=b6cC
------END PGP PUBLIC KEY BLOCK-----
-```
-
-<div class="demo">
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-25-pinning">demo-25</a>
-  proves three of these guarantees by getting each wrong on purpose: an unpinned dependency rejected by strict
-  pinning, a wrong checksum rejected always, and a dependency signed by a key other than the declared one. It
-  generates its own key and artifact, so it runs offline.
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-47-docker-isolation">demo-47</a> shows the
-  isolation half. See <a href="/tool/demos/">Demos</a>.
-  To also see the other half of the chain, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-27-sigstore">demo-27</a> verifies a release by the identity that published it, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-25-pinning">demo-25</a> shows what strict pinning refuses, and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-57-code-signing">demo-57</a> signs the jar the build produces.
-</div>

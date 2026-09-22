@@ -98,6 +98,8 @@ that is not a 40-character Git tree id fails the build. When
 notation SPDX uses for a download location: `git+https://github.com/jenesis/jenesis.git@<revision>`. A tag of
 `HEAD`, which a `pom.xml` declares for the root of its repository, counts as no tag there.
 
+{% demos 58 %}
+
 ## Publishing locally with `export`
 
 `export` is a genuine publish, into a *local* repository:
@@ -127,6 +129,8 @@ into the local module repository beside the module jar:
 
 Another project consumes it with `@jenesis.bom demo.bom`, exactly the way it consumes a hand-written file. The
 BOM travels through the module layout only; the Maven export never carries it.
+
+{% demos 17 %}
 
 ## Signing the jar itself
 
@@ -188,6 +192,8 @@ detached signature made afterwards covers the signed bytes.
   delete <code>target/</code> after a key rotation.
 </div>
 
+{% demos 57 %}
+
 ## The last mile: signing and uploading
 
 The remote upload and GPG signing are not Jenesis's job. Point **[JReleaser](https://jreleaser.org/)** at
@@ -240,13 +246,4 @@ build.
   other platforms offer equivalents. They pin the tool version, wire the platform's secret store, and publish
   the release logs. The <code>release</code> target is for what they do not cover: rehearsing a release
   locally, and releasing from a pipeline that has no such integration.
-</div>
-
-<div class="demo">
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-58-publishing">demo-58</a> stages a
-  Central-ready bundle - POM metadata, sources and javadoc jars - and then resolves the coordinate straight
-  back out of the staged tree to prove it is complete, entirely offline;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-17-bom">demo-17</a> publishes a BOM of its own
-  closure. Each is a runnable project - see <a href="/tool/demos/">Demos</a>.
-  To also see what publishing produces, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-58-publishing">demo-58</a> assembles a Maven Central ready bundle and resolves it back, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-59-module-convention">demo-59</a> resolves your own modules from your own Maven repository, and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-60-reproducible">demo-60</a> checks the jar against a recorded digest.
 </div>

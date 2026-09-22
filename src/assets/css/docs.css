@@ -24,10 +24,10 @@
   --brand-cream: var(--app-brand-cream);
   --brand-rust: var(--app-brand-rust);
 
-  /* The demo callout: its own colour, so a box that links runnable projects is recognised at a glance and
-     never mistaken for a note, a tip or a warning. Amber-toned, since the demos are the brand's own. */
-  --docs-demo-bg: #f8ead6;
-  --docs-demo-fg: #7a4512;
+  /* The demo links: a hue of their own, so a link to a runnable project is recognised at a glance and never
+     mistaken for a note (blue), a tip (green) or a warning (yellow). Violet, as the one hue none of them use. */
+  --docs-demo-bg: #ece5f7;
+  --docs-demo-fg: #4b2a7a;
 
   --docs-measure: 46rem;              /* readable line length for prose */
   --docs-sidebar-width: 16rem;
@@ -48,8 +48,14 @@ body { --pico-line-height: 1.6; }
 [data-theme="dark"] img[data-logo] { content: none; }
 
 [data-theme="dark"] {
-  --docs-demo-bg: #33240f;
-  --docs-demo-fg: #eebd80;
+  --docs-demo-bg: #2a1f3d;
+  --docs-demo-fg: #d0b8f5;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --docs-demo-bg: #2a1f3d;
+    --docs-demo-fg: #d0b8f5;
+  }
 }
 
 /* ---- Skip link + focus ---------------------------------------------------------------------------------- */
@@ -224,15 +230,31 @@ body { --pico-line-height: 1.6; }
 }
 
 /* Admonitions: <div class="note|tip|warning"> ... </div>. Reuse the app status palette. */
-.note, .tip, .warning, .demo {
+.note, .tip, .warning {
   border-radius: var(--app-radius-md); padding: var(--app-space-3) var(--app-space-4);
   margin: var(--app-space-4) 0; border-left: 3px solid; font-size: var(--app-font-size-sm);
 }
 .note { background: var(--app-status-info-bg); color: var(--app-status-info-fg); border-color: var(--app-status-info-fg); }
 .tip { background: var(--app-status-pass-bg); color: var(--app-status-pass-fg); border-color: var(--app-status-pass-fg); }
 .warning { background: var(--app-status-warn-bg); color: var(--app-status-warn-fg); border-color: var(--app-status-warn-fg); }
-.demo { background: var(--docs-demo-bg); color: var(--docs-demo-fg); border-color: var(--docs-demo-fg); }
-.note :last-child, .tip :last-child, .warning :last-child, .demo :last-child { margin-bottom: 0; }
+.note :last-child, .tip :last-child, .warning :last-child { margin-bottom: 0; }
+
+/* Demo links: the runnable projects that close a section, one per line. A rounded pill rather than a box,
+   so a link to a demo is never mistaken for a note, a tip or a warning. */
+.demo-links {
+  list-style: none; padding: 0; margin: var(--app-space-4) 0;
+  display: flex; flex-direction: column; align-items: flex-start; gap: var(--app-space-2);
+}
+.demo-links li { list-style: none; margin: 0; }
+.demo-links a {
+  display: inline-flex; align-items: center; gap: 0.5em;
+  padding: 0.15rem 0.85rem 0.15rem 0.7rem; border: 1px solid var(--docs-demo-fg); border-radius: 999px;
+  background: var(--docs-demo-bg); color: var(--docs-demo-fg);
+  font-size: var(--app-font-size-sm); font-weight: 600; text-decoration: none;
+}
+.demo-links a, .demo-links a:hover { text-decoration: none; }
+.demo-links a::before { content: "\25B6"; font-size: 0.7em; }
+.demo-links a:hover span { text-decoration: underline; }
 
 /* Demo catalogue: a compact two-column list of example projects. */
 .demo-list { list-style: none; padding: 0; margin: 0 0 var(--app-space-5); display: grid; gap: 2px; }

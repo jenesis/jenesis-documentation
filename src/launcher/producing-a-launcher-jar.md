@@ -27,6 +27,8 @@ Like every packaging feature, it only runs for a module that declares a main cla
 tag (or `<mainClass>` POM property) the other packaging steps key off. A module without one is skipped, so a
 library is left alone and an application needs no launcher-specific configuration.
 
+{% demos 6, 7 %}
+
 ## What the build writes
 
 The build resolves the published launcher artifact and produces the jar in four moves. Everything the
@@ -96,15 +98,6 @@ A `pom.xml` project carries the same line in its `<!--jenesis.pin … -->` block
 `<dependencyManagement>`, since the launcher is not an application dependency. Either way the launcher bytes
 shaded into your jar are [verified](/tool/pinning/) on every build, and the produced jar is reproducible:
 the same sources yield the same bytes.
-
-<div class="demo">
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-06-java-pom-executable">demo-06</a> (a
-  <code>pom.xml</code> application) and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-07-java-modular-executable">demo-07</a> (a
-  modular one) each ship a <code>build/DemoLauncher.java</code> that switches the launcher on through a
-  profile, builds the jar, and runs it: <code>java build/DemoLauncher.java Ada Lovelace</code>. Their pinned
-  <code>module-info.java</code> and <code>pom.xml</code> show the pin line in both forms.
-</div>
 
 With the jar produced, the next chapter turns to running it: the start-up flow, what the single loader means
 for your code, and the pitfalls to watch for.
