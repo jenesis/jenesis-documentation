@@ -58,17 +58,15 @@ the run that writes the pins. *[The one build a pin cannot protect](#the-one-bui
 follows is the mechanism.
 
 ## Provenance: who produced the bytes
-A checksum is computed from whatever the repository served, so it proves an artifact has not changed since you
-recorded it - not that what you recorded was genuine. An artifact swapped before your first `pin` is frozen as
-an accepted pin just the same.
 
-`@jenesis.signature` says who that is, in one of two ways: an **OpenPGP key** somebody keeps, or a **Sigstore
-identity** nobody keeps a key for at all. The key form comes first here; *[An identity instead of a
-key](#an-identity-instead-of-a-key)* is the other.
+A checksum proves an artifact has not changed since you recorded it - not that what you recorded was genuine.
+An artifact swapped before your first `pin` is frozen as an accepted pin just the same.
 
-Naming a key, the declaration is the fingerprint of the key that signs a dependency's artifacts. Right after an
-artifact is downloaded, Jenesis fetches the detached signature published beside it, forks a local `gpgv` to
-check it, and compares the **primary** key fingerprint against your declarations.
+`@jenesis.signature` says who produced it, as an **OpenPGP key** or as a **Sigstore identity** nobody keeps a
+key for at all (*[An identity instead of a key](#an-identity-instead-of-a-key)*). Naming a key, the
+declaration is the fingerprint that signs a dependency's artifacts. Right after a download, Jenesis fetches
+the detached signature published beside it, forks `gpgv`, and compares the **primary** key fingerprint against
+your declarations:
 
 ```java
 /**
@@ -77,20 +75,13 @@ check it, and compares the **primary** key fingerprint against your declarations
  */
 ```
 
-The fingerprint comes first because one key normally signs many artifacts, and the tokens that follow use the
-same grammar as every other `@jenesis` tag. A Maven token may end in `/*` to cover every artifact of one
-groupId.
+The fingerprint comes first because one key normally signs many artifacts, and a Maven token may end in `/*`
+to cover a whole groupId. **Nothing writes these lines.** A fingerprint is obtained out of band, checked
+against the project's published `KEYS` and added by hand - a tool that filled it in from what it downloaded
+would only record its own guess. The tag sits on `module-info.java`, as `@jenesis.bom` does; a `pom.xml` has
+no place for a key.
 
-**Nothing writes these lines.** A fingerprint is obtained out of band, checked against the upstream project's
-published `KEYS`, and added by hand - that judgement is the thing the mechanism rests on, and a tool that
-filled the line in from whatever it downloaded would only be recording its own guess. Widening trust across a
-whole group with `/*` is the same kind of decision. The declaration is a javadoc tag on `module-info.java`,
-exactly as `@jenesis.bom` is; a `pom.xml` has no equivalent form, since a Maven project states its BOM imports
-in `<dependencyManagement>` and has no place for a key.
-
-One vetted list can serve many modules. A declaration naming a lone `signature-<name>.properties` reads
-`<algorithm>/<fingerprint>=<token>...` lines from a local file instead, the shape `@jenesis.bom` already uses
-for a local `pin-<name>.properties`:
+One vetted list can serve many modules, as a local file of `<algorithm>/<fingerprint>=<token>...` lines:
 
 ```java
 /**
@@ -104,36 +95,29 @@ OpenPGP/FF6E2C001948C5F2F38B0CC385911F425EC61B51 = org.apiguardian/* org.junit.j
 OpenPGP/BE685132AFD2740D9095F9040CC0B712FEE75827 = org.assertj/*
 ```
 
-The fingerprint is the properties key rather than the coordinate, so the same coordinate can sit under two
-keys through a rotation. The file is found in `-Djenesis.project.signatures`, which defaults to the
-configuration folders, and its tokens expand by the same grammar as the tag.
+The fingerprint is the properties key rather than the coordinate, so one coordinate can sit under two keys
+through a rotation. The file is found in `-Djenesis.project.signatures`, which defaults to the configuration
+folders.
 
 <div class="warning">
-  A fingerprint is only ever read from your own sources, and a list only ever from disk: there is no form that resolves one from a repository, because a list you
-  had to download would itself need verifying - which is the problem the mechanism exists to solve. Obtain a
-  list the way you would obtain a key: out of band, reviewed once, then committed.
+  A fingerprint is only ever read from your own sources, and a list only ever from disk: there is no form that
+  resolves one from a repository, because a list you had to download would itself need verifying - the problem
+  the mechanism exists to solve. Obtain a list the way you would obtain a key: out of band, reviewed once,
+  then committed.
 </div>
 
-A coordinate's **POM is verified with its artifact**, and must carry the same signer. POMs are read during
+A coordinate's **POM is verified with its artifact** and must carry the same signer. POMs are read during
 resolution but never pinned, because some servers re-serialise them and a byte checksum would mismatch for no
-reason. A signature closes that gap directly, rather than leaving strict pinning to catch what a tampered POM
-adds. The cost is that a repository which re-serialises POMs invalidates their signatures, so resolve from one
-that serves the published bytes.
+reason - so resolve from a repository that serves the published bytes.
 
-The line carries **no version**, and that is the point. One key signs every release it signs, so vetting a key
-once covers every future release from that key, where a checksum covers exactly one file and every version bump
-is a fresh, unvetted trust event. `-Djenesis.dependency.signature` chooses how much is checked and defaults to
-`none`: `declared` verifies every coordinate a line covers, and `strict` additionally rejects one that no line
-covers, or whose artifact or POM publishes no signature. Verification is opt-in, so a declaration alone does
-not switch it on - set the property in `jenesis.properties` as you would any other project default, or pass it
-on the runs that matter: a dependency update, and CI.
-
-`-Djenesis.print.signatures` names each dependency that was checked with the key that signed it, and each one
-no declaration covers, which is how you find out what to declare before moving from `declared` to `strict`.
-
-A coordinate signed by some other key **fails**, naming both fingerprints: a signature can be
-cryptographically perfect and still be the wrong signer. A genuine key rotation is accepted by addition - list
-the new fingerprint alongside the old - so no window exists in which nothing verifies.
+The line carries **no version**, and that is the point: one key signs every release it signs, where a checksum
+covers one file and every version bump is a fresh, unvetted trust event.
+`-Djenesis.dependency.signature` chooses how much is checked and defaults to `none`. `declared` verifies every
+coordinate a line covers; `strict` also rejects one that no line covers, or that publishes no signature.
+`-Djenesis.print.signatures` names each dependency checked and the key that signed it, and each one nothing
+covers - which is how you get from `declared` to `strict`. A coordinate signed by another key fails, naming
+both fingerprints; a genuine rotation is accepted by adding the new fingerprint beside the old, so no window
+exists in which nothing verifies.
 
 ### A coordinate that publishes no signature
 
@@ -342,33 +326,22 @@ a repository publishes: a detached `.asc` is near-universal on Maven Central, wh
 exception, so an identity is an additional answer where one exists rather than a replacement.
 
 ## The one build a pin cannot protect
-A pinned project is easy to reason about. The pins sit in your own sources, so they were reviewed the way any
-other change is, and every later build enforces them: whatever the repository serves must hash to what the pin
-says, or the build fails. Trust the project and you trust its pins; trust the pins and you trust every download
-that follows - on every machine, for every contributor, with no keys, no gpg and no network beyond the bytes
-themselves.
 
-That reasoning holds for every build except the one that writes the pins.
+A pinned project is easy to reason about: the pins sit in your own sources, reviewed like any other change,
+and every later build enforces them - whatever the repository serves must hash to what the pin says, or the
+build fails, with no keys, no gpg and no network beyond the bytes themselves.
 
-Initialising a project, or updating a dependency, is the moment when there is nothing committed to check
-against. The resolver takes what the repository serves and the pin records it. Whatever arrives *becomes* the
-definition of correct, and every later build then enforces it faithfully - including when what arrived was not
-what the publisher released. `-Djenesis.dependency.pin=ignore` makes this explicit by dropping the existing
-pins first, but the first `pin` on a new project is the same act with nothing to drop.
+That holds for every build except the one that *writes* the pins. Initialising a project, or updating a
+dependency, is the moment with nothing committed to check against: the resolver takes what the repository
+serves, the pin records it, and whatever arrived becomes the definition of correct.
 
-At that moment a checksum has nothing to say, because it is the thing being written. What can speak is the
-signature: the publisher's key, applied to those bytes, checked against a fingerprint you vetted once and
-committed. This is why verification runs during resolution rather than during the rewrite - the run that
-establishes a pin is exactly the run whose bytes nobody has vouched for yet.
+A checksum has nothing to say there - it is the thing being written. The signature does: the publisher's key,
+applied to those bytes, checked against a fingerprint you vetted once. That is why verification runs during
+resolution rather than during the rewrite. A key is also cheap to keep, because it does not move with the
+version: a routine bump costs nothing, and a version signed by somebody else is precisely what you are told.
 
-And a key is cheap to keep, because it does not move with the version. One key signs every release a project
-makes until it is rotated, so a declaration written once keeps paying: a routine version bump costs nothing,
-and if a new version arrives signed by somebody else, that is precisely the thing you are told. A checksum
-covers exactly one file, so every bump is a fresh, unvetted trust event; a key covers the publisher.
-
-So the strongest posture is not a stricter everyday build - an ordinary build already enforces the pins and
-needs no gpg at all. It is to make the pin-writing run the careful one, on a machine you trust and against a
-repository you trust:
+So the strongest posture is not a stricter everyday build - an ordinary build already enforces the pins. It is
+to make the pin-writing run the careful one, on a machine and against a repository you trust:
 
 ```bash
 java -Djenesis.dependency.pin=ignore \
@@ -376,23 +349,17 @@ java -Djenesis.dependency.pin=ignore \
      build/jenesis/Make.java pin
 ```
 
-Both flags are needed, and neither is a default. `@jenesis.signature` lines sitting in your sources verify
-nothing on their own; `jenesis.dependency.signature` is `none` until something sets it, which is what keeps
-every ordinary build free of gpg. The run that writes the pins is the one where you ask for it.
+Both flags are needed and neither is a default: `@jenesis.signature` lines verify nothing on their own, and
+`jenesis.dependency.signature` stays `none` until something sets it, which is what keeps every ordinary build
+free of gpg.
 
-That machine then needs two things in place beforehand, and Jenesis can supply neither: a JDK, and a `gpg` on
-the `PATH` that you trust. Bootstrapping either from the network would defeat the exercise - a verifier fetched
-from the repository under verification proves nothing about it - so a hardened image is one where the JDK and
-the OpenPGP tooling are already present and vetted, not one that assembles them on the way.
+That machine needs two things Jenesis cannot supply: a JDK, and a `gpg` on the `PATH` that you trust -
+fetching either from the network would defeat the exercise. `pin` runs after a full build, so the resolution
+that feeds the rewrite is the verified one, and `strict` refuses any coordinate no key vouches for. Review
+the diff, commit it, and the pins carry that verdict to everyone who trusts your repository.
 
-`pin` runs after a full build, so the resolution that feeds the rewrite is the verified one. `strict` refuses
-any coordinate no key vouches for, which means the checksums that land in your sources are the ones whose
-signatures were checked. Review the resulting diff, commit it, and the pins carry that verdict forward to
-everyone who trusts your repository.
-
-Getting there is the only fiddly part, and `-Djenesis.print.signatures` is what makes it tractable: under
-`declared` it names every coordinate no declaration covers, which is exactly the list `strict` would refuse.
-Work through that list once, and the run that writes your pins is one you can defend.
+Getting there is the fiddly part, and `-Djenesis.print.signatures` under `declared` makes it tractable: it
+names every coordinate no declaration covers, which is exactly the list `strict` would refuse.
 
 ## Where each one stops
 
