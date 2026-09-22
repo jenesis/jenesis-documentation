@@ -1,19 +1,19 @@
 ---
 order: 2
 title: Getting started
-description: Install Jenesis, build an example project end to end, and take a first tour of the Project model.
+description: Install Jenesis, build a modular project end to end, and learn the settings and selectors every build is driven by.
 ---
 
 This chapter takes you from nothing to a built project. You install Jenesis, run the canonical build
-command against a bundled example, read what it printed, and then meet the `Project` model that every
-build runs through. Everything later in this section assumes only what is here.
+command against a project you write yourself, read what it printed, and meet the settings and selectors
+every build is driven by. Everything later in this section assumes only what is here.
 
 ## Prerequisites
 
 Jenesis needs **a JDK, version 25 or newer, and nothing else** - no wrapper, no plugin tree to download. A
 build is an ordinary Java program that the JDK launches directly, so if `java --version` reports 25 or
 above, you are ready. What a project carries is under two megabytes of readable Java, where a build tool
-distributed as binaries is commonly tens of megabytes you do not read.
+distributed as binaries is megabytes of compiled code downloaded from a server you do not control.
 
 ```bash
 java --version
@@ -22,7 +22,7 @@ java --version
 ## Installing
 
 A Jenesis build lives *with* your project: its engine ships as plain Java source under `build/jenesis/`, and
-you launch it with the JVM's single-file source mode. Installing is really just populating that
+you launch it with the JVM's source file mode. Installing is really just populating that
 `build/jenesis/` folder. There are three equivalent ways to do it. All land at the same on-disk state, so
 the canonical `java build/jenesis/Make.java` command works identically afterwards. Pick by how you prefer
 to manage versions.
@@ -237,29 +237,25 @@ the module shape of the whole closure.
   multi-module versions of each. See <a href="/tool/demos/">Demos</a>.
 </div>
 
-## The Project model
+## What drives a build
 
-Everything you ran above went through one file: `build/jenesis/Make.java`. It is the entry point, and it
-carries no build logic of its own - that is the point, because the Java launcher compiles the file you name
-before any of its code runs, and a file naming no engine class compiles in a fraction of the time. The build itself
-is configured by `Project`, a small Java **record** - so a build is configured as code, not markup. You
-almost never edit either. Instead you flip system properties on the command line or, for code-level control,
-write a tiny entry point of your own next to it (covered in *[Extending the build](/tool/extending-the-build/)*).
+Everything above went through one file, `build/jenesis/Make.java`. It carries no build logic of its own -
+the Java launcher compiles the file you name before any of its code runs, so an entry point naming nothing
+else starts in a fraction of the time. What the build does is decided by settings and selectors, and you
+change those on the command line; for code-level control, a small entry point of your own does it (see
+*[Extending the build](/tool/extending-the-build/)*).
 
-Four fields carry the knobs you reach for first. Two have a `jenesis.project.*` system property that sets them
-before the build starts, and the root has a `jenesis.make.*` one, because finding the project is the entry
-point's job rather than the build's. All four are settable in code as well: the root is the argument
-`Project` requires, the rest are withers.
+Four settings carry the knobs you reach for first:
 
-| Field | Property | Default | What it is |
-| --- | --- | --- | --- |
-| `root` | `jenesis.make.root` | `.` | The directory Jenesis scans for `module-info.java` / `pom.xml`. Command line only; `Make` reads it and hands it to `Project`, whose constructor requires it. |
-| `target` | `jenesis.project.target` | `target` | Where every build output is written. Safe to delete for a clean build. |
-| `layout` | `jenesis.project.layout` | `auto` | How the project is shaped and how dependencies resolve. |
-| `defaultTarget` | *(none)* | `build` | What runs when you pass no selector. |
+| Setting | Default | What it is |
+| --- | --- | --- |
+| `jenesis.make.root` | `.` | The directory scanned for `module-info.java` / `pom.xml`. Command line only, because finding the project comes before the build. |
+| `jenesis.project.target` | `target` | Where every build output is written. Safe to delete for a clean build. |
+| `jenesis.project.layout` | `auto` | How the project is shaped and how dependencies resolve. |
+| *(the default target)* | `build` | What runs when you pass no selector. |
 
-A property always comes **before** the source file on the command line - anything after it is read as a
-selector:
+A setting may lead the arguments after the source file, or come before it as a JVM property - anything else
+after the file is read as a selector:
 
 ```bash
 java -Djenesis.test.skip=true \
@@ -282,8 +278,8 @@ java -Djenesis.test.skip=true \
 ### Selectors: choosing what to run
 
 Positional arguments after the source file are **selectors** - they choose what part of the build to run.
-With none, `Project` runs its `defaultTarget`, which out of the box is `build`: compile, test, and package
-every discovered module. The other targets the shipped layouts register:
+With none, the default target runs, which out of the box is `build`: compile, test and package every
+discovered module. The other targets the shipped layouts register:
 
 | Selector | What it does |
 | --- | --- |
