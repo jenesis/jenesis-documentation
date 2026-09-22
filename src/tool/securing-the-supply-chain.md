@@ -249,10 +249,10 @@ gpg --import key.asc                       # only once the fingerprint matches
 
 ## An identity instead of a key
 Everything above rests on a maintainer holding a private key for years, and on you obtaining its fingerprint
-through a channel an attacker does not control. Sigstore answers the same question without either. The signer
-authenticates to an identity provider, a certificate authority issues a certificate that is valid for **ten
-minutes** and names that identity, the signature is recorded in a public append-only log, and the private key
-is discarded. What you verify afterwards is an identity and a log entry rather than a key somebody kept.
+through a channel an attacker does not control. Sigstore needs neither: the signer authenticates to an
+identity provider, a certificate valid for **ten minutes** names that identity, the signature goes into a
+public append-only log, and the private key is discarded. You verify an identity and a log entry rather than
+a key somebody kept.
 
 For a coordinate whose repository publishes a `.sigstore.json` beside the artifact, the declaration names that
 identity:
@@ -286,12 +286,11 @@ single workflow. A prefix ends at a `/` or an `@`, so a declaration for `protobu
 what lets one line cover every future release, the way a fingerprint does - the property that makes a
 declaration worth writing once.
 
-**The host also names the issuer** that must have authenticated the identity, and it is the host itself unless
-`-Djenesis.sigstore.issuers` names another. Today it does so only for
-`github.com=token.actions.githubusercontent.com`, GitHub being the provider whose identities are issued
-elsewhere; GitLab and anything self-managed need no entry. A host is written without a scheme wherever it
-appears, since an OpenID Connect issuer is an `https` URL and nothing else. The issuer is compared rather than
-assumed: it is what stops a certificate from another provider carrying a `github.com` identity.
+**The host also names the issuer** that must have authenticated the identity - itself, unless
+`-Djenesis.sigstore.issuers` says otherwise, which today it does only for
+`github.com=token.actions.githubusercontent.com`. Comparing the issuer is what stops a certificate from
+another provider carrying a `github.com` identity. A host is written without a scheme, since an OpenID
+Connect issuer is an `https` URL and nothing else.
 
 A coordinate signed by some other identity **fails**, naming both sides, exactly as a wrong key does. The
 signature can be perfect and the log entry genuine - a release built in a fork is both - and only the
