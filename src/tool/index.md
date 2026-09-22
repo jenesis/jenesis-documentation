@@ -41,7 +41,7 @@ And three properties are built in rather than added on:
   against OpenPGP signatures or Sigstore identities, held to a licence policy, checked against known
   vulnerabilities, and described in an SBOM the build emits.
 
-<div class="tip">
+<div class="demo">
   New to Jenesis? Read this page, then <strong>Getting started</strong> to install it and run your first
   build. Every later chapter assumes only what came before it. Prefer to learn by example? Every feature has a
   runnable project in <a href="/tool/demos/">Demos</a>.

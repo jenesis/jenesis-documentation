@@ -227,7 +227,7 @@ Eviction runs on write and goes by file timestamp, which `touch` keeps fresh on 
   <code>false</code> turns the cache off entirely.
 </div>
 
-<div class="tip">
+<div class="demo">
   Two runnable projects cover this chapter:
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-47-docker-isolation">demo-47</a> leaks a
   credentials file and an environment secret on the host, then confines both the build and the launched program

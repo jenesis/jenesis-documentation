@@ -388,7 +388,7 @@ already uses. This is the whole vocabulary:
 | `@jenesis.signature <algorithm>/<fingerprint> <token>…` | The OpenPGP key that signs these coordinates' artifacts; a Maven token may end in `/*` to cover a whole groupId, and a lone `[<group>/]signature-<name>.properties` reads the keys from a local list. | *[Securing the supply chain](/tool/securing-the-supply-chain/#provenance-who-produced-the-bytes)* |
 | `@jenesis.signature Sigstore/<host>/<path> <token>…` | The identity that signs these coordinates, for a repository that publishes a `.sigstore.json` beside the artifact. The path is a prefix of the identity a certificate names, and the host also names the issuer that must have authenticated it. | *[Securing the supply chain](/tool/securing-the-supply-chain/#an-identity-instead-of-a-key)* |
 
-<div class="tip">
+<div class="demo">
   Every feature named here has a runnable example. Browse the full set on the
   <a href="/tool/demos/">Demos</a> page.
 </div>

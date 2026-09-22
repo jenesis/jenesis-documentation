@@ -250,7 +250,7 @@ silently reaching the public default.
   the repositories yourself when the choice has to come from your program rather than from its environment.
 </div>
 
-<div class="tip">
+<div class="demo">
   Installation is idempotent and safe to run from several processes at once, so a program does not have to
   track whether a target is present: call <code>install</code> every time and pay for the download only on the
   first run. The

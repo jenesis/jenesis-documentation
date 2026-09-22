@@ -352,7 +352,7 @@ of GraalVM, a slow compile, and complete reachability metadata. They are alterna
 Choose jpackage for a faithful bundle of the JVM you tested against, and native-image when startup and
 footprint matter more.
 
-<div class="tip">
+<div class="demo">
   Six runnable projects cover this chapter:
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-06-java-pom-executable">demo-06</a> and
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-07-java-modular-executable">demo-07</a> ship

@@ -452,7 +452,7 @@ Setting `jenesis.project.watch=true` in a `jenesis.properties` file makes watch 
 already skips a module's tests when none of its inputs changed; it can go finer and re-run only the tests a
 change can reach - a development-loop optimisation covered in *[Code quality & testing](/tool/code-quality-and-testing/)*.
 
-<div class="tip">
+<div class="demo">
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-03-java-pom-multi">demo-03</a> and
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-04-java-modular-multi">demo-04</a> each carry
   a tested module - one in <code>src/test</code> style, one as a separate test module;

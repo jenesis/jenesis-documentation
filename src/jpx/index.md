@@ -55,7 +55,7 @@ published module too.
 5. **Using jpx from Java** - the same resolve, install, and launch sequence as an API.
 6. **Reference** - every flag, the exit codes, and the API surface in one table.
 
-<div class="tip">
+<div class="demo">
   Prefer to read it running? The
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-61-jpx">jpx demo</a> is a single file that
   installs the JUnit console launcher, names it once as a module and once as a coordinate, and verifies both

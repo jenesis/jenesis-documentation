@@ -243,7 +243,7 @@ build.
   locally, and releasing from a pipeline that has no such integration.
 </div>
 
-<div class="tip">
+<div class="demo">
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-57-publishing">demo-57</a> stages a
   Central-ready bundle - POM metadata, sources and javadoc jars - and then resolves the coordinate straight
   back out of the staged tree to prove it is complete, entirely offline;

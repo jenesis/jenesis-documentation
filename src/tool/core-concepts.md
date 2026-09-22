@@ -173,7 +173,7 @@ Selectors are deliberately *not* part of the hash - they only gate which steps g
 runs under a selector produces exactly the output a full build would have, and a later unselected run hits the
 cache as expected.
 
-<div class="tip">
+<div class="demo">
   Two runnable projects show this chapter end to end:
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-04-java-modular-multi">demo-04</a> builds a
   multi-module modular project and prints its module graph, and
