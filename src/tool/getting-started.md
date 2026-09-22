@@ -155,7 +155,7 @@ it needs nothing fetched to obtain the build tool at all.
 A module declaration, a class, and the engine you just installed:
 
 ```
-greeter
+project
 ├── build/jenesis   # the engine
 └── sources
     ├── module-info.java
