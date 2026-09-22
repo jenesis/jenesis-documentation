@@ -223,7 +223,11 @@ build that names just the other. Ubuntu is asked first because keys.openpgp.org 
 IDs stripped unless the owner has verified an address, and `gpgv` refuses a key that has none.
 
 What is fetched is held in `-Djenesis.openpgp.local`, one file per fingerprint, and a populated folder with
-an empty `jenesis.openpgp.uri` is the offline form - vendored keys, no network. Both settings take
+an empty `jenesis.openpgp.uri` is the offline form - vendored keys, no network. It is a cache, not something
+to commit: a fingerprint the folder already holds is served from it and no key server is asked, so a key
+checked into the repository would be the key as it was on the day it was fetched, on every machine and every
+clone, and a revocation published afterwards would never arrive. What a project checks in is the fingerprint;
+deleting the folder, or the one file, is what makes the next build fetch the key again. Both settings take
 `OPENPGP_REPOSITORY_URI` and `OPENPGP_REPOSITORY_LOCAL` from the environment, and a containerised build
 forwards them the way it forwards the Maven and module repository settings. A key source that is not an HKP
 server - a corporate key store, a git tree, a service of your own - is a different repository registered
