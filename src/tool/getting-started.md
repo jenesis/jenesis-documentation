@@ -136,23 +136,10 @@ daemon's port, token and log, and the OpenPGP keys a build fetched to verify sig
 it under one hidden folder is deliberate - there is one thing to ignore, and one thing to delete when you
 want a cold start.
 
-One folder under it can be yours rather than the tool's. `.jenesis/keys` is where fetched keys are held, and
-a project that verifies signatures offline vendors them there and empties `jenesis.openpgp.uri`, which makes
-that folder the only source there is (see *[Securing the supply
-chain](/tool/securing-the-supply-chain/)*). Such a project ignores the *contents* of `.jenesis/` rather than
-the folder, so the store it committed survives:
-
-```gitignore
-target/
-.jenesis/*
-!.jenesis/keys/
-```
-
-Git cannot re-include a path whose parent directory is excluded, which is why the second line names the
-contents. Either form holds whether Jenesis is vendored as source or tracked as a submodule: a submodule
-lives at `build/.upstream`, outside `.jenesis/` entirely, so nothing has to be carved back out of it.
-`rm -rf .jenesis` is then a cold start that removes only work the next build redoes - unless the keys are
-vendored there, which is the one thing to keep.
+Those two rules hold whether Jenesis is vendored as source or tracked as a submodule. A submodule lives at
+`build/.upstream`, outside `.jenesis/` entirely, so nothing has to be carved back out of the rule and
+`rm -rf .jenesis` is a cold start - it removes only what the next build produces again, the keys included,
+since those are fetched from the fingerprints the project declares.
 
 Nothing needs ignoring inside the vendored engine either. It carries its own `.gitignore`, and the compiled
 engine lands in `.jenesis/classes` rather than beside the sources, so the vendored copy stays as checked out.
