@@ -229,13 +229,8 @@ the module shape of the whole closure.
 
 ## What drives a build
 
-Everything above went through one file, `build/jenesis/Make.java`. It carries no build logic of its own -
-the Java launcher compiles the file you name before any of its code runs, so an entry point naming nothing
-else starts in a fraction of the time. What the build does is decided by settings and selectors, and you
-change those on the command line; for code-level control, a small entry point of your own does it (see
-*[Extending the build](/tool/extending-the-build/)*).
-
-Four settings carry the knobs you reach for first:
+Two things decide what a build does: **settings**, the `jenesis.*` properties, and **selectors**, the
+positional arguments that choose what runs. Four settings carry the knobs you reach for first:
 
 | Setting | Default | What it is |
 | --- | --- | --- |
