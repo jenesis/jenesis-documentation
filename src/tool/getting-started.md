@@ -221,24 +221,25 @@ the module shape of the whole closure.
 `stage` builds and then lays out everything a release consists of:
 
 ```bash
-java -Djenesis.project.version=1.0.0 build/jenesis/Make.java stage
+java build/jenesis/Make.java stage
 ```
 
 ```
 target/stage
-├── maven/output/greeter/greeter/1.0.0
-│   ├── greeter-1.0.0.jar   # the modular jar, under a Maven coordinate
-│   ├── greeter-1.0.0.pom   # generated, so Maven consumers resolve it
-│   └── greeter-1.0.0-cyclonedx.json   # the bill of materials
-├── modular/output/greeter/1.0.0
+├── maven/output/greeter/greeter/1-SNAPSHOT
+│   ├── greeter-1-SNAPSHOT.jar   # the modular jar, under a Maven coordinate
+│   ├── greeter-1-SNAPSHOT.pom   # generated, so Maven consumers resolve it
+│   └── greeter-1-SNAPSHOT-cyclonedx.json   # the bill of materials
+├── modular/output/greeter/1-SNAPSHOT
 │   ├── greeter.jar   # the same jar, named as the module index serves it
 │   └── greeter.pom   # its dependencies as coordinates, for a project mixing modules and Maven artifacts
 └── reports/output   # the dependency graph, and what else ran
 ```
 
-Nothing was configured to get that: the version came from the command line and the coordinate from the
-module name. `export` then copies the tree into your local Maven repository, your local module repository,
-or both.
+Nothing was configured to get that: the coordinate comes from the module name, and `1-SNAPSHOT` is what a
+build stamps when nothing names a version - a module declares none of its own, and an unreleased one needs
+none, so `-Djenesis.project.version=1.0.0` is what a release adds. `export` then copies the tree into your
+local Maven repository, your local module repository, or both.
 
 <div class="demo">
   The four project shapes are runnable:
