@@ -27,7 +27,7 @@ you launch it with the JVM's single-file source mode. Installing is really just 
 the canonical `java build/jenesis/Make.java` command works identically afterwards. Pick by how you prefer
 to manage versions.
 
-### A package manager (recommended)
+### A package manager
 
 Best when you would rather manage the tool version globally than vendor its sources by hand. Install once,
 then initialise the project from the installed copy:
@@ -88,7 +88,13 @@ curl -fsSL https://get.jenesis.build | JENESIS_MODE=submodule bash
 That adds the submodule at `build/.upstream`, records it as shallow, checks it out at the version you asked
 for, links `build/jenesis` into it, and stages all of it for you to commit. Jenesis is read at its pinned
 commit and its history is never browsed from your project, so the shallow flag keeps every fresh checkout
-cheap. By hand, the same thing is:
+cheap.
+
+The pinned commit is a hash of the tree it names, and your git client checks it on every fetch and checkout,
+so this route verifies what it brings in the same way the `jenesis` command verifies a vendored copy - a
+substituted or edited engine does not survive the checkout. Moving to another version is a commit of the
+submodule pointer, reviewed like any other change, and a clone of that commit reads the engine your history
+recorded and no other. By hand, the same thing is:
 
 ```bash
 git submodule add --depth 1 https://github.com/jenesis/jenesis.git build/.upstream
