@@ -100,6 +100,8 @@ Windows line endings gives a different value than the same file checked out with
 compiled classes would not differ. A `.gitattributes` that fixes line endings keeps the value the same on every
 machine (see *[Building &amp; running](/tool/building-and-running/)*).
 
+{% demos 28 %}
+
 ## Licence compliance
 
 The licence check gates the build on the licences of its resolved dependencies. It stays **off until a
@@ -156,6 +158,8 @@ category/Apache-2.0=permissive
 replacing them, and the same classification feeds both the licence check and the SBOM's licence identifiers.
 It is distinct from `licensing.properties`, which is the enforcement policy, not the classification.
 
+{% demos 29 %}
+
 ## Vulnerability scanning
 
 The vulnerability check gates the build on the **known vulnerabilities** of its resolved dependencies. Like the
@@ -188,6 +192,8 @@ An unrecognised key fails the build. The licence and vulnerability checks are tw
 To keep both files in place but skip both checks for a single build, pass the default-`true` override
 `-Djenesis.compliance=false`.
 
+{% demos 30 %}
+
 ## Hardening the whole build
 
 The SBOM, licence, and vulnerability checks all describe the closure they resolve. **Pinning** is what makes
@@ -209,13 +215,4 @@ That leaves one gap: a tampered POM could try to introduce a dependency the jar 
 strict mode rejects, so a manipulated POM cannot quietly pull in an unverified artifact. This is why strict
 pinning is recommended for builds in unsecured environments and for releases.
 
-<div class="demo">
-  Four runnable projects cover this chapter:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-28-sbom">demo-28</a> emits an SBOM,
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-29-compliance">demo-29</a> gates a build on a
-  permissive-only licence policy,
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-30-vulnerabilities">demo-30</a> catches
-  Log4Shell in a pinned <code>log4j-core</code>, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-25-pinning">demo-25</a> proves
-  the pinning guarantees by getting them wrong on purpose. See <a href="/tool/demos/">Demos</a>.
-</div>
+{% demos 25 %}

@@ -93,8 +93,9 @@ Never refer forward to a later chapter for something the current one needs. Chap
 reference pages may be longer.
 
 Front matter is `order`, `title`, `description`; the menu, the previous/next links and the section index
-derive from it. Callouts are `<div class="note|tip|warning">`; a closing `tip` links the demos that exercise
-the chapter. No diagrams, no screenshots.
+derive from it. Callouts are `<div class="note|tip|warning">`. A section that a demo exercises ends with
+`{% demos 18, 20 %}`, which renders one "Demo 18: Module alias" link per line from `demos.js`; every demo is
+linked from at least one section. No diagrams, no screenshots.
 
 **Every heading is an anchor, and its words are its id.** The build gives each `##` and `###` an `id` taken
 from the heading's own text, lower case with one hyphen per run of anything else, so *Keeping a dependency
@@ -109,7 +110,7 @@ than a heading and must match the id the repository server emits, not the wordin
 ## Section notes
 
 - **Tool.** Staged paths carry an `output/` segment and the module's build identity (`module`,
-  `module-sources`), not its name. Demo links are `https://github.com/jenesis/jenesis/tree/main/demo/<slug>`;
+  `module-sources`), not its name. The demo lines that close a section come from the `demos` shortcode;
   every demo folder is in `demos.js` and vice versa. The reference tables follow `Project.java`,
   `BuildExecutor.Configuration` and the property reads in the step classes - a property added to the tool is
   added to the reference and mentioned where a reader would look for it.

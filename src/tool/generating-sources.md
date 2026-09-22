@@ -38,6 +38,8 @@ Every generator resolves its tool in its own dependency group, named after the t
 project's dependencies. The version floats `RELEASE` until you pin it - see *[Pinning &amp; bills of
 materials](/tool/pinning/)*, which is also where the checksums for these tools belong.
 
+{% demos 13, 14, 15 %}
+
 ## Where the contracts live
 
 A generator does not search your project. It reads one folder, and the build fills that folder for it.
@@ -167,13 +169,3 @@ Each generator has a switch, on by default:
 
 The same shape works for `protoc`, `avro`, `wsimport`, `openapi` and `antlr`. All configuration keys are listed in the
 *[Reference](/tool/reference/)*.
-
-<div class="demo">
-  Three demos exercise this chapter end to end:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-13-data-formats">demo-13-data-formats</a>
-  generates from XML Schema, protocol buffers and Avro, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-14-service-contracts">demo-14-service-contracts</a>
-  generates a SOAP and a REST client - one shipping its contract, one keeping it out of the jar, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-15-antlr">demo-15-antlr</a>
-  compiles a grammar into a calculator that evaluates an expression you pass on the command line.
-</div>

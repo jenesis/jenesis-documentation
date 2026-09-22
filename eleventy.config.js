@@ -6,6 +6,8 @@
 // file with that front matter - it appears in the menu automatically, so adding a chapter never
 // has to touch navigation.
 
+import demos from "./src/_data/demos.js";
+
 export default function (eleventy) {
   // Static assets pass through untouched (CSS, JS, logos, fonts, the CNAME).
   eleventy.addPassthroughCopy({ "src/assets": "assets" });
@@ -46,6 +48,20 @@ export default function (eleventy) {
         heading.attrSet("id", id);
       }
     });
+  });
+
+  // `{% demos 18, 20 %}` closes a section with the demos that exercise it, one link per line, each named
+  // "Demo <number>: <name>" from demos.js. An unknown number fails the build rather than printing a dead link.
+  const demoByNumber = new Map(
+    demos.groups.flatMap((group) => group.demos).map((demo) => [Number(demo.slug.split("-")[1]), demo])
+  );
+  eleventy.addShortcode("demos", (...numbers) => {
+    const items = numbers.map((number) => {
+      const demo = demoByNumber.get(Number(number));
+      if (!demo) throw new Error(`No demo numbered ${number} in src/_data/demos.js`);
+      return `<li><a href="${demos.repo}/${demo.slug}"><span>Demo ${Number(number)}: ${demo.name}</span></a></li>`;
+    });
+    return `<ul class="demo-links">${items.join("")}</ul>`;
   });
 
   // One collection per tool section, sorted by the page's `order`, so the sidebar and the

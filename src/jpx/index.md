@@ -43,6 +43,8 @@ Both run the same program and take the same arguments. The examples in this sect
 The same three steps - resolve, install, launch - are also a public API, so a program of your own can run a
 published module too.
 
+{% demos 63 %}
+
 ## What's in this section
 
 1. **Introduction** - you are here.
@@ -54,10 +56,3 @@ published module too.
    digest.
 5. **Using jpx from Java** - the same resolve, install, and launch sequence as an API.
 6. **Reference** - every flag, the exit codes, and the API surface in one table.
-
-<div class="demo">
-  Prefer to read it running? The
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-63-jpx">jpx demo</a> is a single file that
-  installs the JUnit console launcher, names it once as a module and once as a coordinate, and verifies both
-  against a digest before launching them.
-</div>

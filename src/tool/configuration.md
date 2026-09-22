@@ -31,17 +31,19 @@ overrides a file entry, so you can still override the project's baseline for a s
 java -Djenesis.project.sources=false build/jenesis/Make.java
 ```
 
-One key is the exception: `jenesis.make.root` belongs on the command line only, because the root is what
-locates the file in the first place. Setting it in a file is reported as an error. So is setting
-`jenesis.toolchain.searchpath` in the project's file or its profiles: the folders searched for a JDK decide
-which program the build runs, so only the command line and your user-global file, described below, name them.
+`jenesis.make.root` belongs on the command line only, because the root is what locates the file in the first
+place. Setting it in a file is reported as an error.
 
-Keys fall into two namespaces, split by who reads them. `jenesis.make.*` is read by the entry point, before a
-build exists: where the project is, which profiles to layer, where the user-global file lives, and how the
-engine itself is compiled and reused. `jenesis.toolchain.*` is read there too, to choose the JDK the build
-runs on. `jenesis.project.*` is read by the build. That is why the root sits
-under `make` - finding the project is the entry point's job, and the build is handed the answer rather than
-looking it up.
+The same goes for the few keys that describe your own environment rather than the project. They would make no
+sense in a project's file anyway, and a rogue project could use them to reach beyond its own build. The
+project's file and its profiles refuse them; the command line and your user-global file, described below,
+accept them.
+
+Keys fall into namespaces, each grouping one concern: `jenesis.test.*` for tests, `jenesis.maven.*` and
+`jenesis.module.*` for the two kinds of repository, and so on. `jenesis.make.*` covers starting a build:
+where the project is, which profiles to layer, where the user-global file lives, and how the engine itself is
+compiled and reused. `jenesis.project.*` covers the project as a whole, such as its version and where its
+output goes. The [reference](/tool/reference/) lists every namespace and its keys.
 
 <div class="note">
   Every boolean setting reads the same way. Leaving the key out keeps the default; naming it with no value at
@@ -85,6 +87,8 @@ java build/jenesis/Make.java -Djenesis.project.version=1.0.0 build
 Only `jenesis.*` settings may be written there; any other `-D` is refused, naming what would be valid,
 because a JVM option has to reach the JVM and therefore belongs before the main class.
 
+{% demos 45 %}
+
 ## Where tool configuration lives
 
 System properties are the small knobs. A tool like Checkstyle or jpackage needs its own configuration *file*,
@@ -116,13 +120,6 @@ What these folders can hold - presence activates, contents configure:
 - **Forked-tool arguments**: `process-<command>.properties` - extra flags for `javac`, `kotlinc`, `jar`, and
   the like (see *[Building & running](/tool/building-and-running/)*).
 
-<div class="note">
-  One kind of file is looked up in its own list of locations rather than these: a
-  <code>pin-&lt;name&gt;.properties</code> bill of materials, whose locations are named by
-  <code>jenesis.project.boms</code> and default to the configuration folders above. They are deliberately
-  <em>not</em> profile-resolved, so no profile can swap a project's pinned versions out from under it.
-</div>
-
 Each of these is the subject of a later chapter; here the point is only *where* they go and that a file's mere
 presence switches its feature on.
 
@@ -146,6 +143,12 @@ Select profiles with the `jenesis.make.profiles` property - a comma-separated li
 - a **`<name>/` subfolder** inside each configuration folder, searched *ahead of* the folder itself - so a
   profile can carry its own `checkstyle.xml`, `packaging.properties`, and so on.
 
+<div class="note">
+  A <code>pin-&lt;name&gt;.properties</code> bill of materials is not searched for in a profile subfolder. It
+  is looked up only in the locations <code>jenesis.project.boms</code> names, which default to the
+  configuration folders themselves, so a project's pinned versions stay where the project put them.
+</div>
+
 Profiles **chain**: any loaded file may itself set `jenesis.make.profiles` to pull in more, transitively.
 The [`profiles`](https://github.com/jenesis/jenesis/tree/main/demo/demo-45-profiles) demo ships a `release`
 profile that turns on source jars and chains to a `supply-chain` profile that enforces strict pinning:
@@ -167,6 +170,8 @@ java -Djenesis.make.profiles=release build/jenesis/Make.java stage
 
 A missing `jenesis-<name>.properties` is skipped, not an error, so a profile may contribute only a
 configuration folder, only a properties file, or both.
+
+{% demos 45 %}
 
 ## Precedence
 
@@ -201,11 +206,3 @@ profiles, resolved relative to its `.jenesis` folder.
 The `jenesis.make.global` property names the base folder (default `$HOME`) whose `.jenesis/` subfolder
 holds that file. Set to an empty string, it switches the user-global layer off entirely. It can be set on the
 command line or in the project's `jenesis.properties`, but not in a profile or in the user-global file itself.
-
-<div class="demo">
-  The <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-45-profiles">demo-45</a> project is a
-  complete, runnable example of everything here - a base build with no extras, and a <code>release</code>
-  profile that chains to <code>supply-chain</code> to add source jars and strict pinning without changing a
-  single command-line flag. See <a href="/tool/demos/">Demos</a>.
-  To also see settings decide what a build produces, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-10-javac-arguments">demo-10</a> passes extra flags to <code>javac</code> from a file beside the project, and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-47-docker-isolation">demo-47</a> confines a whole build to a container from one setting.
-</div>

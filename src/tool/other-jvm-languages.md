@@ -42,6 +42,8 @@ already produced.
   <code>.java</code> sources for resolution.
 </div>
 
+{% demos 38, 41, 43 %}
+
 ## Which packages you can export
 
 That order decides one thing you need to know: **whether a package holding only non-Java code can be exported.**
@@ -122,6 +124,8 @@ and scalafmt together with the Java formatter.
   land - applies to these tools unchanged.
 </div>
 
+{% demos 39, 42, 44 %}
+
 ## A compiler plugin
 
 A Kotlin or Scala compiler plugin is declared exactly like a Java annotation processor
@@ -153,6 +157,8 @@ group, and `scalac` loads the plugin the same way.
 The plugin's version is pinned the usual way, coordinated to the compiler - the `pin` step writes back its
 `@jenesis.pin` line for you.
 
+{% demos 40 %}
+
 ## API documentation
 
 When you build documentation jars (`jenesis.project.documentation`, *Building & running*), each language uses
@@ -163,18 +169,3 @@ Java + Kotlin is one Dokka document, Java + Groovy one groovydoc document. Any m
 Kotlin together with Groovy, splits the output, with `javadoc` rendering the Java at the archive root and
 each remaining language in its own subfolder. Either way the produced `-javadoc.jar` always has a root
 `index.html`, so it satisfies a repository like Maven Central.
-
-<div class="demo">
-  Seven runnable demos exercise this chapter - a language mixed with Java, its quality tools, and a plugin:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-38-kotlin">demo-38</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-39-kotlin-quality">demo-39</a> build and lint a
-  Kotlin/Java module, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-40-kotlin-plugin">demo-40</a> runs a Kotlin
-  compiler plugin (kotlinx.serialization);
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-41-scala">demo-41</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-42-scala-quality">demo-42</a> do the same for
-  Scala; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-43-groovy">demo-43</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-44-groovy-quality">demo-44</a> for Groovy. See
-  <a href="/tool/demos/">Demos</a>.
-</div>

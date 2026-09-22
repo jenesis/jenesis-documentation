@@ -237,19 +237,9 @@ target/stage
 ```
 
 Nothing was configured to get that: the coordinate comes from the module name, and `1-SNAPSHOT` is what a
-build stamps when nothing names a version - a module declares none of its own, and an unreleased one needs
-none, so `-Djenesis.project.version=1.0.0` is what a release adds. `export` then copies the tree into your
-local Maven repository, your local module repository, or both.
+build stamps when nothing names a version.
 
-<div class="demo">
-  The four project shapes are runnable:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-01-java-pom">demo-01</a> (Maven layout),
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-02-java-modular">demo-02</a> (this one, with
-  a pinned dependency), and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-03-java-pom-multi">demo-03</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-04-java-modular-multi">demo-04</a> for the
-  multi-module versions of each. See <a href="/tool/demos/">Demos</a>.
-</div>
+{% demos 1, 2, 3, 4 %}
 
 ## What drives a build
 
@@ -260,43 +250,29 @@ positional arguments that choose what runs. Four settings carry the knobs you re
 | --- | --- | --- |
 | `jenesis.make.root` | `.` | The directory scanned for `module-info.java` / `pom.xml`. Command line only, because finding the project comes before the build. |
 | `jenesis.project.target` | `target` | Where every build output is written. Safe to delete for a clean build. |
-| `jenesis.project.layout` | `auto` | How the project is shaped and how dependencies resolve. |
+| `jenesis.project.version` | `1-SNAPSHOT`, or the POM's version | The version stamped onto every artifact the build produces; set it for a release. |
 | *(the default target)* | `build` | What runs when you pass no selector. |
 
 A setting may lead the arguments after the source file, or come before it as a JVM property - anything else
 after the file is read as a selector:
 
 ```bash
-java -Djenesis.test.skip=true \
-     -Djenesis.project.layout=maven \
+java -Djenesis.project.version=1.0.0 \
+     -Djenesis.project.target=out \
      build/jenesis/Make.java
 ```
-
-### Layout: what a build publishes
-
-`jenesis.project.layout` is `auto` by default, which reads the project and picks. The choice decides what
-`stage` lays out:
-
-| Layout | The project declares | `stage` produces |
-| --- | --- | --- |
-| `maven` | a `pom.xml`; a `module-info.java` is ignored | the Maven tree only |
-| `modular_to_maven` | a `module-info.java`, no root `pom.xml` | both trees, as above: a modular jar that a Maven consumer can still resolve, through a generated POM |
-| `modular` | a `module-info.java` | the modular tree only - a modular jar, resolved by module name, with nothing for Maven |
-
-`auto` resolves to `maven` or `modular_to_maven`; the strict `modular` layout is opt-in with
-`-Djenesis.project.layout=modular`, for artifacts consumed only as Java modules.
 
 ### Selectors: choosing what to run
 
 Positional arguments after the source file are **selectors** - they choose what part of the build to run.
 With none, the default target runs, which out of the box is `build`: compile, test and package every
-discovered module. The other targets the shipped layouts register:
+discovered module. The other targets:
 
 | Selector | What it does |
 | --- | --- |
 | `build` | Compile, test, and jar every module *(the default)*. |
 | `stage` | The full release recipe - build, then lay out a publishable tree under `target/stage/`. |
-| `export` | Publish the staged tree into your local Maven repository (`~/.m2`), your local module repository (`~/.jenesis`), or both, as the layout dictates. |
+| `export` | Publish the staged tree into your local Maven repository (`~/.m2`), your local module repository (`~/.jenesis`), or both. |
 | `pin` | Rewrite every `pom.xml` / `module-info.java` to pin the full resolved dependency closure. |
 | `dependencies` | Print each module's resolved dependency graph with licences (shown above). |
 | `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata. |
@@ -309,5 +285,5 @@ subject of the next chapter.
 <div class="note">
   Under the hood a build is a graph of <strong>steps</strong> - each takes input folders and produces a
   fresh output folder - and a selector names a point in that graph. You do not need the full mechanics yet;
-  <strong>Core concepts</strong> introduces build steps, the build graph, and layouts in depth.
+  <strong>Core concepts</strong> introduces build steps, the build graph, and how a project is read in depth.
 </div>

@@ -165,6 +165,8 @@ rather than being served by one configured for something else.
 | `jenesis.project.boms` | the configuration folders | Path-separated list of folders searched for `pin-<name>.properties` files. |
 | `jenesis.project.artifacts` | `.jenesis/artifacts` | The project-local folder resolved artifacts are materialised into (hard-linked from `~/.m2` where possible), in every layout. It also holds a copy of each repository's `maven-metadata.xml`, so a `RELEASE` or range still resolves when the repository is unreachable. |
 
+{% demos 5 %}
+
 ### Building & testing
 
 | Key | Default | Effect |
@@ -226,7 +228,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.module.uri` (`JENESIS_REPOSITORY_URI`) | `https://repo.jenesis.build/` | The Jenesis Module Index URL(s) module names resolve through; same list/filter/`@` grammar. |
 | `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | `~/.jenesis` | The local module repository, read first and written by `export`. |
 | `jenesis.module.source` | `service` | Who resolves a module name: `service` asks the index at `jenesis.module.uri`, `git` reads its published data itself and fetches from `jenesis.maven.uri`. |
-| `jenesis.module.index` (`JENESIS_INDEX_URI`) | *(the published data)* | Where `git` reads that data from - a fork or mirror of the index's per-module files. |
+| `jenesis.module.index` (`JENESIS_INDEX_URI`) | `data/modules/` in [`jenesis/jenesis-modules`](https://github.com/jenesis/jenesis-modules/tree/main/data/modules) | Where `git` reads that data from - a fork or mirror of the index's per-module files. |
 | `jenesis.module.prerelease` | *(unset)* | Whether a module asked for without a version may resolve to a pre-release. Unset states no preference: the newest release is served, and a module that has only pre-releases resolves to nothing. |
 | `jenesis.module.speculative` | *(unset)* | Whether a version the index has not recorded may be resolved from the module's newest coordinate. Unset states no preference, and the version is guessed. |
 | `jenesis.openpgp.uri` (`OPENPGP_REPOSITORY_URI`) | `keyserver.ubuntu.com`, `keys.openpgp.org` | HKP key server roots a declared fingerprint resolves through; same list/`@` grammar, asked in order. |
@@ -387,8 +389,3 @@ already uses. This is the whole vocabulary:
 | `@jenesis.bom <token> [<version> [<algorithm>/<hash>]]` | A bill of materials to import. | *[Pinning &amp; bills of materials](/tool/pinning/)* |
 | `@jenesis.signature <algorithm>/<fingerprint> <token>…` | The OpenPGP key that signs these coordinates' artifacts; a Maven token may end in `/*` to cover a whole groupId, and a lone `[<group>/]signature-<name>.properties` reads the keys from a local list. | *[Securing the supply chain](/tool/securing-the-supply-chain/#provenance-who-produced-the-bytes)* |
 | `@jenesis.signature Sigstore/<host>/<path> <token>…` | The identity that signs these coordinates, for a repository that publishes a `.sigstore.json` beside the artifact. The path is a prefix of the identity a certificate names, and the host also names the issuer that must have authenticated it. | *[Securing the supply chain](/tool/securing-the-supply-chain/#an-identity-instead-of-a-key)* |
-
-<div class="demo">
-  Every feature named here has a runnable example. Browse the full set on the
-  <a href="/tool/demos/">Demos</a> page.
-</div>

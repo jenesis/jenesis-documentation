@@ -82,6 +82,8 @@ int status = installation.launch(command.mainClass(), List.of("--version"));
   above.
 </div>
 
+{% demos 63 %}
+
 ## Reading what was installed
 
 An `Installation` exposes its folder and the descriptor written beside the jars, so you can inspect a target
@@ -244,11 +246,8 @@ fails rather than quietly reaching the public default.
   the repositories yourself when the choice has to come from your program rather than from its environment.
 </div>
 
-<div class="demo">
+<div class="note">
   Installation is idempotent and safe to run from several processes at once, so a program does not have to
   track whether a target is present: call <code>install</code> every time and pay for the download only on the
-  first run. The
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-63-jpx">jpx demo</a> is this whole chapter as
-  one runnable file - it installs the JUnit console launcher into its own <code>target/jpx/</code>, verifies
-  it, and launches it.
+  first run.
 </div>

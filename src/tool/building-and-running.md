@@ -12,7 +12,7 @@ processor, how to run a module's `main`, and how to keep rebuilding as you edit.
 
 ## The build pipeline
 
-For each module, the inferred build wires the same short chain of steps: **compile → test → jar**. Running
+For each module, the inferred build wires the same short chain of steps: **compile → jar → test**. Running
 `build` (or just `java build/jenesis/Make.java` with no selector) walks that chain for every discovered
 module in dependency order. Steps that do not depend on each other run at the same time; on a machine where
 that is too much - a laptop on battery, a small CI runner - `-Djenesis.executor.concurrency=<n>` caps how
@@ -23,13 +23,13 @@ when it is the tools themselves that are heavy, `-Djenesis.process.concurrency=<
 - **Compile** runs `javac` over the module's sources, resolving its dependencies onto the class or module
   path, and writes the `.class` files. Other-language compiles (Kotlin, Scala, Groovy) slot into the same
   chain - see *[Other JVM languages](/tool/other-jvm-languages/)*.
-- **Test** compiles and runs the module's tests. Jenesis **auto-detects the test framework** from the test
-  dependencies you already declare - JUnit Platform (JUnit 5/6), JUnit 4, or TestNG - and resolves the
-  matching console runner for you, so you never add it as an explicit dependency. In the modular layouts the
-  tests live in their own test module, built after the module under test (next section).
 - **Jar** packages the compiled classes into the module's jar under `target/`. When the module declares a
   main class (below), the jar's manifest gets a `Main-Class` entry and its `module-info` a `ModuleMainClass`
   attribute, so the artifact is directly launchable.
+- **Test** compiles and runs the module's tests. Jenesis **auto-detects the test framework** from the test
+  dependencies you already declare - JUnit Platform (JUnit 5 and later), JUnit 4, or TestNG - and resolves the
+  matching console runner for you, so you never add it as an explicit dependency. In the modular layouts the
+  tests live in their own test module, built after the module under test (next section).
 
 <div class="note">
   Every phase is cached the way <em>Core concepts</em> described: a second <code>build</code> recompiles and
@@ -53,10 +53,15 @@ names), with the test framework as a normal test-scoped dependency:
 </dependency>
 ```
 
-A **modular** project puts its tests in a **separate module**, in a sibling folder, because the Java Module
-System does not let two modules share a package. The test module is an `open module` (so the framework can
-reflect over the tests), `requires` the module under test and the framework, and carries a `@jenesis.test`
-tag naming the module it tests:
+A **modular** project puts its tests in a **separate module**, which reads the module under test as any
+other module does. When a test needs more than the exported API, the Java Module System already has the
+means: the module under test exports a package to the test module by name, with
+`exports sample.greeter.internal to demo.greeter.test`. That grants access one package at a time, to one
+named module. Placing tests in the same package instead would reach package-private members, which is the
+kind of access modules were made to prevent.
+
+The test module is an `open module` (so the framework can reflect over the tests), `requires` the module
+under test and the framework, and carries a `@jenesis.test` tag naming the module it tests:
 
 ```java
 /**
@@ -90,6 +95,8 @@ is wired for it, and it is never staged - not even under `jenesis.stage.tests`, 
 modules beside the modules they test. Since `abstract` is a Java keyword it can never be a module name, so
 the two forms of the tag never collide.
 
+{% demos 3, 4, 32 %}
+
 ### Skipping the tests
 
 To compile and package without running the test suite - a fast inner loop, or a machine that only builds
@@ -121,10 +128,8 @@ A `pom.xml` project sets the same thing through the `maven.compiler.release` pro
 
 Without either, the module compiles for the release of the JDK running the build: `--release 25` on any JDK
 25, and Kotlin and Scala sources target the same release. That keeps the output the same across updates and
-vendors of one JDK, because without `--release` `javac` writes the JDK's full version, such as `25.0.3`, into
-`module-info.class`. `javac` refuses an `--add-exports` or `--add-reads` into a JDK module alongside a
-release, so exporting a JDK package into a compilation is not supported. Which JDK runs the build can be
-named as well, as described under [The JDK a build runs on](#the-jdk-a-build-runs-on).
+vendors of one JDK. Which JDK runs the build can be named as well, as described under
+[The JDK a build runs on](#the-jdk-a-build-runs-on).
 
 ### One jar, several Java versions
 
@@ -134,7 +139,7 @@ its own version at launch. You get one from a source convention: anything under
 
 ```
 sources/
-├── module-info.java                           @jenesis.release 21
+├── module-info.java   # @jenesis.release 21
 ├── sample/Platform.java   # the Java 21 baseline
 └── META-INF/versions/25/sample/Platform.java   # the Java 25 override
 ```
@@ -142,6 +147,8 @@ sources/
 The jar that comes out runs the baseline on a Java 21 runtime and the override on Java 25 - one artifact, two
 implementations, selected by the JVM. Nothing else is needed: producing an overlay is what marks the jar
 `Multi-Release: true`, the flag that tells the JVM to look in the versioned directory at all.
+
+{% demos 9 %}
 
 ### Source and API-documentation jars
 
@@ -158,6 +165,8 @@ java -Djenesis.project.sources=true \
 documentation tool (`javadoc` for Java) and adds a `-javadoc.jar`. Both are off by default because they cost
 build time you do not want on every inner-loop run. Turn them on for a release, or record them in a profile
 (see *[Configuration](/tool/configuration/)*).
+
+{% demos 58 %}
 
 ### Reproducible archives
 
@@ -183,6 +192,194 @@ fixes the line endings of every file Git treats as text, whatever machine checks
 ```
 * text=auto eol=lf
 ```
+
+{% demos 60 %}
+
+## Passing extra arguments to a tool
+
+Jenesis picks sensible flags for `javac` and the other tools it forks, but sometimes you need one more. You
+add it with a **`process-<command>.properties`** file in a configuration folder (`build.jenesis/`, as covered
+in *Configuration*), with no build script required. The file is named after the tool, and each entry is a
+flag with its argument:
+
+```properties
+# process-javac.properties  →  compile with -parameters, and report up to 500 warnings
+-parameters
+-Xmaxwarns=500
+```
+
+Each key is a flag and its value the flag's argument, so the second line passes `-Xmaxwarns 500`. A key with
+**no value emits a bare flag**, as the first line does; a value with embedded newlines repeats the flag once
+per line. The file merges over the arguments Jenesis already generates - so `javac` here receives both the
+build's own `--release` and your two flags.
+
+The same mechanism works for every tool the build forks: `javac`, `kotlinc`, `scalac`, `jar`, `jmod`, `jlink`,
+`jpackage`, and `native-image`. Two names address the forked JVMs specifically: **`process-java.properties`**
+applies to *every* forked `java` process, while **`process-test.properties`** targets only the test JVM
+(merged over the `java` file, with test keys winning).
+
+<div class="tip">
+  Because the file lives in a configuration folder, it is profile-aware and resolved by first match. A
+  profile can add a flag for one build, and an empty <code>process-javac.properties</code> in a more specific
+  folder switches an inherited flag back off. This is the profile-aware way to compile a single module with
+  extra <code>javac</code> flags.
+</div>
+
+{% demos 10 %}
+
+## Annotation processing
+
+A Java annotation processor (JSR-269) is turned on with a single `@jenesis.plugin` tag on the module
+declaration, naming the processor **by module name** (or `<repository>/<coordinate>`):
+
+```java
+/**
+ * @jenesis.plugin org.immutables.value
+ */
+module demo.annotations {
+    requires static org.immutables.value;
+}
+```
+
+Jenesis resolves the processor, places it on `javac`'s **processor path** (`--processor-module-path`), and the
+compiler runs it.
+
+<div class="warning">
+  Processors are run <strong>only from what you declare</strong>. A dependency that happens to bundle a
+  processor - even one that is also a <code>requires</code> of your module, and so already on the module path -
+  never runs unless a <code>@jenesis.plugin</code> tag places it on the processor path. Delete the tag and the
+  processor silently stops running; the class it generates is never produced and the build fails to compile.
+</div>
+
+The same tag, with a compiler name in front (`@jenesis.plugin kotlinc <coordinate>`), declares a compiler
+plugin for another language - covered in *Other JVM languages*.
+
+{% demos 11, 36 %}
+
+## Running a module's main
+
+To *run* a module rather than just build it, declare its entry point and launch it with **`Execute.java`**, the
+companion of `Make.java` in the same folder. Declaring the main class differs by layout but converges on
+the same result:
+
+- a **modular** project uses a `@jenesis.main` tag on `module-info.java`:
+
+  ```java
+  /**
+   * @jenesis.main sample.Sample
+   */
+  module demo.app {
+      exports sample;
+  }
+  ```
+
+- a **`pom.xml`** project sets a `<mainClass>` property instead:
+
+  ```xml
+  <properties>
+      <mainClass>sample.Sample</mainClass>
+  </properties>
+  ```
+
+`Execute.java` **builds the project first**, then launches the main class in a fresh `java` process, forwarding
+any trailing arguments to your program:
+
+```bash
+java build/jenesis/Execute.java ada lovelace
+```
+
+### Implicit vs. explicit main
+
+If exactly one module declares a main class, `Execute` selects it **implicitly** - you pass nothing. If several
+do, it stops and lists the candidates; name the one you want **explicitly** with two properties, which also
+narrows the build to that module's subtree:
+
+```bash
+java -Djenesis.execute.module=tools \
+     -Djenesis.execute.mainClass=org.example.tools.Cli \
+     build/jenesis/Execute.java --help
+```
+
+`jenesis.execute.module` takes the same module path you would write after `+` in a build selector.
+
+<div class="note">
+  <code>Execute</code> can also run the launched program inside a container, independently of the build - see
+  <em>Build performance &amp; isolation</em>. Running an <em>already-published</em> module instead of the
+  current project is the job of <a href="/jpx/">jpx</a>.
+</div>
+
+{% demos 6, 7 %}
+
+## Attaching a Java agent
+
+Some libraries have to run as a `-javaagent` rather than be called through an API - a tracer that instruments
+classes as they load, a mocking library that redefines them. A `@jenesis.attach` tag on the module declaration
+adds one to the `java` commands that module owns: its test run, and the `Execute` run of its `@jenesis.main`.
+
+```java
+/**
+ * @jenesis.main demo.agents.Application
+ * @jenesis.attach io.opentelemetry.javaagent/opentelemetry-javaagent
+ */
+module demo.agents {
+    exports demo.agents;
+}
+```
+
+The token is a module name or a `<groupId>/<artifactId>`, and everything after it is passed to the agent as
+its option string. There is no version slot: the version comes from a dependency you declare, from a pin, or
+floats to the latest. A `pom.xml` project declares the same lines in a project-level
+`<!--jenesis.attach ... -->` block.
+
+One tag covers both shapes. The OpenTelemetry agent above is **agent-only** - required by nothing, on no
+compile or runtime path. Mockito is the other shape, a **dependency that also attaches**, named by a
+`requires` *and* an attach declaration; both resolve to the same file.
+
+An attachment belongs to the module that declares it and never propagates to a dependent, so a test module
+attaches to its own test run:
+
+```java
+/**
+ * @jenesis.test demo.agents
+ * @jenesis.attach org.mockito
+ */
+open module demo.agents.test {
+    requires demo.agents;
+    requires org.mockito;
+}
+```
+
+<div class="note">
+  The resolved jar has to carry a <code>Premain-Class</code> manifest attribute - that is what makes it an
+  agent - and the build says so with a clear error before the launch rather than letting the JVM fail. Agents
+  are ordinary dependencies otherwise: they resolve, pin, and appear in the bill of materials like any other.
+</div>
+
+{% demos 48 %}
+
+## Watch mode
+
+While you are editing, keep the build process alive and let it rebuild on every save. Set
+`jenesis.project.watch`:
+
+```bash
+java -Djenesis.project.watch=true build/jenesis/Make.java
+```
+
+The first build runs as usual; Jenesis then watches the project root and re-runs the target whenever a file
+changes, reusing the content-hash cache so only the steps whose inputs moved run again - a no-op change
+settles in well under a second. The output folders and dot-directories are excluded, so the build's own
+writes never trigger a rebuild. Press Ctrl+C to stop.
+
+Module selectors still apply, so you can watch just one module's subgraph:
+
+```bash
+java -Djenesis.project.watch=true build/jenesis/Make.java +mymodule
+```
+
+Setting `jenesis.project.watch=true` in a `jenesis.properties` file makes watch a project's default. Watch mode
+already skips a module's tests when none of its inputs changed; it can go finer and re-run only the tests a
+change can reach - a development-loop optimisation covered in *[Code quality & testing](/tool/code-quality-and-testing/)*.
 
 ## The JDK a build runs on
 
@@ -258,203 +455,4 @@ another match. GitHub's hosted Linux runners install the JDKs of `actions/setup-
 so a job that searches for one restricts it first, with `chmod -R go-w` on its folder. Windows has no such
 check, so there the search relies on the protection of `C:\Program Files` and of your user profile.
 
-The [`toolchain`](https://github.com/jenesis/jenesis/tree/main/demo/demo-61-toolchain) demo names JDK 25 in
-its `jenesis.properties`. CI starts it on JDK 25, asks for 26, and checks that the program reports 26 on
-Linux, macOS and Windows.
-
-## Passing extra arguments to a tool
-
-Jenesis picks sensible flags for `javac` and the other tools it forks, but sometimes you need one more. You
-add it with a **`process-<command>.properties`** file in a configuration folder (`build.jenesis/`, as covered
-in *Configuration*), with no build script required. The file is named after the tool, and each entry is a
-flag with its argument:
-
-```properties
-# process-javac.properties  →  compile with -parameters
--parameters=
-```
-
-Each key is a flag and its value the flag's argument. An **empty value emits a bare flag** (as above); a value
-with embedded newlines repeats the flag once per line. The file merges over the arguments Jenesis already
-generates - so `javac` here receives both the build's own `--release` and your `-parameters`.
-
-The same mechanism works for every tool the build forks: `javac`, `kotlinc`, `scalac`, `jar`, `jmod`, `jlink`,
-`jpackage`, and `native-image`. Two names address the forked JVMs specifically: **`process-java.properties`**
-applies to *every* forked `java` process, while **`process-test.properties`** targets only the test JVM
-(merged over the `java` file, with test keys winning).
-
-<div class="tip">
-  Because the file lives in a configuration folder, it is profile-aware and resolved by first match. A
-  profile can add a flag for one build, and an empty <code>process-javac.properties</code> in a more specific
-  folder switches an inherited flag back off. This is the profile-aware way to compile a single module with
-  extra <code>javac</code> flags.
-</div>
-
-## Annotation processing
-
-A Java annotation processor (JSR-269) is turned on with a single `@jenesis.plugin` tag on the module
-declaration, naming the processor **by module name** (or `<repository>/<coordinate>`):
-
-```java
-/**
- * @jenesis.plugin org.immutables.value
- */
-module demo.annotations {
-    requires static org.immutables.value;
-}
-```
-
-Jenesis resolves the processor, places it on `javac`'s **processor path** (`--processor-module-path`), and the
-compiler runs it. The version is pinned the usual way: the `pin` step writes back the `@jenesis.pin` line for
-you (pinning is covered in *[Pinning & bills of materials](/tool/pinning/)*).
-
-<div class="warning">
-  Processors are run <strong>only from what you declare</strong>. A dependency that happens to bundle a
-  processor - even one that is also a <code>requires</code> of your module, and so already on the module path -
-  never runs unless a <code>@jenesis.plugin</code> tag places it on the processor path. Delete the tag and the
-  processor silently stops running; the class it generates is never produced and the build fails to compile.
-</div>
-
-The same tag, with a compiler name in front (`@jenesis.plugin kotlinc <coordinate>`), declares a compiler
-plugin for another language - covered in *Other JVM languages*.
-
-## Running a module's main
-
-To *run* a module rather than just build it, declare its entry point and launch it with **`Execute.java`**, the
-companion of `Make.java` in the same folder. Declaring the main class differs by layout but converges on
-the same result:
-
-- a **modular** project uses a `@jenesis.main` tag on `module-info.java`:
-
-  ```java
-  /**
-   * @jenesis.main sample.Sample
-   */
-  module demo.app {
-      exports sample;
-  }
-  ```
-
-- a **`pom.xml`** project sets a `<mainClass>` property instead:
-
-  ```xml
-  <properties>
-      <mainClass>sample.Sample</mainClass>
-  </properties>
-  ```
-
-`Execute.java` **builds the project first**, then launches the main class in a fresh `java` process, forwarding
-any trailing arguments to your program:
-
-```bash
-java build/jenesis/Execute.java ada lovelace
-```
-
-### Implicit vs. explicit main
-
-If exactly one module declares a main class, `Execute` selects it **implicitly** - you pass nothing. If several
-do, it stops and lists the candidates; name the one you want **explicitly** with two properties, which also
-narrows the build to that module's subtree:
-
-```bash
-java -Djenesis.execute.module=tools \
-     -Djenesis.execute.mainClass=org.example.tools.Cli \
-     build/jenesis/Execute.java --help
-```
-
-`jenesis.execute.module` takes the same module path you would write after `+` in a build selector.
-
-<div class="note">
-  <code>Execute</code> can also run the launched program inside a container, independently of the build - see
-  <em>Build performance &amp; isolation</em>. Running an <em>already-published</em> module instead of the
-  current project is the job of <a href="/jpx/">jpx</a>.
-</div>
-
-## Attaching a Java agent
-
-Some libraries have to run as a `-javaagent` rather than be called through an API - a tracer that instruments
-classes as they load, a mocking library that redefines them. A `@jenesis.attach` tag on the module declaration
-adds one to the `java` commands that module owns: its test run, and the `Execute` run of its `@jenesis.main`.
-
-```java
-/**
- * @jenesis.main demo.agents.Application
- * @jenesis.attach io.opentelemetry.javaagent/opentelemetry-javaagent
- */
-module demo.agents {
-    exports demo.agents;
-}
-```
-
-The token is a module name or a `<groupId>/<artifactId>`, and everything after it is passed to the agent as
-its option string. There is no version slot: the version comes from a dependency you declare, from a pin, or
-floats to the latest. A `pom.xml` project declares the same lines in a project-level
-`<!--jenesis.attach ... -->` block.
-
-One tag covers both shapes. The OpenTelemetry agent above is **agent-only** - required by nothing, on no
-compile or runtime path. Mockito is the other shape, a **dependency that also attaches**, named by a
-`requires` *and* an attach declaration; both resolve to the same file.
-
-An attachment belongs to the module that declares it and never propagates to a dependent, so a test module
-attaches to its own test run:
-
-```java
-/**
- * @jenesis.test demo.agents
- * @jenesis.attach org.mockito
- */
-open module demo.agents.test {
-    requires demo.agents;
-    requires org.mockito;
-}
-```
-
-<div class="note">
-  The resolved jar has to carry a <code>Premain-Class</code> manifest attribute - that is what makes it an
-  agent - and the build says so with a clear error before the launch rather than letting the JVM fail. Agents
-  are ordinary dependencies otherwise: they resolve, pin, and appear in the bill of materials like any other.
-</div>
-
-## Watch mode
-
-While you are editing, keep the build process alive and let it rebuild on every save. Set
-`jenesis.project.watch`:
-
-```bash
-java -Djenesis.project.watch=true build/jenesis/Make.java
-```
-
-The first build runs as usual; Jenesis then watches the project root and re-runs the target whenever a file
-changes, reusing the content-hash cache so only the steps whose inputs moved run again - a no-op change
-settles in well under a second. The output folders and dot-directories are excluded, so the build's own
-writes never trigger a rebuild. Press Ctrl+C to stop.
-
-Module selectors still apply, so you can watch just one module's subgraph:
-
-```bash
-java -Djenesis.project.watch=true build/jenesis/Make.java +mymodule
-```
-
-Setting `jenesis.project.watch=true` in a `jenesis.properties` file makes watch a project's default. Watch mode
-already skips a module's tests when none of its inputs changed; it can go finer and re-run only the tests a
-change can reach - a development-loop optimisation covered in *[Code quality & testing](/tool/code-quality-and-testing/)*.
-
-<div class="demo">
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-03-java-pom-multi">demo-03</a> and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-04-java-modular-multi">demo-04</a> each carry
-  a tested module - one in <code>src/test</code> style, one as a separate test module;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-06-java-pom-executable">demo-06</a> (a
-  <code>pom.xml</code> app with <code>&lt;mainClass&gt;</code>) and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-07-java-modular-executable">demo-07</a> (a
-  modular app with <code>@jenesis.main</code>) declare an entry point, each driven by its own
-  <code>build/Demo.java</code>;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-09-java-multi-release">demo-09</a> builds a
-  multi-release jar with a Java 25 override of one class;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-10-javac-arguments">demo-10</a> hands
-  <code>javac</code> a <code>-parameters</code> flag through <code>process-javac.properties</code>;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-11-annotations">demo-11</a> runs an annotation
-  processor (Immutables); and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-48-agents">demo-48</a> attaches Mockito to
-  its tests and the OpenTelemetry agent to its application run. Each is a runnable project - see
-  <a href="/tool/demos/">Demos</a>.
-</div>
+{% demos 61 %}

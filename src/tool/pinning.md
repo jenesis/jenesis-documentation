@@ -48,9 +48,7 @@ module demo.app {
 
 A project on the [JEP 467](https://openjdk.org/jeps/467) Markdown form declares them in `///` comments
 instead, and `pin` writes back in whichever form the comment already uses - creating a `/** … */` only where
-there is no comment at all, so a project never ends up with one of each. It is also why a platform guard is
-written `(windows)` rather than `[windows]`: a bracketed word is a reference link in Markdown, which javadoc
-then reports as unresolved.
+there is no comment at all, so a project never ends up with one of each.
 
 <div class="warning">
   <strong>Explanatory prose goes above the tag block, never below or between the tags.</strong> A javadoc tag
@@ -172,6 +170,8 @@ works on a `pom.xml`'s `<!--jenesis.pin ... -->` block, where it selects a coord
   guards fail the build, while an unmatched guard with no fallback simply leaves the module unpinned.
 </div>
 
+{% demos 23, 24 %}
+
 ## Enforcing the pins
 
 How strictly the recorded pins are enforced is controlled by one property,
@@ -189,11 +189,19 @@ mode goes further and refuses to build at all until *nothing* is left unpinned, 
 once a project is fully pinned. Run `pin`, commit, then build under `-Djenesis.dependency.pin=strict` so no
 new un-vetted artifact can slip in unnoticed.
 
+Strict mode pairs well with the `managed` resolution strategy from
+*[Dependencies](/tool/dependencies/#letting-nothing-in-that-you-did-not-name)*. Because `pin` writes the whole
+resolved closure, a pinned project satisfies `managed` as it stands, and the strategy keeps it that way. The two
+answer different questions: strict pinning asks whether every artifact has a checksum, `managed` asks whether
+every version was a decision somebody wrote down.
+
 <div class="note">
   First-party artifacts built within the project are exempt from the strict checksum requirement - only
   third-party jars pulled from a repository must be pinned. So a multi-module project's own modules never need
   a checksum to satisfy strict mode.
 </div>
+
+{% demos 25 %}
 
 ## Refreshing the pins
 
@@ -204,9 +212,18 @@ them, run `pin` with the enforcement turned off:
 java -Djenesis.dependency.pin=ignore build/jenesis/Make.java pin
 ```
 
-`ignore` drops every existing pin: versions float to the latest the repository offers and the recorded
-checksums are not consulted. `pin` then re-resolves that fresh closure and rewrites each `pom.xml` (or
-`module-info.java`) with the new versions and freshly computed checksums.
+`ignore` sets the recorded checksums aside and keeps a pinned version only for a dependency the project
+declares directly; every other version is resolved afresh. `pin` then rewrites each `pom.xml` (or
+`module-info.java`) with the resulting versions and freshly computed checksums.
+
+Resolving afresh does not by itself mean newer: versions are chosen by the
+*[resolution strategy](/tool/dependencies/#choosing-a-different-strategy)*, as in any build. To move the
+closure forward, pick the strategy for the refresh. `stable` takes the newest version of each Maven
+coordinate that is not a pre-release, declared ones included:
+
+```bash
+java -Djenesis.dependency.pin=ignore -Djenesis.resolver.maven=stable build/jenesis/Make.java pin
+```
 
 <div class="warning">
   This step <em>establishes</em> trust rather than enforcing it. Because it bypasses checksum verification
@@ -252,6 +269,8 @@ The second line shows the other source a BOM can come from: **a published Maven 
 third form names a module, which resolves a BOM published under that module name through the module index
 or from your local module repository, versioned and checksummed, or floating to the latest published file.
 
+{% demos 17 %}
+
 ### Which source seals how much
 
 The three forms differ in how far they can be sealed, and that difference is the whole reason to know which
@@ -293,14 +312,3 @@ Only the `main` group is written. A BOM is read under the group its declaration 
 belonging to a tool's own group - the linter or alternative compiler a build module resolves for itself -
 would be read back as a repository name, and is left out rather than written wrong. First-party modules of
 the project are left out too, for the same reason a pin never records them: they are built, not resolved.
-
-<div class="demo">
-  Every demo ships already pinned, so any of them shows the result. Three are about pinning itself:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-23-platform-guard">demo-23</a> pins a
-  classified variant and switches between two of them with a guard;
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-17-bom">demo-17</a> imports a Maven BOM and a
-  local pin file side by side and builds under strict pinning with almost no pin lines of its own, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-25-pinning">demo-25</a> proves
-  both guarantees by getting them wrong on purpose - an unpinned dependency and a wrong checksum, each
-  rejected. See <a href="/tool/demos/">Demos</a>.
-</div>
