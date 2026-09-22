@@ -207,4 +207,5 @@ command line or in the project's `jenesis.properties`, but not in a profile or i
   complete, runnable example of everything here - a base build with no extras, and a <code>release</code>
   profile that chains to <code>supply-chain</code> to add source jars and strict pinning without changing a
   single command-line flag. See <a href="/tool/demos/">Demos</a>.
+  To also see settings decide what a build produces, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-10-javac-arguments">demo-10</a> passes extra flags to <code>javac</code> from a file beside the project, and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-47-docker-isolation">demo-47</a> confines a whole build to a container from one setting.
 </div>

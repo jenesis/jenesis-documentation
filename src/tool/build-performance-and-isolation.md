@@ -234,4 +234,5 @@ Eviction runs on write and goes by file timestamp, which `touch` keeps fresh on 
   with Docker, and
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-46-build-cache">demo-46</a> serves a forced full
   rebuild entirely from the build cache. See <a href="/tool/demos/">Demos</a>.
+  To also see what a build pays to start, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-05-startup">demo-05</a> measures it with and without a reused JVM, and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-34-test-selection">demo-34</a> re-runs only the tests a change can reach.
 </div>

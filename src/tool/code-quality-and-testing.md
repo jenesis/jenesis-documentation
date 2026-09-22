@@ -338,7 +338,7 @@ a linter's own closure can run to a hundred artifacts - which is what makes the 
 
 <div class="demo">
   Five runnable demos exercise this chapter:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-32-java-quality">demo-32</a> wires Checkstyle,
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-31-java-quality">demo-31</a> wires Checkstyle,
   PMD, SpotBugs and the Java formatter into one project;
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-33-code-coverage">demo-33</a> measures
   coverage with JaCoCo;
@@ -348,4 +348,5 @@ a linter's own closure can run to a hundred artifacts - which is what makes the 
   both mutants of a covered method; and
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-37-api-compatibility">demo-37</a> compares a
   built jar against a released one with japicmp. See <a href="/tool/demos/">Demos</a>.
+  To also see a test run shaped by the project, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-32-test-framework">demo-32</a> runs tests whose module names no engine, and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-36-jmh">demo-36</a> generates, compiles and runs a JMH benchmark.
 </div>
