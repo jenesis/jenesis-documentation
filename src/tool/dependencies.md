@@ -372,7 +372,7 @@ means reaching it by its Maven coordinate. The strict `modular` layout rejects t
   it; and
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-18-module-alias">demo-18</a> gives args4j -
   a library with no module identity at all - a name of its own and opens a package to it; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-21-module-override">demo-21</a> puts the
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-20-module-override">demo-20</a> puts the
   Jakarta Server Pages API, a modular library, on a module path with Tomcat Embed, which carries the servlet
   packages itself. Each is a runnable project - see <a href="/tool/demos/">Demos</a>.
 </div>
@@ -482,9 +482,10 @@ Each of these is reported when it is declared, naming what to write instead:
 
 <div class="demo">
   Two runnable projects cover this section:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-22-module-layers">demo-22</a> runs three
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-21-module-layers">demo-21</a> runs three
   versions of Jackson in one JVM - nested, and exercised by tests - with the consumer declaring nothing; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-23-module-layer-legacy">demo-23</a> hides
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-22-module-layer-legacy">demo-22</a> hides
   Commons BeanUtils and the jars it drags, naming only the one its code calls. Each is a runnable project -
   see <a href="/tool/demos/">Demos</a>.
+  To also see a dependency resolved from somewhere else, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-59-module-convention">demo-59</a> resolves modules from your own Maven repository, and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-17-bom">demo-17</a> curates versions with a bill of materials.
 </div>

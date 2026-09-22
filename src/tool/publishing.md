@@ -244,9 +244,10 @@ build.
 </div>
 
 <div class="demo">
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-57-publishing">demo-57</a> stages a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-58-publishing">demo-58</a> stages a
   Central-ready bundle - POM metadata, sources and javadoc jars - and then resolves the coordinate straight
   back out of the staged tree to prove it is complete, entirely offline;
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-17-bom">demo-17</a> publishes a BOM of its own
   closure. Each is a runnable project - see <a href="/tool/demos/">Demos</a>.
+  To also see what publishing produces, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-58-publishing">demo-58</a> assembles a Maven Central ready bundle and resolves it back, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-59-module-convention">demo-59</a> resolves your own modules from your own Maven repository, and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-60-reproducible">demo-60</a> checks the jar against a recorded digest.
 </div>

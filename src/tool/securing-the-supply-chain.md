@@ -165,46 +165,38 @@ every expired key as a failure would mean deleting the declaration, which verifi
 | `signing` | is accepted for what it signed **before** it expired - the default |
 | `current` | is always rejected, however old the signature |
 
-The default reads the signature's own date against the key's expiry, both of which gpgv reports while it
-verifies, so nothing extra is fetched or asked. A signature made *after* the key expired still fails under
-`signing`, and so does one whose expiry gpgv does not report - an expiry that cannot be established is refused
-rather than assumed. Revocation is never affected: a revoked key fails under every value, because revocation
-says the key should not have been trusted, where expiry only says it is no longer current.
-
-`-Djenesis.print.signatures` marks a coordinate accepted this way `[EXPIRED]` rather than `[VERIFIED]`, with
-the date it was signed and the date the key lapsed, so the ones resting on an unmaintained key can be found
-and reviewed rather than passing silently.
+The default reads the signature's date against the key's expiry, both of which `gpgv` reports while it
+verifies, so nothing extra is fetched. A signature made *after* the key expired fails under `signing`, and so
+does one whose expiry `gpgv` does not report - an expiry that cannot be established is refused rather than
+assumed. Revocation is never affected: a revoked key fails under every value, because revocation says the key
+should not have been trusted where expiry only says it is no longer current.
+`-Djenesis.print.signatures` marks such a coordinate `[EXPIRED]` rather than `[VERIFIED]`, with both dates,
+so the ones resting on an unmaintained key can be reviewed rather than passing silently.
 
 <div class="note">
   A fingerprint carries no expiry, and neither does the <code>.asc</code>. The fingerprint hashes the public
-  key itself, while the expiry is an assertion in the key's self-signature, which is why extending a key's
-  expiry leaves its fingerprint - and so your <code>@jenesis.signature</code> line - untouched, and why the
-  expiry has to come from the keyring at the moment of verification.
+  key, while the expiry is an assertion in the key's self-signature - so extending a key's expiry leaves your
+  <code>@jenesis.signature</code> line untouched, and the expiry has to come from the keyring at the moment of
+  verification.
 </div>
 
-Verification is a step of the dependency module rather than something wired beside it, so it rides along with
-every resolution a build performs - a module's own closure, and equally the linter, formatter, alternative
-compiler or test launcher a build module resolves for itself. Switching the property on re-runs only that step
-rather than re-downloading anything, and the fetched `.asc` files are cached beside the jars they verify.
-It is deliberately no part of `pin`: `pin` pins, recording the versions and checksums a resolution produced,
-and it never adds, removes or reads a signature line. Keeping them apart is what stops the dangerous operation
-from looking safer than it is: a pin refresh re-blesses whatever the repository serves today, and a signature
-is the one check that still has something to say while the checksums are being rewritten.
+Verification is part of the dependency step, so it covers every resolution a build performs - a module's own
+closure, and equally the linter, formatter, compiler or test launcher a build module resolves for itself.
+Switching it on re-runs that step alone, and fetched `.asc` files are cached beside the jars. It is
+deliberately no part of `pin`, which records versions and checksums and never reads or writes a signature
+line: a pin refresh re-blesses whatever the repository serves today, and the signature is the one check that
+still has something to say while the checksums are being rewritten.
 
-When verification is switched on - and only then - it forks the `gpgv` command rather than linking a library,
-so **gpgv has to be installed and on the `PATH` of whatever machine runs it**. A build that has not enabled it
-needs none of this. That the verifier is a forked tool is not a convenience: a Java OpenPGP implementation would have to be resolved from a
-repository, which is the very thing being verified, and a verifier you downloaded on trust verifies nothing.
-The same reasoning keeps `build.jenesis` free of third-party libraries, and it is why the tool declines to
-obtain one for you. `-Djenesis.openpgp.command` names a different binary when yours is not called `gpgv`: a plain name is looked
-up on the `PATH`, and a value containing a path separator is used as a path, so a wrapper script can be named
-without rewriting the `PATH`.
+Verification forks `gpgv`, so **it has to be installed and on the `PATH`** of the machine that runs it; a
+build that has not enabled verification needs none of this. Forking is the point - a Java OpenPGP library
+would have to be resolved from the repository being verified, and a verifier downloaded on trust verifies
+nothing. `-Djenesis.openpgp.command` names another binary: a plain name is looked up on the `PATH`, a value
+with a path separator is used as a path.
 
-`gpgv` is the verify-only half of GnuPG. It reads a keyring file and nothing else: no home directory, no
-agent, no trust database, no import step, and so none of the ambient state that makes "it works on my
-machine" a signature problem. **Jenesis builds that keyring itself**, out of the fingerprints your
-declarations name and nothing else - which is why `NO_PUBKEY` means exactly *no line covers this signer*
-rather than *your keyring is incomplete*.
+`gpgv` is the verify-only half of GnuPG. It reads a keyring file and nothing else - no home directory, no
+agent, no trust database, no import step - and **Jenesis builds that keyring** from the fingerprints your
+declarations name, which is why `NO_PUBKEY` means *no line covers this signer* rather than *your keyring is
+incomplete*.
 
 ### Where the keys come from
 
@@ -596,10 +588,11 @@ vvICkc3m62RNUgkmtjvx8eFFVBJP
 ```
 
 <div class="demo">
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-26-pinning">demo-26</a>
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-25-pinning">demo-25</a>
   proves three of these guarantees by getting each wrong on purpose: an unpinned dependency rejected by strict
   pinning, a wrong checksum rejected always, and a dependency signed by a key other than the declared one. It
   generates its own key and artifact, so it runs offline.
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-47-docker-isolation">demo-47</a> shows the
   isolation half. See <a href="/tool/demos/">Demos</a>.
+  To also see the other half of the chain, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-27-sigstore">demo-27</a> verifies a release by the identity that published it, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-25-pinning">demo-25</a> shows what strict pinning refuses, and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-57-code-signing">demo-57</a> signs the jar the build produces.
 </div>

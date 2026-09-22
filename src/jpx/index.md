@@ -57,7 +57,7 @@ published module too.
 
 <div class="demo">
   Prefer to read it running? The
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-61-jpx">jpx demo</a> is a single file that
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-63-jpx">jpx demo</a> is a single file that
   installs the JUnit console launcher, names it once as a module and once as a coordinate, and verifies both
   against a digest before launching them.
 </div>

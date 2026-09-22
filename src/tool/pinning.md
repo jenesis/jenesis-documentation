@@ -310,14 +310,12 @@ would be read back as a repository name, and is left out rather than written wro
 the project are left out too, for the same reason a pin never records them: they are built, not resolved.
 
 <div class="demo">
-  Every demo ships already pinned, so any of them shows the result. Four are about pinning itself:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-19-module-classifier">demo-19</a> pins a
-  classified variant of a module and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-24-platform-guard">demo-24</a> switches
-  between two variants with a guard;
+  Every demo ships already pinned, so any of them shows the result. Three are about pinning itself:
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-23-platform-guard">demo-23</a> pins a
+  classified variant and switches between two of them with a guard;
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-17-bom">demo-17</a> imports a Maven BOM and a
   local pin file side by side and builds under strict pinning with almost no pin lines of its own, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-26-pinning">demo-26</a> proves
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-25-pinning">demo-25</a> proves
   both guarantees by getting them wrong on purpose - an unpinned dependency and a wrong checksum, each
   rejected. See <a href="/tool/demos/">Demos</a>.
 </div>

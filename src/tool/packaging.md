@@ -364,6 +364,7 @@ footprint matter more.
   content into a <code>.jmod</code> and carries it through jlink into a jpackage image;
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-18-module-alias">demo-18</a> makes an
   unlinkable closure linkable with a <code>modules.properties</code>; and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-60-native-image">demo-60</a> builds a GraalVM
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-62-native-image">demo-62</a> builds a GraalVM
   native image end to end. See <a href="/tool/demos/">Demos</a>.
+  To also see what else a build can emit, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-62-native-image">demo-62</a> compiles the application into a GraalVM binary and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-57-code-signing">demo-57</a> signs the jar it produced.
 </div>

@@ -211,11 +211,11 @@ pinning is recommended for builds in unsecured environments and for releases.
 
 <div class="demo">
   Four runnable projects cover this chapter:
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-29-sbom">demo-29</a> emits an SBOM,
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-30-compliance">demo-30</a> gates a build on a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-28-sbom">demo-28</a> emits an SBOM,
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-29-compliance">demo-29</a> gates a build on a
   permissive-only licence policy,
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-31-vulnerabilities">demo-31</a> catches
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-30-vulnerabilities">demo-30</a> catches
   Log4Shell in a pinned <code>log4j-core</code>, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-26-pinning">demo-26</a> proves
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-25-pinning">demo-25</a> proves
   the pinning guarantees by getting them wrong on purpose. See <a href="/tool/demos/">Demos</a>.
 </div>

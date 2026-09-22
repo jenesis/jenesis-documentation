@@ -177,6 +177,7 @@ cache as expected.
   Two runnable projects show this chapter end to end:
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-04-java-modular-multi">demo-04</a> builds a
   multi-module modular project and prints its module graph, and
-  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-20-module-layout">demo-20</a> is a
+  <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-19-module-layout">demo-19</a> is a
   single-module project under the pure <code>modular</code> layout. See <a href="/tool/demos/">Demos</a>.
+  To also see the graph bent to a project's own shape, <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-49-custom-assembler">demo-49</a> wraps the assembler and <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-55-custom-build">demo-55</a> wires a build by hand.
 </div>
