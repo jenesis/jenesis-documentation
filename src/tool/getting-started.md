@@ -208,13 +208,14 @@ java build/jenesis/Make.java dependencies
 ```
 
 ```
-main/compile (module-sources)
-maven/org.apache.commons/commons-lang3 3.20.0 [compile] (module org.apache.commons.lang3) {Apache-2.0}
+./sources 1-SNAPSHOT (module greeter)
+└─ maven/org.apache.commons/commons-lang3 3.20.0 [compile] (module org.apache.commons.lang3) {Apache-2.0}
 ```
 
-The resolution key, the version that resolved, the Maven scope, the **Java module name** it carries and its
-declared **licence** - a real module graph, not a flat class path. The selector also reports the licences and
-the module shape of the whole closure.
+The tree starts from your own module - its path, its version and its **Java module name** - and every
+dependency hangs below it with the resolution key, the version that resolved, the Maven scope, the module name
+it carries and its declared **licence**: a real module graph, not a flat class path. The selector also reports
+the licences and the module shape of the whole closure.
 
 ### Staging it for release
 
