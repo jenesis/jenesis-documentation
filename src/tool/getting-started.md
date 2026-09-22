@@ -216,6 +216,30 @@ The resolution key, the version that resolved, the Maven scope, the **Java modul
 declared **licence** - a real module graph, not a flat class path. The selector also reports the licences and
 the module shape of the whole closure.
 
+### Staging it for release
+
+`stage` builds and then lays out everything a release consists of:
+
+```bash
+java -Djenesis.project.version=1.0.0 build/jenesis/Make.java stage
+```
+
+```
+target/stage
+├── maven/output/greeter/greeter/1.0.0
+│   ├── greeter-1.0.0.jar               the modular jar, under a Maven coordinate
+│   ├── greeter-1.0.0.pom               generated, so Maven consumers resolve it
+│   └── greeter-1.0.0-cyclonedx.json    the bill of materials
+├── modular/output/greeter/1.0.0
+│   ├── greeter.jar                     the same jar, under its module name
+│   └── greeter.pom
+└── reports/output                      the dependency graph, and what else ran
+```
+
+Nothing was configured to get that: the version came from the command line and the coordinate from the
+module name. `export` then copies the tree into your local Maven repository, your local module repository,
+or both.
+
 <div class="demo">
   The four project shapes are runnable:
   <a href="https://github.com/jenesis/jenesis/tree/main/demo/demo-01-java-pom">demo-01</a> (Maven layout),
@@ -247,17 +271,19 @@ java -Djenesis.test.skip=true \
      build/jenesis/Make.java
 ```
 
-### Layout: how your project is shaped
+### Layout: what a build publishes
 
-`layout` is `auto` by default, which inspects the root and picks:
+`jenesis.project.layout` is `auto` by default, which reads the project and picks. The choice decides what
+`stage` lays out:
 
-- **`maven`** - a `pom.xml` at the root. Jenesis reads the declarative parts of the POM (coordinates,
-  dependencies, source folders) and builds one module per POM.
-- **`modular_to_maven`** - a `module-info.java` and no root `pom.xml`. Jenesis builds real Java modules but
-  also emits a generated `pom.xml`, so each artifact stays Maven-publishable. This is what `auto` resolves
-  to for a modular project.
-- **`modular`** - the same, but resolving dependencies purely by Java module name and emitting no `pom.xml`
-  at all. It is opt-in (`-Djenesis.project.layout=modular`), for artifacts consumed only as Java modules.
+| Layout | The project declares | `stage` produces |
+| --- | --- | --- |
+| `maven` | a `pom.xml`; a `module-info.java` is ignored | the Maven tree only |
+| `modular_to_maven` | a `module-info.java`, no root `pom.xml` | both trees, as above: a modular jar that a Maven consumer can still resolve, through a generated POM |
+| `modular` | a `module-info.java` | the modular tree only - a modular jar, resolved by module name, with nothing for Maven |
+
+`auto` resolves to `maven` or `modular_to_maven`; the strict `modular` layout is opt-in with
+`-Djenesis.project.layout=modular`, for artifacts consumed only as Java modules.
 
 ### Selectors: choosing what to run
 
