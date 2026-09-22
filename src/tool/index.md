@@ -9,14 +9,7 @@ project already declares - its source layout, its `module-info.java`, the depend
 the build is inferred from, so `java build/jenesis/Make.java` compiles, tests and packages it with the JDK
 you already have and nothing else installed. Where a convention does not cover what a project needs, the
 extension is a small Java function or module describing one step, read, tested and refactored like the rest
-of your code: no markup language to learn, and no plugin ecosystem to install.
-
-Three properties are built in rather than added on. A build is **incremental**: each step is keyed by its
-inputs, so a second build redoes only what changed, and a shared cache extends that across machines. It is
-**reproducible**: the same sources produce the same bytes, on every machine and in CI, which is checked
-against a recorded digest. And its **supply chain is accounted for**: dependencies can be pinned to a
-version and a checksum, verified against OpenPGP signatures or Sigstore identities, held to a licence
-policy, checked against known vulnerabilities, and described in an SBOM the build emits.
+of your code.
 
 A project does not have to be modular to be built. Jenesis reads a `pom.xml` as the description of what to
 build, which is the quickest way to try it on a project you already have, and the way to keep building one
@@ -26,13 +19,25 @@ that is not ready for the Java Module System yet.
 
 Two convictions shape everything here:
 
-- **Convention first, Java where it runs out.** A project's own layout and declarations describe the build,
-  so most builds are written nowhere at all. What a convention cannot express is a few lines of Java,
-  launched by the JDK directly with `java build/jenesis/Make.java`, so a build that does need code gets
-  types, an IDE and refactoring, the same as your application.
-- **The Java Module System is a feature, not a footnote.** `module-info.java` drives the build: Jenesis reads
-  your declared modules, resolves the module path, and carries a real module graph all the way through to
-  packaging, instead of flattening it into a class path.
+- **Convention first, Java where it runs out.** There is no build language to learn and no plugin ecosystem
+  to install. What a convention cannot express is a few lines of Java, launched by the JDK directly with
+  `java build/jenesis/Make.java`, so the build that does need code gets types, an IDE and refactoring, the
+  same as your application.
+- **The Java Module System is a feature, not a footnote.** A `module-info.java` already describes a module -
+  what it is called, what it requires, what it exports - so Jenesis reads the one a project has rather than
+  asking for a second descriptor to keep in sync with it. Those declared modules drive the build: they
+  resolve the dependencies, fill the module path, and carry a real module graph through to packaging,
+  instead of being flattened into a class path.
+
+And three properties are built in rather than added on:
+
+- **Incremental.** Each step is keyed by its inputs, so a second build redoes only what changed, and a
+  shared cache extends that across machines.
+- **Reproducible.** The same sources produce the same bytes, on every machine and in CI, checked against a
+  digest the project records.
+- **A supply chain that is accounted for.** Dependencies can be pinned to a version and a checksum, verified
+  against OpenPGP signatures or Sigstore identities, held to a licence policy, checked against known
+  vulnerabilities, and described in an SBOM the build emits.
 
 <div class="tip">
   New to Jenesis? Read this page, then <strong>Getting started</strong> to install it and run your first
