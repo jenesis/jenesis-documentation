@@ -252,21 +252,15 @@ place.
 
 ## API compatibility
 
-Coverage and mutation testing ask whether your tests are any good. **API compatibility** asks a different
-question: does the jar you are about to publish still work for everyone who compiled against the last one?
-[japicmp](https://siom79.github.io/japicmp/) answers it by comparing byte code, which is the level that
-matters - a caller linked against class files, not against your sources, so a removed method, a narrowed
-return type or a tightened modifier is what breaks them.
+Coverage and mutation testing ask whether your tests are any good. **API compatibility** asks whether the jar
+you are about to publish still works for everyone who compiled against the last one.
+[japicmp](https://siom79.github.io/japicmp/) answers by comparing byte code, which is the level that matters:
+a caller linked against class files, so a removed method, a narrowed return type or a tightened modifier is
+what breaks them.
 
-A `japicmp.properties` in a configuration folder switches it on. With no keys at all, japicmp compares the
-module's freshly built jar against the last release of **that module's own coordinate**:
-
-```properties
-# empty: compare against <this module's groupId>:<its artifactId> at RELEASE
-```
-
-The version floats, so the check follows your releases rather than being re-pointed by hand. A `baseline`
-key names a different artifact, read by how many slashes it carries rather than by any suffix:
+A `japicmp.properties` in a configuration folder switches it on. Empty, it compares the module's fresh jar
+against the last release of **that module's own coordinate**, so the check follows your releases rather than
+being re-pointed by hand. A `baseline` key names another artifact, read by how many slashes it carries:
 
 ```properties
 baseline=com.example/library                           # the latest release
@@ -274,11 +268,10 @@ baseline=com.example/library/1.2.3                     # that version
 baseline=modular/com.example/library/1.2.3             # served from a named repository
 ```
 
-A module with no Maven coordinate has nothing to default to, so leaving the key out there fails with a
-message naming it. In a multi-module project the file is read per module, so a `japicmp.properties` in the
-project-wide configuration folder with no `baseline` gives every module its own coordinate - which is what
-you want. A `baseline` there would point every module at the same artifact, so a per-module baseline belongs
-in that module's own configuration location.
+A module with no Maven coordinate has nothing to default to and says so. The file is read per module, so a
+project-wide `japicmp.properties` without a `baseline` gives every module its own coordinate - a `baseline`
+there would point them all at one artifact, so a per-module baseline belongs in that module's own
+configuration folder.
 
 The remaining keys map onto japicmp's own options:
 
