@@ -305,16 +305,13 @@ Aliases are a `modular_to_maven` feature: they reach an artifact by its Maven co
 ## Replacing a module another artifact already carries
 
 A package belongs to exactly one module, and a library that needs an API `requires` the module owning it.
-Occasionally one does not: it copies the API's classes into its own jar and exports those packages under its
-own name. Tomcat Embed is the notable case. `org.apache.tomcat.embed.core` exports the `jakarta.servlet`
-packages itself, `org.apache.tomcat.embed.el` exports `jakarta.el`, and none of them depends on the API
-artifact.
+Occasionally one does not: Tomcat Embed copies the API's classes into its own jar, so
+`org.apache.tomcat.embed.core` exports the `jakarta.servlet` packages itself and depends on no API artifact.
 
-That leaves two modules exporting one package, which a module descriptor is meant to prevent. It breaks more
-than your own code. A modular library names the API the only way a module can, in its descriptor - the
-Jakarta Server Pages API states `requires transitive jakarta.servlet` - so a module of that name has to be on
-the path or it does not resolve at all. Tomcat supplies the packages but not the name, and adding the API
-artifact beside it carries the packages twice:
+That leaves two modules exporting one package. It breaks more than your own code: a modular library names the
+API the only way a module can, in its descriptor - the Jakarta Server Pages API states
+`requires transitive jakarta.servlet` - so a module of that name must be on the path, and adding the API
+artifact beside Tomcat carries the packages twice:
 
 ```
 error: module not found: jakarta.el
@@ -338,31 +335,28 @@ module demo.override {
 }
 ```
 
-Jenesis then places a module of that name which holds no packages of its own and requires each carrier
-transitively. Reading it reads the carrier's copy under the API's name, because readability is what a
-`requires` grants and the packages come from the carrier's own exports. One line names one module and any
-number of carriers, repeated lines add up, and a carrier no resolved dependency declares is an error rather
-than a silent no-op.
+Jenesis places a module of that name holding no packages of its own, requiring each carrier transitively, so
+reading it reads the carrier's copy under the API's name. One line names one module and any number of
+carriers; a carrier no resolved dependency declares is an error rather than a silent no-op.
 
-The declaration also drops every resolved artifact that declares the overridden module, whether it was
-required directly or arrived through somebody else's POM. The closure therefore carries those packages once,
-and so does the generated POM - a Maven consumer flattening this project onto a class path gets the carrier's
-copy and no second one. Your published descriptor still says `requires jakarta.servlet`, which is the point:
-it names the API rather than the server implementing it here. Consumers that build with Jenesis inherit the
-declaration through the `Jenesis-Overrides` manifest attribute of the produced jar.
+The declaration also drops every resolved artifact that declares the overridden module, however it arrived, so
+the closure and the generated POM carry those packages once. Your published descriptor still says
+`requires jakarta.servlet` - it names the API, not the server implementing it here - and consumers building
+with Jenesis inherit the declaration through the jar's `Jenesis-Overrides` manifest attribute.
 
 Two limits follow from the placed module holding no code. A qualified `exports … to jakarta.servlet` or
-`opens … to jakarta.servlet` grants access to that module, not to the carrier that does the reflecting, so
-open to the carrier or leave the directive unqualified. And requiring it reads everything the carrier exports,
-so code can compile against `org.apache.catalina` while declaring only `requires jakarta.servlet`.
+`opens … to jakarta.servlet` grants access to that module rather than to the carrier that does the
+reflecting, so open to the carrier or leave the directive unqualified; and requiring it reads everything the
+carrier exports, so code can compile against `org.apache.catalina` while declaring only
+`requires jakarta.servlet`.
 
-Overrides are a `modular_to_maven` feature, for the same reason aliases are: dropping the replaced artifact
-means reaching it by its Maven coordinate. The strict `modular` layout rejects the tag.
+Overrides are a `modular_to_maven` feature, as aliases are: dropping the replaced artifact means reaching it
+by its Maven coordinate. The strict `modular` layout rejects the tag.
 
 <div class="note">
   Two artifacts that declare the same module name are refused wherever they meet, override or not. A module
-  path resolves whichever of them comes first, so the build names both coordinates and stops rather than
-  compiling against one and running against the other.
+  path resolves whichever comes first, so the build names both coordinates and stops rather than compiling
+  against one and running against the other.
 </div>
 
 <div class="demo">
