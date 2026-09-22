@@ -228,13 +228,10 @@ cd <unpacked> && java @application.unix.args
 ```
 
 Every path is spelled out rather than handed over as a folder, so a jar is read because the argument file
-names it and never because of where it sits - and because the whole command lives in a file, no closure is
-too large to launch. The graph's own options are in there too, as are the
-[module layers](/tool/dependencies/#keeping-a-dependency-private) the project declares, each as a
-`-Djlayer.modulepath.<layer>` naming its jars. There are two files because the path separator is the only
-part of a launch a bundle cannot know in advance: it is built once and unpacked wherever, so it carries
-both rather than the separator of whoever built it. Dropped onto a `-jre` base it needs no JDK and no
-jpackage.
+names it, not because of where it sits - and since the whole command lives in a file, no closure is too large
+to launch. The [module layers](/tool/dependencies/#keeping-a-dependency-private) a project declares are in
+there too, each as a `-Djlayer.modulepath.<layer>`. There are two files because the path separator is the one
+part of a launch a bundle cannot know in advance. Dropped onto a `-jre` base it needs no JDK and no jpackage.
 
 The trade against an app-image is the classic one. An app-image is self-contained but duplicates the JVM per
 service. A bundle is tiny and shares one JVM layer across every image built on the same base - leaner in
