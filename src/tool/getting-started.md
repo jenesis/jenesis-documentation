@@ -156,7 +156,7 @@ A module declaration, a class, and the engine you just installed:
 
 ```
 greeter
-├── build/jenesis          the engine
+├── build/jenesis   # the engine
 └── sources
     ├── module-info.java
     └── greeter
@@ -227,13 +227,13 @@ java -Djenesis.project.version=1.0.0 build/jenesis/Make.java stage
 ```
 target/stage
 ├── maven/output/greeter/greeter/1.0.0
-│   ├── greeter-1.0.0.jar               the modular jar, under a Maven coordinate
-│   ├── greeter-1.0.0.pom               generated, so Maven consumers resolve it
-│   └── greeter-1.0.0-cyclonedx.json    the bill of materials
+│   ├── greeter-1.0.0.jar   # the modular jar, under a Maven coordinate
+│   ├── greeter-1.0.0.pom   # generated, so Maven consumers resolve it
+│   └── greeter-1.0.0-cyclonedx.json   # the bill of materials
 ├── modular/output/greeter/1.0.0
-│   ├── greeter.jar                     the same jar, under its module name
+│   ├── greeter.jar   # the same jar, under its module name
 │   └── greeter.pom
-└── reports/output                      the dependency graph, and what else ran
+└── reports/output   # the dependency graph, and what else ran
 ```
 
 Nothing was configured to get that: the version came from the command line and the coordinate from the
