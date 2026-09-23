@@ -69,10 +69,10 @@ launcher jar - a deployment that unpacked its dependencies - the same two lists 
 
 <div class="warning">
   A layer that is not bundled in a launcher jar is defined from the <code>jlayer.*</code> system properties
-  when a module first asks for it. Any code can rewrite system properties while the JVM runs, so code that
-  runs earlier - in the application or in an outer layer - can change which jars that layer holds, and so
-  place its own code in another module's layer, outside the encapsulation that layer was declared for. A layer
-  bundled in a launcher jar is read from the jar and is not affected.
+  when a module first asks for it. The JVM lets any code overwrite a system property at any time and offers no
+  way to protect one, so code that runs earlier - in the application or in an outer layer - can change which
+  jars that layer holds, and so place its own code in another module's layer, outside the encapsulation that
+  layer was declared for. A layer bundled in a launcher jar is read from the jar and is not affected.
 </div>
 
 ## Bundled Java agents
