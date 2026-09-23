@@ -270,13 +270,17 @@ discovered module. The other targets:
 
 | Selector | What it does |
 | --- | --- |
-| `build` | Compile, test, and jar every module *(the default)*. |
+| `build` | Compile, jar, and test every module *(the default)*. |
 | `stage` | The full release recipe - build, then lay out a publishable tree under `target/stage/`. |
 | `export` | Publish the staged tree into your local Maven repository (`~/.m2`), your local module repository (`~/.jenesis`), or both. |
+| `release` | Hand the staged tree to a configured release tool, as a dry run unless told otherwise (see *[Publishing](/tool/publishing/)*). |
 | `pin` | Rewrite every `pom.xml` / `module-info.java` to pin the full resolved dependency closure. |
 | `dependencies` | Print each module's resolved dependency graph with licences (shown above). |
 | `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata. |
+| `configuration` | Print every setting with the value in force, one per line. |
+| `properties` | Print only the `jenesis.*` settings this run sets. |
 | `help` | Print the usage screen. |
+| `skill` | Print the briefing a coding agent works from. |
 
 A `+<module>` selector builds just one module's subtree - `+greeter` builds the `greeter` module and
 whatever it depends on, without touching unrelated siblings. Selectors and the build graph they walk are the
