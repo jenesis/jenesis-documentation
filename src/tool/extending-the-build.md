@@ -197,17 +197,16 @@ digest - and leaves only the assembler for you to supply:
 BuildExecutor root = BuildExecutor.of(Path.of("target"));
 root.addModule("maven", MavenProject.make(Path.of("."),
         (descriptor, repositories, resolvers) -> new InferredMultiProjectAssembler().apply(
-                new ProjectModuleDescriptor(
-                        descriptor,                              // the discovered module
-                        new LinkedHashSet<>(List.of(Path.of("."))), // its configuration folders
-                        true,                                    // run its tests
-                        false,                                   // no sources jar
-                        false,                                   // no javadoc jar
-                        null,                                    // pinning: lenient (or Pinning.STRICT, VERSIONS, IGNORE)
-                        PathPlacement.CLASS_PATH),               // place dependencies on the class path
+                new ProjectModuleDescriptor(descriptor)            // the discovered module
+                        .configuration(Path.of("."))               // its configuration folders
+                        .pathPlacement(PathPlacement.CLASS_PATH),  // place dependencies on the class path
                 repositories, resolvers)));
 root.execute(args);
 ```
+
+The descriptor runs the module's tests, attaches no sources or javadoc jar and pins leniently unless told
+otherwise; `test(false)`, `source(true)`, `documentation(true)` and `pinning(Pinning.STRICT)` change one of
+those each.
 
 This is a middle ground: no layout, no goals, no `Project`, yet you did not wire every step by hand either.
 `ModularProject.make` is the modular counterpart; its convenience form builds pure modules (a modular jar,
