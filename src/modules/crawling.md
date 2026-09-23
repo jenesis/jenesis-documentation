@@ -26,10 +26,9 @@ it is used for both.
 
 <div class="note">
   Both URIs in the example are Google's Maven Central mirror, the index included. Central's own
-  <code>robots.txt</code> disallows <code>/maven2/.index/</code> for every crawler but Googlebot, and that
-  directory enforces a per-IP download limit asking consumers to cache the files rather than re-fetch
-  them. The crawl honours <code>robots.txt</code> and stops rather than read a path it is denied, so
-  pointed at Central's index it refuses to start.
+  <code>robots.txt</code> disallows the whole host for every crawler but Googlebot. The crawl checks
+  <code>robots.txt</code> for both URIs and stops rather than read a path it is denied, so pointed at
+  Central for either one it refuses to start.
 </div>
 
 From there the crawl streams the index and, for every artifact that looks like a jar, fetches just enough
@@ -55,14 +54,13 @@ The knobs you are likely to touch:
 | `jenesis.crawler.resume` | `true` | Set `false` to restart the index sweep; already-scanned artifacts are still skipped. |
 | `jenesis.crawler.probe.incrementals` | `false` | Set `true` to look for the next index chunk even when the index's pointer says there is none. |
 
-The probe is worth enabling against Maven Central. An index announces its newest chunk in a properties
-file beside it, and the crawl follows that pointer. Central has published chunks without advancing it, so
-the crawl finds nothing to do while the repository moves on.
+An index announces its newest chunk in a properties file beside it, and the crawl follows that pointer. A
+repository can publish chunks without advancing it, and the crawl then finds nothing to do while the
+index moves on. Turn the probe on when that happens: it asks for the next chunk anyway and applies one
+that is already published, at the cost of one request per run.
 
-The probe asks for the next chunk anyway and applies one that is already published. It costs a single
-request per run when the pointer is right, and the public index runs with it enabled.
-
-There are more - checkpoint frequency, tail size, git publishing - and the project's README lists them.
+There are more - checkpoint frequency, tail size, git publishing - and
+`java sources/build/jenesis/crawler/Crawl.java --help` prints them all.
 
 ### When the repository has no index
 
@@ -88,8 +86,9 @@ service reads; until then there is nothing to serve.
 ## The companion programs
 
 An index is never finished in one pass, so the crawler ships as a family of small programs around the
-main one. Each is a `main` class you run the same way; the ones that read the index honour
-`jenesis.crawler.data` unless noted.
+main one. Each is a `main` class you run the same way, from `sources/build/jenesis/crawler/` or, for
+`IndexProbe`, from its `index/` subfolder; the ones that read the index honour `jenesis.crawler.data`
+unless noted.
 
 Programs that fetch from the repository:
 
@@ -109,8 +108,8 @@ Programs that only read what is on disk:
 | `ListOwners` | Prints the current owners of every module matching a glob, in the format `SetOwners` reads, so you can review and edit a policy before applying it. |
 | `DriftReport` | Writes the drift report. With `-Djenesis.crawler.drift.emit=<category>` it also writes a `SetOwners` file proposing an owner for every module in that category. |
 | `ModuleSummary` | Regenerates the coverage summary. |
-| `TopModules` | Writes a top-modules report for each `data/top/<year>.txt` list you pass; `-Djenesis.crawler.top.bleeding=true` produces the bleeding-edge variant. |
-| `ModuleMaven` | Prints the named modules of the index as a flat `<module-name>=<groupId>:<artifactId>` properties stream, for a tool that only needs the mapping. Reads `data/modules/` in the working directory. |
+| `TopModules` | Writes a top-modules report for each `data/top/<year>.txt` list you pass; `-Djenesis.crawler.top.bleeding=true` produces the bleeding-edge variant. `-Djenesis.crawler.top.releases.uri=<repository>` adds the publishing columns, read from that repository's directory listings, which its `robots.txt` must allow; `-Djenesis.crawler.top.releases.concurrency` (default `32`) bounds the listing requests in flight. |
+| `ModuleMaven` | Prints the named modules of the index whose name starts with their owner's groupId as a flat `<module-name>=<groupId>:<artifactId>` properties stream, for a tool that only needs the mapping. Reads `data/modules/` in the working directory. |
 
 The [reports chapter](/modules/reports/) describes what the summary, top-modules and drift reports contain;
 the public index regenerates them daily. The checked-in `owners-republisher-fixes.properties` in the
@@ -121,7 +120,8 @@ project is a worked example of an ownership policy, ready for `SetOwners`.
 An index on disk becomes a service by publishing its `data/modules/` tree over HTTP - a static file host,
 an object store, or a git hosting service's raw view all work - and pointing the reference service at it.
 The service reads `DATA_BASE`, the HTTP(S) base URL of that tree, and redirects to `ARTIFACT_BASE`, your
-artifact mirror; both are plain environment variables. With those two set, the [URL
+artifact mirror; both are plain environment variables. `ARTIFACT_BASE` is only the default target: a client
+that sends `Jenesis-Repository` is redirected to its own repository instead. With those two set, the [URL
 shapes](/modules/resolving/) are unchanged, so every client that resolves against the public service
 resolves against yours without knowing the difference.
 
@@ -134,6 +134,6 @@ resolves against yours without knowing the difference.
 
 <div class="tip">
   The crawler lives in <a href="https://github.com/jenesis/jenesis-modules">jenesis/jenesis-modules</a>,
-  whose README documents the remaining properties, the scheduled runs that keep the public index
-  current, and the on-disk file formats - the detail you need when running a crawl of your own.
+  whose README documents the scheduled runs that keep the public index current and the on-disk file
+  formats. The full list of the crawl's properties is what <code>Crawl --help</code> prints.
 </div>

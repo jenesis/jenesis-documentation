@@ -85,7 +85,7 @@ the exact version and checksum next to your other pins - in a modular project:
 ```java
 /**
  * @jenesis.main sample.Sample
- * @jenesis.pin launcher/maven/build.jenesis/build.jenesis.launcher 0.3.1 SHA-256/720f9c17…
+ * @jenesis.pin launcher/maven/build.jenesis/build.jenesis.launcher 0.4.0 SHA-256/e56603eb…
  */
 module demo.modular.executable {
     requires org.slf4j;

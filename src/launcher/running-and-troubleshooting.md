@@ -54,6 +54,20 @@ itself raises, and what each means:
 | `Main module not found on the module path: <name>` | `mainModule` names a module that nothing `modulepath` names provides, or the jar that provides it derives a different name. |
 | `Two bundled modules resolve to the same name: <name>` | Two jars `modulepath` names declare or derive the same module name - typically two versions of one library. A module path can carry a name only once; drop one. |
 | `… is aliased as both <a> and <b>` | Two `Jenesis-Aliases` declarations claim one jar. A jar can carry one module name. |
+| `Module alias <name> is declared for <a> and for <b>` | Bundled modules declare one alias for two different coordinates. An alias can name only one jar. |
+| `Malformed Jenesis-Aliases entry '<entry>' in <jar>` | A bundled jar's manifest carries an alias entry that is not of the form `<module>=<groupId>/<artifactId>`. |
+| `<key> names <entry>, which this bundle does not hold` | A descriptor key names a jar that `jars/` does not hold. A name is refused rather than skipped. |
+| `This bundle holds <n> jars and names none of them: …` | The descriptor names no class path, module path or module layer, so none of the shipped jars would be read. |
+
+A jar you assemble yourself can also meet these, which a build-produced jar never does:
+
+| Message | Cause and fix |
+| --- | --- |
+| `Malformed access directive …` / `Malformed addExports/addOpens …` | An `addExports`, `addOpens` or `addReads` directive lacks its `=` or its `module/package` form. |
+| `Module named by addExports/addOpens/addReads is not bundled: <name>` | A grant's source module is not among the bundled modules. |
+| `Target module not found: <name>` | A grant's target is neither a bundled nor a boot module, nor `ALL-UNNAMED`. |
+| `Agent class <name> declares no static premain(String) …` | An `agentClass` entry names a class without a matching `premain` or `agentmain`; the message says when a manifest attribute is missing to capture an `Instrumentation`. |
+| `Cannot access <class>.main(String[]); …` | The main class sits in a package its module neither exports nor opens, and `mainModule` does not name that module. |
 
 One further failure comes from the JVM rather than the launcher. **A bundled module `requires` a JDK module
 that is not resolved by default** - `jdk.incubator.*`, or a module reachable only through qualified exports.
@@ -78,7 +92,8 @@ things. Most launcher jars never touch them.
 ### Native libraries
 
 A JNI library cannot be loaded straight from a jar, so the launcher extracts a requested library to a temp
-file on demand and loads it from there. Two consequences follow:
+file on demand and loads it from there. It finds the library by its platform file name - `libfoo.so` on
+Linux for `System.loadLibrary("foo")` - in any folder of a dependency. Two consequences follow:
 
 - The temp file is deleted on a **normal** exit, but **leaks on an abrupt kill** (`kill -9`, a crash).
 - A library that finds a *sibling* library by co-location - rather than through `java.library.path` - will
@@ -102,8 +117,8 @@ A resource inside a package of a bundled module stays encapsulated unless that p
 **unconditionally** - by an `open module`, an automatic module, or an unqualified `opens`. Only then does
 `contextClassLoader.getResourceAsStream("some/module/internal.txt")` find it; a qualified `opens` does not
 widen the flat `getResource` API. That is exactly how a real `java -p … -cp …` launch encapsulates it.
-Resources in no package (top-level entries, anything under `META-INF/`) and class-path resources are
-always served.
+`.class` files are always served, as the JDK serves them, and so are resources in no package (top-level
+entries, anything under `META-INF/`) and class-path resources.
 
 ### Directory entries are not resources
 
@@ -115,12 +130,13 @@ lookups are unaffected - this only bites code that enumerates a directory URL.
 
 Reading on demand means the outer jar (a `ZipFile`), plus a cached `JarFile` once resource URLs are opened,
 stays **open for the application's lifetime** - the trade for never holding the dependencies' bytes in the
-heap. Under `java -jar` that is exactly right and needs no action.
+heap. Each module layer the application defines from the jar opens it once more, and that handle stays open
+too. Under `java -jar` that is exactly right and needs no action.
 
 It matters only when you embed the launcher in a program of your own. The public entry point is
 `Launcher.run(Path, String[])`, which takes a jar or an exploded directory of the same layout and runs its
 `main` in the current JVM. The loader it builds lives as long as the application it hosts; if you start
-several in one process, expect one open handle per launch.
+several in one process, expect at least one open handle per launch, plus one for each layer it defines.
 
 <div class="tip">
   JAR signatures are <strong>not cryptographically re-verified</strong>: a signed dependency's signature files

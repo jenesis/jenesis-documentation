@@ -31,7 +31,8 @@ readable with a plain `java.util.zip.ZipFile`, so there is no nested-jar address
 
 The subfolder name is the file name the dependency had when the build resolved it. The Jenesis build tool
 names a resolved jar after the module it carries, at the version the closure resolved
-(`org.slf4j-2.0.16.jar`), names an aliased jar `<alias>-<version>.jar`, keeps the application's own module as
+(`org.slf4j-2.0.16.jar`), names an aliased jar `<alias>-<version>.jar` - or `<alias>.jar` when a module path
+could not derive that version from the file name - keeps the application's own module as
 `classes.jar`, and falls back to the URL-encoded coordinate (`<group>%2F<artifact>%2F<version>.jar`) for a jar
 that declares no module at all. The name follows what the jar declares, not where it lands: a jar with an
 `Automatic-Module-Name` is named for that module even when it goes on the class path.
@@ -44,17 +45,19 @@ modular - and `classpath` names the rest. A non-modular application therefore li
 ### The descriptor
 
 `application.properties` is the small text file that tells the launcher what to run. The build tool writes
-three keys:
+four keys:
 
 | Key | Meaning |
 | --- | --- |
 | `mainClass` | the fully qualified class whose `main` is invoked |
 | `mainModule` | the module owning `mainClass`, when the application is modular |
 | `classpath` | the `jars/` entries to read as a class path, in search order |
-| `modulepath` | the `jars/` entries to resolve as modules |
+| `modulepath` | the `jars/` entries to resolve as modules; empty when the application is not modular |
 
-The launcher understands a few more - bundled agents, module-access grants, and signer reconstruction -
-which are for a jar you assemble yourself. The [*Reference*](/launcher/reference/) chapter lists them all.
+A project that keeps a dependency private in a module layer also gets that layer's `modulepath.<layer>` key,
+and a `classpath.<layer>` key when the layer holds jars with no module identity. The launcher understands a
+few more - bundled agents, module-access grants, and signer reconstruction - which are for a jar you
+assemble yourself. The [*Reference*](/launcher/reference/) chapter lists them all.
 
 ## How a launch proceeds
 
@@ -97,8 +100,10 @@ layer and the unnamed module over the class path - which is what one application
 
 The in-memory module finder builds a descriptor for each jar the `modulepath` key names: from its `module-info.class`, or
 derived for an automatic module from its `Automatic-Module-Name` or its file name, with the providers in
-`META-INF/services` scanned in. A version behind the first dash is derived as a module path derives it, so a bundled automatic module
-reports the identity it would report under `java -p`, in `Module::getDescriptor` and in stack traces. The
+`META-INF/services` scanned in. Its version is derived as a module path derives it: the rest of the file name
+after the first dash followed by a digit, kept only when it parses as a module version. A bundled automatic
+module therefore reports the identity it would report under `java -p`, in `Module::getDescriptor` and in
+stack traces. The
 boot layer is immutable, so a fresh child layer is the only way to add modules at run time - and the right
 one, because they stay real named modules. What these rules mean in
 practice is the subject of [*Running & troubleshooting*](/launcher/running-and-troubleshooting/).
@@ -107,9 +112,10 @@ practice is the subject of [*Running & troubleshooting*](/launcher/running-and-t
 
 A dependency that declares neither a `module-info` nor an `Automatic-Module-Name` has no name to derive. The
 build tool gives such a jar a name through a [module alias](/tool/dependencies/), and it renames the
-resolved file to `<alias>-<version>.jar` before packaging. Inside the launcher jar the subfolder is then
-`jars/<alias>-<version>.jar/`, and the automatic-module rule derives both the declared name and that
-version from it. Nothing else is needed.
+resolved file to `<alias>-<version>.jar` before packaging, or to `<alias>.jar` when a module path could not
+derive that version from the file name. Inside the launcher jar the subfolder carries the same name, and the
+automatic-module rule derives the declared name - and the version, where there is one - from it. Nothing
+else is needed.
 
 The launcher also understands a manifest header for a jar that kept its coordinate-encoded name. The module
 that declared the alias carries, in its own manifest:
@@ -127,8 +133,8 @@ claimed for one jar is an error rather than a choice the launcher makes for you.
 ## Reading the jar on demand
 
 Because every class and resource is a direct entry of the outer jar, the launcher never merges anything into
-memory or spills it to disk. It opens the outer jar once (a `ZipFile`) or the exploded directory, indexes the
-entry names at start-up, and reads an entry's bytes **only when first needed**, discarding them afterwards.
+memory or spills it to disk. It opens the outer jar (a `ZipFile`) or the exploded directory at start-up,
+indexes the entry names, and reads an entry's bytes **only when first needed**, discarding them afterwards.
 Heap use is therefore roughly the size of the entry-name index rather than the dependencies' bytes.
 
 Two details make this transparent to the application:
@@ -141,7 +147,8 @@ Two details make this transparent to the application:
   for a real jar.
 
 <div class="tip">
-  The one lasting cost of reading on demand is an open file handle for the process lifetime: the launcher's
-  own <code>ZipFile</code> stays open while the application runs, as it must. That, and the rest of the
+  The one lasting cost of reading on demand is open file handles for the process lifetime: the launcher's
+  own <code>ZipFile</code> stays open while the application runs, as it must, and each module layer the
+  application defines from the jar opens it once more. That, and the rest of the
   launcher's boundaries, are covered in <em>Running &amp; troubleshooting</em>.
 </div>
