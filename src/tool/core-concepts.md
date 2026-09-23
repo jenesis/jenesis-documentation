@@ -141,7 +141,7 @@ such:
 
 ```
 module/greeter [compile] (module greeter, local ./sources)
-└─ module/org.slf4j 2.0.16 (module org.slf4j)
+└─ module/org.slf4j 2.0.16 (module org.slf4j) {MIT}
 ```
 
 Under `modular_to_maven` it is translated to a Maven coordinate and resolved through Maven, so it carries a
