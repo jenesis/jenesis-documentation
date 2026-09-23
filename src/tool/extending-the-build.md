@@ -64,6 +64,9 @@ The plugin's dependencies are pinned like any other, in the dependency group nam
 
 A plugin found in the local export is built on your machine and is not checked against a pinned checksum.
 
+`-Djenesis.plugin.<name>=false` leaves a plugin out, as the stock tools are switched off, without editing the
+file.
+
 <div class="note">
   A plugin runs code the project chooses - compiled from its own sources, or resolved by a module name it
   names - and every Jenesis that builds the project runs it, the installed <code>jenesis</code> included. Before
