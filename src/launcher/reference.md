@@ -151,7 +151,9 @@ that layer, which the launcher grants when it defines the layer - a module that 
 of reach of any command-line option. Outside a launcher jar the layer's list arrives as the
 `jlayer.enableNativeAccess.<layer>` system property. A name that is not among the modules is refused. The
 class path has no module to name: the outer jar's `Enable-Native-Access: ALL-UNNAMED` attribute grants it, and
-it also covers the launcher itself, which needs native access to grant a module without a warning. The build
+it also covers the launcher itself, which grants the application's modules. A layer's modules are granted
+through the lookup the module asking for the layer passes, so the JDK checks that module instead: without
+native access of its own, it is warned about or refused as if it had granted the layer itself. The build
 tool writes all three from the `@jenesis.native` declarations of the module it packages - see
 [*Building &amp; running*](/tool/building-and-running/#granting-native-access).
 
@@ -159,8 +161,8 @@ tool writes all three from the `@jenesis.native` declarations of the module it p
   System properties can be rewritten by any code while the JVM runs, and the launcher reads a layer's
   <code>jlayer.*</code> properties only when it defines the layer. Code that runs before then - in the
   application or in an outer layer - can therefore change which jars an inner layer on disk holds and which of
-  its modules are granted native access. A layer bundled in a launcher jar is read from the jar and is not
-  affected.
+  its modules are granted native access, though never beyond what the module asking for the layer could grant
+  itself. A layer bundled in a launcher jar is read from the jar and is not affected.
 </div>
 
 ## Emulating a signed jar
@@ -220,15 +222,16 @@ directory of the same layout.
 
 ## The layer API
 A module that keeps a dependency private declares the layer, requires `build.jenesis.launcher`, and asks for
-it by name. The declaration is a build-tool feature -
+it by name, passing its own `MethodHandles.lookup()`: the layer belongs to the class of that lookup, which the
+launcher refuses unless it has full privilege access. The declaration is a build-tool feature -
 [Keeping a dependency private](/tool/dependencies/#keeping-a-dependency-private) covers it - and these three
 calls are how the running application reaches what it declared.
 
 | Call | What it does |
 | --- | --- |
-| `Launcher.instance(String name, Class<S> service)` | The one provider of `service` in the layer `name`, instantiated. Refuses a layer that provides none, and one that provides several. |
-| `Launcher.load(String name, Class<S> service)` | The same layer's providers as a `ServiceLoader`, for the cases that expect more than one. |
-| `Launcher.layer(String name)` | The `ModuleLayer` itself, for anything a service lookup does not cover. |
+| `Launcher.instance(Lookup lookup, String name, Class<S> service)` | The one provider of `service` in the layer `name`, instantiated. Refuses a layer that provides none, and one that provides several. |
+| `Launcher.load(Lookup lookup, String name, Class<S> service)` | The same layer's providers as a `ServiceLoader`, for the cases that expect more than one. |
+| `Launcher.layer(Lookup lookup, String name)` | The `ModuleLayer` itself, for anything a service lookup does not cover. |
 
 All three refuse a layer that neither the caller's jar bundles nor a `jlayer.modulepath.<layer>` property
 names. They also refuse a layer that provides a service while holding the module that declares it: the

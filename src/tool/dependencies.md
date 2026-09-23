@@ -374,7 +374,7 @@ line for more roots. A root is a module name, as here, or any other coordinate, 
 The library reaches its layer by name, and gets back the implementation:
 
 ```java
-Report report = Launcher.instance("render", Report.class);
+Report report = Launcher.instance(MethodHandles.lookup(), "render", Report.class);
 ```
 
 **Consumers declare nothing.** They require the library and know nothing of what it hides; a consumer may
