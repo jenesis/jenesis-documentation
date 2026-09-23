@@ -191,11 +191,13 @@ a second project module.
 When you want your own `main` but still the stock compile/jar/test flow, skip `Project` and call the
 convenience factory `MavenProject.make` (or `ModularProject.make` for a Java Module System project). It
 discovers the modules under a root, fills in sane defaults - a Maven Central repository, the right resolver, a
-digest - and leaves only the assembler for you to supply:
+digest - and leaves only the environment those defaults read their settings from and the assembler for you to
+supply:
 
 ```java
 BuildExecutor root = BuildExecutor.of(Path.of("target"));
-root.addModule("maven", MavenProject.make(Path.of("."),
+root.addModule("maven", MavenProject.make(Environment.SYSTEM,
+        Path.of("."),
         (descriptor, repositories, resolvers) -> new InferredMultiProjectAssembler().apply(
                 new ProjectModuleDescriptor(descriptor)            // the discovered module
                         .configuration(Path.of("."))               // its configuration folders
