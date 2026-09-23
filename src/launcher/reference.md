@@ -155,6 +155,14 @@ it also covers the launcher itself, which needs native access to grant a module 
 tool writes all three from the `@jenesis.native` declarations of the module it packages - see
 [*Building &amp; running*](/tool/building-and-running/#granting-native-access).
 
+<div class="warning">
+  System properties can be rewritten by any code while the JVM runs, and the launcher reads a layer's
+  <code>jlayer.*</code> properties only when it defines the layer. Code that runs before then - in the
+  application or in an outer layer - can therefore change which jars an inner layer on disk holds and which of
+  its modules are granted native access. A layer bundled in a launcher jar is read from the jar and is not
+  affected.
+</div>
+
 ## Emulating a signed jar
 A dependency that shipped as a *signed* jar loses its signer identity when exploded: its signature files
 (`META-INF/*.SF`, `*.RSA`/`*.DSA`/`*.EC`) become ordinary entries, so a class-path class would otherwise

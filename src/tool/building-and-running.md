@@ -400,7 +400,9 @@ A test module is a run of its own and grants what its tests need itself. A token
 on the module's run-time path, or in one of the layers it runs, or the build fails saying so. A jar on the
 class path has no name, so a grant for one becomes `--enable-native-access=ALL-UNNAMED`. A module isolated in
 a layer is named the same way, or as `layer:<name>/module/<module>`, and the launcher grants it when it
-defines the layer. `jpx` grants what the jar it runs names.
+defines the layer. System properties can be rewritten while the JVM runs, so code that runs before a layer
+on disk is defined - in the application or in an outer layer - can change what that layer holds and what it
+is granted; a layer bundled in a launcher jar is not affected. `jpx` grants what the jar it runs names.
 
 A `pom.xml` project declares the same in a project-level comment block, naming itself by its own
 `<groupId>/<artifactId>`:
