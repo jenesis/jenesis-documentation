@@ -104,7 +104,7 @@ the variable of the same name:
   different host, so it never leaks to a redirect target.
 </div>
 
-{% demos 59 %}
+{% demos 60 %}
 
 ### What the build tells the module index
 
@@ -376,7 +376,7 @@ line for more roots. A root is a module name, as here, or any other coordinate, 
 The library reaches its layer by name, and gets back the implementation:
 
 ```java
-Report report = Launcher.instance("render", Report.class);
+Report report = Launcher.instance(MethodHandles.lookup(), "render", Report.class);
 ```
 
 **Consumers declare nothing.** They require the library and know nothing of what it hides; a consumer may
@@ -435,4 +435,12 @@ Each of these is reported when it is declared, naming what to write instead:
 <div class="note">
   A layer is defined while the JVM runs, so a packaging that resolves its module graph ahead of time refuses
   a project that declares one rather than flattening it.
+</div>
+
+<div class="warning">
+  A layer that is not bundled in a launcher jar is defined from the <code>jlayer.*</code> system properties
+  when a module first asks for it. The JVM lets any code overwrite a system property at any time and offers no
+  way to protect one, so code that runs earlier - in the application or in an outer layer - can change which
+  jars that layer holds, and so place its own code in another module's layer, outside the encapsulation that
+  layer was declared for. A layer bundled in a launcher jar is read from the jar and is not affected.
 </div>
