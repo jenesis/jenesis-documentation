@@ -50,8 +50,9 @@ two flags, so harden it in the image itself if you swap it.
 ### What runs on the host
 
 All of the project's code runs inside the container. On the host, Jenesis only reads the settings and starts
-the container. It runs no test there and none of the plugins the project names until the container is up and the
-isolation is in place.
+the container, handing it every `jenesis.*` setting in force - from the command line, `jenesis.properties` or a
+profile alike - except the `jenesis.project.docker*` settings that start it. It runs no test there and none of the
+plugins the project names until the container is up and the isolation is in place.
 
 The project also cannot undo the isolation. Its `jenesis.properties` and its profiles are refused if they set any
 `jenesis.project.docker*` or `jenesis.execute.docker*` key, so a project can neither switch Docker off nor widen
