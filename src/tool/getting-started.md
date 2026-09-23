@@ -231,18 +231,19 @@ java build/jenesis/Make.java stage
 
 ```
 target/stage
-├── maven/output/greeter/greeter/1-SNAPSHOT
-│   ├── greeter-1-SNAPSHOT.jar   # the modular jar, under a Maven coordinate
-│   ├── greeter-1-SNAPSHOT.pom   # generated, so Maven consumers resolve it
-│   └── greeter-1-SNAPSHOT-cyclonedx.json   # the bill of materials
-├── modular/output/greeter/1-SNAPSHOT
+├── maven/output/greeter/greeter/0-SNAPSHOT
+│   ├── greeter-0-SNAPSHOT.jar   # the modular jar, under a Maven coordinate
+│   ├── greeter-0-SNAPSHOT.pom   # generated, so Maven consumers resolve it
+│   └── greeter-0-SNAPSHOT-cyclonedx.json   # the bill of materials
+├── modular/output/greeter
 │   ├── greeter.jar   # the same jar, named as the module index serves it
 │   └── greeter.pom   # its dependencies as coordinates, for a project mixing modules and Maven artifacts
 └── reports/output   # the dependency graph, and what else ran
 ```
 
-Nothing was configured to get that: the coordinate comes from the module name, and `1-SNAPSHOT` is what a
-build stamps when nothing names a version.
+Nothing was configured to get that: the coordinate comes from the module name. This project names no version,
+so the module stays unversioned - that is what `jar --describe-module` reports and why the modular tree has no
+version folder - while the POM, which cannot omit one, carries the `0-SNAPSHOT` placeholder.
 
 {% demos 1, 2, 3, 4 %}
 
@@ -255,7 +256,7 @@ positional arguments that choose what runs. Four settings carry the knobs you re
 | --- | --- | --- |
 | `jenesis.make.root` | `.` | The directory scanned for `module-info.java` / `pom.xml`. Command line only, because finding the project comes before the build. |
 | `jenesis.project.target` | `target` | Where every build output is written. Safe to delete for a clean build. |
-| `jenesis.project.version` | `1-SNAPSHOT`, or the POM's version | The version stamped onto every artifact the build produces; set it for a release. |
+| `jenesis.project.version` | *(unset)*, or the POM's version | The version stamped onto every artifact the build produces; set it for a release. |
 | *(the default target)* | `build` | What runs when you pass no selector. |
 
 A setting may lead the arguments after the source file, or come before it as a JVM property - anything else
