@@ -182,7 +182,7 @@ rather than being served by one configured for something else.
 | `jenesis.test.incremental` | *(off)* | Run only the tests a change can reach; the value names the digest algorithm. |
 | `jenesis.test.force` | `false` | `true` runs the tests even when nothing changed and the recorded scope already covers the request. |
 | `jenesis.archive.timestamp` | `1980-02-01T00:00:00Z` | The date and time recorded on every entry of the jars, jmods and zips the build produces; an ISO-8601 date-time with an offset between `1980-01-01T00:00:02Z` and `2099-12-31T23:59:59Z`. Empty turns the fixed time off, which is discouraged (see *[Building &amp; running](/tool/building-and-running/#reproducible-archives)*). |
-| `jenesis.stage.tests` | `false` | Include test-variant artifacts when staging; a module tagged `@jenesis.test abstract` is never staged. |
+| `jenesis.stage.tests` | `false` | Include test-variant artifacts when staging, and the modules tagged `@jenesis.test abstract` that they require. |
 | `jenesis.sbom.cyclonedx` | `true` | Emit a CycloneDX SBOM; set `false` to skip it. |
 | `jenesis.compliance` | `true` | Run the licence and vulnerability checks; `false` skips both. |
 | `jenesis.source.<tool>` | `true` | Per-linter switch (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`). |
