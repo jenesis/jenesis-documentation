@@ -208,13 +208,16 @@ java build/jenesis/Make.java dependencies
 ```
 
 ```
-main/compile (module-sources)
-maven/org.apache.commons/commons-lang3 3.20.0 [compile] (module org.apache.commons.lang3) {Apache-2.0}
+maven/greeter/greeter 0-SNAPSHOT [compile] (module greeter, local ./sources)
+└─ maven/org.apache.commons/commons-lang3 3.20.0 [compile] (module org.apache.commons.lang3) {Apache-2.0}
 ```
 
-The resolution key, the version that resolved, the Maven scope, the **Java module name** it carries and its
-declared **licence** - a real module graph, not a flat class path. The selector also reports the licences and
-the module shape of the whole closure.
+The tree starts from your own module, written like every line below it: the coordinate it is published under,
+its version, the scope the tree resolves and its **Java module name**, tagged `local` with the folder it is
+built from. Every dependency hangs below it with the resolution key, the version that resolved, the Maven
+scope, the module name it carries and its declared **licence**: a real module graph, not a flat class path. A
+second tree follows for the `runtime` scope, and the selector also reports the licences and the module shape
+of the whole closure.
 
 ### Staging it for release
 
@@ -270,13 +273,17 @@ discovered module. The other targets:
 
 | Selector | What it does |
 | --- | --- |
-| `build` | Compile, test, and jar every module *(the default)*. |
+| `build` | Compile, jar, and test every module *(the default)*. |
 | `stage` | The full release recipe - build, then lay out a publishable tree under `target/stage/`. |
 | `export` | Publish the staged tree into your local Maven repository (`~/.m2`), your local module repository (`~/.jenesis`), or both. |
+| `release` | Hand the staged tree to a configured release tool, as a dry run unless told otherwise (see *[Publishing](/tool/publishing/)*). |
 | `pin` | Rewrite every `pom.xml` / `module-info.java` to pin the full resolved dependency closure. |
 | `dependencies` | Print each module's resolved dependency graph with licences (shown above). |
 | `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata. |
+| `configuration` | Print every setting with the value in force, one per line. |
+| `properties` | Print only the `jenesis.*` settings this run sets. |
 | `help` | Print the usage screen. |
+| `skill` | Print the briefing a coding agent works from. |
 
 A `+<module>` selector builds just one module's subtree - `+greeter` builds the `greeter` module and
 whatever it depends on, without touching unrelated siblings. Selectors and the build graph they walk are the

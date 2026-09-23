@@ -29,23 +29,41 @@ place depends on your layout (see *[Core concepts](/tool/core-concepts/)*):
 
   ```java
   module demo.app {
-      requires com.fasterxml.jackson.databind;
+      requires org.apache.commons.text;
   }
   ```
 
 That is the whole surface. Jenesis reads these existing files, resolves the transitive closure, and puts the
 result on the compile and runtime paths.
 
+A `requires` names no version, so Jenesis takes the newest release of the module, leaving out pre-releases.
+To hold a module at a version of your choosing, name it in a `@jenesis.pin` tag in the comment above the
+declaration:
+
+```java
+/**
+ * @jenesis.pin org.apache.commons.text 1.12.0
+ */
+module demo.app {
+    requires org.apache.commons.text;
+}
+```
+
+The tag takes the module name and the version, and applies wherever that module turns up in the closure,
+directly or through another module. Jenesis can also write these tags for you, fixing each module at the version it
+resolved, as *[Recording the pins](/tool/pinning/#recording-the-pins)* in the next chapter describes.
+
 ## The two repositories
 
-Jenesis resolves through two named repositories, one per kind of coordinate:
+Jenesis resolves through two named repositories, one per kind of coordinate. Each comes with a default
+source, and either can be [pointed elsewhere](#pointing-at-a-different-repository):
 
-- **`maven`** - Maven coordinates (`groupId:artifactId:version`). Fetched over HTTPS from Maven Central
-  (`https://repo1.maven.org/maven2/`) into your **local Maven repository** (`~/.m2/repository`), exactly
-  where `mvn` keeps them, and hard-linked from there into the build.
-- **`module`** - Java module names. Resolved through the **Jenesis Module Index** at `repo.jenesis.build`,
-  which maps a name like `com.fasterxml.jackson.databind` to its artifact and redirects to the file on Maven
-  Central.
+- **`maven`** - Maven coordinates (`groupId:artifactId:version`). By default fetched over HTTPS from Maven
+  Central (`https://repo1.maven.org/maven2/`) into your **local Maven repository** (`~/.m2/repository`),
+  exactly where `mvn` keeps them, and hard-linked from there into the build.
+- **`module`** - Java module names. By default resolved through the **Jenesis Module Index** at
+  `repo.jenesis.build`, which maps a name like `com.fasterxml.jackson.databind` to its artifact and redirects
+  to the file on Maven Central.
 
 Which one a dependency uses follows from the layout. A `pom.xml` declares Maven coordinates, so it resolves
 through `maven`. A `requires` names a module, so it resolves through `module`, and this is the step that turns
@@ -98,10 +116,13 @@ unconfigured build leaves every choice with the index and gets the same answer a
 | `jenesis.module.prerelease` | Whether a module asked for without a version may resolve to a pre-release. |
 | `jenesis.module.speculative` | Whether a version the index has not recorded may be resolved from the module's newest coordinate, rather than answering that it has never seen it. |
 
-The last two are choices rather than questions, so they hold either way: with
-`jenesis.module.source=git` the build reads the published data itself and applies them there, by the same rule
-the index applies - a version counts as a release when the version a module is keyed by and the Maven version
-it resolves to both carry no pre-release qualifier.
+The last two are choices rather than questions, so they hold either way. With `jenesis.module.source=git`
+the build asks no service at all. It reads the index's data from the
+[`jenesis/jenesis-modules`](https://github.com/jenesis/jenesis-modules/tree/main/data/modules) repository on
+GitHub, one file per module, which can be cloned or forked like any other repository; `jenesis.module.index`
+points a build at such a copy. No build therefore has to rely on an index that Jenesis hosts. The two choices
+are applied there by the same rule the index applies - a version counts as a release when the version a
+module is keyed by and the Maven version it resolves to both carry no pre-release qualifier.
 
 Not every repository can be named to a third party, and Jenesis says nothing rather than guess: an entry
 restricted to some groups cannot stand for the redirect of a module outside them, an `@` reference is not
@@ -116,10 +137,14 @@ The `dependencies` selector prints each module's resolved tree, the way `mvn dep
 java build/jenesis/Make.java dependencies
 ```
 
-Each node shows the version every parent requested, the **negotiated** version inline when it differs
-(`[1,2] -> 2`), the scope, the dependency's licence (`{Apache-2.0}`), and `local` for a module built inside
-this project rather than fetched. A per-module *Resolved dependencies* list and a licence summary follow the
-tree. It is the fastest way to answer "why is this version on my class path?" before you pin anything.
+Each module gets one tree per scope, starting from the module itself and written like any other node: the
+coordinate it is published under, its version, the scope and its module name, tagged `local` with the folder
+it is built from (`maven/greeter/greeter 0-SNAPSHOT [compile] (module greeter, local ./sources)`). A module
+built in the project carries the same `local` tag and folder wherever it appears in another module's tree.
+Each node below shows the version every parent requested, the **negotiated** version inline when it differs
+(`[1,2] -> 2`), the scope, the dependency's licence (`{Apache-2.0}`), and the module name. A per-module
+*Resolved dependencies* list and a licence summary follow the tree. It is the fastest way to answer "why is
+this version on my class path?" before you pin anything.
 
 When the whole closure is more than you want to read, `-Djenesis.tree.format` narrows what the trees show:
 
@@ -134,8 +159,8 @@ project releases, so neither the trees nor the licence summary count what only a
 
 ## Version negotiation
 
-When two paths through the graph ask for different versions of the same library, Jenesis picks one. The rule
-matches the repository:
+When two paths through the graph ask for different versions of the same library, Jenesis picks one. By
+default, the rule matches the repository:
 
 - **Maven** coordinates use Maven's own **nearest-wins** conflict resolution, and understand version ranges
   and the `LATEST`/`RELEASE` selectors - the same behaviour `mvn` gives you.
@@ -143,8 +168,8 @@ matches the repository:
   version, and a later, deeper requirer asking for a different version is ignored.
 
 To override the negotiated result, declare the version you want directly: a `<version>` (or a
-`<dependencyManagement>` entry) in Maven, or a **pin** in a modular project (the next chapter). A declared
-version always beats what negotiation would have chosen.
+`<dependencyManagement>` entry) in Maven, or a [`@jenesis.pin`](#declaring-a-dependency) tag in a modular
+project. A declared version always beats what negotiation would have chosen.
 
 ### Choosing a different strategy
 
@@ -184,7 +209,7 @@ as another dependency's POM declares it (add it to dependencyManagement, or run 
 ```
 
 On the module side the rule is the same: a module reached only through another module's `requires` stops
-the build unless the project names its version itself. A module the project declares itself - a sibling of a
+the build unless the project names its version itself, in a [`@jenesis.pin`](#declaring-a-dependency) tag. A module the project declares itself - a sibling of a
 multi-project build among them - is a declaration of the project and passes.
 
 <div class="warning">
@@ -261,7 +286,10 @@ build never fetched it.
 
 Some libraries still ship as a plain jar: no `module-info`, and not even an `Automatic-Module-Name`. On the
 module path such a jar becomes an automatic module named after its *file*, which changes with the file and so
-cannot be `requires`d reliably. An **alias** gives one a name your project chooses:
+cannot be `requires`d reliably. An **alias** gives one a name your project chooses. That works for a jar you
+require yourself and equally for a transitive dependency your project never mentions, which would otherwise
+be loaded on the class path. A closure of plain jars is brought onto the module path this way, one
+deliberate name at a time:
 
 ```java
 /**
@@ -276,23 +304,7 @@ module demo.cli {
 
 The tag maps a module name onto a `<groupId>/<artifactId>` the resolved closure already contains, and the name
 is then a module name like any other; the `opens` above is what lets args4j set the annotated fields by
-reflection. Nothing is synthesised and no jar is rewritten. The artifact is placed under
-`<alias>-<version>.jar`, which is exactly the name the JDK derives that automatic module and its version
-from, so a stack trace out of it reads `org.kohsuke.args4j@2.33` and a pinned checksum keeps describing the
-bytes on the command line.
-
-Two rules keep an alias predictable. The declaration carries **no version**: the version comes from a pin, a
-bill of materials, or the closure the alias names, is stated in one place only, and is what the file name
-then carries. And it only ever *renames*: a jar
-that already declares a `module-info` or an `Automatic-Module-Name` is rejected, because it is addressable
-under that name already. An alias also travels. A project that depends on a module which declared one
-inherits the name without redeclaring it.
-
-<div class="tip">
-  An alias does not have to be something you <code>requires</code> yourself. Naming a transitive dependency
-  the project never mentions is enough to make it a module every other module can require. That is how a
-  closure of plain jars is brought onto the module path one deliberate name at a time.
-</div>
+reflection. Nothing is synthesised and no jar is rewritten.
 
 Aliases are a `modular_to_maven` feature: they reach an artifact by its Maven coordinate, which the strict
 `modular` layout does not use.
@@ -301,23 +313,13 @@ Aliases are a `modular_to_maven` feature: they reach an artifact by its Maven co
 
 ## Replacing a module another artifact already carries
 
-A package belongs to exactly one module, and a library that needs an API `requires` the module owning it.
-Occasionally one does not: Tomcat Embed copies the API's classes into its own jar, so
-`org.apache.tomcat.embed.core` exports the `jakarta.servlet` packages itself and depends on no API artifact.
+Few projects need this. A handful of libraries use the Java Module System incorrectly: rather than requiring
+an API's module, they copy its packages into their own jar. Tomcat Embed is one of them, as
+`org.apache.tomcat.embed.core` exports the `jakarta.servlet` packages itself. A library that correctly
+`requires jakarta.servlet` then cannot share a module path with Tomcat, because two modules would export one
+package.
 
-That leaves two modules exporting one package. It breaks more than your own code: a modular library names the
-API the only way a module can, in its descriptor - the Jakarta Server Pages API states
-`requires transitive jakarta.servlet` - so a module of that name must be on the path, and adding the API
-artifact beside Tomcat carries the packages twice:
-
-```
-error: module not found: jakarta.el
-error: module demo.override reads package jakarta.servlet
-       from both jakarta.servlet and org.apache.tomcat.embed.core
-```
-
-An **override** states the relationship once, naming the module to replace and the modules that already carry
-its packages:
+An **override** names the module to replace and the module that already carries its packages:
 
 ```java
 /**
@@ -332,42 +334,24 @@ module demo.override {
 }
 ```
 
-Jenesis places a module of that name holding no packages of its own, requiring each carrier transitively, so
-reading it reads the carrier's copy under the API's name. One line names one module and any number of
-carriers; a carrier no resolved dependency declares is an error rather than a silent no-op.
-
-The declaration also drops every resolved artifact that declares the overridden module, however it arrived, so
-the closure and the generated POM carry those packages once. Your published descriptor still says
-`requires jakarta.servlet` - it names the API, not the server implementing it here - and consumers building
-with Jenesis inherit the declaration through the jar's `Jenesis-Overrides` manifest attribute.
-
-Two limits follow from the placed module holding no code. A qualified `exports … to jakarta.servlet` or
-`opens … to jakarta.servlet` grants access to that module rather than to the carrier that does the
-reflecting, so open to the carrier or leave the directive unqualified; and requiring it reads everything the
-carrier exports, so code can compile against `org.apache.catalina` while declaring only
-`requires jakarta.servlet`.
-
-Overrides are a `modular_to_maven` feature, as aliases are: dropping the replaced artifact means reaching it
-by its Maven coordinate. The strict `modular` layout rejects the tag.
-
-<div class="note">
-  Two artifacts that declare the same module name are refused wherever they meet, override or not. A module
-  path resolves whichever comes first, so the build names both coordinates and stops rather than compiling
-  against one and running against the other.
-</div>
+Jenesis drops the replaced artifact from the closure and puts a module of that name in its place, which reads
+the carrier's copy of the packages. `requires jakarta.servlet` keeps meaning what it says, in your code and in
+the libraries you depend on. Like aliases, overrides need the `modular_to_maven` layout.
 
 {% demos 20 %}
 
 ## Keeping a dependency private
+
 Every section so far assumed the module path can hold what the build resolves. It cannot always. A module
 path admits one module per name, so a library that needs a different version of some dependency than its
 consumer has nowhere to put it. The usual answer elsewhere is shading: rewrite the dependency's bytecode
 under new package names and copy it in. That takes reflection, `Class.forName`, resource lookup,
 `META-INF/services`, jar signatures and stack traces with it, and it leaves the seam implicit.
 
-The Java Module System already has the mechanism for this. A second copy of a library goes in a
-`ModuleLayer` of its own, with its own class loader, and keeps every package name it had. Jenesis lets the
-module that needs the isolation declare it:
+The JVM already has the mechanism for this, and it serves the class path just as well as the module path. A
+second copy of a library goes behind a class loader of its own and keeps every package name it had; for
+modules, that loader backs a `ModuleLayer` of its own. Jenesis lets the module that needs the isolation
+declare it:
 
 ```java
 /**
@@ -384,12 +368,8 @@ Two lines, and each says which side it declares. `api` names the one module the 
 layer; `provider` names a root the layer holds, and its whole closure comes with it. Repeat the `provider`
 line for more roots. A root is a module name, as here, or any other coordinate, such as
 `maven/<groupId>/<artifactId>`, and the layer resolves in a dependency group of its own,
-`layer:render`. A version for it is named like any other, with the group in front, as
-*[Pinning & bills of materials](/tool/pinning/)* describes:
-
-```java
- * @jenesis.pin layer:render/maven/com.fasterxml.jackson.core/jackson-core 2.15.4
-```
+`layer:render`. A pin for something in the layer carries that group in front, as in
+`@jenesis.pin layer:render/maven/com.fasterxml.jackson.core/jackson-core 2.15.4`.
 
 The library reaches its layer by name, and gets back the implementation:
 
@@ -404,17 +384,6 @@ build that resolves that jar reconstructs the layer from it. Discovery runs to a
 inside a layer may isolate a dependency of its own, without limit.
 
 {% demos 21 %}
-
-### What crosses, and what cannot
-
-A layer's configuration is built from its host's, so any module the layer does not itself hold resolves from
-the host. That is what makes the API module the *same* class on both sides, and what lets an instance cross
-the boundary as an ordinary interface call rather than a proxy. Everything the API module reaches is shared
-for the same reason, derived rather than declared.
-
-The consequence is worth stating plainly, because it is equally true of shading: **a dependency whose types
-your API module reaches is exposed by it and cannot be isolated behind it.** Here the build says so, instead
-of leaving it to a `LinkageError` far from its cause. Keep the API module thin.
 
 ### Libraries that name themselves nowhere
 
