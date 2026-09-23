@@ -125,7 +125,7 @@ in one step.
 | `jenesis.project.sources` | `false` | Also assemble a per-module sources jar. |
 | `jenesis.project.documentation` | `false` | Also assemble a per-module javadoc jar. |
 | `jenesis.project.watch` | `false` | Keep the process alive and rebuild on every source change (see *[Building &amp; running](/tool/building-and-running/)*). |
-| `jenesis.project.customizers` | *(none)* | Comma-separated `UnaryOperator<Project>` classes under `build/custom/`, applied in order to the configured project (see *[Extending the build](/tool/extending-the-build/#customizing-the-stock-build)*). Under `jenesis.project.docker`, applied inside the container only. |
+| `jenesis.project.customizers` | *(none)* | Comma-separated `UnaryOperator<Project<InferredMultiProjectAssembler>>` classes under `build/custom/`, applied in order to the configured project (see *[Extending the build](/tool/extending-the-build/#customizing-the-stock-build)*). Under `jenesis.project.docker`, applied inside the container only. |
 
 ### The entry point (`build/jenesis/Make.java`)
 

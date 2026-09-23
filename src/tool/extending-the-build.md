@@ -16,27 +16,27 @@ its own, and that comes last.
 
 ## Customizing the stock build
 
-A customizer is a class in the project's `build/custom/` folder that implements `UnaryOperator<Project>`: it is
-handed the project the settings configured and returns the one to build. Most customizers wrap the
-**assembler** - the callback that wires each module's compile/jar/test sub-graph. This one,
-`build/custom/Signing.java`, adds a `sign` step after the stock build:
+A customizer is a class in the project's `build/custom/` folder that implements
+`UnaryOperator<Project<InferredMultiProjectAssembler>>`: it is handed the project the settings configured and
+returns the one to build. A project is typed by its **assembler** - the callback that wires each module's
+compile/jar/test sub-graph - and the stock one is the `InferredMultiProjectAssembler`, so
+`project.assembler(assembler -> ...)` hands a customizer that assembler and expects one back. This one,
+`build/custom/Signing.java`, merges a `sign` step into every module, after the stock build:
 
 ```java
 package build.custom;
 
-public class Signing implements UnaryOperator<Project> {
+public class Signing implements UnaryOperator<Project<InferredMultiProjectAssembler>> {
 
     @Override
-    public Project apply(Project project) {
-        return project.assembler((descriptor, repositories, resolvers) -> project.assembler()
-                .apply(descriptor, repositories, resolvers)
-                .mapBuild(stock -> (sub, inherited) -> {
-                    sub.addModule("assemble", stock, inherited.sequencedKeySet().stream());
-                    sub.addStep("sign", (executor, context, arguments) -> {
-                        // read the jars in each argument's folder, write their signatures into context.next()
-                        return CompletableFuture.completedStage(new BuildStepResult(true));
-                    }, "assemble");
-                }));
+    public Project<InferredMultiProjectAssembler> apply(Project<InferredMultiProjectAssembler> project) {
+        return project.assembler(assembler -> assembler.merge((descriptor, stock) -> (sub, inherited) -> {
+            sub.addModule("assemble", stock, inherited.sequencedKeySet().stream());
+            sub.addStep("sign", (executor, context, arguments) -> {
+                // read the jars in each argument's folder, write their signatures into context.next()
+                return CompletableFuture.completedStage(new BuildStepResult(true));
+            }, "assemble");
+        }));
     }
 }
 ```
@@ -49,15 +49,17 @@ jenesis.project.customizers=build.custom.Signing
 
 The same key works on the command line or in a profile, like any other setting.
 
-`project.assembler()` is the assembler the settings configured, and the lambda calls it for every module.
-`mapBuild` decorates only the module's build phase - here registering the stock output under `assemble` and
-chaining the `sign` step onto it. The build is otherwise the stock one: `jenesis.properties`, the profiles and
-the other settings configure the project the customizer receives, and the build runs on the JDK, in the daemon
-or in Docker as they ask. `java build/jenesis/Execute.java` reads the same settings and runs the program the
+`merge` is handed each module's descriptor and the `stock` build the assembler wired for it, and returns the
+build to run in its place - here registering the stock build under `assemble` and chaining the `sign` step
+onto it. The build is otherwise the stock one: `jenesis.properties`, the profiles and the other settings
+configure the project the customizer receives, and the build runs on the JDK, in the daemon or in Docker as
+they ask. `java build/jenesis/Execute.java` reads the same settings and runs the program the
 customized build produced.
 
 - `jenesis.project.customizers` takes several classes, separated by commas, and applies them in order, so
   customizers compose: sign, stamp licence headers, emit checksums - without reimplementing the toolchain.
+  Each `merge` appends to the ones before it and wraps what they built, so a later customizer's merge sees
+  the earlier one's build as its `stock`.
 - `Make.java` compiles `build/custom/` with the engine once, into `.jenesis/classes`, and again only when a
   source there changes. A customizer needs a public constructor without arguments.
 - `jenesis-validate` compares `build/jenesis` alone, so a customizer leaves the vendored engine valid. The
@@ -73,6 +75,25 @@ customized build produced.
 
 {% demos 50, 51 %}
 
+### Configuring the stock modules
+
+The assembler wires its sub-modules - the toolchain, the checks, the formatters, the documentation - and
+takes one configurator per sub-module, named after it, that receives the sub-module and returns it
+adjusted. Each sub-module does the same for its own children, so a customizer reaches any of them by nesting:
+
+```java
+return project.assembler(assembler -> assembler
+        .toolchain(toolchain -> toolchain.compiler(compiler -> compiler.errorprone(null)))
+        .check(check -> check.checkstyle(null)));
+```
+
+A configurator appends to the one before it, so several customizers adjust one sub-module in the order they
+are applied and the last one wins where two set the same thing. Handing `null` switches a sub-module off,
+and so does a configurator that returns `null`; nothing appended afterwards switches it back on, just as a
+`jenesis.*` property that switched it off keeps it off.
+
+{% demos 12 %}
+
 ### Redirecting a module's inputs
 
 A customizer can also change *what* the stock steps consume, because the module descriptor is immutable with a
@@ -84,7 +105,21 @@ inputs in one line:
 descriptor.sources("preprocess")   // stock compile now reads the preprocess step's output, not sources/
 ```
 
-That is the whole trick behind a preprocessing assembler: add a `preprocess` step that reads the module's
+`merge` takes such an adjustment as its first argument. The stock build is wired from the adjusted
+descriptor, while the function that merges it is still handed the original:
+
+```java
+return project.assembler(assembler -> assembler.merge(descriptor -> descriptor.sources("preprocess"),
+        (descriptor, stock) -> (sub, inherited) -> {
+            sub.addStep("preprocess", (executor, context, arguments) -> {
+                // rewrite the sources/ of each argument's folder into context.next()
+                return CompletableFuture.completedStage(new BuildStepResult(true));
+            }, descriptor.sources().stream());
+            stock.accept(sub, inherited);
+        }));
+```
+
+That is the whole trick behind a preprocessing customizer: add a `preprocess` step that reads the module's
 `sources/`, rewrites it into its own output, then hand the stock assembler a descriptor whose `sources()`
 points at `preprocess`. `javac`, the jar step, and the tests all consume the transformed tree, and the rest
 of the build is untouched. Any pass that produces a `sources/` tree - template expansion, code generation,

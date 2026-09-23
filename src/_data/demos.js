@@ -115,7 +115,7 @@ export default {
       title: "Extending the build",
       blurb: "Wrapping the template, adding build modules, or replacing it entirely.",
       demos: [
-        { slug: "demo-50-custom-assembler", name: "Custom assembler", blurb: "Wrapping the stock assembler so sources are preprocessed before they compile." },
+        { slug: "demo-50-custom-assembler", name: "Custom assembler", blurb: "Merging a step into the stock assembler so sources are preprocessed before they compile." },
         { slug: "demo-51-custom-jmod", name: "jlink & jpackage", blurb: "A custom .jmod carrying extra content, linked into a runtime and packaged into an app." },
         { slug: "demo-52-internal-module", name: "Internal build module", blurb: "A reusable build plugin compiled from local source." },
         { slug: "demo-53-external-module", name: "External build module", blurb: "The same plugin resolved as a published coordinate." },
