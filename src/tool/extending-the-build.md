@@ -80,20 +80,23 @@ customized build produced.
 
 Every module the stock assembler wires - the checks, the formatters, the compliance checks, the toolchain and
 the modules it nests, the test observation, the documentation - and the assembler's own module build take
-additional modules through a `custom` wither. They are wired next to the stock ones, inside a sub-module named
+additional steps and modules through `custom`. They are wired next to the stock ones, inside a sub-module named
 `custom`, and each reads what the module it is added to reads. No stock module is named `custom`, so an added
 name never collides with a stock one, and nothing is wrapped or replaced:
 
 ```java
-SequencedMap<String, BuildExecutorModule> checks = new LinkedHashMap<>();
-checks.put("placeholders", (module, inherited) -> module.addStep("verify", (executor, context, arguments) -> {
+return assembler.check(check -> check.custom("placeholders", (executor, context, arguments) -> {
     // fail when a source in any argument's folder still holds a ${ placeholder
     return CompletableFuture.completedStage(new BuildStepResult(true));
-}, inherited.sequencedKeySet()));
-return assembler.check(check -> check.custom(checks));
+}));
 ```
 
-The step runs as `check/custom/placeholders/verify`, next to the stock checks, on the sources they check.
+The step answers for `check/custom/placeholders`, next to the stock checks, on the sources they check.
+
+- `custom(name, step)` adds one step and `custom(name, module)` one module, after those added before; either
+  refuses a name that is taken already.
+- `custom(map)` sets every added module at once, a `SequencedMap<String, BuildExecutorModule>` in the order
+  they are wired.
 
 ### Redirecting a module's inputs
 
