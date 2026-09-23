@@ -30,7 +30,7 @@ describes a [Java agent](#bundled-java-agents) rather than an application.
 | `addOpens` | [`--add-opens` grants](#relaxing-module-access). | no |
 | `addReads` | [`--add-reads` grants](#relaxing-module-access). | no |
 | `enableNativeAccess` | Comma-separated bundled modules granted [native access](#granting-native-access). | yes, for what the running module grants |
-| `enableNativeAccess.<layer>` | The same for the modules of a [module layer](#module-layers). | yes, for what the running module grants in the layer |
+| `enableNativeAccess.<layer>` | The same for the modules of a [module layer](#module-layers). | yes, for what the running module grants in the layer, or a granted module in a layer of its own |
 | `signature.<dep>` | [Base64 PKCS#7 chain](#emulating-a-signed-jar) restoring a class-path dependency's signer identity. | no |
 
 ### Every path is named
@@ -170,7 +170,8 @@ class path has no module to name: the outer jar's `Enable-Native-Access: ALL-UNN
 it also covers the launcher itself, which grants the application's modules. A layer's modules are granted
 through the lookup the module asking for the layer passes, so the JDK checks that module instead: without
 native access of its own, it is warned about or refused as if it had granted the layer itself. The build
-tool writes all three from the `@jenesis.native` declarations of the module it packages - see
+tool writes all three from the `@jenesis.native` declarations of the module it packages, and of each module it
+grants for that module's own layers - see
 [*Building &amp; running*](/tool/building-and-running/#granting-native-access).
 
 ## Emulating a signed jar

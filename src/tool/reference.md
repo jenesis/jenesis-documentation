@@ -384,7 +384,7 @@ already uses. This is the whole vocabulary:
 | `@jenesis.test [<module>\|abstract]` | Marks this module as the test module of another, or as test infrastructure that declares no tests of its own (`abstract`). | *[Building &amp; running](/tool/building-and-running/)* |
 | `@jenesis.plugin [<compiler>] <token>` | An annotation processor, or a compiler plugin for a named compiler. | *[Other JVM languages](/tool/other-jvm-languages/)* |
 | `@jenesis.attach <token> [<options>]` | A library to attach as a Java agent (`<!--jenesis.attach-->` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
-| `@jenesis.native <token>…` | Native access for the modules named, this one only when it names itself, including one in a layer (`<!--jenesis.native-->` in a POM). | *[Building &amp; running](/tool/building-and-running/#granting-native-access)* |
+| `@jenesis.native <token>…` | Native access for the modules named, this one only when it names itself, including one in a layer; what a granted module names in its own layers is granted with it (`<!--jenesis.native-->` in a POM). | *[Building &amp; running](/tool/building-and-running/#granting-native-access)* |
 | `@jenesis.exclude <module> <group>/<artifact>…` | Transitives to prune from a requirement (`<exclusions>` in a POM). | *[Dependencies](/tool/dependencies/)* |
 | `@jenesis.alias <module> <group>/<artifact>[/<type>[/<classifier>]]` | A module name for an artifact that has none. | *[Dependencies](/tool/dependencies/)* |
 | `@jenesis.override <module> <module>…` | A module to replace with the modules that already carry its packages. | *[Dependencies](/tool/dependencies/)* |
