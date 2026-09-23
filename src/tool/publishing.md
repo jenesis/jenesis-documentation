@@ -23,7 +23,9 @@ java build/jenesis/Make.java export
   under `<group>/<artifact>/<version>/`. Maven, and Gradle through `mavenLocal()`, consume them from there.
 - The `modular` layout exports only the modules, into the local module repository (`~/.jenesis`), under
   `<module>/<version>/`. Every export also refreshes `<module>/<module>.jar`, which holds the latest one.
-- `modular_to_maven` exports both.
+- `modular_to_maven`, the default, exports both, so one export is consumed everywhere: by a POM-based project
+  of any build tool through the local Maven repository, and by a Jenesis project that requires the module by
+  name through the local module repository.
 
 A project that sets no version exports an unversioned module, whose POM carries `0-SNAPSHOT`. Another project
 requires the module by name, and the local repositories are read before any remote: without a pin it takes
