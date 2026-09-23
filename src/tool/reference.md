@@ -125,7 +125,7 @@ in one step.
 | `jenesis.project.sources` | `false` | Also assemble a per-module sources jar. |
 | `jenesis.project.documentation` | `false` | Also assemble a per-module javadoc jar. |
 | `jenesis.project.watch` | `false` | Keep the process alive and rebuild on every source change (see *[Building &amp; running](/tool/building-and-running/)*). |
-| `jenesis.project.customizer` | *(none)* | A `Function<InferredMultiProjectAssembler, MultiProjectAssembler>` class under `build/custom/`, applied to the configured assembler (see *[Extending the build](/tool/extending-the-build/#customizing-the-stock-build)*). Under `jenesis.project.docker`, applied inside the container only. |
+| `jenesis.project.customizer` | *(none)* | A `Project.Customizer` class under `build/custom/`, applied to the configured assembler (see *[Extending the build](/tool/extending-the-build/#customizing-the-stock-build)*). Under `jenesis.project.docker`, applied inside the container only. |
 
 ### The entry point (`build/jenesis/Make.java`)
 
