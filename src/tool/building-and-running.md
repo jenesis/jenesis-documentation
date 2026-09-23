@@ -168,7 +168,7 @@ documentation tool (`javadoc` for Java) and adds a `-javadoc.jar`. Both are off 
 build time you do not want on every inner-loop run. Turn them on for a release, or record them in a profile
 (see *[Configuration](/tool/configuration/)*).
 
-{% demos 58 %}
+{% demos 59 %}
 
 ### Reproducible archives
 
@@ -195,7 +195,7 @@ fixes the line endings of every file Git treats as text, whatever machine checks
 * text=auto eol=lf
 ```
 
-{% demos 60 %}
+{% demos 61 %}
 
 ## Passing extra arguments to a tool
 
@@ -359,6 +359,67 @@ module demo.agents.test {
 
 {% demos 48 %}
 
+## Granting native access
+
+Code that calls native functions or reads native memory - through the foreign function and memory API, JNI,
+or a library built on either - uses *restricted methods*, which the JDK allows only for a module the launch
+names with `--enable-native-access`. Without it the JDK prints a warning today, and a future release refuses
+the call. A `@jenesis.native` tag declares that grant, and the build adds it to every launch the module owns:
+its test run, its `Execute` run, and what it packages - a bundle, a Docker image, a `jpackage` application and
+an executable jar.
+
+The grant is the running program's to give, never the library's. A library states that it needs native
+access with a bare tag:
+
+```java
+/**
+ * @jenesis.native
+ */
+module demo.natives.text {
+    exports demo.natives.text;
+}
+```
+
+Its jar then carries the manifest attribute `Jenesis-Native-Access: true`, which tells a user of the library
+that a grant is needed and grants nothing. The module that runs the library names it:
+
+```java
+/**
+ * @jenesis.main demo.natives.app.Application
+ * @jenesis.native demo.natives.text
+ */
+module demo.natives.app {
+    requires demo.natives.text;
+}
+```
+
+Only the declarations of the module that runs count, and a declaration never propagates to a dependent. A test
+module is a run of its own and grants what its tests need itself. A token is a module name or a
+`<groupId>/<artifactId>`, several may share one tag, and a bare tag in a module that runs grants that module
+itself. A grant adds no dependency: what it names has to be on the module's run-time path, or in one of the
+layers it runs, or the build fails saying so. A jar on the class path has no name, so a grant for one becomes
+`--enable-native-access=ALL-UNNAMED`. A module isolated in a layer is named the same way, or as
+`layer:<name>/module/<module>`, and the launcher grants it when it defines the layer.
+
+A `pom.xml` project declares the same in a project-level comment block, where an empty block states the
+project's own need and a token names a dependency:
+
+```xml
+<!--jenesis.native-->
+<!--jenesis.native
+org.example/jni
+-->
+```
+
+By default a dependency's `Jenesis-Native-Access` is only information. `jenesis.dependency.native=strict`
+fails the build of any module whose run includes such a jar without granting it, and names each one:
+
+```bash
+java -Djenesis.dependency.native=strict build/jenesis/Make.java
+```
+
+{% demos 49 %}
+
 ## Watch mode
 
 While you are editing, keep the build process alive and let it rebuild on every save. Set
@@ -487,4 +548,4 @@ another match. GitHub's hosted Linux runners install the JDKs of `actions/setup-
 so a job that searches for one restricts it first, with `chmod -R go-w` on its folder. Windows has no such
 check, so there the search relies on the protection of `C:\Program Files` and of your user profile.
 
-{% demos 61 %}
+{% demos 62 %}

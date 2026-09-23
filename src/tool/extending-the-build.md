@@ -128,7 +128,7 @@ new Project(Path.of(".")).assembler(withSign).build(args);
 the stock output under `assemble` and chaining a `sign` step onto it. Wrappers compose freely: stack several
 (sign, stamp licence headers, emit checksums) without ever reimplementing the Java toolchain.
 
-{% demos 49 %}
+{% demos 50 %}
 
 ### Redirecting a module's inputs
 
@@ -184,7 +184,7 @@ a second project module.
   <em>dependencies</em> need not be, since a module layer admits automatic modules too.
 </div>
 
-{% demos 51, 52 %}
+{% demos 52, 53 %}
 
 ## Reusing the toolchain from your own entry point
 
@@ -213,7 +213,7 @@ This is a middle ground: no layout, no goals, no `Project`, yet you did not wire
 no generated POM). For full control - a custom repository, strict pinning, a different digest, or emitting a
 POM as well - switch to the longer `make(...)` overload that `Project` itself uses.
 
-{% demos 53, 54 %}
+{% demos 54, 55 %}
 
 ## Wiring the graph by hand
 
@@ -237,7 +237,7 @@ cached outputs whose inputs are unchanged. The `generate` step above synthesises
 There is no phase lifecycle to fit into: a build is just steps wired to steps, and here you wire them
 yourself.
 
-{% demos 55 %}
+{% demos 56 %}
 
 ## Running a build inside another program
 
@@ -275,7 +275,7 @@ The tools are found by name when `build.jenesis` is a resolved module or a jar o
 mode registers no service, so a program there constructs `new MakeTool()`, `new ExecuteTool()` or
 `new JpxTool()` itself; the contract is the same.
 
-{% demos 56 %}
+{% demos 57 %}
 
 ## Running your entry point on the project's JDK
 

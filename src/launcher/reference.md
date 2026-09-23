@@ -29,6 +29,8 @@ describes a [Java agent](#bundled-java-agents) rather than an application.
 | `addExports` | [`--add-exports` grants](#relaxing-module-access) applied to the bundled modules. | no |
 | `addOpens` | [`--add-opens` grants](#relaxing-module-access). | no |
 | `addReads` | [`--add-reads` grants](#relaxing-module-access). | no |
+| `enableNativeAccess` | Comma-separated bundled modules granted [native access](#granting-native-access). | yes, for what the running module grants |
+| `enableNativeAccess.<layer>` | The same for the modules of a [module layer](#module-layers). | yes, for what the running module grants in the layer |
 | `signature.<dep>` | [Base64 PKCS#7 chain](#emulating-a-signed-jar) restoring a class-path dependency's signer identity. | no |
 
 ### Every path is named
@@ -135,6 +137,24 @@ no bundled module to relax, and they are ignored. To open a *boot* module to
 your code, use the JDK's own executable-jar manifest attributes (`Add-Opens`, `Add-Exports`), which the JVM
 honours under `java -jar`.
 
+## Granting native access
+A module that calls native code needs native access, which `java` grants with `--enable-native-access`. A
+launcher jar is started with `java -jar`, so the grant travels in the jar instead:
+
+```properties
+enableNativeAccess=com.example.ffm
+enableNativeAccess.render=com.example.native.renderer
+```
+
+`enableNativeAccess` names bundled modules on the module path; `enableNativeAccess.<layer>` names modules of
+that layer, which the launcher grants when it defines the layer - a module that exists only in a layer is out
+of reach of any command-line option. Outside a launcher jar the layer's list arrives as the
+`jlayer.enableNativeAccess.<layer>` system property. A name that is not among the modules is refused. The
+class path has no module to name: the outer jar's `Enable-Native-Access: ALL-UNNAMED` attribute grants it, and
+it also covers the launcher itself, which needs native access to grant a module without a warning. The build
+tool writes all three from the `@jenesis.native` declarations of the module it packages - see
+[*Building &amp; running*](/tool/building-and-running/#granting-native-access).
+
 ## Emulating a signed jar
 A dependency that shipped as a *signed* jar loses its signer identity when exploded: its signature files
 (`META-INF/*.SF`, `*.RSA`/`*.DSA`/`*.EC`) become ordinary entries, so a class-path class would otherwise
@@ -161,12 +181,14 @@ dependency's `CodeSource`, so `getCodeSigners()` and `getCertificates()` report 
 ## Manifest attributes
 
 The outer jar's manifest is what connects `java -jar` (or `-javaagent:`) to the launcher. The build tool
-writes `Main-Class`; the rest belong to a jar you assemble yourself, and appear only when it carries agents.
+writes `Main-Class`, and `Enable-Native-Access` for an application that grants native access; the rest belong
+to a jar you assemble yourself, and appear only when it carries agents.
 
 | Attribute | Value | When it is used |
 | --- | --- | --- |
 | `Main-Class` | `build.jenesis.launcher.Launcher` | Always - makes `java -jar foo.jar` start the launcher. |
 | `Launcher-Agent-Class` | `build.jenesis.launcher.LauncherAgent` | An application that bundles agents; captures an `Instrumentation` before `main` under `java -jar foo.jar`. |
+| `Enable-Native-Access` | `ALL-UNNAMED` | An application that grants native access; the JVM reads it under `java -jar` for the class path and the launcher. |
 | `Premain-Class` | `build.jenesis.launcher.LauncherAgent` (or your own delegating class) | An agent jar attached with `java -javaagent:foo.jar`. |
 | `Agent-Class` | `build.jenesis.launcher.LauncherAgent` (or your own delegating class) | An agent jar attached dynamically at run time. |
 | `Can-Redefine-Classes` / `Can-Retransform-Classes` | `true` | Standard JVM agent attributes; set them when a bundled agent redefines or retransforms classes. The JVM reads them, not the launcher. |
