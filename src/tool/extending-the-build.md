@@ -110,11 +110,13 @@ immediately rather than silently breaking cache invalidation. If you see it, hol
 ## Adding a step to the stock pipeline
 
 The lightest way to extend a build is to keep the whole stock toolchain and **wrap the assembler** - the
-callback that wires each module's compile/jar/test sub-graph. You drop a **customizer** into the project's own
-`build/` folder: a class that is handed the project the build would run and returns the one to run instead.
-This one interposes a `sign` step after the stock build:
+callback that wires each module's compile/jar/test sub-graph. You drop a **customizer** into the project's
+`build/custom/` folder: a class that is handed the project the build would run and returns the one to run
+instead. This one, `build/custom/Signing.java`, interposes a `sign` step after the stock build:
 
 ```java
+package build.custom;
+
 public class Signing implements UnaryOperator<Project> {
 
     @Override
@@ -132,7 +134,7 @@ public class Signing implements UnaryOperator<Project> {
 Name it when you run the stock build:
 
 ```bash
-java build/jenesis/Make.java -Djenesis.project.customizers=build.Signing
+java build/jenesis/Make.java -Djenesis.project.customizers=build.custom.Signing
 ```
 
 `jenesis.project.customizers` takes several classes, separated by commas, and applies them in order. Every
@@ -140,8 +142,9 @@ other part of the build stays as it was. `jenesis.properties`, the profiles and 
 the project a customizer receives, and `project.assembler()` is the assembler they configured, so the wrapper
 keeps every option of the stock one. The build then runs on the JDK, in the daemon or in Docker as those
 settings ask, and `Execute.java` runs a program built by the customized build when it is given the same
-setting. A customizer is compiled with the build from `build/`, and it needs a public constructor without
-arguments.
+setting. A customizer is compiled with the build from `build/custom/`, and it needs a public constructor
+without arguments. `jenesis-validate` compares `build/jenesis` alone, so a customizer leaves the vendored
+engine valid.
 
 A customizer runs code of the project's own, so a file the project provides cannot name one: pass it on the
 command line, in an `@<file>` argument, or in your own `~/.jenesis/jenesis.properties`, which is how you trust a
@@ -328,8 +331,8 @@ again itself. `version(...)` and `searchpath(...)` return a copy with another ve
 A custom entry point is the one thing the installed `jenesis` command cannot run: it launches the published
 engine, not the `Build.java` or assembler wrapper you wrote, so a customised build is always launched in
 source mode - and source mode recompiles the engine *and* your build code on every invocation. The same holds
-for a customizer: the installed command compiles nothing under `build/`, so it refuses a
-`jenesis.project.customizers` it cannot find. `java build/jenesis/Make.java` compiles `build/` once into
+for a customizer: the installed command compiles nothing under `build/custom/`, so it refuses a
+`jenesis.project.customizers` it cannot find. `java build/jenesis/Make.java` compiles `build/custom/` once into
 `.jenesis/classes` and reuses it until a source there changes, so a customizer needs none of what follows.
 
 Compile both once and the loop gets its speed back:
