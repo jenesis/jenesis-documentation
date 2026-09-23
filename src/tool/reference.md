@@ -87,7 +87,7 @@ inputs are always real folders.
 | `java build/jenesis/Make.java ::/test` | Every `test` step at any depth, plus its predecessors. |
 | `java build/jenesis/Make.java build/::/test` | The same, anchored under the top-level `build` module. |
 | `java build/jenesis/Make.java +mymodule` | Only the named module's subgraph. |
-| `java build/jenesis/Make.java pin/module-api%2Fclient` | Only the `api/client` module's pins. |
+| `java build/jenesis/Make.java pin/module-api+client` | Only the `api/client` module's pins. |
 
 A `+<module>` selector narrows **`build`** and nothing else. `pin`, `stage` and `export` are entry points of
 their own, so `pin +mymodule` runs the whole project's pin *and* that module's build rather than a pin
