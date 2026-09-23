@@ -1,17 +1,88 @@
 ---
 order: 16
 title: Extending the build
-description: Write your own build step, add it to the stock pipeline through a custom assembler, or wire the whole graph by hand - and the serialised-state rule a custom step must respect.
+description: Adjust the stock build with a customizer, write the build steps it adds, package them as a plugin, or write an entry point of your own when one adjusted build is not enough.
 ---
 
 Every chapter so far drove the stock pipeline: a layout auto-detects your modules, the default assembler
 wires the conventional compile/jar/test flow, and you configure it by choosing among the options it offers.
-This chapter is for the build that needs something the templates *do not* model - a preprocessing pass, a
-code-generation step, a bespoke packaging step, an unusual dependency wiring.
+This chapter is for the build that needs something the stock pipeline *does not* model - a preprocessing pass,
+a code-generation step, a bespoke packaging step, an unusual dependency wiring.
 
-There are three levels of control, from least to most custom: wrap the stock assembler, drive the toolchain
-from your own entry point, or wire the graph by hand. A fourth question is where an extension lives once more
-than one project wants it. All of them share one primitive, the build step, so start there.
+Almost always, the answer is a **customizer**: a class that adjusts the project the stock build would run and
+keeps everything else about it. Only a build that is more than one adjusted project - several builds whose
+results are compared, one build feeding the next, a graph with no project at all - needs an entry point of
+its own, and that comes last.
+
+## Customizing the stock build
+
+A customizer is a class in the project's `build/custom/` folder that implements `UnaryOperator<Project>`: it is
+handed the project the settings configured and returns the one to build. Most customizers wrap the
+**assembler** - the callback that wires each module's compile/jar/test sub-graph. This one,
+`build/custom/Signing.java`, adds a `sign` step after the stock build:
+
+```java
+package build.custom;
+
+public class Signing implements UnaryOperator<Project> {
+
+    @Override
+    public Project apply(Project project) {
+        return project.assembler((descriptor, repositories, resolvers) -> project.assembler()
+                .apply(descriptor, repositories, resolvers)
+                .mapBuild(stock -> (sub, inherited) -> {
+                    sub.addModule("assemble", stock, inherited.sequencedKeySet().stream());
+                    sub.addStep("sign", (executor, context, arguments) -> {
+                        // read the jars in each argument's folder, write their signatures into context.next()
+                        return CompletableFuture.completedStage(new BuildStepResult(true));
+                    }, "assemble");
+                }));
+    }
+}
+```
+
+Name it when you run the build:
+
+```bash
+java build/jenesis/Make.java -Djenesis.project.customizers=build.custom.Signing
+```
+
+`project.assembler()` is the assembler the settings configured, and the lambda calls it for every module.
+`mapBuild` decorates only the module's build phase - here registering the stock output under `assemble` and
+chaining the `sign` step onto it. The build is otherwise the stock one: `jenesis.properties`, the profiles and
+the other settings configure the project the customizer receives, and the build runs on the JDK, in the daemon
+or in Docker as they ask. `java build/jenesis/Execute.java -Djenesis.project.customizers=…` runs the program
+the customized build produced.
+
+- `jenesis.project.customizers` takes several classes, separated by commas, and applies them in order, so
+  customizers compose: sign, stamp licence headers, emit checksums - without reimplementing the toolchain.
+- `Make.java` compiles `build/custom/` with the engine once, into `.jenesis/classes`, and again only when a
+  source there changes. A customizer needs a public constructor without arguments.
+- A customizer runs code of the project's own, so a file the project provides cannot name one: pass it on the
+  command line, in an `@<file>` argument, or in your own `~/.jenesis/jenesis.properties`, which is how you
+  trust a project to adjust its build.
+- `jenesis-validate` compares `build/jenesis` alone, so a customizer leaves the vendored engine valid. The
+  installed `jenesis` command runs the released engine and compiles nothing under `build/custom/`, so it
+  refuses a customizer it cannot find.
+
+{% demos 49, 50 %}
+
+### Redirecting a module's inputs
+
+A customizer can also change *what* the stock steps consume, because the module descriptor is immutable with a
+**wither per property**. Every reference accessor (`sources`, `resources`, `manifests`, `dependencies`,
+`artifacts`, `content`, `coordinates`, `spdx`) returns a `SequencedSet<String>`, so you can add or replace
+inputs in one line:
+
+```java
+descriptor.sources("preprocess")   // stock compile now reads the preprocess step's output, not sources/
+```
+
+That is the whole trick behind a preprocessing assembler: add a `preprocess` step that reads the module's
+`sources/`, rewrites it into its own output, then hand the stock assembler a descriptor whose `sources()`
+points at `preprocess`. `javac`, the jar step, and the tests all consume the transformed tree, and the rest
+of the build is untouched. Any pass that produces a `sources/` tree - template expansion, code generation,
+licence-header stamping - fits the same shape.
 
 ## Writing a build step
 
@@ -85,6 +156,9 @@ its serialised fields*. The practical rule follows directly:
 Because the step is serialised to be hashed, **all of its state must be serialisable**. This is checked on
 the first run, at hash time, not lazily. Two things make the common cases work:
 
+- A **step written as a lambda** serialises with what it captures, because `BuildStep` is itself
+  `Serializable`. A lambda that uses only its parameters captures nothing; one that creates an anonymous
+  class inside a customizer's method captures the customizer, which then implements `Serializable` too.
 - A **lambda** field serialises only if its declared type does. Declare the field as a serialisable
   functional interface, or cast the lambda to `Function<…> & Serializable` where you store it, and a lambda
   that closes over, say, a `Path` serialises cleanly. The stock steps do this at their constructors, which is
@@ -107,75 +181,9 @@ immediately rather than silently breaking cache invalidation. If you see it, hol
   your job from then on.
 </div>
 
-## Adding a step to the stock pipeline
-
-The lightest way to extend a build is to keep the whole stock toolchain and **wrap the assembler** - the
-callback that wires each module's compile/jar/test sub-graph. You drop a **customizer** into the project's
-`build/custom/` folder: a class that is handed the project the build would run and returns the one to run
-instead. This one, `build/custom/Signing.java`, interposes a `sign` step after the stock build:
-
-```java
-package build.custom;
-
-public class Signing implements UnaryOperator<Project> {
-
-    @Override
-    public Project apply(Project project) {
-        MultiProjectAssembler<? super ProjectModuleDescriptor> base = project.assembler();
-        return project.assembler((descriptor, repos, resolvers) ->
-                base.apply(descriptor, repos, resolvers).mapBuild(delegate -> (sub, inherited) -> {
-                    sub.addModule("assemble", delegate, inherited.sequencedKeySet().stream());
-                    sub.addStep("sign", new Sign(), "assemble"); // Sign is your BuildStep
-                }));
-    }
-}
-```
-
-Name it when you run the stock build:
-
-```bash
-java build/jenesis/Make.java -Djenesis.project.customizers=build.custom.Signing
-```
-
-`jenesis.project.customizers` takes several classes, separated by commas, and applies them in order. Every
-other part of the build stays as it was. `jenesis.properties`, the profiles and the other settings configure
-the project a customizer receives, and `project.assembler()` is the assembler they configured, so the wrapper
-keeps every option of the stock one. The build then runs on the JDK, in the daemon or in Docker as those
-settings ask, and `Execute.java` runs a program built by the customized build when it is given the same
-setting. A customizer is compiled with the build from `build/custom/`, and it needs a public constructor
-without arguments. `jenesis-validate` compares `build/jenesis` alone, so a customizer leaves the vendored
-engine valid.
-
-A customizer runs code of the project's own, so a file the project provides cannot name one: pass it on the
-command line, in an `@<file>` argument, or in your own `~/.jenesis/jenesis.properties`, which is how you trust a
-project to adjust its build.
-
-`apply` on the assembler returns the module's build description; `mapBuild` decorates only its build phase - here registering
-the stock output under `assemble` and chaining a `sign` step onto it. Wrappers compose freely: stack several
-(sign, stamp licence headers, emit checksums) without ever reimplementing the Java toolchain.
-
-{% demos 49 %}
-
-### Redirecting a module's inputs
-
-A wrapper can also change *what* the stock steps consume, because the module descriptor is immutable with a
-**wither per property**. Every reference accessor (`sources`, `resources`, `manifests`, `dependencies`,
-`artifacts`, `content`, `coordinates`, `spdx`) returns a `SequencedSet<String>`, so you can add or replace
-inputs in one line:
-
-```java
-descriptor.sources("preprocess")   // stock compile now reads the preprocess step's output, not sources/
-```
-
-That is the whole trick behind a preprocessing assembler: add a `preprocess` step that reads the module's
-`sources/`, rewrites it into its own output, then hand the stock assembler a descriptor whose `sources()`
-points at `preprocess`. `javac`, the jar step, and the tests all consume the transformed tree, and the rest
-of the build is untouched. Any pass that produces a `sources/` tree - template expansion, code generation,
-licence-header stamping - fits the same shape.
-
 ## Packaging the extension as a plugin
 
-A customizer written in a project's own `build/custom/` folder belongs to one project. When the same pass - a code generator, a
+A customizer in a project's `build/custom/` folder belongs to that project. When the same pass - a code generator, a
 source preprocessor - should serve several, package it as a **build module**: a named Java module that
 `provides` a build-executor service, which Jenesis discovers through that declaration alone.
 
@@ -184,8 +192,8 @@ A build module comes from one of two places, and nothing else about it differs:
 - an **internal** build module is compiled from local source in its own project folder, and
 - an **external** build module is resolved from a repository coordinate, like any published artifact.
 
-Either way you wire it in from a customizer's assembler wrapper, exactly like the `sign` step above, by adding it as a
-module that the stock steps then read from. An internal module names its source folder; an external one
+Either way a customizer wires it in, exactly like the `sign` step above, by adding it as a module that the
+stock steps then read from. An internal module names its source folder; an external one
 names the coordinate to resolve and where to resolve it:
 
 ```java
@@ -212,10 +220,30 @@ a second project module.
 
 {% demos 51, 52 %}
 
-## Reusing the toolchain from your own entry point
+## Writing an entry point of your own
 
-When you want your own `main` but still the stock compile/jar/test flow, skip `Project` and call the
-convenience factory `MavenProject.make` (or `ModularProject.make` for a Java Module System project). It
+A build that a customizer cannot express - several builds compared, one staged build feeding the next, a
+graph with no project at all - is a program of its own, run as `java build/Demo.java`. Where it builds the
+project, it calls `Make`, which reads `jenesis.properties`, the profiles and the `-Djenesis.*` properties the
+JVM was started with, and returns what the build produced:
+
+```java
+Make.Result staged = new Make("build.jenesis.Project").build("stage");
+Path packages = staged.outputs().get("stage/packages");
+```
+
+Such an entry point starts on whichever JDK runs it. To honour `jenesis.toolchain.version`, as `Make.java`
+does, ask `Toolchain` from `build.jenesis`: `new Toolchain().home()` answers the JDK the version selects, and
+`launch(Demo.class, options, arguments)` starts the entry point again on it and returns its exit code.
+
+A file that names `Project` or the steps is compiled by the JDK's source launcher on every run, engine
+included. Compile it once when that matters - `javac -d .jenesis/tool $(find build/ -name '*.java')`, then
+`java -cp .jenesis/tool build.Demo` - and keep `java build/Demo.java` as the documented command.
+
+### Reusing the toolchain without `Project`
+
+When the stock compile/jar/test flow fits but `Project` does not, call the convenience factory
+`MavenProject.make` (or `ModularProject.make` for a Java Module System project). It
 discovers the modules under a root, fills in sane defaults - a Maven Central repository, the right resolver, a
 digest - and leaves only the assembler for you to supply:
 
@@ -241,7 +269,7 @@ POM as well - switch to the longer `make(...)` overload that `Project` itself us
 
 {% demos 53, 54 %}
 
-## Wiring the graph by hand
+### Wiring the graph by hand
 
 When auto-detection is the wrong starting point entirely - a non-Java pipeline, code generation, a wildly
 custom graph - drop to the `BuildExecutor` primitives and build exactly the graph you want:
@@ -303,47 +331,3 @@ mode registers no service, so a program there constructs `new MakeTool()`, `new 
 
 {% demos 56 %}
 
-## Running your entry point on the project's JDK
-
-`Make.java` and `Execute.java` start again on the JDK that `jenesis.toolchain.version` names (see
-*[Building &amp; running](/tool/building-and-running/#the-jdk-a-build-runs-on)*). An entry point of your own
-does so only when it asks `Toolchain`, from `build.jenesis`:
-
-```java
-static void main(String... selectors) throws Exception {
-    Make make = new Make("build.jenesis.Project");
-    Toolchain toolchain = new Toolchain();
-    if (!toolchain.home().equals(Path.of(System.getProperty("java.home")))) {
-        System.exit(toolchain.launch(Demo.class, List.of(), List.of(selectors)));
-    }
-    System.exit(make.run(selectors));
-}
-```
-
-`new Make(...)` reads `jenesis.properties` first, so the version can come from the project. `home()` answers
-the JDK the version selects - the running one when it matches or no version is set - and `launch` starts the
-entry point again on it, the same way it was started, and returns the exit code. The first list holds JVM
-options for the new JVM, such as `-D` properties of the command line; the new JVM reads the project's files
-again itself. `version(...)` and `searchpath(...)` return a copy with another version or search path.
-
-## Compiling your build
-
-A custom entry point is the one thing the installed `jenesis` command cannot run: it launches the published
-engine, not the `Build.java` or assembler wrapper you wrote, so a customised build is always launched in
-source mode - and source mode recompiles the engine *and* your build code on every invocation. The same holds
-for a customizer: the installed command compiles nothing under `build/custom/`, so it refuses a
-`jenesis.project.customizers` it cannot find. `java build/jenesis/Make.java` compiles `build/custom/` once into
-`.jenesis/classes` and reuses it until a source there changes, so a customizer needs none of what follows.
-
-Compile both once and the loop gets its speed back:
-
-```bash
-javac -d .jenesis/tool $(find build/ -name '*.java')
-java -cp .jenesis/tool build.Demo
-```
-
-`find build/` picks up the vendored engine and your own build classes together, and the class you name is
-your entry point rather than `build.jenesis.Project`. Recompile whenever you edit either; that recompile is
-the whole cost, and it is paid when you change the build rather than every time you run it. Keep
-`java build/Demo.java` as the documented command - it needs nothing but a JDK - and treat the compiled
-classes as a local convenience, ignored by git.
