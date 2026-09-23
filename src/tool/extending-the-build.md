@@ -34,6 +34,10 @@ The value says where the plugin comes from:
 - anything else is a module name, resolved as `module/<name>` from the Jenesis module repository whatever the
   project's layout, with the local export (`~/.jenesis`) searched first.
 
+Either may end in `@<name>`, which selects the provider annotated `@BuildModuleName("<name>")` when the plugin
+module provides several: `artifact/signing=demo.signing@jarsigner`. Without it, the module must provide exactly
+one unannotated provider.
+
 A plugin reads what the module it joins reads, and its output belongs to that module like any of the stock
 steps': a plugin in `binary/generated` that writes a `sources/` tree has it compiled with the project's own
 sources, and a plugin in `artifact` reads the jars the build produced. The plugins of a slot are wired inside
