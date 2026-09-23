@@ -160,8 +160,8 @@ category/Apache-2.0=permissive
 ```
 
 `alias/<declared name>` normalises a licence name as written in a POM to its canonical SPDX id. A licence that
-names no identifier is matched by its URL as well, written without its scheme, a leading `www.`, a file
-extension or a trailing slash: `alias/example.com/licenses/widget=Apache-2.0` covers
+names no identifier is matched by its URL as well, written without its scheme, a leading `www.`, a `.txt`,
+`.html`, `.htm`, `.php` or `.md` extension, or a trailing slash: `alias/example.com/licenses/widget=Apache-2.0` covers
 `https://www.example.com/licenses/widget.txt`. `category/<SPDX id>` classifies an identifier. Each entry
 **appends** to the built-in tables rather than replacing them, and the same classification feeds both the
 licence check and the SBOM's licence identifiers. It is distinct from `licensing.properties`, which is the
