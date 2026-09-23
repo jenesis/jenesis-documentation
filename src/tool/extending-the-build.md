@@ -20,22 +20,22 @@ A project names its plugins in `jenesis-plugins.properties`, beside `jenesis.pro
 line:
 
 ```properties
-binary/generated/greeting=./plugin
-artifact/signing=demo.signing
+greeting+binary/generated=./plugin
+signing+artifact=demo.signing
 ```
 
-The key is `<slot>/<name>`. The **slot** is the module of the stock build the plugin joins, named as the build
-log shows it: `check`, `format`, `compliance`, `binary`, `binary/generated`, `binary/compiled`,
-`binary/validate`, `artifact`, `observed`, `documentation` and `documentation/generate`. A key without a slot
-adds the plugin to the module build itself, and an unknown slot is refused. The **name** is the plugin's own.
-The value says where the plugin comes from:
+The key is `<name>+<slot>`. The **name** is the plugin's own, and holds neither `/` nor `+`. The **slot** is the
+module of the stock build the plugin adds to, named as the build log shows it: `check`, `format`, `compliance`,
+`binary`, `binary/generated`, `binary/compiled`, `binary/validate`, `artifact`, `observed`, `documentation` and
+`documentation/generate`. A key without `+<slot>` adds the plugin to the module build itself, and an unknown slot
+is refused. The value says where the plugin comes from:
 
 - a value starting with `./` or `../` is a folder, compiled from source on every build, and
 - anything else is a module name, resolved as `module/<name>` from the Jenesis module repository whatever the
   project's layout, with the local export (`~/.jenesis`) searched first.
 
-Either may end in `@<name>`, which selects the provider annotated `@BuildModuleName("<name>")` when the plugin
-module provides several: `artifact/signing=demo.signing@jarsigner`. Without it, the module must provide exactly
+Either may end in `@<provider>`, which selects the provider annotated `@BuildModuleName("<provider>")` when the plugin
+module provides several: `signing+artifact=demo.signing@jarsigner`. Without it, the module must provide exactly
 one unannotated provider.
 
 A plugin reads what the module it joins reads, and its output belongs to that module like any of the stock
