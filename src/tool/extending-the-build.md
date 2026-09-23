@@ -16,19 +16,20 @@ its own, and that comes last.
 
 ## Customizing the stock build
 
-A customizer is a class in the project's `build/custom/` folder that implements `UnaryOperator<Project>`: it is
-handed the project the settings configured and returns the one to build. Most customizers wrap the
-**assembler** - the callback that wires each module's compile/jar/test sub-graph. This one,
+A customizer is a class in the project's `build/custom/` folder that adjusts the **assembler** - the callback
+that wires each module's compile/jar/test sub-graph. It implements
+`Function<InferredMultiProjectAssembler, MultiProjectAssembler<? super ProjectModuleDescriptor>>`: it is handed
+the stock assembler the settings configured and returns the assembler to build with. This one,
 `build/custom/Signing.java`, adds a `sign` step after the stock build:
 
 ```java
 package build.custom;
 
-public class Signing implements UnaryOperator<Project> {
+public class Signing implements Function<InferredMultiProjectAssembler, MultiProjectAssembler<? super ProjectModuleDescriptor>> {
 
     @Override
-    public Project apply(Project project) {
-        return project.assembler((descriptor, repositories, resolvers) -> project.assembler()
+    public MultiProjectAssembler<? super ProjectModuleDescriptor> apply(InferredMultiProjectAssembler assembler) {
+        return (descriptor, repositories, resolvers) -> assembler
                 .apply(descriptor, repositories, resolvers)
                 .mapBuild(stock -> (sub, inherited) -> {
                     sub.addModule("assemble", stock, inherited.sequencedKeySet().stream());
@@ -36,7 +37,7 @@ public class Signing implements UnaryOperator<Project> {
                         // read the jars in each argument's folder, write their signatures into context.next()
                         return CompletableFuture.completedStage(new BuildStepResult(true));
                     }, "assemble");
-                }));
+                });
     }
 }
 ```
@@ -44,20 +45,22 @@ public class Signing implements UnaryOperator<Project> {
 Name it in the project's `jenesis.properties`, so every build of the project applies it:
 
 ```properties
-jenesis.project.customizers=build.custom.Signing
+jenesis.project.customizer=build.custom.Signing
 ```
 
 The same key works on the command line or in a profile, like any other setting.
 
-`project.assembler()` is the assembler the settings configured, and the lambda calls it for every module.
-`mapBuild` decorates only the module's build phase - here registering the stock output under `assemble` and
-chaining the `sign` step onto it. The build is otherwise the stock one: `jenesis.properties`, the profiles and
-the other settings configure the project the customizer receives, and the build runs on the JDK, in the daemon
-or in Docker as they ask. `java build/jenesis/Execute.java` reads the same settings and runs the program the
+The assembler the customizer returns is a lambda that calls the stock one for every module. `mapBuild`
+decorates only the module's build phase - here registering the stock output under `assemble` and chaining the
+`sign` step onto it. The build is otherwise the stock one: `jenesis.properties`, the profiles and the other
+settings configure the assembler the customizer receives, and the build runs on the JDK, in the daemon or in
+Docker as they ask. `java build/jenesis/Execute.java` reads the same settings and runs the program the
 customized build produced.
 
-- `jenesis.project.customizers` takes several classes, separated by commas, and applies them in order, so
-  customizers compose: sign, stamp licence headers, emit checksums - without reimplementing the toolchain.
+- `jenesis.project.customizer` names one class. A build that signs, stamps licence headers and emits checksums
+  does all of it in that one function, without reimplementing the toolchain.
+- A program that builds the project itself hands the same function to `new Project(root, customizer)`, or to
+  `Project.ofEnvironment(environment, root, customizer)` to start from the settings.
 - `Make.java` compiles `build/custom/` with the engine once, into `.jenesis/classes`, and again only when a
   source there changes. A customizer needs a public constructor without arguments.
 - `jenesis-validate` compares `build/jenesis` alone, so a customizer leaves the vendored engine valid. The
@@ -72,6 +75,25 @@ customized build produced.
 </div>
 
 {% demos 50, 51 %}
+
+### Adding modules beside the stock ones
+
+Every module the stock assembler wires - the checks, the formatters, the compliance checks, the toolchain and
+the modules it nests, the test observation, the documentation - and the assembler's own module build take
+additional modules through a `custom` wither. They are wired next to the stock ones, inside a sub-module named
+`custom`, and each reads what the module it is added to reads. No stock module is named `custom`, so an added
+name never collides with a stock one, and nothing is wrapped or replaced:
+
+```java
+SequencedMap<String, BuildExecutorModule> checks = new LinkedHashMap<>();
+checks.put("placeholders", (module, inherited) -> module.addStep("verify", (executor, context, arguments) -> {
+    // fail when a source in any argument's folder still holds a ${ placeholder
+    return CompletableFuture.completedStage(new BuildStepResult(true));
+}, inherited.sequencedKeySet()));
+return assembler.check(check -> check.custom(checks));
+```
+
+The step runs as `check/custom/placeholders/verify`, next to the stock checks, on the sources they check.
 
 ### Redirecting a module's inputs
 
