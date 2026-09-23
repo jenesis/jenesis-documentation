@@ -110,21 +110,44 @@ immediately rather than silently breaking cache invalidation. If you see it, hol
 ## Adding a step to the stock pipeline
 
 The lightest way to extend a build is to keep the whole stock toolchain and **wrap the assembler** - the
-callback that wires each module's compile/jar/test sub-graph. You drop a `.java` file into the project's own `build/`
-folder and pass your wrapper to `Project`. This one interposes a `sign` step after the stock build:
+callback that wires each module's compile/jar/test sub-graph. You drop a **customizer** into the project's own
+`build/` folder: a class that is handed the project the build would run and returns the one to run instead.
+This one interposes a `sign` step after the stock build:
 
 ```java
-MultiProjectAssembler<ProjectModuleDescriptor> base = new InferredMultiProjectAssembler();
-MultiProjectAssembler<ProjectModuleDescriptor> withSign = (descriptor, repos, resolvers) ->
-        base.apply(descriptor, repos, resolvers).mapBuild(delegate -> (sub, inherited) -> {
-            sub.addModule("assemble", delegate, inherited.sequencedKeySet().stream());
-            sub.addStep("sign", new Sign(), "assemble"); // Sign is your BuildStep
-        });
+public class Signing implements UnaryOperator<Project> {
 
-new Project(Path.of(".")).assembler(withSign).build(args);
+    @Override
+    public Project apply(Project project) {
+        MultiProjectAssembler<? super ProjectModuleDescriptor> base = project.assembler();
+        return project.assembler((descriptor, repos, resolvers) ->
+                base.apply(descriptor, repos, resolvers).mapBuild(delegate -> (sub, inherited) -> {
+                    sub.addModule("assemble", delegate, inherited.sequencedKeySet().stream());
+                    sub.addStep("sign", new Sign(), "assemble"); // Sign is your BuildStep
+                }));
+    }
+}
 ```
 
-`apply` returns the module's build description; `mapBuild` decorates only its build phase - here registering
+Name it when you run the stock build:
+
+```bash
+java build/jenesis/Make.java -Djenesis.project.customizers=build.Signing
+```
+
+`jenesis.project.customizers` takes several classes, separated by commas, and applies them in order. Every
+other part of the build stays as it was. `jenesis.properties`, the profiles and the other settings configure
+the project a customizer receives, and `project.assembler()` is the assembler they configured, so the wrapper
+keeps every option of the stock one. The build then runs on the JDK, in the daemon or in Docker as those
+settings ask, and `Execute.java` runs a program built by the customized build when it is given the same
+setting. A customizer is compiled with the build from `build/`, and it needs a public constructor without
+arguments.
+
+A customizer runs code of the project's own, so a file the project provides cannot name one: pass it on the
+command line, in an `@<file>` argument, or in your own `~/.jenesis/jenesis.properties`, which is how you trust a
+project to adjust its build.
+
+`apply` on the assembler returns the module's build description; `mapBuild` decorates only its build phase - here registering
 the stock output under `assemble` and chaining a `sign` step onto it. Wrappers compose freely: stack several
 (sign, stamp licence headers, emit checksums) without ever reimplementing the Java toolchain.
 
@@ -304,7 +327,10 @@ again itself. `version(...)` and `searchpath(...)` return a copy with another ve
 
 A custom entry point is the one thing the installed `jenesis` command cannot run: it launches the published
 engine, not the `Build.java` or assembler wrapper you wrote, so a customised build is always launched in
-source mode - and source mode recompiles the engine *and* your build code on every invocation.
+source mode - and source mode recompiles the engine *and* your build code on every invocation. The same holds
+for a customizer: the installed command compiles nothing under `build/`, so it refuses a
+`jenesis.project.customizers` it cannot find. `java build/jenesis/Make.java` compiles `build/` once into
+`.jenesis/classes` and reuses it until a source there changes, so a customizer needs none of what follows.
 
 Compile both once and the loop gets its speed back:
 
