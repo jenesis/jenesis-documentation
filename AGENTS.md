@@ -117,9 +117,12 @@ than a heading and must match the id the repository server emits, not the wordin
 - **jpx.** Its API is public (`build.jenesis.Jpx` in `build.jenesis:build.jenesis` on Maven Central) and every
   signature shown is checked against `Jpx.java`. A `--docker` run with a named image is not hardened and
   reuses the host JDK.
-- **Launcher.** The build writes `mainClass`, `mainModule`, `classpath` and `Main-Class`, nothing else; the
-  other descriptor keys and manifest attributes are launcher capabilities for jars assembled by other means.
-  Subfolder names are URL-encoded coordinates; the application's own classes sit under `classes.jar/`.
+- **Launcher.** The build writes the descriptor keys `mainClass`, `mainModule` (modular only), `classpath`,
+  `modulepath` (always, empty when nothing is modular) and, per module layer, `modulepath.<layer>` and
+  `classpath.<layer>` (when non-empty), plus the manifest's `Main-Class` - nothing else; the other descriptor
+  keys and manifest attributes are launcher capabilities for jars assembled by other means. A subfolder is
+  named after the module its jar carries, or the URL-encoded coordinate for a jar that declares none; the
+  application's own classes sit under `classes.jar/`.
 - **Module index.** Every URL needs the trailing file segment (`/module/<name>/<name>.jar`); `/module/`,
   `/sources/` and `/documentation/` serve named modules only, `/artifact/` also automatic ones; an unknown
   version answers a best-effort 302 with `Jenesis-BestEffort: true`. The service is not a Maven

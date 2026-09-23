@@ -16,10 +16,10 @@ door is the **module summary**, which links the top-modules reports; the drift r
 ## The module summary
 
 [`SUMMARY.md`](https://github.com/jenesis/jenesis-modules/blob/main/data/SUMMARY.md) is the coverage report
-for all of Maven Central. Its opening **Totals** table is the headline. In a recent crawl it counted about
-**18 million** artifacts scanned, of which about **1.65 million** are modular - roughly **360 000** named
-and **1.3 million** automatic - spread across roughly **41 000** distinct module names and **5 300**
-publishing groupIds.
+for all of Maven Central. Its opening **Totals** table is the headline. In a recent crawl it counted more
+than **18 million** artifacts scanned, of which about **1.7 million** are modular - over **350 000** named
+and about **1.3 million** automatic. They carry more than **40 000** distinct module names from over
+**5 000** publishing groupIds.
 
 Two terms recur throughout, and the split matters:
 
@@ -85,6 +85,23 @@ assesses it against current data: the module columns describe each artifact's la
 today, and the ⚠️ / 🚩 activity flags use rolling 12- and 36-month windows. Read the per-year reports for
 the trend; read this one for where modularisation stands right now.
 
+It also measures how each row publishes against Maven Central's publishing limits, which the per-year
+reports leave out. The figures describe the row's whole **groupId** rather than its single artifact,
+because a group is the closest stand-in for the organisation Central limits. Rows sharing a groupId
+therefore carry the same figures:
+
+| Column | Shows |
+| --- | --- |
+| Group artifacts | How many artifacts the group published in the last year - all of them, not only the listed ones. |
+| Files per release, MB per release | What an average release serves, counting the artifacts, the POM, and their signatures and checksums. A release is one version across the group's artifacts. |
+| Releases per month | The group's releases over the last year, spread evenly across its months. |
+| Over Central limit | Which limits - files, size, releases - the group's monthly volume exceeds. A 🔺 marks each figure above its limit. |
+
+The two summary tables gain matching rows, counting the artifacts and the groups over each limit and over
+any of them. Read every figure as a **best case**. An organisation may hold several groupIds, so a group
+under a limit can still belong to an account over it. Central also averages over a rolling three months,
+so a group that published in one burst can breach there while its yearly mean here stays under.
+
 ## The drift report
 
 A module name is not owned by anyone on Maven Central. It is just a string a jar carries, and unrelated
@@ -93,7 +110,8 @@ artifacts routinely declare the same one. The
 name published by **more than one groupId** whose ownership has not been fully decided - that is,
 whose `owners.tsv` does not mark every publisher as `allowed` or `rejected`.
 
-It opens with a table counting the drifters by category:
+It opens with a table counting, per category, both the names still unresolved and those already
+resolved through an `owners.tsv`. The lists that follow cover the unresolved names only:
 
 | Category | What the collision looks like |
 | --- | --- |

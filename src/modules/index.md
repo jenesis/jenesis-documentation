@@ -8,12 +8,14 @@ description: What the Jenesis Module Index is, and how it turns a module name in
 `module-info.java` says `requires com.fasterxml.jackson.databind`, something has to know which artifact
 publishes that name. The module index records the module name every artifact on Maven Central declares and
 answers over HTTP at **[repo.jenesis.build](https://repo.jenesis.build/)**. Every answer is a 302 redirect
-to the real file on Maven Central, so nothing is re-hosted.
+to the real file, on Google's Maven Central mirror unless the request names another repository, so
+nothing is re-hosted.
 
 ## How you use it
 
 The module index is an **HTTP service, not a file you download**. You ask for a module name and a file
-name, and it redirects you to the jar on Maven Central. Anything that can follow a redirect is a client:
+name, and it redirects you to the jar on Google's Maven Central mirror. Anything that can follow a redirect
+is a client:
 
 ```bash
 # Resolve a module name to its newest released jar (follow the redirect with -L):

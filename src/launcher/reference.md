@@ -6,8 +6,9 @@ description: Every application.properties key and manifest attribute the launche
 
 Two files drive a launcher jar: the `application.properties` **descriptor** that tells the launcher what to
 run, and the jar **manifest** that tells the JVM to start the launcher. When the build tool
-[produces the jar](/launcher/producing-a-launcher-jar/), it writes `mainClass`, `mainModule`, `classpath`
-and `modulepath` into the descriptor and `Main-Class` into the manifest - nothing else. Everything else on this page is what
+[produces the jar](/launcher/producing-a-launcher-jar/), it writes `mainClass`, `mainModule`, `classpath`,
+`modulepath` and the keys of each [module layer](#module-layers) into the descriptor, and `Main-Class` into
+the manifest - nothing else. Everything else on this page is what
 the launcher itself understands, for a jar you assemble yourself with the same layout: by hand, with a
 script, or with another tool.
 
@@ -21,7 +22,7 @@ describes a [Java agent](#bundled-java-agents) rather than an application.
 | `mainClass` | Fully qualified class whose `main` the launcher invokes. Absent → the jar is an agent, not an application. | yes |
 | `mainModule` | The module owning `mainClass`, when the application is modular. | yes, for a modular application |
 | `classpath` | Comma-separated `jars/` entry names to read as the unnamed module, in the order to search them. | yes |
-| `modulepath` | Comma-separated `jars/` entry names to resolve as modules. | yes, for a modular application |
+| `modulepath` | Comma-separated `jars/` entry names to resolve as modules. | yes, empty when nothing is modular |
 | `modulepath.<layer>` | Comma-separated `jars/` entry names a [module layer](#module-layers) resolves. | yes, for a project that declares one |
 | `classpath.<layer>` | The same layer's class path, for jars that carry no module identity. | yes, when the layer holds any |
 | `agentClass` | Comma-separated [bundled agents](#bundled-java-agents) to run before `main`. | no |
@@ -59,10 +60,10 @@ modulepath.render=com.example.impl.jar,com.fasterxml.jackson.core-2.15.4.jar
 classpath.render=commons-logging-1.2.jar
 ```
 
-A layer is named on its own, so a name identifies one layer. The application asks for it by that name
-through the [layer API](#the-layer-api), and outside a bundle - a deployment that unpacked its dependencies
-- the same two lists arrive as `jlayer.modulepath.<layer>` and `jlayer.classpath.<layer>` system
-properties instead.
+A layer is named on its own, so every module that asks for it uses the same name. It is defined once per
+calling module, as a child of that caller's layer, through the [layer API](#the-layer-api). Outside a
+launcher jar - a deployment that unpacked its dependencies - the same two lists arrive as
+`jlayer.modulepath.<layer>` and `jlayer.classpath.<layer>` system properties instead.
 
 ## Bundled Java agents
 A launcher jar can carry its own Java agents. `agentClass` is a comma-separated list of fully qualified agent
@@ -127,8 +128,10 @@ addReads=some.module=java.sql
 ```
 
 Directives within a property are separated by `;` and targets within a directive by `,`; a target is a module
-name or `ALL-UNNAMED`. The **source must be one of the bundled modules** - only their encapsulation can be
-opened this way - while the targets may be bundled, boot, or the unnamed module. To open a *boot* module to
+name or `ALL-UNNAMED`, which here means the jar's own class path. The **source must be one of the bundled
+modules** - only their encapsulation can be opened this way - while the targets may be bundled, boot, or the
+unnamed module. The keys apply only when `modulepath` names at least one jar; without a module path there is
+no bundled module to relax, and they are ignored. To open a *boot* module to
 your code, use the JDK's own executable-jar manifest attributes (`Add-Opens`, `Add-Exports`), which the JVM
 honours under `java -jar`.
 
@@ -197,6 +200,11 @@ calls are how the running application reaches what it declared.
 | `Launcher.load(String name, Class<S> service)` | The same layer's providers as a `ServiceLoader`, for the cases that expect more than one. |
 | `Launcher.layer(String name)` | The `ModuleLayer` itself, for anything a service lookup does not cover. |
 
+All three refuse a layer that neither the caller's jar bundles nor a `jlayer.modulepath.<layer>` property
+names. They also refuse a layer that provides a service while holding the module that declares it: the
+caller would look the service up against a different class of the same name and find no provider, so that
+module belongs outside the layer, shared with the caller.
+
 The calling module needs no `uses` clause: naming the service in the call is the declaration, and the
 launcher adds the service dependence to its own module, which `ServiceLoader` otherwise refuses because it
 checks `uses` against the caller and offers no overload that takes one.
@@ -208,6 +216,7 @@ from the application's instead, and reaches them by the same name and the same c
 
 The jars come from the jar the caller was loaded from when it declares them, read on demand like every other
 bundled class; otherwise from the files named by `jlayer.modulepath.<layer>` and `jlayer.classpath.<layer>`,
-read the way `java -p … -cp …` reads any module graph. Those keys are deliberately not `jenesis.*`
-properties: a `jenesis.*` property configures a build, and these are read by the application a build
-produced.
+read the way `java -p … -cp …` reads any module graph. Each value is split on the platform path separator
+(`:`, or `;` on Windows), and each entry is a jar or a folder; the class-path key is optional. Those keys
+are deliberately not `jenesis.*` properties: a `jenesis.*` property configures a build, and these are read
+by the application a build produced.

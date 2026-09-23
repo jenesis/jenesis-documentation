@@ -39,8 +39,10 @@ use `/artifact/`.
   Only a <strong>named</strong> module - one shipping a real <code>module-info.class</code> - is reachable
   through <code>/module/</code>, <code>/sources/</code> and <code>/documentation/</code>. An
   <strong>automatic</strong> module, which only sets <code>Automatic-Module-Name</code>, resolves through
-  <code>/artifact/</code> alone, and so do the JDK's own names (<code>java.*</code>, <code>jdk.*</code>): no
-  Maven artifact supplies those, so <code>/module/</code> refuses them while <code>/artifact/</code> answers.
+  <code>/artifact/</code> alone. The modules the JDK itself ships, such as <code>java.base</code>, are left
+  out of the named routes too, because the JDK's own copy always shadows a jar of that name. On
+  <code>/artifact/</code> such a name serves whichever artifact declared it, under the usual rules. Other
+  <code>java.*</code> names, such as <code>java.xml.bind</code>, resolve on every route.
 </div>
 
 ## Versions are optional
@@ -75,7 +77,8 @@ A named version matches **exactly** - no ranges, no normalisation. One the index
 answered: the service assumes it exists under the module's newest coordinate, redirects there, and flags that
 with `Jenesis-BestEffort: true`, which is what keeps a release from the last few hours resolvable before the
 crawl records it. `Jenesis-BestEffort: false` asks for a `404` instead of a guess; any other value, or none,
-keeps it. If Maven Central has no such file, the redirect target answers 404.
+keeps it. If the redirect target - the mirror, or the repository the request named - has no such file, it
+answers 404.
 
 ## `artifact` route: every file of a coordinate
 
@@ -86,7 +89,7 @@ its checksums and signatures, and Gradle module metadata:
 ```
 # The jar
 GET /artifact/org.slf4j/org.slf4j.jar
-→ 302 …/org/slf4j/slf4j-api/2.0.10/slf4j-api-2.0.10.jar
+→ 302 …/org/slf4j/slf4j-api/2.0.19/slf4j-api-2.0.19.jar
 
 # The POM of a specific version
 GET /artifact/org.slf4j/2.0.9/org.slf4j.pom
@@ -153,7 +156,7 @@ of a repository manager redirects to it. A missing trailing slash is added. The 
 `http` or `https` URL without credentials, a query or a fragment; anything else is answered with `400`. No
 header, or a blank one, keeps the mirror.
 
-The mirror syncs from Central several times a day, so a release published since its last pass is not there
+The mirror trails Central by a couple of hours, so a release published since its last sync is not there
 yet. That is one case for the header. A redirect carrying `Jenesis-BestEffort: true` is the likeliest,
 because it was built for a version the index has not recorded, which usually means a very new one.
 
@@ -193,6 +196,7 @@ fetched without parsing the `Location`:
 | `400` | The `Jenesis-Repository` header is not a usable repository URL. |
 | `404` | Nothing could be served. The body says why when the module or version is the problem. |
 | `405` | The request was not `GET` or `HEAD`. |
+| `500` | The service failed unexpectedly. |
 | `502` | The upstream index files are temporarily unreachable. |
 
 A `404` has one of these causes:
@@ -234,12 +238,14 @@ module name through `/module/`, so every dependency must be a named module. That
 reason a plain-jar library is reachable in one layout and not the other.
 
 Three settings move a build to another deployment of the module index; the
-[Dependencies](/tool/dependencies/) chapter of the build tool covers them in full:
+[Dependencies](/tool/dependencies/) chapter of the build tool covers them in full, and shows
+[which settings the build passes on](/tool/dependencies/#what-the-build-tells-the-module-index) as request
+headers:
 
 | Setting | Environment variable | Purpose |
 | --- | --- | --- |
 | `-Djenesis.module.uri=<url>` | `JENESIS_REPOSITORY_URI` | The base URL of the module index (default `https://repo.jenesis.build/`). |
-| `-Djenesis.module.token=<token>` | `JENESIS_REPOSITORY_TOKEN` | An `Authorization` header value sent on every request. |
+| `-Djenesis.module.token=<token>` | `JENESIS_REPOSITORY_TOKEN` | Sent verbatim as the `Authorization` header (for example `Bearer …`) to the first index `jenesis.module.uri` names, never to the default service. |
 | `-Djenesis.module.local=<dir>` | `JENESIS_REPOSITORY_LOCAL` | The local module repository consulted first (default `~/.jenesis`). |
 
 A build can also skip the service and read the index itself, which *[Reading the index
@@ -266,6 +272,8 @@ The reference service is a small HTTP function that reads four optional environm
 | `ARTIFACT_BASE` | Google's Maven Central mirror | The base URL the 302 redirects target when a request does not name one with `Jenesis-Repository`. Point it at a Maven mirror or proxy. |
 | `HOME_REDIRECT` | the project's GitHub page | Where a request for `/` redirects. |
 | `REDIRECT_TTL` | `3600` (seconds) | The `max-age` on the 302, and the edge-cache TTL for the upstream reads. |
+
+Setting `ARTIFACT_BASE` changes only the default: a client's `Jenesis-Repository` header still overrides it.
 
 Any number of path segments *before* the route marker are ignored, so the same service works whether it
 is mounted at `/`, `/mod/`, or `/jenesis/v1/`, with no configuration.
@@ -304,6 +312,12 @@ first column is your version and fetch `<artifactId>-<version>` from Maven Centr
 The columns are `moduleVersion`, `groupId`, `artifactId`, `mavenVersion`. Match the first column, then
 fetch the coordinate named by the last three. Classifier-scoped variants live alongside as
 `artifacts-<classifier>.tsv` and `modules-<classifier>.tsv`.
+
+A tool that needs only the mapping can read
+[`data/module-maven.properties`](https://github.com/jenesis/jenesis-modules/blob/main/data/module-maven.properties)
+instead, regenerated daily. It lists named modules as `<module>=<groupId>:<artifactId>`, one per line, for
+each name that starts with its owner's groupId or a known alias of it, such as `kotlin` for
+`org.jetbrains.kotlin`.
 
 The build tool reads them this way on request, so a project that would rather not depend on the service can
 have its build resolve module names from the data and fetch the coordinates from the Maven repository it
