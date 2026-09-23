@@ -60,14 +60,16 @@ means: the module under test exports a package to the test module by name, with
 named module. Placing tests in the same package instead would reach package-private members, which is the
 kind of access modules were made to prevent.
 
-The test module is an `open module` (so the framework can reflect over the tests), `requires` the module
-under test and the framework, and carries a `@jenesis.test` tag naming the module it tests:
+The test module `requires` the module under test and the framework, and carries a `@jenesis.test` tag
+naming the module it tests. It need not be `open`: when the tests run, each of its packages is opened to the
+framework modules that reflect over them (to the unnamed module when the framework sits on the class path),
+so the descriptor declares only what the tests use:
 
 ```java
 /**
  * @jenesis.test demo.greeter
  */
-open module demo.greeter.test {
+module demo.greeter.test {
     requires demo.greeter;
     requires org.junit.jupiter;
 }
@@ -343,7 +345,7 @@ attaches to its own test run:
  * @jenesis.test demo.agents
  * @jenesis.attach org.mockito
  */
-open module demo.agents.test {
+module demo.agents.test {
     requires demo.agents;
     requires org.mockito;
 }
