@@ -28,15 +28,13 @@ public class Signing implements UnaryOperator<Project> {
 
     @Override
     public Project apply(Project project) {
-        return project.assembler((descriptor, repositories, resolvers) -> project.assembler()
-                .apply(descriptor, repositories, resolvers)
-                .mapBuild(stock -> (sub, inherited) -> {
-                    sub.addModule("assemble", stock, inherited.sequencedKeySet().stream());
-                    sub.addStep("sign", (executor, context, arguments) -> {
-                        // read the jars in each argument's folder, write their signatures into context.next()
-                        return CompletableFuture.completedStage(new BuildStepResult(true));
-                    }, "assemble");
-                }));
+        return project.mergeAssembler((descriptor, stock) -> (sub, inherited) -> {
+            sub.addModule("assemble", stock, inherited.sequencedKeySet().stream());
+            sub.addStep("sign", (executor, context, arguments) -> {
+                // read the jars in each argument's folder, write their signatures into context.next()
+                return CompletableFuture.completedStage(new BuildStepResult(true));
+            }, "assemble");
+        });
     }
 }
 ```
@@ -49,12 +47,12 @@ jenesis.project.customizers=build.custom.Signing
 
 The same key works on the command line or in a profile, like any other setting.
 
-`project.assembler()` is the assembler the settings configured, and the lambda calls it for every module.
-`mapBuild` decorates only the module's build phase - here registering the stock output under `assemble` and
-chaining the `sign` step onto it. The build is otherwise the stock one: `jenesis.properties`, the profiles and
-the other settings configure the project the customizer receives, and the build runs on the JDK, in the daemon
-or in Docker as they ask. `java build/jenesis/Execute.java` reads the same settings and runs the program the
-customized build produced.
+`mergeAssembler` merges into the assembler the settings configured: for every module, the function receives
+the module's descriptor and the `stock` build that assembler wired for it, and returns the build to run in its
+place - here registering the stock build under `assemble` and chaining the `sign` step onto it. The build is
+otherwise the stock one: `jenesis.properties`, the profiles and the other settings configure the project the
+customizer receives, and the build runs on the JDK, in the daemon or in Docker as they ask.
+`java build/jenesis/Execute.java` reads the same settings and runs the program the customized build produced.
 
 - `jenesis.project.customizers` takes several classes, separated by commas, and applies them in order, so
   customizers compose: sign, stamp licence headers, emit checksums - without reimplementing the toolchain.
@@ -84,7 +82,21 @@ inputs in one line:
 descriptor.sources("preprocess")   // stock compile now reads the preprocess step's output, not sources/
 ```
 
-That is the whole trick behind a preprocessing assembler: add a `preprocess` step that reads the module's
+`mergeAssembler` takes such an adjustment as its first argument and hands the adjusted descriptor to the
+configured assembler, while the function that merges the build still receives the original:
+
+```java
+return project.mergeAssembler(descriptor -> descriptor.sources("preprocess"),
+        (descriptor, stock) -> (sub, inherited) -> {
+            sub.addStep("preprocess", (executor, context, arguments) -> {
+                // rewrite the sources/ of each argument's folder into context.next()
+                return CompletableFuture.completedStage(new BuildStepResult(true));
+            }, descriptor.sources().stream());
+            stock.accept(sub, inherited);
+        });
+```
+
+That is the whole trick behind a preprocessing customizer: add a `preprocess` step that reads the module's
 `sources/`, rewrites it into its own output, then hand the stock assembler a descriptor whose `sources()`
 points at `preprocess`. `javac`, the jar step, and the tests all consume the transformed tree, and the rest
 of the build is untouched. Any pass that produces a `sources/` tree - template expansion, code generation,
