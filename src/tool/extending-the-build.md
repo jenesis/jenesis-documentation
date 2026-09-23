@@ -181,17 +181,18 @@ module demo.plugin {
 }
 ```
 
-Its `BuildExecutorModule` adds the steps it contributes, as a stock module does. A provider that declares a
-public constructor taking a `Map<String, String>` is created with the values of its `plugin-<name>.properties`;
-`javac` requires every service provider to keep a public constructor without arguments as well, which the
-build uses for a provider that takes no `Map`:
+Its `BuildExecutorModule` adds the steps it contributes, as a stock module does. The values of its
+`plugin-<name>.properties` reach it through a public constructor taking a `SequencedMap<String, String>` of
+them, in the file's order. `javac` requires every service provider to keep a public constructor without
+arguments as well, which the build uses when the file is empty. A file with values for a provider that takes
+none fails the build, rather than the values being dropped:
 
 ```java
 public GreetingModule() {
-    this(Map.of());
+    this(Collections.emptyNavigableMap());
 }
 
-public GreetingModule(Map<String, String> properties) {
+public GreetingModule(SequencedMap<String, String> properties) {
     greeting = properties.getOrDefault("greeting", "Hello from a generated source!");
 }
 ```
