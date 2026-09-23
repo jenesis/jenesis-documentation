@@ -26,10 +26,11 @@ It is opt-in - not part of `build` - and it writes into your project tree rather
 with the project.
 
 `pin` is project-wide, and a `+<module>` selector beside it narrows `build` rather than the pin. To pin one
-module, name its step - `<path>` is URL-encoded because a selector splits on `/`:
+module, name its step - `<path>` is the module's folder with `+` in place of `/`, as the step's folder under
+`target/` is named:
 
 ```bash
-java build/jenesis/Make.java pin/module-api%2Fclient
+java build/jenesis/Make.java pin/module-api+client
 ```
 
 A pin in `module-info.java` reads:

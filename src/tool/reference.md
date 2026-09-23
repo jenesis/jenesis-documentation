@@ -87,7 +87,7 @@ inputs are always real folders.
 | `java build/jenesis/Make.java ::/test` | Every `test` step at any depth, plus its predecessors. |
 | `java build/jenesis/Make.java build/::/test` | The same, anchored under the top-level `build` module. |
 | `java build/jenesis/Make.java +mymodule` | Only the named module's subgraph. |
-| `java build/jenesis/Make.java pin/module-api%2Fclient` | Only the `api/client` module's pins. |
+| `java build/jenesis/Make.java pin/module-api+client` | Only the `api/client` module's pins. |
 
 A `+<module>` selector narrows **`build`** and nothing else. `pin`, `stage` and `export` are entry points of
 their own, so `pin +mymodule` runs the whole project's pin *and* that module's build rather than a pin
@@ -125,6 +125,7 @@ in one step.
 | `jenesis.project.sources` | `false` | Also assemble a per-module sources jar. |
 | `jenesis.project.documentation` | `false` | Also assemble a per-module javadoc jar. |
 | `jenesis.project.watch` | `false` | Keep the process alive and rebuild on every source change (see *[Building &amp; running](/tool/building-and-running/)*). |
+| `jenesis.project.customizers` | *(none)* | Comma-separated `UnaryOperator<Project>` classes under `build/custom/`, applied in order to the configured project (see *[Extending the build](/tool/extending-the-build/#customizing-the-stock-build)*). Command line or `~/.jenesis/jenesis.properties` only. |
 
 ### The entry point (`build/jenesis/Make.java`)
 
