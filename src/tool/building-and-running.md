@@ -440,13 +440,43 @@ a CI job that sets up its own JDK:
 java -Djenesis.toolchain.searchpath= build/jenesis/Make.java
 ```
 
+### Installing a missing JDK
+
+Jenesis installs no JDK by itself. It runs an installer you name in `jenesis.toolchain.installer` when no JDK
+on the search path matches, and the Jenesis command-line install ships one, `jenesis-jdk`. Turn it on once,
+for every project:
+
+```bash
+jenesis-jdk --enable
+```
+
+That adds `jenesis.toolchain.installer=jenesis-jdk` to your `~/.jenesis/jenesis.properties`. `jenesis-jdk`
+turns the version into a request for the tool that installs JDKs on your machine:
+
+| Tool | What it installs |
+| --- | --- |
+| SDKMAN | The newest Java identifier matching every number of the version, leaving out JavaFX and CRaC builds. `ea` selects an early-access build from jdk.java.net. |
+| mise | The newest build of the vendor matching the numbers, as mise resolves it. mise names Zulu builds by Zulu's own version, so for Zulu it installs the newest build of the feature release. |
+| Scoop, on Windows | The package of the vendor and feature release from Scoop's `java` bucket, in its newest build. |
+
+`jenesis-jdk` prefers the tool Jenesis itself was installed with; `--tool=sdkman` or `--tool=mise` picks one.
+A word of the version names the vendor - `temurin`, `zulu`, `corretto`, `liberica`, `microsoft`,
+`sapmachine`, `semeru`, `graalvm`, `oracle` or `jetbrains` - and Temurin is installed when none does. Scoop
+offers Temurin, Zulu, Corretto, Liberica and GraalVM only.
+
+Any other program works as well. Jenesis calls it with its own arguments followed by the version, in your
+home folder rather than the project, and treats a non-zero exit as a failed build. The program has to install
+into a folder on the search path: Jenesis searches once more afterwards, and checks what it finds like any
+other JDK. A name is looked up in the folders of `PATH` that are absolute, and a path has to be absolute or
+start with `~`.
+
 ### What a project cannot set
 
-The search path decides which program the build runs, so it is yours to set, not the project's. It is
-accepted on the command line and in your own `~/.jenesis/jenesis.properties`, and refused in the project's
-`jenesis.properties`, in a profile, and in a user-global file whose location the project's
-`jenesis.properties` chose. A project names the version it needs, and so chooses among the JDKs you
-installed, but it cannot point the build at a program of its own.
+The search path and the installer decide which programs the build runs, so they are yours to set, not the
+project's. Both are accepted on the command line and in your own `~/.jenesis/jenesis.properties` and its
+profiles, and refused in the project's `jenesis.properties` and in the project's profiles. A project names
+the version it needs, and so chooses among the JDKs you installed or your installer provides, but it cannot
+point the build at a program of its own.
 
 Before a JDK it found runs, Jenesis checks on Linux and macOS that every file in it belongs to you or to root
 and that no other user can write to it; a group named after the file's owner, the private group many Linux

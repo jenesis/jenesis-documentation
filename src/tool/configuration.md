@@ -34,6 +34,12 @@ java -Djenesis.project.sources=false build/jenesis/Make.java
 `jenesis.make.root` belongs on the command line only, because the root is what locates the file in the first
 place. Setting it in a file is reported as an error.
 
+A project may name the repositories it resolves from, with `jenesis.maven.uri`, `jenesis.module.uri` and
+`jenesis.openpgp.uri`. A token never follows it there: `jenesis.maven.token` and `jenesis.module.token` go
+only to a repository named in the environment, on the command line or in your user-global file. A folder a
+project's file names, such as `jenesis.project.target`, must lie inside the project, because the build writes
+to it and may wipe it. On the command line it can name any folder.
+
 The same goes for the few keys that describe your own environment rather than the project. They would make no
 sense in a project's file anyway, and a rogue project could use them to reach beyond its own build. The
 project's file and its profiles refuse them; the command line and your user-global file, described below,
@@ -180,14 +186,15 @@ With several layers in play, the rule is fixed. Configuration resolves in five t
 | Tier | Source |
 | --- | --- |
 | 1 | an explicit `-D` on the command line |
-| 2 | the **profiles** selected for the project |
-| 3 | the profiles selected by the user-global file (below) |
-| 4 | the project `jenesis.properties` |
-| 5 | the user-global `jenesis.properties` |
+| 2 | the profiles selected by your user-global file (below) |
+| 3 | your user-global `jenesis.properties` |
+| 4 | the **profiles** selected for the project |
+| 5 | the project `jenesis.properties` |
 
 So `-Djenesis.project.sources=false` on a release build switches the source jar back off (the command line
-always wins), and selecting the `release` profile overrides whatever the project's base `jenesis.properties`
-set. The folder search follows the same spirit: a profile's `<name>/` folder beats a plain folder, and a
+always wins), selecting the `release` profile overrides whatever the project's base `jenesis.properties` set,
+and a line in your own file overrides both, because what your machine settles applies to every project it
+builds. The folder search follows the same spirit: a profile's `<name>/` folder beats a plain folder, and a
 module-local folder beats a project-wide one.
 
 When you are unsure what the layers add up to, ask the build. The `properties` selector prints every
@@ -199,10 +206,12 @@ java -Djenesis.make.profiles=release build/jenesis/Make.java properties
 
 ## User-global defaults
 
-The weakest layer is a **user-global `jenesis.properties`**, read from `~/.jenesis/` and applied to *every*
-project - your shared personal defaults. It is optional and ignored when absent, and it may declare its own
-profiles, resolved relative to its `.jenesis` folder.
+A **user-global `jenesis.properties`**, read from `~/.jenesis/` and applied to *every* project, settles how
+this machine builds. It outranks what a project sets, so a `jenesis.dependency.signature=strict` there holds
+for every project you build, and only a `-D` overrides it. It is optional and ignored when absent, and it may
+declare its own profiles, resolved relative to its `.jenesis` folder.
 
 The `jenesis.make.global` property names the base folder (default `$HOME`) whose `.jenesis/` subfolder
-holds that file. Set to an empty string, it switches the user-global layer off entirely. It can be set on the
-command line or in the project's `jenesis.properties`, but not in a profile or in the user-global file itself.
+holds that file. Set to an empty string, it switches the user-global layer off entirely. It is set on the
+command line only: a project's `jenesis.properties`, a profile or the user-global file that sets it is refused,
+so a project can never put a file of its own in the place of your personal defaults.

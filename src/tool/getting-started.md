@@ -80,7 +80,9 @@ release is no longer trusted. The fix it asks for is to move the project on - `j
   <code>jenesis-version</code> and <code>jenesis-validate</code> report how a project's
   <code>build/jenesis/</code> compares with the installed release - <code>jenesis-validate</code> naming the
   files that differ - and <code>. jenesis-switch</code> moves the whole shell to the version a project
-  records, sourced rather than run, since it changes the calling shell.
+  records, sourced rather than run, since it changes the calling shell. `jenesis-jdk` installs a JDK for the version a project asks for with SDKMAN,
+mise or Scoop, once you name it as the installer (see
+*[Building &amp; running](/tool/building-and-running/#installing-a-missing-jdk)*).
 </div>
 
 ### Git submodule
