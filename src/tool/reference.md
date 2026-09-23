@@ -206,7 +206,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | --- | --- | --- |
 | `jenesis.dependency.pin` | *(lenient)* | Pinning mode: `strict`, `versions`, or `ignore`. |
 | `jenesis.dependency.signature` | `none` | Signature verification after each download: `none`, `declared`, or `strict`. |
-| `jenesis.dependency.native` | `ignore` | What a dependency's `Jenesis-Native-Access` asks of the module that runs it: `ignore`, or `strict`, which fails a module that does not grant it with `@jenesis.native`. |
+| `jenesis.dependency.native` | `ignore` | What to do when a module runs a jar whose `Jenesis-Native-Access` names a module it does not grant with `@jenesis.native`: `ignore`, `warn`, or `strict`. |
 | `jenesis.pin.bom` | `keep` | Whether the `pin` step keeps (`keep`) or flattens (`flatten`) BOM references. |
 | `jenesis.pin.file` | *(unset)* | Write the whole project's pins to this properties file instead of rewriting the module declarations. A project's own file names only a folder inside the project. |
 | `jenesis.pin.checksum` | `true` | Whether `pin` writes SHA checksums alongside versions. |
@@ -382,7 +382,7 @@ already uses. This is the whole vocabulary:
 | `@jenesis.test [<module>\|abstract]` | Marks this module as the test module of another, or as test infrastructure that declares no tests of its own (`abstract`). | *[Building &amp; running](/tool/building-and-running/)* |
 | `@jenesis.plugin [<compiler>] <token>` | An annotation processor, or a compiler plugin for a named compiler. | *[Other JVM languages](/tool/other-jvm-languages/)* |
 | `@jenesis.attach <token> [<options>]` | A library to attach as a Java agent (`<!--jenesis.attach-->` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
-| `@jenesis.native [<token>…]` | Native access for this module (no token) or for a module it runs, including one in a layer (`<!--jenesis.native-->` in a POM). | *[Building &amp; running](/tool/building-and-running/#granting-native-access)* |
+| `@jenesis.native <token>…` | Native access for the modules named, this one only when it names itself, including one in a layer (`<!--jenesis.native-->` in a POM). | *[Building &amp; running](/tool/building-and-running/#granting-native-access)* |
 | `@jenesis.exclude <module> <group>/<artifact>…` | Transitives to prune from a requirement (`<exclusions>` in a POM). | *[Dependencies](/tool/dependencies/)* |
 | `@jenesis.alias <module> <group>/<artifact>[/<type>[/<classifier>]]` | A module name for an artifact that has none. | *[Dependencies](/tool/dependencies/)* |
 | `@jenesis.override <module> <module>…` | A module to replace with the modules that already carry its packages. | *[Dependencies](/tool/dependencies/)* |
