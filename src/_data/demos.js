@@ -118,8 +118,8 @@ export default {
       demos: [
         { slug: "demo-51-custom-assembler", name: "Custom assembler", blurb: "Wrapping the stock assembler so sources are preprocessed before they compile." },
         { slug: "demo-52-custom-jmod", name: "jlink & jpackage", blurb: "A custom .jmod carrying extra content, linked into a runtime and packaged into an app." },
-        { slug: "demo-53-internal-module", name: "Internal build module", blurb: "A reusable build plugin compiled from local source." },
-        { slug: "demo-54-external-module", name: "External build module", blurb: "The same plugin resolved as a published coordinate." },
+        { slug: "demo-53-internal-module", name: "Internal build module", blurb: "A plugin named in jenesis-plugins.properties, compiled from local source and configured by its own properties file." },
+        { slug: "demo-54-external-module", name: "External build module", blurb: "The same plugin resolved by its module name from a repository." },
         { slug: "demo-55-custom-maven", name: "Custom Maven build", blurb: "Driving a multi-module Maven-layout build from your own entry point with the convenience factory." },
         { slug: "demo-56-custom-modular", name: "Custom modular build", blurb: "The same for a modular project." },
         { slug: "demo-57-custom-build", name: "Custom build", blurb: "A code-generating build graph wired entirely by hand." },
