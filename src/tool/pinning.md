@@ -78,17 +78,22 @@ module demo.app {
 commons-text's POM asks for commons-lang3 3.14.0; the coordinate line overrides it wherever the closure
 reaches it, and the next `pin` records the checksum of the version you chose.
 
-A refresh rewrites every line of the closure it resolved and removes a module-name line it did not
-produce, since every `pin` run resolves each module a module name can fix. A coordinate line the closure does not reach is **kept**:
-it may belong to a closure only some builds resolve, such as the documentation tool's under
-`-Djenesis.project.documentation=true`. The cost is that a coordinate left over from an earlier shape of the
-module survives too, so `-Djenesis.print.pins=true` reports every line it kept:
+A refresh rewrites every line of the closure it resolved and removes every other line, except those of a
+group this run resolved no closure for: the documentation tool's pins, in a group of their own that only
+`-Djenesis.project.documentation=true` resolves, survive a run that does not build documentation.
+`-Djenesis.pin.retain` chooses what survives:
+
+| Value | Keeps a line the refresh did not write when |
+| --- | --- |
+| `groups` (default) | the run resolved nothing in its group |
+| `all` | always - for a project built in more than one layout, since `modular` pins a transitive module by its name where `modular_to_maven` pins it by its Maven coordinate |
+| `none` | never |
+
+`-Djenesis.print.pins=true` reports every line a refresh kept:
 
 ```
-[KEPT]      ./source/store/module-info.java: kept, resolved by no closure: org.example/gone 1.2.3 SHA-256/8f2b...c41
+[KEPT]      ./source/store/module-info.java: kept, resolved by no closure: dokka/maven/org.jsoup/jsoup 1.16.1 SHA-256/1f11...e901
 ```
-
-Every line it names is either a pin for a closure this run did not resolve or a leftover worth deleting.
 
 Each module resolves its own closure, and nothing makes two modules agree on a version. `pin/divergence`
 writes every coordinate the project pins at more than one version into `divergence.properties`, naming the
