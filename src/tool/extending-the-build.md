@@ -175,7 +175,7 @@ licence-header stamping - fits the same shape.
 
 ## Packaging the extension as a plugin
 
-A wrapper written in a project's own `build/` folder belongs to one project. When the same pass - a code generator, a
+A customizer written in a project's own `build/custom/` folder belongs to one project. When the same pass - a code generator, a
 source preprocessor - should serve several, package it as a **build module**: a named Java module that
 `provides` a build-executor service, which Jenesis discovers through that declaration alone.
 
@@ -184,7 +184,7 @@ A build module comes from one of two places, and nothing else about it differs:
 - an **internal** build module is compiled from local source in its own project folder, and
 - an **external** build module is resolved from a repository coordinate, like any published artifact.
 
-Either way you wire it in from an assembler wrapper, exactly like the `sign` step above, by adding it as a
+Either way you wire it in from a customizer's assembler wrapper, exactly like the `sign` step above, by adding it as a
 module that the stock steps then read from. An internal module names its source folder; an external one
 names the coordinate to resolve and where to resolve it:
 
