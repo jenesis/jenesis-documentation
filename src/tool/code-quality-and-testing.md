@@ -1,5 +1,5 @@
 ---
-order: 8
+order: 10
 title: Code quality & testing
 description: The linters, the compiler plugin, formatters, coverage, test selection, mutation testing and API-compatibility checks Jenesis runs for you - each turned on by dropping its config file in place, no build script and no plugin to register.
 ---
@@ -56,7 +56,7 @@ defaults to `true`, so file discovery alone normally decides; the property is an
 For example, `-Djenesis.source.checkstyle=false` keeps `checkstyle.xml` in place but skips Checkstyle, while
 PMD and SpotBugs still run.
 
-{% demos 31 %}
+{% demos 31, 39, 42, 44 %}
 
 ## Analysis inside the compiler
 
