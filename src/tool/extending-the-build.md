@@ -1,7 +1,7 @@
 ---
 order: 16
 title: Extending the build
-description: Adjust the stock build with a customizer, write the build steps it adds, package them as a plugin, or write an entry point of your own when one adjusted build is not enough.
+description: Add plugins to the stock build, write the build steps and plugins they are made of, or write an entry point of your own when the build must change what the stock steps do.
 ---
 
 Every chapter so far drove the stock pipeline: a layout auto-detects your modules, the default assembler
@@ -9,114 +9,74 @@ wires the conventional compile/jar/test flow, and you configure it by choosing a
 This chapter is for the build that needs something the stock pipeline *does not* model - a preprocessing pass,
 a code-generation step, a bespoke packaging step, an unusual dependency wiring.
 
-Almost always, the answer is a **customizer**: a class that adjusts the project the stock build would run and
-keeps everything else about it. Only a build that is more than one adjusted project - several builds whose
-results are compared, one build feeding the next, a graph with no project at all - needs an entry point of
-its own, and that comes last.
+Almost always, the answer is a **plugin**: a build module, named in one line of a properties file, that joins a
+module of the stock build and adds to it. A plugin never replaces what the stock build does; a build that must -
+one that redirects what the compiler reads, or wires a step between two stock ones - is an entry point of its
+own, and that comes last.
 
-## Customizing the stock build
+## Adding plugins to the stock build
 
-A customizer is a class in the project's `build/custom/` folder that adjusts the **assembler** - the callback
-that wires each module's compile/jar/test sub-graph. It implements `Project.Customizer`, a functional interface
-whose one method is handed the `InferredMultiProjectAssembler` the settings configured and returns the
-`MultiProjectAssembler` to build with. This one,
-`build/custom/Signing.java`, adds a `sign` step after the stock build:
-
-```java
-package build.custom;
-
-public class Signing implements Project.Customizer {
-
-    @Override
-    public MultiProjectAssembler<? super ProjectModuleDescriptor> apply(InferredMultiProjectAssembler assembler) {
-        return (descriptor, repositories, resolvers) -> assembler
-                .apply(descriptor, repositories, resolvers)
-                .mapBuild(stock -> (sub, inherited) -> {
-                    sub.addModule("assemble", stock, inherited.sequencedKeySet().stream());
-                    sub.addStep("sign", (executor, context, arguments) -> {
-                        // read the jars in each argument's folder, write their signatures into context.next()
-                        return CompletableFuture.completedStage(new BuildStepResult(true));
-                    }, "assemble");
-                });
-    }
-}
-```
-
-Name it in the project's `jenesis.properties`, so every build of the project applies it:
+A project names its plugins in `jenesis-plugins.properties`, beside `jenesis.properties` at its root, one per
+line:
 
 ```properties
-jenesis.project.customizer=build.custom.Signing
+greeting+binary/generated=./plugin
+signing+artifact=demo.signing
 ```
 
-The same key works on the command line or in a profile, like any other setting.
+The key is `<name>+<slot>`. The **name** is the plugin's own, and holds neither `/` nor `+`. The **slot** is the
+module of the stock build the plugin adds to, named as the build log shows it: `check`, `format`, `compliance`,
+`binary`, `binary/generated`, `binary/compiled`, `binary/validate`, `artifact`, `observed`, `documentation` and
+`documentation/generate`. A key without `+<slot>` adds the plugin to the module build itself, and an unknown slot
+is refused. The value says where the plugin comes from:
 
-Build a project with a customizer with `java build/jenesis/Make.java`, and run what it built with
-`java build/jenesis/Execute.java`. They compile `build/custom/` with the engine; the installed `jenesis` command
-runs the released engine, compiles nothing under `build/custom/`, and stops with an error naming the customizer
-it cannot find.
+- a value starting with `./` or `../` is a folder, compiled from source on every build, and
+- anything else is a module name, resolved as `module/<name>` from the Jenesis module repository whatever the
+  project's layout, with the local export (`~/.jenesis`) searched first.
 
-The assembler the customizer returns is a lambda that calls the stock one for every module. `mapBuild`
-decorates only the module's build phase - here registering the stock output under `assemble` and chaining the
-`sign` step onto it. The build is otherwise the stock one: `jenesis.properties`, the profiles and the other
-settings configure the assembler the customizer receives, and the build runs on the JDK, in the daemon or in
-Docker as they ask. `java build/jenesis/Execute.java` reads the same settings and runs the program the
-customized build produced.
+Either may end in `@<provider>`, which selects the provider annotated `@BuildModuleName("<provider>")` when the plugin
+module provides several: `signing+artifact=demo.signing@jarsigner`. Without it, the module must provide exactly
+one unannotated provider.
 
-- `jenesis.project.customizer` names one class. A build that signs, stamps licence headers and emits checksums
-  does all of it in that one function, without reimplementing the toolchain.
-- A program that builds the project itself hands the same function to `new Project(root, customizer)`, or to
-  `Project.ofEnvironment(environment, root, customizer)` to start from the settings.
-- `Make.java` compiles `build/custom/` with the engine once, into `.jenesis/classes`, and again only when a
-  source there changes. A customizer needs a public constructor without arguments.
-- `jenesis-validate` compares `build/jenesis` alone, so a customizer leaves the vendored engine valid.
+A plugin reads what the module it joins reads, and its output belongs to that module like any of the stock
+steps': a plugin in `binary/generated` that writes a `sources/` tree has it compiled with the project's own
+sources, and a plugin in `artifact` reads the jars the build produced. The plugins of a slot are wired inside
+a sub-module named `custom`, which no stock module uses, so a plugin's name never collides with a stock step.
+
+A plugin runs in a module only where **`plugin-<name>.properties`** is found, looked up like any other
+configuration file - in `build.jenesis/`, with the profiles first - so the same line can serve every module of
+a project and still run only in those that configure it. The file's values are handed to the plugin when it
+is created:
+
+```properties
+# build.jenesis/plugin-greeting.properties
+greeting=Hello from a generated source
+```
+
+The plugin's dependencies are pinned like any other, in the dependency group named after the plugin,
+`plugin-<name>`:
+
+```java
+/**
+ * @jenesis.pin plugin-greeting/module/org.json 20260522 SHA-256/...
+ */
+```
+
+A plugin found in the local export is built on your machine and is not checked against a pinned checksum.
+
+`-Djenesis.plugin.<name>=false` leaves a plugin out, as the stock tools are switched off, without editing the
+file.
 
 <div class="note">
-  A customizer runs the project's own code, just as its tests do. Before you build a project you do not
-  trust, run the build in a container with <code>-Djenesis.project.docker=true</code>. The customizer is then
-  applied inside the container and never on your machine, and the project cannot switch Docker off (see
+  A plugin runs code the project chooses - compiled from its own sources, or resolved by a module name it
+  names - and every Jenesis that builds the project runs it, the installed <code>jenesis</code> included. Before
+  you build a project whose plugins you have not reviewed, run the build in a container with
+  <code>-Djenesis.project.docker=true</code>: the plugins then run inside the container and never on your
+  machine, and the project cannot switch Docker off (see
   <em><a href="/tool/build-performance-and-isolation/#what-runs-on-the-host">What runs on the host</a></em>).
 </div>
 
-{% demos 51, 52 %}
-
-### Adding modules beside the stock ones
-
-Every module the stock assembler wires - the checks, the formatters, the compliance checks, the toolchain and
-the modules it nests, the test observation, the documentation - and the assembler's own module build take
-additional steps and modules through `custom`. They are wired next to the stock ones, inside a sub-module named
-`custom`, and each reads what the module it is added to reads. No stock module is named `custom`, so an added
-name never collides with a stock one, and nothing is wrapped or replaced:
-
-```java
-return assembler.check(check -> check.custom("placeholders", (executor, context, arguments) -> {
-    // fail when a source in any argument's folder still holds a ${ placeholder
-    return CompletableFuture.completedStage(new BuildStepResult(true));
-}));
-```
-
-The step answers for `check/custom/placeholders`, next to the stock checks, on the sources they check.
-
-- `custom(name, step)` adds one step and `custom(name, module)` one module, after those added before; either
-  refuses a name that is taken already.
-- `custom(map)` sets every added module at once, a `SequencedMap<String, BuildExecutorModule>` in the order
-  they are wired.
-
-### Redirecting a module's inputs
-
-A customizer can also change *what* the stock steps consume, because the module descriptor is immutable with a
-**wither per property**. Every reference accessor (`sources`, `resources`, `manifests`, `dependencies`,
-`artifacts`, `content`, `coordinates`, `spdx`) returns a `SequencedSet<String>`, so you can add or replace
-inputs in one line:
-
-```java
-descriptor.sources("preprocess")   // stock compile now reads the preprocess step's output, not sources/
-```
-
-That is the whole trick behind a preprocessing assembler: add a `preprocess` step that reads the module's
-`sources/`, rewrites it into its own output, then hand the stock assembler a descriptor whose `sources()`
-points at `preprocess`. `javac`, the jar step, and the tests all consume the transformed tree, and the rest
-of the build is untouched. Any pass that produces a `sources/` tree - template expansion, code generation,
-licence-header stamping - fits the same shape.
+{% demos 53, 54 %}
 
 ## Writing a build step
 
@@ -192,7 +152,7 @@ the first run, at hash time, not lazily. Two things make the common cases work:
 
 - A **step written as a lambda** serialises with what it captures, because `BuildStep` is itself
   `Serializable`. A lambda that uses only its parameters captures nothing; one that creates an anonymous
-  class inside a customizer's method captures the customizer, which then implements `Serializable` too.
+  class inside an instance method captures that instance, which then has to be `Serializable` too.
 - A **lambda** field serialises only if its declared type does. Declare the field as a serialisable
   functional interface, or cast the lambda to `Function<…> & Serializable` where you store it, and a lambda
   that closes over, say, a `Path` serialises cleanly. The stock steps do this at their constructors, which is
@@ -215,34 +175,38 @@ immediately rather than silently breaking cache invalidation. If you see it, hol
   your job from then on.
 </div>
 
-## Packaging the extension as a plugin
+## Writing a plugin
 
-A customizer in a project's `build/custom/` folder belongs to that project. When the same pass - a code generator, a
-source preprocessor - should serve several, package it as a **build module**: a named Java module that
-`provides` a build-executor service, which Jenesis discovers through that declaration alone.
-
-A build module comes from one of two places, and nothing else about it differs:
-
-- an **internal** build module is compiled from local source in its own project folder, and
-- an **external** build module is resolved from a repository coordinate, like any published artifact.
-
-Either way a customizer wires it in, exactly like the `sign` step above, by adding it as a module that the
-stock steps then read from. An internal module names its source folder; an external one
-names the coordinate to resolve and where to resolve it:
+A plugin is a **build module**: a named Java module that `provides` a build-executor service, which Jenesis
+discovers through that declaration alone:
 
 ```java
-// compiled from ./plugin on every build; "module" is the prefix its requires resolve under,
-// "tool" the dependency group its closure is pinned in
-sub.addModule("preprocess", new InternalModule("module", "tool", Path.of("plugin")), inputs);
-
-// resolved from a repository as module/demo.plugin
-sub.addModule("preprocess", new ExternalModule("module/demo.plugin", "tool", repositories, resolvers), inputs);
+module demo.plugin {
+    requires build.jenesis;
+    requires org.json;
+    provides build.jenesis.BuildExecutorModule with demo.plugin.GreetingModule;
+}
 ```
 
-The `inputs` are the steps the build module reads - the project's `sources/` to preprocess, and its
-manifests so the module's own dependencies resolve against the project's pins. A local `plugin/` folder
-also carries an empty **`.jenesis.skip`** marker, so the project's module discovery does not mistake it for
-a second project module.
+Its `BuildExecutorModule` adds the steps it contributes, as a stock module does. The values of its
+`plugin-<name>.properties` reach it through a public constructor taking a `SequencedMap<String, String>` of
+them, in the file's order. `javac` requires every service provider to keep a public constructor without
+arguments as well, which the build uses when the file is empty. A file with values for a provider that takes
+none fails the build, rather than the values being dropped:
+
+```java
+public GreetingModule() {
+    this(Collections.emptyNavigableMap());
+}
+
+public GreetingModule(SequencedMap<String, String> properties) {
+    greeting = properties.getOrDefault("greeting", "Hello from a generated source!");
+}
+```
+
+A plugin compiled from source lives in a project folder of its own, which carries an empty **`.jenesis.skip`**
+marker so the project's module discovery does not mistake it for a second project module. A published plugin
+is built and exported like any other module, and resolved by its module name.
 
 <div class="note">
   A plugin usually carries a different version of the Jenesis build API than the build running it. Each build
@@ -252,12 +216,11 @@ a second project module.
   <em>dependencies</em> need not be, since a module layer admits automatic modules too.
 </div>
 
-{% demos 53, 54 %}
-
 ## Writing an entry point of your own
 
-A build that a customizer cannot express - several builds compared, one staged build feeding the next, a
-graph with no project at all - is a program of its own, run as `java build/Demo.java`. Where it builds the
+A build that plugins cannot express - one that changes what the stock steps do, several builds compared, one
+staged build feeding the next, a graph with no project at all - is a program of its own, run as
+`java build/Demo.java`. Where it builds the
 project, it calls `Make`, which reads `jenesis.properties`, the profiles and the `-Djenesis.*` properties the
 JVM was started with, and returns what the build produced:
 
@@ -265,6 +228,68 @@ JVM was started with, and returns what the build produced:
 Make.Result staged = new Make("build.jenesis.Project").build("stage");
 Path packages = staged.outputs().get("stage/packages");
 ```
+
+### Changing the stock build
+
+An entry point that keeps the stock build but changes it builds the project from the settings, as `Make` does,
+and replaces its **assembler** - the callback that wires each module's compile/jar/test sub-graph - with one
+that wraps the stock `InferredMultiProjectAssembler`:
+
+```java
+Environment environment = new Environment(Make.settings(Path.of(".")).keys());
+InferredMultiProjectAssembler stock = InferredMultiProjectAssembler.ofEnvironment(environment);
+Project project = Project.ofEnvironment(environment, Path.of("."))
+        .assembler((descriptor, repositories, resolvers) -> stock
+                .apply(descriptor, repositories, resolvers)
+                .mapBuild(build -> (sub, inherited) -> {
+                    sub.addModule("assemble", build, inherited.sequencedKeySet().stream());
+                    sub.addStep("sign", (executor, context, arguments) -> {
+                        // read the jars in each argument's folder, write their signatures into context.next()
+                        return CompletableFuture.completedStage(new BuildStepResult(true));
+                    }, "assemble");
+                }));
+System.exit(new Execution(project).execute(args));
+```
+
+`mapBuild` decorates only the module's build phase - here registering the stock output under `assemble` and
+chaining a `sign` step onto it. `Execution` builds the project and runs the module that declares a main class,
+as `build/jenesis/Execute.java` does for the stock build.
+
+The stock modules take additional steps and modules in code as well, through the same `custom` slot a plugin is
+wired into:
+
+```java
+InferredMultiProjectAssembler checked = stock.check(check -> check.custom("placeholders", (executor, context, arguments) -> {
+    // fail when a source in any argument's folder still holds a ${ placeholder
+    return CompletableFuture.completedStage(new BuildStepResult(true));
+}));
+```
+
+- `custom(name, step)` adds one step and `custom(name, module)` one module, after those added before; either
+  refuses a name that is taken already.
+- `custom(map)` sets every added module at once, a `SequencedMap<String, BuildExecutorModule>` in the order
+  they are wired.
+
+#### Redirecting a module's inputs
+
+An entry point can also change *what* the stock steps consume, because the module descriptor is immutable with a
+**wither per property**. Every reference accessor (`sources`, `resources`, `manifests`, `dependencies`,
+`artifacts`, `content`, `coordinates`, `spdx`) returns a `SequencedSet<String>`, so you can add or replace
+inputs in one line:
+
+```java
+descriptor.sources("preprocess")   // stock compile now reads the preprocess step's output, not sources/
+```
+
+That is the whole trick behind a preprocessing build: add a `preprocess` step that reads the module's
+`sources/`, rewrites it into its own output, then hand the stock assembler a descriptor whose `sources()`
+points at `preprocess`. `javac`, the jar step, and the tests all consume the transformed tree, and the rest
+of the build is untouched. Any pass that produces a `sources/` tree - template expansion, code generation,
+licence-header stamping - fits the same shape.
+
+{% demos 51, 52 %}
+
+### Starting on the selected JDK
 
 Such an entry point starts on whichever JDK runs it. To honour `jenesis.toolchain.version`, as `Make.java`
 does, ask `Toolchain` from `build.jenesis`: `new Toolchain().home()` answers the JDK the version selects, and
