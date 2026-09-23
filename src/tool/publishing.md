@@ -11,18 +11,39 @@ it** - and Jenesis owns the first while deliberately leaving the signed upload t
 
 ## Publishing locally with `export`
 
-The shortest way to hand an artifact to another project is `export`, a genuine publish into a *local*
-repository:
+Another project on the same machine can require a module only once it has been exported. A build writes its
+artifacts under its own `target/`, and `stage` lays them out as repositories there too, but no other project
+reads that folder. `export` is the step that installs them where other builds look:
 
 ```bash
 java build/jenesis/Make.java export
 ```
 
 It builds the project, lays out the release tree that the next section describes, and copies that tree into
-the repositories your layout publishes to: the local Maven repository (`~/.m2`) for `maven`, the local module
-repository (`~/.jenesis`) for `modular`, and both for `modular_to_maven`. Another project on the same
-machine then resolves the artifact immediately. That is the whole loop for a library you are developing
-alongside its consumer, with no remote involved.
+the repositories your layout publishes to: the local Maven repository (`~/.m2/repository`) for `maven`, the
+local module repository (`~/.jenesis`) for `modular`, and both for `modular_to_maven`. A project on the same
+machine then requires the module by its name, as it would any other. That is the whole loop for a library
+you are developing alongside its consumer, with no remote involved.
+
+The export to the local Maven repository carries the generated POM, so it is not only for Jenesis. Maven reads
+`~/.m2/repository` by default and Gradle reads it once a build declares `repositories { mavenLocal() }`, so
+both take the module as an ordinary dependency, under the coordinate derived from its name.
+
+A project that sets no version exports an unversioned module, whose POM carries `0-SNAPSHOT`. That suits two
+projects changing together, but it names no build in particular: a `requires` without a pin takes whichever
+build of the module was exported last. To depend on one build, export it with `jenesis.project.version` and
+pin that version in the consumer; `pin` then records its checksum, and a build under
+`jenesis.dependency.pin=strict` accepts it.
+
+A consumer resolves its dependencies again when what it declares changes, not when another project exports a
+new build of one of them. After exporting again under the same version, or without one, build the consumer
+with `-Djenesis.executor.rebuild=true` to take the new export.
+
+`jenesis.module.local` and `jenesis.maven.local` point the two local repositories elsewhere, for a build and
+for the consumers that should see its export, for example a temporary folder that keeps your own
+repositories untouched. The local Maven repository they name must already exist.
+
+{% demos 59 %}
 
 ## Staging the release tree
 
@@ -113,7 +134,7 @@ that is not a 40-character Git tree id fails the build. When
 notation SPDX uses for a download location: `git+https://github.com/jenesis/jenesis.git@<revision>`. A tag of
 `HEAD`, which a `pom.xml` declares for the root of its repository, counts as no tag there.
 
-{% demos 59 %}
+{% demos 60 %}
 
 ## Publishing a bill of materials
 
