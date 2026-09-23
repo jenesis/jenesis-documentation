@@ -4,19 +4,16 @@ title: Pinning & bills of materials
 description: Freezing the resolved closure at exact versions and SHA-256 checksums recorded in your own sources, enforcing those pins, and sharing a curated set of them through a bill of materials.
 ---
 
-*[Dependencies](/tool/dependencies/)* ended with a resolved closure - the exact set of jars a build compiles
-and runs against. But that set can still drift: a `RELEASE` selector or an unpinned range resolves to whatever
-is newest today. This chapter is about freezing it.
-
-**Pinning** records every dependency in the transitive closure with both an exact version *and* the SHA-256
-checksum of the jar, in your own committed sources. A later build that resolves a jar whose bytes do not match
-the recorded checksum **fails**, so the build is resistant to a supply-chain swap at a coordinate you already
-trusted. The second half of the chapter is how to share one such record across modules and projects instead
-of repeating it.
+*[Dependencies](/tool/dependencies/#declaring-a-dependency)* pinned a single module at a version you chose.
+Jenesis aims further: a pin for **every** dependency in the transitive closure, each with the **SHA-256
+checksum** of its jar, written for you rather than by hand and committed with your sources. A later build that
+resolves a jar whose bytes do not match the recorded checksum **fails**, so the build is resistant to a
+supply-chain swap at a coordinate you already trusted. The second half of the chapter is how to share one
+such record across modules and projects instead of repeating it.
 
 ## Recording the pins
 
-You do not write pins by hand. The `pin` selector resolves the closure, hashes each jar, and rewrites your
+You rarely write pins by hand. The `pin` selector resolves the closure, hashes each jar, and rewrites your
 sources:
 
 ```bash
@@ -39,10 +36,10 @@ A pin in `module-info.java` reads:
 
 ```java
 /**
- * @jenesis.pin com.fasterxml.jackson.databind 2.18.2 SHA-256/8f2b...c41
+ * @jenesis.pin org.apache.commons.text 1.12.0 SHA-256/8f2b...c41
  */
 module demo.app {
-    requires com.fasterxml.jackson.databind;
+    requires org.apache.commons.text;
 }
 ```
 
@@ -56,36 +53,6 @@ there is no comment at all, so a project never ends up with one of each.
   arrives as part of that pin's value. Jenesis rejects such a declaration and quotes the absorbed text back
   at you; the fix is always to move the description into the comment's body.
 </div>
-
-```java
-/**
- * <p>Why this dependency is here and what it does for us.
- *
- * @jenesis.pin com.fasterxml.jackson.databind 2.18.2 SHA-256/8f2b...c41
- */
-module demo.app {
-    requires com.fasterxml.jackson.databind;
-}
-```
-
-The same holds for `@jenesis.signature` and every other `@jenesis.*` tag: whatever follows a tag is that
-tag's value until the next one begins. A `pom.xml` has the matching rule - every line inside a
-`<!--jenesis.pin ... -->` or `<!--jenesis.signature ... -->` block is a declaration of its own, so a remark
-written among them is read as one, and belongs outside the comment.
-
-The grammar is `@jenesis.pin <group>/<repository>/<coordinate> <version> [<algorithm>/<hash>]`, with two
-shorthands for a project's own dependencies (the `main` group):
-
-| You write | Means |
-| --- | --- |
-| `com.fasterxml.jackson.databind` | a module name - `main/module/…` |
-| `org.slf4j/slf4j-api` | a Maven `groupId/artifactId` - `main/maven/…` |
-| `main/maven/org.foo/bar/jar/native` | a coordinate with a type or classifier, written in full |
-
-A module project can therefore pin a plain Maven transitive it pulls in (say a non-modular library behind a
-named module) with the `groupId/artifactId` form, even though its own dependencies resolve through the module
-index. Two optional additions to that grammar, a classifier and a platform guard, are the subject of the next
-section. Everything else `pin` writes and refreshes for you.
 
 <div class="tip">
   Re-run <code>pin</code> whenever you change a dependency; it refreshes the versions and checksums from the
@@ -134,10 +101,6 @@ module demo.classifier {
 
 The pin stays keyed by the bare module name, so it applies wherever that module turns up in the closure -
 directly or transitively - and exactly one variant is ever present, mirroring the module path's own rule.
-
-A module-name pin carries a checksum like any other. Tool versions before 0.13 wrote these lines bare, so the
-first refresh on a tree pinned by an older Jenesis rewrites every descriptor that has one. Run `pin` on its
-own and commit that before making the change you actually came for, or the checksums will bury it.
 
 ### Choosing the variant per machine
 
@@ -242,8 +205,8 @@ repeated. A module then declares only *what* it requires while the BOM decides *
 bytes*.
 
 A local BOM is a `pin-<name>.properties` file in the project's BOM location - by default the same
-`build.jenesis/` [configuration folder](/tool/configuration/) everything else uses. Its keys follow the pin
-grammar without the group, and its values are a version and an optional checksum:
+`build.jenesis/` [configuration folder](/tool/configuration/) everything else uses. Its keys name a module or a
+Maven `<groupId>/<artifactId>`, as a pin does, and its values are a version and an optional checksum:
 
 ```properties
 # build.jenesis/pin-lang3.properties

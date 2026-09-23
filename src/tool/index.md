@@ -58,9 +58,9 @@ The chapters build up from zero knowledge:
 5. **Building & running** - compile, test, annotation processing, `Execute`, agents, and watch mode.
 6. **Dependencies** - resolution, module-name lookup, exclusions, and module aliases.
 7. **Pinning & bills of materials** - exact versions and checksums in your sources, shared and enforced.
-8. **Code quality & testing** - formatting, coverage, test selection, and mutation testing.
+8. **Other JVM languages** - Kotlin, Scala, and Groovy.
 9. **Generating sources** - compiling a schema or a service contract into Java as part of the build.
-10. **Other JVM languages** - Kotlin, Scala, and Groovy.
+10. **Code quality & testing** - formatting, coverage, test selection, and mutation testing.
 11. **Supply-chain features** - SBOM, dependency licensing, and vulnerability scanning.
 12. **Packaging** - executables, bundles, jlink/jpackage, container contexts, native images, launcher jars.
 13. **Publishing** - staging a release bundle, publishing it, and driving a release tool.

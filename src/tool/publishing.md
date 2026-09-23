@@ -1,13 +1,28 @@
 ---
 order: 14
 title: Publishing
-description: Staging a correct release bundle, the metadata a repository demands, publishing it locally with export, publishing a bill of materials, and driving a release tool from the build.
+description: Publishing locally with export, staging a correct release bundle with the metadata a repository demands, publishing a bill of materials, and driving a release tool from the build.
 ---
 
 A build ends at artifacts under `target/`. **Publishing** is what makes them available to somebody else: the
 artifacts laid out as a repository, carrying the metadata a repository demands, and finally uploaded and
 signed. Publishing to Maven Central is really two jobs - **produce a correct, complete bundle** and **upload
 it** - and Jenesis owns the first while deliberately leaving the signed upload to a dedicated release tool.
+
+## Publishing locally with `export`
+
+The shortest way to hand an artifact to another project is `export`, a genuine publish into a *local*
+repository:
+
+```bash
+java build/jenesis/Make.java export
+```
+
+It builds the project, lays out the release tree that the next section describes, and copies that tree into
+the repositories your layout publishes to: the local Maven repository (`~/.m2`) for `maven`, the local module
+repository (`~/.jenesis`) for `modular`, and both for `modular_to_maven`. Another project on the same
+machine then resolves the artifact immediately. That is the whole loop for a library you are developing
+alongside its consumer, with no remote involved.
 
 ## Staging the release tree
 
@@ -99,19 +114,6 @@ notation SPDX uses for a download location: `git+https://github.com/jenesis/jene
 `HEAD`, which a `pom.xml` declares for the root of its repository, counts as no tag there.
 
 {% demos 58 %}
-
-## Publishing locally with `export`
-
-`export` is a genuine publish, into a *local* repository:
-
-```bash
-java build/jenesis/Make.java export
-```
-
-It copies the staged tree into the repositories your layout publishes to: the local Maven repository
-(`~/.m2`) for `maven`, the local module repository (`~/.jenesis`) for `modular`, and both for
-`modular_to_maven`. Another project on the same machine then resolves the artifact immediately. That is the
-whole loop for a library you are developing alongside its consumer, with no remote involved.
 
 ## Publishing a bill of materials
 

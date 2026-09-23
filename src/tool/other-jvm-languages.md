@@ -1,5 +1,5 @@
 ---
-order: 10
+order: 8
 title: Other JVM languages
 description: Compiling Kotlin, Scala and Groovy - alone or mixed with Java in one module - the compile order that decides which packages you can export, the standard-library dependency each needs, their code-quality tools, and enabling a Kotlin or Scala compiler plugin.
 ---
@@ -11,8 +11,8 @@ present and wires the right compiler into the same step graph *[Core concepts](/
 described.
 
 This chapter covers what changes when a module holds more than Java: how two compilers share one module, the one
-rule that decides which packages you can export, the standard-library dependency each language needs, their
-code-quality tools, and how to run a compiler plugin.
+rule that decides which packages you can export, the standard-library dependency each language needs, and how
+to run a compiler plugin.
 
 ## One module, two compilers
 
@@ -98,33 +98,6 @@ java build/jenesis/Make.java pin
   pre-release builds - a Scala <code>-RC</code> or a Groovy <code>-alpha</code> - so an unpinned build can drift
   onto one. Pinning keeps the module on a stable compiler while you upgrade deliberately.
 </div>
-
-## Code-quality tools per language
-
-Each language brings its own linters and formatter, wired the same config-file-only way as the Java tools in
-*[Code quality & testing](/tool/code-quality-and-testing/)*: drop the tool's configuration file into a `build.jenesis/` folder and it runs on the
-next build. A tool whose language is absent self-skips, so a stray config file in a Java-only project does
-nothing.
-
-| Language | Linter(s) | Trigger file | Formatter |
-| --- | --- | --- | --- |
-| Kotlin | detekt, ktlint | `detekt.yml`, `.editorconfig` | ktlint (`.editorconfig`) |
-| Scala | Scalastyle, scalafmt | `scalastyle-config.xml`, `.scalafmt.conf` | scalafmt (`.scalafmt.conf`) |
-| Groovy | CodeNarc | `codenarc.xml` | *(none)* |
-
-As with the Java tools, the linters are **report-only by default** and the formatters run in **verify mode**:
-a normal build fails if a source file is not already formatted but never rewrites it. Rewrite in place with the
-same switch that drives the Java formatter, `-Djenesis.format.rewrite=true`; it flips ktlint (to `ktlint -F`)
-and scalafmt together with the Java formatter.
-
-<div class="note">
-  <strong>Groovy has no formatter.</strong> No suitable Maven-published Groovy formatter exists, so a Groovy
-  project's <code>codenarc.xml</code> lints but nothing reformats. Everything else in <em>Code quality &amp;
-  testing</em> - report-only defaults, <code>.strict(true)</code>, the per-tool opt-out properties, where reports
-  land - applies to these tools unchanged.
-</div>
-
-{% demos 39, 42, 44 %}
 
 ## A compiler plugin
 

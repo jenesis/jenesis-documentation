@@ -45,10 +45,9 @@ materials](/tool/pinning/)*, which is also where the checksums for these tools b
 A generator does not search your project. It reads one folder, and the build fills that folder for it.
 
 By default it collects everything from `META-INF/build.jenesis/`, under both the module's sources and its
-resources. Files keep the path they had below that folder, so `META-INF/build.jenesis/order/order.xsd`
-reaches the tool as `order/order.xsd`, and an `import` written relative to a sibling resolves as written.
-Only the kinds a tool compiles are collected: a `.proto` sitting beside a `.xsd` never reaches the JAXB
-compiler.
+resources. Files keep the path they had below that folder, so `META-INF/build.jenesis/user/user.avsc`
+reaches the tool as `user/user.avsc`. Only the kinds a tool compiles are collected: a `.proto` sitting beside
+`user.avsc` never reaches avro-tools.
 
 `META-INF/build.jenesis/` is the default for a reason: **the compiler never copies that folder into the
 artifact**. The contract shapes the build without shipping in the jar.
@@ -56,13 +55,14 @@ artifact**. The contract shapes the build without shipping in the jar.
 When a contract must ship, name its folder instead:
 
 ```properties
-# soap/build.jenesis/wsimport.properties
-folders=wsdl
+# avro/build.jenesis/avro.properties
+folders=schemas
 ```
 
-Now `wsdl/greeter.wsdl` is read by the generator *and* packaged, which is what a JAX-WS client needs, since
-it reads its description when the service class is constructed. `folders` takes a comma-separated list, and
-each entry is searched under both sources and resources.
+Now `schemas/user.avsc` is read by the generator *and* packaged, for code that also reads the schema at run
+time. A JAX-WS client is the common case among the other generators, since it reads its WSDL when the
+service class is constructed. `folders` takes a comma-separated list, and each entry is searched under both
+sources and resources.
 
 <div class="note">
   Moving a contract between folders does not re-run the generator. The build links each file under the name

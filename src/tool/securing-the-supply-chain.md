@@ -4,9 +4,11 @@ title: Securing the supply chain
 description: The reasoning behind Jenesis's supply-chain features - which attack each one answers, where each one stops, and how pinning, signatures, isolation and the compliance checks compose into a defensible build.
 ---
 
-*[Supply-chain features](/tool/supply-chain/)* describes what each feature does. This chapter is the reasoning
-around them: which attack each one answers, where each one stops, and what a build looks like when they are
-combined. It also documents `@jenesis.signature`, the one mechanism that has no other home.
+A build runs code written by people you have never met: every dependency you ship, and every tool that
+compiles, checks and packages it. Any of them can be compromised, through a hijacked release, a swapped
+artifact or a tool that alters what it writes. This chapter looks at those attacks, which mechanism answers
+each one, where each one stops, and how they combine into a build you can defend. Along the way it shows how
+to declare who signed a dependency, so that a jar is checked against its publisher as well as its checksum.
 
 ## What an attacker needs
 
@@ -23,8 +25,8 @@ libraries. It is also where Jenesis differs most from the usual arrangement.
 
 ## The tool is not a dependency
 
-`build.jenesis` requires `jdk.compiler` and `java.xml` and nothing else - there is no third-party library
-anywhere in the engine. It ships as plain Java source under `build/jenesis/` in your own repository
+`build.jenesis` requires `jdk.compiler` and `java.xml`, two modules every JDK ships, and nothing else. There
+is no third-party library anywhere in the engine. It ships as plain Java source under `build/jenesis/` in your own repository
 (see *[Getting started](/tool/getting-started/)*), so the build tool arrives the way your application code
 does: by review, in a diff, under version control.
 
@@ -53,9 +55,10 @@ The fourth is the *[supply-chain features](/tool/supply-chain/)* chapter, and th
 *[Build performance & isolation](/tool/build-performance-and-isolation/)*, which confines what test code and
 an artifact's `main` can reach. Pinning guarantees *what* runs; isolation limits what it can do.
 
-That leaves the third question, which no hash can answer - and which matters most at one particular moment,
-the run that writes the pins. *[The one build a pin cannot protect](#the-one-build-a-pin-cannot-protect)* is that argument; what
-follows is the mechanism.
+That leaves the third question, which no hash can answer. A pin has to be written first, by a run with
+nothing committed to check against. That run records whatever the repository serves at that moment, and
+from then on those bytes are the definition of correct, so an artifact swapped before it goes unnoticed.
+What follows is the mechanism that checks those bytes against their publisher.
 
 ## Provenance: who produced the bytes
 
@@ -63,7 +66,7 @@ A checksum proves an artifact has not changed since you recorded it - not that w
 An artifact swapped before your first `pin` is frozen as an accepted pin just the same.
 
 `@jenesis.signature` says who produced it, as an **OpenPGP key** or as a **Sigstore identity** nobody keeps a
-key for at all (*[An identity instead of a key](#an-identity-instead-of-a-key)*). Naming a key, the
+key for at all. Naming a key, the
 declaration is the fingerprint that signs a dependency's artifacts. Right after a download, Jenesis fetches
 the detached signature published beside it, forks `gpgv`, and compares the **primary** key fingerprint against
 your declarations:
@@ -102,8 +105,9 @@ folders.
 <div class="warning">
   A fingerprint is only ever read from your own sources, and a list only ever from disk: there is no form that
   resolves one from a repository, because a list you had to download would itself need verifying - the problem
-  the mechanism exists to solve. Obtain a list the way you would obtain a key: out of band, reviewed once,
-  then committed.
+  the mechanism exists to solve. Obtain a list the way you would obtain a key: out of band, from a place the
+  project controls, such as its website, its source repository or its maintainers' GitHub accounts. Review it
+  once, then commit it.
 </div>
 
 A coordinate's **POM is verified with its artifact** and must carry the same signer. POMs are read during
@@ -250,18 +254,18 @@ gpg --import key.asc                       # only once the fingerprint matches
 {% demos 26 %}
 
 ## An identity instead of a key
-Everything above rests on a maintainer holding a private key for years, and on you obtaining its fingerprint
-through a channel an attacker does not control. Sigstore needs neither: the signer authenticates to an
-identity provider, a certificate valid for **ten minutes** names that identity, the signature goes into a
-public append-only log, and the private key is discarded. You verify an identity and a log entry rather than
-a key somebody kept.
+
+Everything above rests on a maintainer keeping a private key for years, and on you finding its fingerprint
+through a channel an attacker does not control. **Sigstore** is often more convenient: a release is signed
+by the identity that published it, such as a project's release workflow, with no long-lived key for anyone to
+keep or look up. Maven Central accepts Sigstore signatures as an option beside OpenPGP, though few projects
+publish them yet, while OpenPGP signatures are everywhere.
 
 For a coordinate whose repository publishes a `.sigstore.json` beside the artifact, the declaration names that
 identity:
 
 ```java
 /**
- * @jenesis.pin dev.sigstore/protobuf-specs 0.5.2 SHA-256/e2368fd2...
  * @jenesis.signature Sigstore/github.com/sigstore/protobuf-specs dev.sigstore/*
  */
 ```
