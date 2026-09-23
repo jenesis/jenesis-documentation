@@ -134,7 +134,7 @@ same `requires org.slf4j` shows up two ways. Under `modular` it is a Java module
 module index:
 
 ```
-./sources 1-SNAPSHOT (module greeter)
+module/greeter 1-SNAPSHOT [compile] (module greeter, local ./sources)
 └─ module/org.slf4j 2.0.16 (module org.slf4j)
 ```
 
@@ -142,7 +142,7 @@ Under `modular_to_maven` it is translated to a Maven coordinate and resolved thr
 Maven scope and expands the full nearest-wins Maven closure:
 
 ```
-./sources 1-SNAPSHOT (module greeter)
+maven/greeter/greeter 1-SNAPSHOT [compile] (module greeter, local ./sources)
 └─ maven/org.slf4j/slf4j-api 2.0.16 [compile] (module org.slf4j) {MIT}
 ```
 
