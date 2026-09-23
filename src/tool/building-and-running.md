@@ -170,7 +170,7 @@ documentation tool (`javadoc` for Java) and adds a `-javadoc.jar`. Both are off 
 build time you do not want on every inner-loop run. Turn them on for a release, or record them in a profile
 (see *[Configuration](/tool/configuration/)*).
 
-{% demos 60 %}
+{% demos 61 %}
 
 ### Reproducible archives
 
@@ -197,7 +197,7 @@ fixes the line endings of every file Git treats as text, whatever machine checks
 * text=auto eol=lf
 ```
 
-{% demos 62 %}
+{% demos 63 %}
 
 ## Passing extra arguments to a tool
 
@@ -219,7 +219,8 @@ build's own `--release` and your two flags.
 
 The same mechanism works for every tool the build forks: `javac`, `kotlinc`, `scalac`, `jar`, `jmod`, `jlink`,
 `jpackage`, and `native-image`. Two names address the forked JVMs specifically: **`process-java.properties`**
-applies to *every* forked `java` process, while **`process-test.properties`** targets only the test JVM
+applies to *every* forked `java` process, the program `Execute` runs included, while
+**`process-test.properties`** targets only the test JVM
 (merged over the `java` file, with test keys winning).
 
 <div class="tip">
@@ -399,11 +400,40 @@ module demo.natives.app {
 
 A test module is a run of its own and grants what its tests need itself. A token is a module name or a
 `<groupId>/<artifactId>`, and several may share one tag. A grant adds no dependency: what it names has to be
-on the module's run-time path, or in one of the layers it runs, or the build fails saying so. A jar on the
-class path has no name, so a grant for one becomes `--enable-native-access=ALL-UNNAMED`. A module isolated in
-a layer is named the same way, or as `layer:<name>/module/<module>`, and the launcher grants it when it
-defines the layer - through the lookup of the module that asks for the layer, so that module needs native
-access itself and is named as well. `jpx` grants what the jar it runs names.
+on the module's run-time path, or the build fails saying so. A jar on the
+class path has no name, so a grant for one becomes `--enable-native-access=ALL-UNNAMED`. `jpx` grants what
+the jar it runs names.
+
+A library that keeps a module in a [layer](/tool/dependencies/#keeping-a-dependency-private) hides that module
+from whoever uses the library, and its need for native access with it. The library passes its own native
+access on to the module with a `native` line beside the layer's declaration. The launcher grants it when it
+defines the layer, through the lookup of the library that asks for it, so the line also records that the
+library needs native access itself. What a granted module passes on to its own layers is granted with it, so
+the application grants the library alone - as it would a library that had shaded the module. A module in a
+layer is out of the application's reach, so naming it in `@jenesis.native` fails the build like any name the
+run does not resolve:
+
+```java
+/**
+ * @jenesis.layer strings api demo.strings.spi
+ * @jenesis.layer strings provider demo.strings.text
+ * @jenesis.layer strings native demo.strings.text
+ */
+module demo.strings.library {
+    requires build.jenesis.launcher;
+    requires demo.strings.spi;
+}
+```
+
+```java
+/**
+ * @jenesis.main demo.strings.app.Application
+ * @jenesis.native demo.strings.library
+ */
+module demo.strings.app {
+    requires demo.strings.library;
+}
+```
 
 A `pom.xml` project declares the same in a project-level comment block, naming itself by its own
 `<groupId>/<artifactId>`:
@@ -422,7 +452,7 @@ build on it:
 java -Djenesis.dependency.native=warn build/jenesis/Make.java
 ```
 
-{% demos 49 %}
+{% demos 49, 50 %}
 
 ## Watch mode
 
@@ -552,4 +582,4 @@ another match. GitHub's hosted Linux runners install the JDKs of `actions/setup-
 so a job that searches for one restricts it first, with `chmod -R go-w` on its folder. Windows has no such
 check, so there the search relies on the protection of `C:\Program Files` and of your user profile.
 
-{% demos 63 %}
+{% demos 64 %}
