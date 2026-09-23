@@ -208,7 +208,7 @@ java build/jenesis/Make.java dependencies
 ```
 
 ```
-maven/greeter/greeter 1-SNAPSHOT [compile] (module greeter, local ./sources)
+maven/greeter/greeter 0-SNAPSHOT [compile] (module greeter, local ./sources)
 └─ maven/org.apache.commons/commons-lang3 3.20.0 [compile] (module org.apache.commons.lang3) {Apache-2.0}
 ```
 
