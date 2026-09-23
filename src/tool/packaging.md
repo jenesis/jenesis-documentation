@@ -171,7 +171,7 @@ it would be stranded there.
   <code>jlink</code> accepts.
 </div>
 
-{% demos 7, 50 %}
+{% demos 7, 51 %}
 
 ## Making a closure linkable
 
@@ -354,7 +354,7 @@ directory to maintain.
   inside every jar - the way to vet exactly what reflection is baked into a published artifact.
 </div>
 
-{% demos 62 %}
+{% demos 63 %}
 
 ### native-image or jpackage?
 
