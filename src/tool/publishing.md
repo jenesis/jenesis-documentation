@@ -12,20 +12,23 @@ it** - and Jenesis owns the first while deliberately leaving the signed upload t
 ## Publishing locally with `export`
 
 Another project on the same machine can require a module only once it has been exported: a build writes
-under its own `target/`, which no other project reads. `export` installs the release tree that the next
-section describes into the local repositories:
+under its own `target/`, which no other project reads. `export` builds the project, stages the release tree
+that the next section describes, and copies it into the local repositories:
 
 ```bash
 java build/jenesis/Make.java export
 ```
 
-The local Maven repository (`~/.m2/repository`) receives it for `maven`, the local module repository
-(`~/.jenesis`) for `modular`, and both for `modular_to_maven`. The Maven export carries a POM, so Maven and
-Gradle's `mavenLocal()` consume the module too.
+- The `maven` layout exports only the Maven artifacts, into the local Maven repository (`~/.m2/repository`),
+  under `<group>/<artifact>/<version>/`. Maven, and Gradle through `mavenLocal()`, consume them from there.
+- The `modular` layout exports only the modules, into the local module repository (`~/.jenesis`), under
+  `<module>/<version>/`. Every export also refreshes `<module>/<module>.jar`, which holds the latest one.
+- `modular_to_maven` exports both.
 
-An unversioned export stands for whichever build was exported last; export with `jenesis.project.version` and
-pin that version to depend on one build. A consumer takes a new export when it is rebuilt with
-`-Djenesis.executor.rebuild=true`.
+A project that sets no version exports an unversioned module, whose POM carries `0-SNAPSHOT`. Another project
+requires the module by name, and the local repositories are read before any remote: without a pin it takes
+the latest export, with a pinned version that version's build. A consumer does not notice a new export on its
+own; it takes one when it is rebuilt with `-Djenesis.executor.rebuild=true`.
 
 {% demos 59 %}
 
