@@ -48,6 +48,12 @@ POM - its description, licence, developers (as CycloneDX `authors`), and homepag
 was built from, when given, are recorded as well, including a `vcs` reference that locates the sources at that
 revision (see *[Publishing](/tool/publishing/#pointing-a-release-at-its-sources)*).
 
+A dependency resolved through Maven takes its licence from its POM. One resolved as a Java module, under the
+`modular` layout, has no POM and takes it from its jar instead: from the component its embedded CycloneDX SBOM
+describes, so a jar built by Jenesis carries its licence to every build that uses it, or else from its OSGi
+`Bundle-License` header, which many jars on Maven Central declare. The `dependencies` selector shows the same
+licences.
+
 <div class="tip">
   The SBOM is <strong>reproducible</strong>: its <code>serialNumber</code> is a UUID derived from the
   document's own content, and no creation <code>timestamp</code> is written (a timestamp cannot be made
@@ -153,10 +159,13 @@ alias/A Company License=Apache-2.0
 category/Apache-2.0=permissive
 ```
 
-`alias/<declared name>` normalises a licence name as written in a POM to its canonical SPDX id;
-`category/<SPDX id>` classifies an identifier. Each entry **appends** to the built-in tables rather than
-replacing them, and the same classification feeds both the licence check and the SBOM's licence identifiers.
-It is distinct from `licensing.properties`, which is the enforcement policy, not the classification.
+`alias/<declared name>` normalises a licence name as written in a POM to its canonical SPDX id. A licence that
+names no identifier is matched by its URL as well, written without its scheme, a leading `www.`, a file
+extension or a trailing slash: `alias/example.com/licenses/widget=Apache-2.0` covers
+`https://www.example.com/licenses/widget.txt`. `category/<SPDX id>` classifies an identifier. Each entry
+**appends** to the built-in tables rather than replacing them, and the same classification feeds both the
+licence check and the SBOM's licence identifiers. It is distinct from `licensing.properties`, which is the
+enforcement policy, not the classification.
 
 {% demos 29 %}
 
