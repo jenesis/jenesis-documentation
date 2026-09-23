@@ -170,7 +170,7 @@ documentation tool (`javadoc` for Java) and adds a `-javadoc.jar`. Both are off 
 build time you do not want on every inner-loop run. Turn them on for a release, or record them in a profile
 (see *[Configuration](/tool/configuration/)*).
 
-{% demos 59 %}
+{% demos 60 %}
 
 ### Reproducible archives
 
@@ -197,7 +197,7 @@ fixes the line endings of every file Git treats as text, whatever machine checks
 * text=auto eol=lf
 ```
 
-{% demos 61 %}
+{% demos 62 %}
 
 ## Passing extra arguments to a tool
 
@@ -552,4 +552,4 @@ another match. GitHub's hosted Linux runners install the JDKs of `actions/setup-
 so a job that searches for one restricts it first, with `chmod -R go-w` on its folder. Windows has no such
 check, so there the search relies on the protection of `C:\Program Files` and of your user profile.
 
-{% demos 62 %}
+{% demos 63 %}

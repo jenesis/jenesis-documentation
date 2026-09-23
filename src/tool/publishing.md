@@ -11,18 +11,28 @@ it** - and Jenesis owns the first while deliberately leaving the signed upload t
 
 ## Publishing locally with `export`
 
-The shortest way to hand an artifact to another project is `export`, a genuine publish into a *local*
-repository:
+Another project on the same machine can require a module only once it has been exported: a build writes
+under its own `target/`, which no other project reads. `export` builds the project, stages the release tree
+that the next section describes, and copies it into the local repositories:
 
 ```bash
 java build/jenesis/Make.java export
 ```
 
-It builds the project, lays out the release tree that the next section describes, and copies that tree into
-the repositories your layout publishes to: the local Maven repository (`~/.m2`) for `maven`, the local module
-repository (`~/.jenesis`) for `modular`, and both for `modular_to_maven`. Another project on the same
-machine then resolves the artifact immediately. That is the whole loop for a library you are developing
-alongside its consumer, with no remote involved.
+- The `maven` layout exports only the Maven artifacts, into the local Maven repository (`~/.m2/repository`),
+  under `<group>/<artifact>/<version>/`. Maven, and Gradle through `mavenLocal()`, consume them from there.
+- The `modular` layout exports only the modules, into the local module repository (`~/.jenesis`), under
+  `<module>/<version>/`. Every export also refreshes `<module>/<module>.jar`, which holds the latest one.
+- `modular_to_maven`, the default, exports both, so one export is consumed everywhere: by a POM-based project
+  of any build tool through the local Maven repository, and by a Jenesis project that requires the module by
+  name through the local module repository.
+
+A project that sets no version exports an unversioned module, whose POM carries `0-SNAPSHOT`. Another project
+requires the module by name, and the local repositories are read before any remote: without a pin it takes
+the latest export, with a pinned version that version's build. A consumer does not notice a new export on its
+own; it takes one when it is rebuilt with `-Djenesis.executor.rebuild=true`.
+
+{% demos 59 %}
 
 ## Staging the release tree
 
@@ -113,7 +123,7 @@ that is not a 40-character Git tree id fails the build. When
 notation SPDX uses for a download location: `git+https://github.com/jenesis/jenesis.git@<revision>`. A tag of
 `HEAD`, which a `pom.xml` declares for the root of its repository, counts as no tag there.
 
-{% demos 59 %}
+{% demos 60 %}
 
 ## Publishing a bill of materials
 
