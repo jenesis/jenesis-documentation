@@ -25,7 +25,9 @@ or write outside the sandbox.
   The engine itself is trusted separately: a standard Jenesis project carries no build logic to execute - it is
   described declaratively - so an untrusted project can be built by the trusted, SDK-installed <code>jenesis</code>
   (see <a href="/tool/getting-started/">Getting started</a>). The Docker flags below confine the remaining
-  untrusted code: the dependencies, the tests, and the artifact's <code>main</code>.
+  untrusted code: the dependencies, the tests, the artifact's <code>main</code>, and any build code the project
+  adds under <code>build/custom/</code> (see <a href="/tool/extending-the-build/">Extending the build</a>),
+  which the installed <code>jenesis</code> never runs.
 </div>
 
 ## Running the build in a container
@@ -44,6 +46,46 @@ your home directory nor the host environment is present, so a test or dependency
 To target a different image, add `-Djenesis.project.docker.image=<reference>`. The implicit image runs with
 `--cap-drop ALL` and `--security-opt no-new-privileges`; a named image is run as you named it, without those
 two flags, so harden it in the image itself if you swap it.
+
+### What runs on the host
+
+All of the project's code runs inside the container. On the host, Jenesis only reads the settings and starts
+the container. It runs no test there and applies no customizer from `build/custom/` until the container is up and
+the isolation is in place.
+
+The project also cannot undo the isolation. Its `jenesis.properties` and its profiles are refused if they set any
+`jenesis.project.docker*` or `jenesis.execute.docker*` key, so a project can neither switch Docker off nor widen
+the container with a mount or an environment variable. Only your command line or your own
+`~/.jenesis/jenesis.properties` configures Docker.
+
+<div class="note">
+  To isolate every build you run, put <code>jenesis.project.docker=true</code> in your own
+  <code>~/.jenesis/jenesis.properties</code>. No project can switch it off.
+</div>
+
+### Building a project you do not trust
+
+Building an untrusted project takes two steps. First, check with the installed Jenesis that the vendored engine
+is the released one (see [Getting started](/tool/getting-started/)):
+
+```bash
+jenesis-validate
+```
+
+Then build the project inside the container, where its tests and its customizers run only after the isolation
+is in place:
+
+```bash
+java -Djenesis.project.docker=true build/jenesis/Make.java
+```
+
+Once you have vetted the project and it pins its dependencies, you can trust it to build on the host. Build it
+there with [strict pinning](/tool/pinning/#enforcing-the-pins), so any dependency that lacks a pinned checksum
+fails the build instead of running:
+
+```bash
+java -Djenesis.dependency.pin=strict build/jenesis/Make.java
+```
 
 ### What is mounted automatically
 

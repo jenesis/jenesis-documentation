@@ -125,7 +125,7 @@ in one step.
 | `jenesis.project.sources` | `false` | Also assemble a per-module sources jar. |
 | `jenesis.project.documentation` | `false` | Also assemble a per-module javadoc jar. |
 | `jenesis.project.watch` | `false` | Keep the process alive and rebuild on every source change (see *[Building &amp; running](/tool/building-and-running/)*). |
-| `jenesis.project.customizers` | *(none)* | Comma-separated `UnaryOperator<Project>` classes under `build/custom/`, applied in order to the configured project (see *[Extending the build](/tool/extending-the-build/#customizing-the-stock-build)*). Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.project.customizers` | *(none)* | Comma-separated `UnaryOperator<Project>` classes under `build/custom/`, applied in order to the configured project (see *[Extending the build](/tool/extending-the-build/#customizing-the-stock-build)*). Under `jenesis.project.docker`, applied inside the container only. |
 
 ### The entry point (`build/jenesis/Make.java`)
 
@@ -262,12 +262,12 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | --- | --- | --- |
 | `jenesis.execute.module` | *(prompt)* | The module to run with `Execute.java`. |
 | `jenesis.execute.mainClass` | *(inferred)* | The main class to run. |
-| `jenesis.project.docker` | `false` | Build inside a throwaway container. |
+| `jenesis.project.docker` | `false` | Build inside a throwaway container. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.project.docker.image` | *(hardened)* | Image for the build container. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.project.docker.mount` | *(none)* | `<host>[:<container>],…` read-only bind mounts. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.project.docker.mountWritable` | *(none)* | Writable bind mounts. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.project.docker.env` | *(none)* | `<name>[=<value>],…` environment forwarded into the container. Command line or `~/.jenesis/jenesis.properties` only. |
-| `jenesis.execute.docker` | `false` | Run the launched program in a container. |
+| `jenesis.execute.docker` | `false` | Run the launched program in a container. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.execute.docker.image` / `.mount` / `.env` | *(as above)* | The run-side equivalents. Command line or `~/.jenesis/jenesis.properties` only. |
 
 ### Releasing

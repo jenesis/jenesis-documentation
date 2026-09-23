@@ -41,29 +41,35 @@ public class Signing implements UnaryOperator<Project> {
 }
 ```
 
-Name it when you run the build:
+Name it in the project's `jenesis.properties`, so every build of the project applies it:
 
-```bash
-java build/jenesis/Make.java -Djenesis.project.customizers=build.custom.Signing
+```properties
+jenesis.project.customizers=build.custom.Signing
 ```
+
+The same key works on the command line or in a profile, like any other setting.
 
 `project.assembler()` is the assembler the settings configured, and the lambda calls it for every module.
 `mapBuild` decorates only the module's build phase - here registering the stock output under `assemble` and
 chaining the `sign` step onto it. The build is otherwise the stock one: `jenesis.properties`, the profiles and
 the other settings configure the project the customizer receives, and the build runs on the JDK, in the daemon
-or in Docker as they ask. `java build/jenesis/Execute.java -Djenesis.project.customizers=…` runs the program
-the customized build produced.
+or in Docker as they ask. `java build/jenesis/Execute.java` reads the same settings and runs the program the
+customized build produced.
 
 - `jenesis.project.customizers` takes several classes, separated by commas, and applies them in order, so
   customizers compose: sign, stamp licence headers, emit checksums - without reimplementing the toolchain.
 - `Make.java` compiles `build/custom/` with the engine once, into `.jenesis/classes`, and again only when a
   source there changes. A customizer needs a public constructor without arguments.
-- A customizer runs code of the project's own, so a file the project provides cannot name one: pass it on the
-  command line, in an `@<file>` argument, or in your own `~/.jenesis/jenesis.properties`, which is how you
-  trust a project to adjust its build.
 - `jenesis-validate` compares `build/jenesis` alone, so a customizer leaves the vendored engine valid. The
   installed `jenesis` command runs the released engine and compiles nothing under `build/custom/`, so it
   refuses a customizer it cannot find.
+
+<div class="note">
+  A customizer runs the project's own code, just as its tests do. Before you build a project you do not
+  trust, run the build in a container with <code>-Djenesis.project.docker=true</code>. The customizer is then
+  applied inside the container and never on your machine, and the project cannot switch Docker off (see
+  <em><a href="/tool/build-performance-and-isolation/#what-runs-on-the-host">What runs on the host</a></em>).
+</div>
 
 {% demos 50, 51 %}
 
