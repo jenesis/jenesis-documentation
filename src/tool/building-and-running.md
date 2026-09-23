@@ -400,24 +400,24 @@ module demo.natives.app {
 
 A test module is a run of its own and grants what its tests need itself. A token is a module name or a
 `<groupId>/<artifactId>`, and several may share one tag. A grant adds no dependency: what it names has to be
-on the module's run-time path, or in one of the layers it runs, or the build fails saying so. A jar on the
-class path has no name, so a grant for one becomes `--enable-native-access=ALL-UNNAMED`. A module isolated in
-a layer the module declares is named the same way, or as `layer:<name>/module/<module>`, and the launcher
-grants it when it defines the layer - through the lookup of the module that asks for the layer, so that module
-needs native access itself and names itself as well. `jpx` grants what the jar it runs names.
+on the module's run-time path, or the build fails saying so. A jar on the
+class path has no name, so a grant for one becomes `--enable-native-access=ALL-UNNAMED`. `jpx` grants what
+the jar it runs names.
 
 A library that keeps a module in a [layer](/tool/dependencies/#keeping-a-dependency-private) hides that module
-from whoever uses the library, and its need for native access with it. The library names itself and the
-module in its layer, and what a granted module names inside its own layers is granted with it, so the
-application grants the library alone - as it would a library that had shaded the module. A module in another
-module's layer is out of the application's reach, so naming it fails the build like any name the run does not
-resolve:
+from whoever uses the library, and its need for native access with it. The library passes its own native
+access on to the module with a `native` line beside the layer's declaration. The launcher grants it when it
+defines the layer, through the lookup of the library that asks for it, so the line also records that the
+library needs native access itself. What a granted module passes on to its own layers is granted with it, so
+the application grants the library alone - as it would a library that had shaded the module. A module in a
+layer is out of the application's reach, so naming it in `@jenesis.native` fails the build like any name the
+run does not resolve:
 
 ```java
 /**
  * @jenesis.layer strings api demo.strings.spi
- * @jenesis.layer strings provider module/demo.strings.text
- * @jenesis.native demo.strings.library layer:strings/module/demo.strings.text
+ * @jenesis.layer strings provider demo.strings.text
+ * @jenesis.layer strings native demo.strings.text
  */
 module demo.strings.library {
     requires build.jenesis.launcher;
