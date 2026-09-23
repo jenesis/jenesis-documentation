@@ -104,7 +104,7 @@ the variable of the same name:
   different host, so it never leaks to a redirect target.
 </div>
 
-{% demos 61 %}
+{% demos 62 %}
 
 ### What the build tells the module index
 
@@ -371,7 +371,9 @@ layer; `provider` names a root the layer holds, and its whole closure comes with
 line for more roots. A root is a module name, as here, or any other coordinate, such as
 `maven/<groupId>/<artifactId>`, and the layer resolves in a dependency group of its own,
 `layer:render`. A pin for something in the layer carries that group in front, as in
-`@jenesis.pin layer:render/maven/com.fasterxml.jackson.core/jackson-core 2.15.4`.
+`@jenesis.pin layer:render/maven/com.fasterxml.jackson.core/jackson-core 2.15.4`. A third line,
+`@jenesis.layer render native <module>`, passes the library's native access on to a module of the layer -
+see [Granting native access](/tool/building-and-running/#granting-native-access).
 
 The library reaches its layer by name, and gets back the implementation:
 
