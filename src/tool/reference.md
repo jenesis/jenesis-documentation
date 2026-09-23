@@ -210,6 +210,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.pin.bom` | `keep` | Whether the `pin` step keeps (`keep`) or flattens (`flatten`) BOM references. |
 | `jenesis.pin.file` | *(unset)* | Write the whole project's pins to this properties file instead of rewriting the module declarations. A project's own file names only a folder inside the project. |
 | `jenesis.pin.checksum` | `true` | Whether `pin` writes SHA checksums alongside versions. |
+| `jenesis.pin.retain` | `groups` | Which lines a refresh keeps although it did not write them: `groups` those of a group the run resolved nothing in, `all` every one (a project built in more than one layout), `none` none. |
 | `jenesis.platform.<token>` | *(detected)* | Add (`=true`) or remove (`=false`) a platform token used to select guarded pins. |
 | `jenesis.project.digest` | `SHA-256` | Digest algorithm the `pin` step uses to checksum artifacts. |
 | `jenesis.openpgp.command` | `gpgv` | Binary forked to verify detached OpenPGP signatures. A name is looked up on the `PATH`; a value containing a separator is used as a path. Command line or `~/.jenesis/jenesis.properties` only. |
@@ -306,7 +307,7 @@ password location is missing.
 | `jenesis.print.cache` | `false` | Print `[LOADED]`/`[STORED]` lines for the build cache, local and shared. |
 | `jenesis.print.signatures` | `false` | Print a `[VERIFIED]` line per checked dependency with the key or the identity that signed it, `[EXPIRED]` with both dates where the key has since expired, and `[UNDECLARED]`/`[UNSIGNED]` for the ones no declaration covers. |
 | `jenesis.print.checksum` | `false` | Append input/output checksums under each `[EXECUTED]` line. |
-| `jenesis.print.pins` | `false` | Print a `[KEPT]` line per coordinate pin a refresh kept although no closure resolved it. |
+| `jenesis.print.pins` | `false` | Print a `[KEPT]` line per pin a refresh kept although no closure resolved it. |
 | `jenesis.print.divergence` | `false` | Print a `[DIVERGED]` line per coordinate the project pins at more than one version; `divergence.properties` is written either way. |
 | `jenesis.print.aliases` | `false` | Print an `[ALIAS]` line per `@jenesis.alias` whose target already declares that module name. |
 | `jenesis.print.jreleaser` | `false` | Stream the release tool's output. |
