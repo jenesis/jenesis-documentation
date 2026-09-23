@@ -68,11 +68,19 @@ launcher jar - a deployment that unpacked its dependencies - the same two lists 
 `jlayer.modulepath.<layer>` and `jlayer.classpath.<layer>` system properties instead.
 
 <div class="warning">
-  A layer that is not bundled in a launcher jar is defined from the <code>jlayer.*</code> system properties
+  <p>A layer that is not bundled in a launcher jar is defined from the <code>jlayer.*</code> system properties
   when a module first asks for it. The JVM lets any code overwrite a system property at any time and offers no
   way to protect one, so code that runs earlier - in the application or in an outer layer - can change which
   jars that layer holds, and so place its own code in another module's layer, outside the encapsulation that
-  layer was declared for. A layer bundled in a launcher jar is read from the jar and is not affected.
+  layer was declared for. A layer bundled in a launcher jar is read from the jar and is not affected.</p>
+  <p>The same holds for <code>jlayer.enableNativeAccess.&lt;layer&gt;</code>: code that rewrites it can grant
+  native access to a module it placed in the layer. The grant is made on behalf of the module that asks for the
+  layer, so it never reaches further than that module's own native access. The JDK also defaults to
+  <code>--illegal-native-access=warn</code>, where a restricted method called without a grant still runs and
+  only prints a warning, so on most JVMs today the rewrite gains nothing the placed code could not already do.
+  It becomes an escalation where the JVM is started with <code>--illegal-native-access=deny</code>. We are
+  considering alternative mechanisms, and hope that by the time the JDK switches that default, the JVM offers a
+  way to read the system properties as they were given at start-up.</p>
 </div>
 
 ## Bundled Java agents
