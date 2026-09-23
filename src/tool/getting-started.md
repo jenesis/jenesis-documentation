@@ -150,7 +150,9 @@ The cost is the recompile on each run. `Make` handles it - the first call compil
 `.jenesis/classes` and later calls reuse those classes until a source changes - and the installed `jenesis`
 skips it entirely by running a released engine. Keep `java build/jenesis/Make.java` in the README and in CI:
 compiling the engine offline is normally faster than downloading a binary distribution over the network, and
-it needs nothing fetched to obtain the build tool at all.
+it needs nothing fetched to obtain the build tool at all. A project that
+*[customizes its build](/tool/extending-the-build/#customizing-the-stock-build)* needs `Make.java` in any case:
+the installed `jenesis` compiles nothing under `build/custom/`.
 
 ## Build a project from nothing
 
