@@ -63,6 +63,15 @@ point. It inherits the current process's streams, waits, and returns the child's
 single-argument form uses the installation's own entry point; a `launch(mainClass, arguments)` overload
 names a different one, the way a `/<main-class>` suffix does on the command line.
 
+To run the program on another JDK, as [`--java`](/jpx/reference/) does, hand the installation that JDK's home
+folder. `home` returns a copy that launches `bin/java` from there, in a container as well:
+
+```java
+int status = jpx.install("org.junit.platform.console@6.1.3")
+        .home(Path.of("/opt/jdk-26"))
+        .launch(List.of("--version"));
+```
+
 When you want the parts of a target separately - to log the version, or to route on the name - parse it
 yourself and hand the result to the same method:
 
@@ -138,8 +147,9 @@ installation.launch(command.mainClass(), List.of("--version"), new DockerizedJav
 
 The single-argument constructor builds and reuses the minimal hardened image `--docker` uses;
 `new DockerizedJava(directory, "<image>")` names your own, which runs without the hardening flags. Either way
-the container runs the host's Java home, mounted read-only, so the image needs no JDK, and the working
-directory is mounted read-write at its host path.
+the container runs the installation's JDK from the host, mounted read-only, so the image needs no JDK, and
+the working directory is mounted read-write at its host path. That JDK is the one running your program, or
+the one an `installation.home(home)` call names - which is how `--java` reaches a container.
 
 When you would rather see a run than make it, ask for it. Two calls answer, and they are the two lines
 [`--pin`](/jpx/reference/) prints.
