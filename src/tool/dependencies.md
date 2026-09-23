@@ -137,10 +137,14 @@ The `dependencies` selector prints each module's resolved tree, the way `mvn dep
 java build/jenesis/Make.java dependencies
 ```
 
-Each node shows the version every parent requested, the **negotiated** version inline when it differs
-(`[1,2] -> 2`), the scope, the dependency's licence (`{Apache-2.0}`), and `local` for a module built inside
-this project rather than fetched. A per-module *Resolved dependencies* list and a licence summary follow the
-tree. It is the fastest way to answer "why is this version on my class path?" before you pin anything.
+Each module gets one tree per scope, starting from the module itself and written like any other node: the
+coordinate it is published under, its version, the scope and its module name, tagged `local` with the folder
+it is built from (`maven/greeter/greeter 0-SNAPSHOT [compile] (module greeter, local ./sources)`). A module
+built in the project carries the same `local` tag and folder wherever it appears in another module's tree.
+Each node below shows the version every parent requested, the **negotiated** version inline when it differs
+(`[1,2] -> 2`), the scope, the dependency's licence (`{Apache-2.0}`), and the module name. A per-module
+*Resolved dependencies* list and a licence summary follow the tree. It is the fastest way to answer "why is
+this version on my class path?" before you pin anything.
 
 When the whole closure is more than you want to read, `-Djenesis.tree.format` narrows what the trees show:
 
