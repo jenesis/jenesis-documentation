@@ -17,9 +17,9 @@ its own, and that comes last.
 ## Customizing the stock build
 
 A customizer is a class in the project's `build/custom/` folder that implements `UnaryOperator<Project>`: it is
-handed the project the settings configured and returns the one to build. Most customizers wrap the
-**assembler** - the callback that wires each module's compile/jar/test sub-graph. This one,
-`build/custom/Signing.java`, adds a `sign` step after the stock build:
+handed the project the settings configured and returns the one to build. Most customizers decorate the
+**assembler** - the callback that wires each module's compile/jar/test sub-graph - with a **`Decoration`**. This
+one, `build/custom/Signing.java`, adds a `sign` step after the stock build:
 
 ```java
 package build.custom;
@@ -28,15 +28,11 @@ public class Signing implements UnaryOperator<Project> {
 
     @Override
     public Project apply(Project project) {
-        return project.assembler((descriptor, repositories, resolvers) -> project.assembler()
-                .apply(descriptor, repositories, resolvers)
-                .mapBuild(stock -> (sub, inherited) -> {
-                    sub.addModule("assemble", stock, inherited.sequencedKeySet().stream());
-                    sub.addStep("sign", (executor, context, arguments) -> {
-                        // read the jars in each argument's folder, write their signatures into context.next()
-                        return CompletableFuture.completedStage(new BuildStepResult(true));
-                    }, "assemble");
-                }));
+        return project.decorate(new Decoration("assemble")
+                .after(_ -> (sub, _) -> sub.addStep("sign", (executor, context, arguments) -> {
+                    // read the jars in each argument's folder, write their signatures into context.next()
+                    return CompletableFuture.completedStage(new BuildStepResult(true));
+                }, "assemble")));
     }
 }
 ```
@@ -49,9 +45,12 @@ jenesis.project.customizers=build.custom.Signing
 
 The same key works on the command line or in a profile, like any other setting.
 
-`project.assembler()` is the assembler the settings configured, and the lambda calls it for every module.
-`mapBuild` decorates only the module's build phase - here registering the stock output under `assemble` and
-chaining the `sign` step onto it. The build is otherwise the stock one: `jenesis.properties`, the profiles and
+`project.decorate(...)` wraps the assembler the settings configured. For every module, the decoration runs the
+stock build as a module of its own, here named `assemble`, and places its own steps beside it: an `after` step
+names `assemble` as its input, a `before` step runs ahead of it. Because the stock build lives in its own
+module, a step the decoration adds never collides with one the stock build declares, whatever either is named,
+and a second customizer decorates the first one's result the same way, one level deeper. The build is otherwise
+the stock one: `jenesis.properties`, the profiles and
 the other settings configure the project the customizer receives, and the build runs on the JDK, in the daemon
 or in Docker as they ask. `java build/jenesis/Execute.java` reads the same settings and runs the program the
 customized build produced.
@@ -84,10 +83,19 @@ inputs in one line:
 descriptor.sources("preprocess")   // stock compile now reads the preprocess step's output, not sources/
 ```
 
-That is the whole trick behind a preprocessing assembler: add a `preprocess` step that reads the module's
-`sources/`, rewrites it into its own output, then hand the stock assembler a descriptor whose `sources()`
-points at `preprocess`. `javac`, the jar step, and the tests all consume the transformed tree, and the rest
-of the build is untouched. Any pass that produces a `sources/` tree - template expansion, code generation,
+A decoration's `descriptor` operator does exactly that, and its `before` hook adds the step the redirected
+descriptor names:
+
+```java
+return project.decorate(new Decoration("assemble")
+        .descriptor(descriptor -> descriptor.sources("preprocess"))
+        .before(descriptor -> (sub, _) -> sub.addStep("preprocess", new Substitute(), descriptor.sources().stream())));
+```
+
+The `preprocess` step reads the module's original `sources/` and writes the rewritten tree into its own
+output. The stock build is handed the redirected descriptor, and with it the `preprocess` step as an input,
+without naming it twice. `javac`, the jar step, and the tests all consume the transformed tree, and the rest of
+the build is untouched. Any pass that produces a `sources/` tree - template expansion, code generation,
 licence-header stamping - fits the same shape.
 
 ## Writing a build step
