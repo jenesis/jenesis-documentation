@@ -67,6 +67,14 @@ calling module, as a child of that caller's layer, through the [layer API](#the-
 launcher jar - a deployment that unpacked its dependencies - the same two lists arrive as
 `jlayer.modulepath.<layer>` and `jlayer.classpath.<layer>` system properties instead.
 
+<div class="warning">
+  A layer that is not bundled in a launcher jar is defined from the <code>jlayer.*</code> system properties
+  when a module first asks for it. Any code can rewrite system properties while the JVM runs, so code that
+  runs earlier - in the application or in an outer layer - can change which jars that layer holds, and so
+  place its own code in another module's layer, outside the encapsulation that layer was declared for. A layer
+  bundled in a launcher jar is read from the jar and is not affected.
+</div>
+
 ## Bundled Java agents
 A launcher jar can carry its own Java agents. `agentClass` is a comma-separated list of fully qualified agent
 class names, each optionally followed by `=<arguments>`, mirroring `-javaagent:<jar>=<arguments>`:
@@ -156,14 +164,6 @@ through the lookup the module asking for the layer passes, so the JDK checks tha
 native access of its own, it is warned about or refused as if it had granted the layer itself. The build
 tool writes all three from the `@jenesis.native` declarations of the module it packages - see
 [*Building &amp; running*](/tool/building-and-running/#granting-native-access).
-
-<div class="warning">
-  System properties can be rewritten by any code while the JVM runs, and the launcher reads a layer's
-  <code>jlayer.*</code> properties only when it defines the layer. Code that runs before then - in the
-  application or in an outer layer - can therefore change which jars an inner layer on disk holds and which of
-  its modules are granted native access, though never beyond what the module asking for the layer could grant
-  itself. A layer bundled in a launcher jar is read from the jar and is not affected.
-</div>
 
 ## Emulating a signed jar
 A dependency that shipped as a *signed* jar loses its signer identity when exploded: its signature files

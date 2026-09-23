@@ -401,9 +401,7 @@ on the module's run-time path, or in one of the layers it runs, or the build fai
 class path has no name, so a grant for one becomes `--enable-native-access=ALL-UNNAMED`. A module isolated in
 a layer is named the same way, or as `layer:<name>/module/<module>`, and the launcher grants it when it
 defines the layer - through the lookup of the module that asks for the layer, so that module needs native
-access itself and is named as well. System properties can be rewritten while the JVM runs, so code that runs before a layer
-on disk is defined - in the application or in an outer layer - can change what that layer holds and what it
-is granted; a layer bundled in a launcher jar is not affected. `jpx` grants what the jar it runs names.
+access itself and is named as well. `jpx` grants what the jar it runs names.
 
 A `pom.xml` project declares the same in a project-level comment block, naming itself by its own
 `<groupId>/<artifactId>`:
