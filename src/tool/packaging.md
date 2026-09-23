@@ -354,7 +354,7 @@ directory to maintain.
   inside every jar - the way to vet exactly what reflection is baked into a published artifact.
 </div>
 
-{% demos 63 %}
+{% demos 64 %}
 
 ### native-image or jpackage?
 
