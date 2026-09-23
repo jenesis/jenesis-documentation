@@ -368,20 +368,22 @@ the call. A `@jenesis.native` tag declares that grant, and the build adds it to 
 its test run, its `Execute` run, and what it packages - a bundle, a Docker image, a `jpackage` application and
 an executable jar.
 
-The grant is the running program's to give, never the library's. A library states that it needs native
-access with a bare tag:
+Whether native code runs is decided by what a program uses, not by the library that offers it: a library can
+offer a native API that most of its users never call, so it declares nothing. The module that uses the API
+names the module that needs access, and a module that calls restricted methods itself names itself:
 
 ```java
 /**
- * @jenesis.native
+ * @jenesis.native demo.natives.text
  */
-module demo.natives.text {
-    exports demo.natives.text;
+module demo.natives.words {
+    requires transitive demo.natives.text;
 }
 ```
 
-Its jar then carries the manifest attribute `Jenesis-Native-Access: true`, which tells a user of the library
-that a grant is needed and grants nothing. The module that runs the library names it:
+A declaration grants access only to the runs of the module that makes it, and is never inherited. Its names
+are recorded in the module's jar as the manifest attribute `Jenesis-Native-Access: demo.natives.text`, so a
+module that runs this one can learn what it has to grant, and grants it the same way:
 
 ```java
 /**
@@ -389,33 +391,32 @@ that a grant is needed and grants nothing. The module that runs the library name
  * @jenesis.native demo.natives.text
  */
 module demo.natives.app {
-    requires demo.natives.text;
+    requires demo.natives.words;
 }
 ```
 
-Only the declarations of the module that runs count, and a declaration never propagates to a dependent. A test
-module is a run of its own and grants what its tests need itself. A token is a module name or a
-`<groupId>/<artifactId>`, several may share one tag, and a bare tag in a module that runs grants that module
-itself. A grant adds no dependency: what it names has to be on the module's run-time path, or in one of the
-layers it runs, or the build fails saying so. A jar on the class path has no name, so a grant for one becomes
-`--enable-native-access=ALL-UNNAMED`. A module isolated in a layer is named the same way, or as
-`layer:<name>/module/<module>`, and the launcher grants it when it defines the layer.
+A test module is a run of its own and grants what its tests need itself. A token is a module name or a
+`<groupId>/<artifactId>`, and several may share one tag. A grant adds no dependency: what it names has to be
+on the module's run-time path, or in one of the layers it runs, or the build fails saying so. A jar on the
+class path has no name, so a grant for one becomes `--enable-native-access=ALL-UNNAMED`. A module isolated in
+a layer is named the same way, or as `layer:<name>/module/<module>`, and the launcher grants it when it
+defines the layer. `jpx` grants what the jar it runs names.
 
-A `pom.xml` project declares the same in a project-level comment block, where an empty block states the
-project's own need and a token names a dependency:
+A `pom.xml` project declares the same in a project-level comment block, naming itself by its own
+`<groupId>/<artifactId>`:
 
 ```xml
-<!--jenesis.native-->
 <!--jenesis.native
 org.example/jni
 -->
 ```
 
-By default a dependency's `Jenesis-Native-Access` is only information. `jenesis.dependency.native=strict`
-fails the build of any module whose run includes such a jar without granting it, and names each one:
+`jenesis.dependency.native` decides what the build does with the names a dependency's jar records: `ignore`,
+the default, does nothing; `warn` reports each one the running module does not grant; `strict` fails the
+build on it:
 
 ```bash
-java -Djenesis.dependency.native=strict build/jenesis/Make.java
+java -Djenesis.dependency.native=warn build/jenesis/Make.java
 ```
 
 {% demos 49 %}

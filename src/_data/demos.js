@@ -108,7 +108,7 @@ export default {
         { slug: "demo-46-build-cache", name: "Build cache", blurb: "Sharing build outputs through a cache." },
         { slug: "demo-47-docker-isolation", name: "Docker isolation", blurb: "Confining the build and the launched program in a throwaway container." },
         { slug: "demo-48-agents", name: "Java agents", blurb: "Attaching agents to the test run and to the application run." },
-        { slug: "demo-49-native-access", name: "Native access", blurb: "Granting native access to a library by the module that runs it, and refusing a need nobody granted." },
+        { slug: "demo-49-native-access", name: "Native access", blurb: "Naming the module that needs native access, and granting it again in every module that runs it." },
       ],
     },
     {
