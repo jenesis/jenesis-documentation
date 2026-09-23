@@ -25,9 +25,9 @@ or write outside the sandbox.
   The engine itself is trusted separately: a standard Jenesis project carries no build logic to execute - it is
   described declaratively - so an untrusted project can be built by the trusted, SDK-installed <code>jenesis</code>
   (see <a href="/tool/getting-started/">Getting started</a>). The Docker flags below confine the remaining
-  untrusted code: the dependencies, the tests, the artifact's <code>main</code>, and any build code the project
-  adds under <code>build/custom/</code> (see <a href="/tool/extending-the-build/">Extending the build</a>),
-  which the installed <code>jenesis</code> never runs.
+  untrusted code: the dependencies, the tests, the artifact's <code>main</code>, and the plugins the project
+  names (see <a href="/tool/extending-the-build/">Extending the build</a>), which every Jenesis that builds the
+  project runs, the installed <code>jenesis</code> included.
 </div>
 
 ## Running the build in a container
@@ -50,8 +50,8 @@ two flags, so harden it in the image itself if you swap it.
 ### What runs on the host
 
 All of the project's code runs inside the container. On the host, Jenesis only reads the settings and starts
-the container. It runs no test there and applies no customizer from `build/custom/` until the container is up and
-the isolation is in place.
+the container. It runs no test there and none of the plugins the project names until the container is up and the
+isolation is in place.
 
 The project also cannot undo the isolation. Its `jenesis.properties` and its profiles are refused if they set any
 `jenesis.project.docker*` or `jenesis.execute.docker*` key, so a project can neither switch Docker off nor widen
@@ -72,7 +72,7 @@ is the released one (see [Getting started](/tool/getting-started/)):
 jenesis-validate
 ```
 
-Then build the project inside the container, where its tests and its customizer run only after the isolation
+Then build the project inside the container, where its tests and its plugins run only after the isolation
 is in place:
 
 ```bash
