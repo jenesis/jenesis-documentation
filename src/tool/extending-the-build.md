@@ -17,15 +17,15 @@ its own, and that comes last.
 ## Customizing the stock build
 
 A customizer is a class in the project's `build/custom/` folder that adjusts the **assembler** - the callback
-that wires each module's compile/jar/test sub-graph. It implements
-`Function<InferredMultiProjectAssembler, MultiProjectAssembler<? super ProjectModuleDescriptor>>`: it is handed
-the stock assembler the settings configured and returns the assembler to build with. This one,
+that wires each module's compile/jar/test sub-graph. It implements `Project.Customizer`, a functional interface
+whose one method is handed the `InferredMultiProjectAssembler` the settings configured and returns the
+`MultiProjectAssembler` to build with. This one,
 `build/custom/Signing.java`, adds a `sign` step after the stock build:
 
 ```java
 package build.custom;
 
-public class Signing implements Function<InferredMultiProjectAssembler, MultiProjectAssembler<? super ProjectModuleDescriptor>> {
+public class Signing implements Project.Customizer {
 
     @Override
     public MultiProjectAssembler<? super ProjectModuleDescriptor> apply(InferredMultiProjectAssembler assembler) {
