@@ -50,6 +50,11 @@ jenesis.project.customizer=build.custom.Signing
 
 The same key works on the command line or in a profile, like any other setting.
 
+Build a project with a customizer with `java build/jenesis/Make.java`, and run what it built with
+`java build/jenesis/Execute.java`. They compile `build/custom/` with the engine; the installed `jenesis` command
+runs the released engine, compiles nothing under `build/custom/`, and stops with an error naming the customizer
+it cannot find.
+
 The assembler the customizer returns is a lambda that calls the stock one for every module. `mapBuild`
 decorates only the module's build phase - here registering the stock output under `assemble` and chaining the
 `sign` step onto it. The build is otherwise the stock one: `jenesis.properties`, the profiles and the other
@@ -63,9 +68,7 @@ customized build produced.
   `Project.ofEnvironment(environment, root, customizer)` to start from the settings.
 - `Make.java` compiles `build/custom/` with the engine once, into `.jenesis/classes`, and again only when a
   source there changes. A customizer needs a public constructor without arguments.
-- `jenesis-validate` compares `build/jenesis` alone, so a customizer leaves the vendored engine valid. The
-  installed `jenesis` command runs the released engine and compiles nothing under `build/custom/`, so it
-  refuses a customizer it cannot find.
+- `jenesis-validate` compares `build/jenesis` alone, so a customizer leaves the vendored engine valid.
 
 <div class="note">
   A customizer runs the project's own code, just as its tests do. Before you build a project you do not
