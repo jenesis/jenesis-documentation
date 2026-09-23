@@ -306,7 +306,7 @@ password location is missing.
 | `jenesis.print.cache` | `false` | Print `[LOADED]`/`[STORED]` lines for the build cache, local and shared. |
 | `jenesis.print.signatures` | `false` | Print a `[VERIFIED]` line per checked dependency with the key or the identity that signed it, `[EXPIRED]` with both dates where the key has since expired, and `[UNDECLARED]`/`[UNSIGNED]` for the ones no declaration covers. |
 | `jenesis.print.checksum` | `false` | Append input/output checksums under each `[EXECUTED]` line. |
-| `jenesis.print.pins` | `false` | Print an `[UNPINNED]` line per pin a refresh kept that no closure resolves, so it carries no checksum. |
+| `jenesis.print.pins` | `false` | Print a `[KEPT]` line per coordinate pin a refresh kept although no closure resolved it. |
 | `jenesis.print.divergence` | `false` | Print a `[DIVERGED]` line per coordinate the project pins at more than one version; `divergence.properties` is written either way. |
 | `jenesis.print.aliases` | `false` | Print an `[ALIAS]` line per `@jenesis.alias` whose target already declares that module name. |
 | `jenesis.print.jreleaser` | `false` | Stream the release tool's output. |
