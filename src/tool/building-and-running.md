@@ -93,9 +93,11 @@ module demo.greeter.testing {
 ```
 
 Such a module is compiled and put on the module path of the test modules that `requires` it, but no test run
-is wired for it, and it is never staged - not even under `jenesis.stage.tests`, which does publish the test
-modules beside the modules they test. Since `abstract` is a Java keyword it can never be a module name, so
-the two forms of the tag never collide.
+is wired for it, and a plain `stage` leaves it out. Under `jenesis.stage.tests`, which publishes the test
+modules beside the modules they test, it is staged as well, as a module of its own, because the published test
+modules require it. It can be tested like any other module: a module tagged `@jenesis.test demo.greeter.testing`
+is run as the other test modules are, and staged as the test variant of `demo.greeter.testing`. Since `abstract`
+is a Java keyword it can never be a module name, so the two forms of the tag never collide.
 
 {% demos 3, 4, 32 %}
 
