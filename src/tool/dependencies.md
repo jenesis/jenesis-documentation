@@ -49,8 +49,10 @@ module demo.app {
 }
 ```
 
-The tag takes the module name and the version, and applies wherever that module turns up in the closure,
-directly or through another module. Jenesis can also write these tags for you, fixing each module at the version it
+The tag takes the module name and the version. In the `modular` layout it applies wherever that module
+turns up in the closure, directly or through another module; in the `modular_to_maven` layout it fixes the
+module a `requires` names, and a module that arrives through that module's POM is pinned by its Maven
+coordinate instead. Jenesis can also write these tags for you, fixing each dependency at the version it
 resolved, as *[Recording the pins](/tool/pinning/#recording-the-pins)* in the next chapter describes.
 
 ## The two repositories

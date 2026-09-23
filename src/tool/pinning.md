@@ -61,18 +61,39 @@ there is no comment at all, so a project never ends up with one of each.
   digest defaults to SHA-256 and is set with <code>-Djenesis.project.digest=&lt;algorithm&gt;</code>.
 </div>
 
-A pin for a coordinate the closure no longer reaches is **kept**, not dropped, so a line you wrote by hand
-for something resolved only under some conditions survives a refresh. The cost is that a line left over from
-an earlier shape of the module survives too, and a later refresh that moves its version leaves it without a
-checksum - which strict mode accepts, because it never resolves that coordinate at all. `-Djenesis.print.pins=true`
-therefore reports what it carried over:
+In the `modular_to_maven` layout, which a `module-info.java` project uses by default, a module name pins the
+module a `requires` names, and everything that module's POM brings in is pinned by its Maven coordinate. To
+hold one of those at another version, change its coordinate line:
+
+```java
+/**
+ * @jenesis.pin org.apache.commons.text 1.12.0
+ * @jenesis.pin org.apache.commons/commons-lang3 3.17.0
+ */
+module demo.app {
+    requires org.apache.commons.text;
+}
+```
+
+commons-text's POM asks for commons-lang3 3.14.0; the coordinate line overrides it wherever the closure
+reaches it, and the next `pin` records the checksum of the version you chose.
+
+A refresh rewrites every line of the closure it resolved and removes every other line, except those of a
+group this run resolved no closure for: the documentation tool's pins, in a group of their own that only
+`-Djenesis.project.documentation=true` resolves, survive a run that does not build documentation.
+`-Djenesis.pin.retain` chooses what survives:
+
+| Value | Keeps a line the refresh did not write when |
+| --- | --- |
+| `groups` (default) | the run resolved nothing in its group |
+| `all` | always - for a project built in more than one layout, since `modular` pins a transitive module by its name where `modular_to_maven` pins it by its Maven coordinate |
+| `none` | never |
+
+`-Djenesis.print.pins=true` reports every line a refresh kept:
 
 ```
-[UNPINNED]  ./source/store/module-info.java: kept without a checksum, resolved by no closure: org.example/gone 1.2.3
+[KEPT]      ./source/store/module-info.java: kept, resolved by no closure: dokka/maven/org.jsoup/jsoup 1.16.1 SHA-256/1f11...e901
 ```
-
-Every line it names is either a deliberate pin worth keeping or a leftover worth deleting; nothing else in
-the build will mention it again.
 
 Each module resolves its own closure, and nothing makes two modules agree on a version. `pin/divergence`
 writes every coordinate the project pins at more than one version into `divergence.properties`, naming the
