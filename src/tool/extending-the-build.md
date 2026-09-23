@@ -65,7 +65,7 @@ the customized build produced.
   installed `jenesis` command runs the released engine and compiles nothing under `build/custom/`, so it
   refuses a customizer it cannot find.
 
-{% demos 49, 50 %}
+{% demos 50, 51 %}
 
 ### Redirecting a module's inputs
 
@@ -218,7 +218,7 @@ a second project module.
   <em>dependencies</em> need not be, since a module layer admits automatic modules too.
 </div>
 
-{% demos 51, 52 %}
+{% demos 52, 53 %}
 
 ## Writing an entry point of your own
 
@@ -245,11 +245,14 @@ included. Compile it once when that matters - `javac -d .jenesis/tool $(find bui
 When the stock compile/jar/test flow fits but `Project` does not, call the convenience factory
 `MavenProject.make` (or `ModularProject.make` for a Java Module System project). It
 discovers the modules under a root, fills in sane defaults - a Maven Central repository, the right resolver, a
-digest - and leaves only the assembler for you to supply:
+digest - and leaves only the environment those defaults read their settings from and the assembler for you to
+supply:
 
 ```java
+Environment environment = new Environment(Make.settings(Path.of(".")).keys());
 BuildExecutor root = BuildExecutor.of(Path.of("target"));
-root.addModule("maven", MavenProject.make(Path.of("."),
+root.addModule("maven", MavenProject.make(environment,
+        Path.of("."),
         (descriptor, repositories, resolvers) -> new InferredMultiProjectAssembler().apply(
                 new ProjectModuleDescriptor(descriptor)            // the discovered module
                         .configuration(Path.of("."))               // its configuration folders
@@ -267,7 +270,7 @@ This is a middle ground: no layout, no goals, no `Project`, yet you did not wire
 no generated POM). For full control - a custom repository, strict pinning, a different digest, or emitting a
 POM as well - switch to the longer `make(...)` overload that `Project` itself uses.
 
-{% demos 53, 54 %}
+{% demos 54, 55 %}
 
 ### Wiring the graph by hand
 
@@ -291,7 +294,7 @@ cached outputs whose inputs are unchanged. The `generate` step above synthesises
 There is no phase lifecycle to fit into: a build is just steps wired to steps, and here you wire them
 yourself.
 
-{% demos 55 %}
+{% demos 56 %}
 
 ## Running a build inside another program
 
@@ -329,5 +332,5 @@ The tools are found by name when `build.jenesis` is a resolved module or a jar o
 mode registers no service, so a program there constructs `new MakeTool()`, `new ExecuteTool()` or
 `new JpxTool()` itself; the contract is the same.
 
-{% demos 56 %}
+{% demos 57 %}
 

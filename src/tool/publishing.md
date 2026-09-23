@@ -113,7 +113,7 @@ that is not a 40-character Git tree id fails the build. When
 notation SPDX uses for a download location: `git+https://github.com/jenesis/jenesis.git@<revision>`. A tag of
 `HEAD`, which a `pom.xml` declares for the root of its repository, counts as no tag there.
 
-{% demos 58 %}
+{% demos 59 %}
 
 ## Publishing a bill of materials
 
@@ -197,7 +197,7 @@ detached signature made afterwards covers the signed bytes.
   delete <code>target/</code> after a key rotation.
 </div>
 
-{% demos 57 %}
+{% demos 58 %}
 
 ## The last mile: signing and uploading
 

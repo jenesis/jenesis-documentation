@@ -64,7 +64,8 @@ A jar you assemble yourself can also meet these, which a build-produced jar neve
 | Message | Cause and fix |
 | --- | --- |
 | `Malformed access directive …` / `Malformed addExports/addOpens …` | An `addExports`, `addOpens` or `addReads` directive lacks its `=` or its `module/package` form. |
-| `Module named by addExports/addOpens/addReads is not bundled: <name>` | A grant's source module is not among the bundled modules. |
+| `Module named by addExports/addOpens/addReads/enableNativeAccess is not bundled: <name>` | A grant's source module is not among the bundled modules. |
+| `Layer <layer> holds no module <name> to enable native access for` | `enableNativeAccess.<layer>` or `jlayer.enableNativeAccess.<layer>` names a module the layer does not hold. |
 | `Target module not found: <name>` | A grant's target is neither a bundled nor a boot module, nor `ALL-UNNAMED`. |
 | `Agent class <name> declares no static premain(String) …` | An `agentClass` entry names a class without a matching `premain` or `agentmain`; the message says when a manifest attribute is missing to capture an `Instrumentation`. |
 | `Cannot access <class>.main(String[]); …` | The main class sits in a package its module neither exports nor opens, and `mainModule` does not name that module. |
