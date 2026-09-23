@@ -155,19 +155,22 @@ jenesis.jarsigner.arguments    anything else jarsigner accepts
 
 These are properties rather than a configuration file because where the key is and what unlocks it differ
 between a laptop, a release machine and a CI runner, and a developer without the key still has to be able to
-build. They settle in the order everything else does: a `-D` on the command line wins over the project's
-`jenesis.properties`, which wins over the user-global `~/.jenesis/jenesis.properties`. So a project can commit
-the alias it signs with, a machine can hold the key once for everything built on it, and a runner can override
-either.
+build. They belong to the machine that signs: a project's `jenesis.properties` or profile that sets any of
+them is refused, since a file travelling with the sources would decide which key a build reaches for and
+which file a password is read from. A machine holds them once, for everything built on it:
 
 ```properties
-# jenesis-release.properties, selected with -Djenesis.make.profiles=release
-jenesis.jarsigner.alias=release
+# ~/.jenesis/jenesis.properties
+jenesis.jarsigner.keystore=/home/me/.keys/signing.p12
+jenesis.jarsigner.alias=me
+jenesis.jarsigner.storepass=file /home/me/.keys/signing.pass
 ```
 
+and a release runner names them for one run, where a `-D` wins over that file:
+
 ```bash
-java -Djenesis.make.profiles=release \
-     -Djenesis.jarsigner.keystore=/etc/jenesis/release.p12 \
+java -Djenesis.jarsigner.keystore=/etc/jenesis/release.p12 \
+     -Djenesis.jarsigner.alias=release \
      -Djenesis.jarsigner.storepass=env JENESIS_KEYSTORE_PASSWORD \
      build/jenesis/Make.java
 ```
