@@ -72,7 +72,7 @@ is the released one (see [Getting started](/tool/getting-started/)):
 jenesis-validate
 ```
 
-Then build the project inside the container, where its tests and its customizers run only after the isolation
+Then build the project inside the container, where its tests and its customizer run only after the isolation
 is in place:
 
 ```bash
