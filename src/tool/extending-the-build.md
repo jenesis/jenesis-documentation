@@ -10,13 +10,13 @@ This chapter is for the build that needs something the stock pipeline *does not*
 a code-generation step, a bespoke packaging step, an unusual dependency wiring.
 
 Almost always, the answer is a **plugin**: a build module, named in one line of a properties file, that joins a
-module of the stock build and adds to it. A plugin never replaces what the stock build does; a build that must -
-one that redirects what the compiler reads, or wires a step between two stock ones - is an entry point of its
-own, and that comes last.
+module of the stock build and adds to it, or runs once over everything the build produced. A plugin never
+replaces what the stock build does; a build that must - one that redirects what the compiler reads, or wires a
+step between two stock ones - is an entry point of its own, and that comes last.
 
 ## Adding plugins to the stock build
 
-A project names its plugins in `jenesis-plugins.properties`, beside `jenesis.properties` at its root, one per
+A project names its plugins in `jenesis.plugins.properties`, beside `jenesis.properties` at its root, one per
 line:
 
 ```properties
@@ -28,11 +28,13 @@ The key is `<name>+<slot>`. The **name** is the plugin's own, and holds neither 
 module of the stock build the plugin adds to, named as the build log shows it: `check`, `format`, `compliance`,
 `binary`, `binary/generated`, `binary/compiled`, `binary/validate`, `artifact`, `observed`, `documentation` and
 `documentation/generate`. A key without `+<slot>` adds the plugin to the module build itself, and an unknown slot
-is refused. The value says where the plugin comes from:
+is refused; the two slots that run once for the whole build, `postprocess/transform` and `postprocess/inspect`, have a section of their
+own below. The value says where the plugin comes from:
 
-- a value starting with `./` or `../` is a folder, compiled from source on every build, and
+- a value starting with `./` is a folder of the project, compiled from source on every build, and
 - anything else is a module name, resolved as `module/<name>` from the Jenesis module repository whatever the
-  project's layout, with the local export (`~/.jenesis`) searched first.
+  project's layout, with the local export (`~/.jenesis`) searched first. A value that is neither, such as a path
+  starting with `../`, fails the build.
 
 Either may end in `@<provider>`, which selects the provider annotated `@BuildModuleName("<provider>")` when the plugin
 module provides several: `signing+artifact=demo.signing@jarsigner`. Without it, the module must provide exactly
@@ -65,7 +67,31 @@ The plugin's dependencies are pinned like any other, in the dependency group nam
 A plugin found in the local export is built on your machine and is not checked against a pinned checksum.
 
 `-Djenesis.plugin.<name>=false` leaves a plugin out, as the stock tools are switched off, without editing the
-file.
+file, and `-Djenesis.project.plugins=false` leaves out every plugin the file names.
+
+### Handing a plugin files of the project
+
+A plugin reads only what the build hands it, so a file of the project reaches it as an **input**. Among a
+plugin's values, a key starting with `@` binds a file or folder instead of naming a value:
+
+```properties
+# build.jenesis/plugin-greeting.properties
+greeting=Hello from a generated source
+@templates=templates
+@templates/legal/HEADER.txt=legal/HEADER.txt
+```
+
+`@<input>=<path>` binds the path into an input named `<input>`, which the plugin reads as the folder
+`../inputs/<input>`. A target after the input's name, `@<input>/<target>`, places what is bound at that path
+inside the input rather than at its root, and one input takes one key per target, so it can gather several files
+and folders. A single file keeps its name unless a target renames it. Editing a bound file runs the plugin again.
+A value whose key really starts with `@` is written with two: `@@name=value` hands the plugin `@name=value`.
+
+In a module's `plugin-<name>.properties`, a path is resolved against the module's own folder, the one holding its
+`module-info.java` or `pom.xml`. It has
+to stay within the project, symbolic links included, and a plugin folder named as `./<folder>` must lie within
+the project as well. A path that leaves the project, does not exist, or shares a target with another binding of
+the same input fails the build.
 
 <div class="note">
   A plugin runs code the project chooses - compiled from its own sources, or resolved by a module name it
@@ -76,7 +102,93 @@ file.
   <em><a href="/tool/build-performance-and-isolation/#what-runs-on-the-host">What runs on the host</a></em>).
 </div>
 
-{% demos 53, 54 %}
+{% demos 54, 55 %}
+
+## Transforming and inspecting what the build produced
+
+A plugin in a module slot sees one module. Two slots see them all: a plugin named under **`transform`** or
+**`inspect`** runs once over everything the build produced, after every module is built and before anything is
+staged. A transform adds files to the modules - a notice, a report, a signature of your own - and an inspection
+checks the result and fails the build when it is wrong:
+
+```properties
+# jenesis.plugins.properties
+notice+postprocess/transform=./notice
+audit+postprocess/inspect=./audit
+```
+
+Both run as part of `build`, in `build/postprocess`, which keeps the transforms under `transform/<name>` and the
+inspections under `inspect/<name>`, apart from its own steps, so a plugin may take any name. Everything that builds
+on it - `stage`, `export`, `release`, `pin`, `dependencies`, `ide` and `Execute.java` - sees what the transforms
+added and never runs past a failed inspection. The line itself switches such a plugin on, as no
+`plugin-<name>.properties` applies to it. Transforms run in the order the file names them, each seeing what the
+ones before it added, and the inspections run after all of them. Their names take no `/`, `.` or `+`, and a name
+used for a module slot cannot also name one of them.
+
+### Configuring them
+
+A plugin of `postprocess` reads its values from **`jenesis.plugins.arguments.properties`** beside
+`jenesis.plugins.properties`, one line per value as `<plugin>.<key>`, and from nowhere else - never from the
+command line:
+
+```properties
+# jenesis.plugins.arguments.properties
+notice.holder=Example Corp.
+notice.@legal=legal
+```
+
+The plugin `notice` then receives `holder=Example Corp.`, and `@legal` binds the project's `legal/` folder as its
+input, resolved against the project root. A line that names no declared plugin fails the build. A profile brings
+values of its own in `jenesis.plugins.arguments-<profile>.properties`, which win over the file without a
+profile, and of two active profiles the one named first wins. That is why the plugin files are named with dots:
+in a file name, a dash after a name always introduces a profile, as in `jenesis-<profile>.properties`.
+
+Since these plugins run with every build, one that takes long is best switched off in `jenesis.properties` with
+`jenesis.plugin.<name>=false` and switched back on in the profile that ships. `-Djenesis.project.plugins=false`
+leaves out every plugin at once, those of the module slots included.
+
+### What a plugin sees, and what it may add
+
+Each plugin is handed the inventory of every module: its jar, sources and documentation, its POM, and every
+dependency it resolved, each with the jar it resolved to. A transform adds to a module by writing files into its
+own output and naming them in an `inventory.properties` there, under the prefix the inventory gives the module
+(its build identity, such as `module-sources`):
+
+```properties
+module-sources.attachment.notice=notices/module-sources/NOTICE.txt
+```
+
+- **`<module>.attachment.<classifier>`** is staged beside the module's jar under that classifier:
+  `<artifact>-<version>-<classifier>.<extension>` in the Maven tree, `<module>-<classifier>.<extension>` in the
+  modular tree.
+- **`<module>.report.<name>`** is staged with the module's reports under `stage/reports/`.
+
+A transform adds and never replaces: an inventory naming anything else, or a module the build does not have,
+fails the build, and so does an attachment whose file name the build stages already. A transform that brings
+its own SBOM, say, attaches it as `cyclonedx` once `-Djenesis.sbom.cyclonedx=false` has switched off the stock
+one. An inspection reads the same inventories plus what the transforms added, and fails the build by throwing.
+It writes only into its own output: an inspection that changes a file it was handed fails the build as well.
+
+### Pinning them
+
+These plugins belong to no module, so their pins live beside the file that names them, in
+**`jenesis.plugins.pin.properties`**, one line for each module in each plugin's closure:
+
+```properties
+plugin-audit/module/build.jenesis=0.14.0 SHA-256/...
+plugin-notice/module/build.jenesis=0.14.0 SHA-256/...
+```
+
+`pin` writes the file and pins every plugin of `postprocess` the file names, including one a setting
+switches off, so a plugin that only a profile switches on is pinned all the same. The plugins run with
+everything that builds, `pin` among it, so an inspection that fails stops `pin` too. This pins without running
+any plugin:
+
+```bash
+java -Djenesis.project.plugins=false build/jenesis/Make.java pin
+```
+
+{% demos 56 %}
 
 ## Writing a build step
 
@@ -189,8 +301,8 @@ module demo.plugin {
 ```
 
 Its `BuildExecutorModule` adds the steps it contributes, as a stock module does. The values of its
-`plugin-<name>.properties` reach it through a public constructor taking a `SequencedMap<String, String>` of
-them, in the file's order. `javac` requires every service provider to keep a public constructor without
+`plugin-<name>.properties`, or its lines of `jenesis.plugins.arguments.properties`, reach it through a public
+constructor taking a `SequencedMap<String, String>` of them, in the file's order. `javac` requires every service provider to keep a public constructor without
 arguments as well, which the build uses when the file is empty. A file with values for a provider that takes
 none fails the build, rather than the values being dropped:
 
@@ -202,6 +314,14 @@ public GreetingModule() {
 public GreetingModule(SequencedMap<String, String> properties) {
     greeting = properties.getOrDefault("greeting", "Hello from a generated source!");
 }
+```
+
+The steps a plugin adds are handed their inputs as arguments. An input bound with `@<input>` arrives as the
+argument `../inputs/<input>`, and a plugin of `postprocess` finds each module's inventory as an
+`inventory.properties` in the folders of its arguments:
+
+```java
+BuildStepArgument legal = arguments.get("../inputs/legal");
 ```
 
 A plugin compiled from source lives in a project folder of its own, which carries an empty **`.jenesis.skip`**
@@ -270,6 +390,21 @@ InferredMultiProjectAssembler checked = stock.check(check -> check.custom("place
 - `custom(map)` sets every added module at once, a `SequencedMap<String, BuildExecutorModule>` in the order
   they are wired.
 
+The plugins of `postprocess` are a value of the project rather than of the assembler: `plugins()`
+answers the `ProjectPlugins` that `jenesis.plugins.properties` declared, and `transform(name, step)` and
+`inspect(name, step)` add one more, a step or a module, refusing a name that is taken already. Here
+`ReleaseAudit` is a `BuildStep` of the project that throws when a module's inventory lacks what every release must
+carry:
+
+```java
+Project project = Project.ofEnvironment(environment, Path.of("."));
+project = project.plugins(project.plugins().inspect("audit", new ReleaseAudit()));
+```
+
+A plugin that `pin` should pin also needs its `resolution()`, the part of an `InternalModule` or `ExternalModule`
+that resolves the plugin's closure without building it; `ProjectPlugins` takes those by name beside the
+transforms and inspections.
+
 #### Redirecting a module's inputs
 
 An entry point can also change *what* the stock steps consume, because the module descriptor is immutable with a
@@ -287,7 +422,7 @@ points at `preprocess`. `javac`, the jar step, and the tests all consume the tra
 of the build is untouched. Any pass that produces a `sources/` tree - template expansion, code generation,
 licence-header stamping - fits the same shape.
 
-{% demos 51, 52 %}
+{% demos 52, 53 %}
 
 ### Starting on the selected JDK
 
@@ -329,7 +464,7 @@ This is a middle ground: no layout, no goals, no `Project`, yet you did not wire
 no generated POM). For full control - a custom repository, strict pinning, a different digest, or emitting a
 POM as well - switch to the longer `make(...)` overload that `Project` itself uses.
 
-{% demos 55, 56 %}
+{% demos 57, 58 %}
 
 ### Wiring the graph by hand
 
@@ -353,7 +488,7 @@ cached outputs whose inputs are unchanged. The `generate` step above synthesises
 There is no phase lifecycle to fit into: a build is just steps wired to steps, and here you wire them
 yourself.
 
-{% demos 57 %}
+{% demos 59 %}
 
 ## Running a build inside another program
 
@@ -391,5 +526,5 @@ The tools are found by name when `build.jenesis` is a resolved module or a jar o
 mode registers no service, so a program there constructs `new MakeTool()`, `new ExecuteTool()` or
 `new JpxTool()` itself; the contract is the same.
 
-{% demos 58 %}
+{% demos 60 %}
 

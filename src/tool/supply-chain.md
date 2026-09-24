@@ -106,7 +106,23 @@ Windows line endings gives a different value than the same file checked out with
 compiled classes would not differ. A `.gitattributes` that fixes line endings keeps the value the same on every
 machine (see *[Building &amp; running](/tool/building-and-running/)*).
 
-{% demos 28 %}
+### The licence text in the jar
+
+The SBOM names the project's licence; the text of the licence travels as a file. `jenesis.project.resources`
+places files or folders of the project among the resources of every module, tests included, each at the path
+after its colon, so one line in `jenesis.properties` puts a licence into every jar the build writes:
+
+```properties
+# jenesis.properties
+jenesis.project.resources=LICENSE:META-INF/LICENSE,NOTICE:META-INF/NOTICE
+```
+
+Pairs are separated by commas, and a folder is placed as a folder, as in `licenses:META-INF/licenses`. Editing a
+placed file builds the jars again. A path must exist and stay within the project, symbolic links included, and a
+target must be a relative path without `..` that no other pair names. A module that brings a resource of its own
+at the same path fails the build rather than losing one of the two.
+
+{% demos 29 %}
 
 ## Licence compliance
 
@@ -167,7 +183,7 @@ names no identifier is matched by its URL as well, written without its scheme, a
 licence check and the SBOM's licence identifiers. It is distinct from `licensing.properties`, which is the
 enforcement policy, not the classification.
 
-{% demos 29 %}
+{% demos 30 %}
 
 ## Vulnerability scanning
 
@@ -201,7 +217,7 @@ An unrecognised key fails the build. The licence and vulnerability checks are tw
 To keep both files in place but skip both checks for a single build, pass the default-`true` override
 `-Djenesis.compliance=false`.
 
-{% demos 30 %}
+{% demos 31 %}
 
 ## Hardening the whole build
 
@@ -224,4 +240,4 @@ That leaves one gap: a tampered POM could try to introduce a dependency the jar 
 strict mode rejects, so a manipulated POM cannot quietly pull in an unverified artifact. This is why strict
 pinning is recommended for builds in unsecured environments and for releases.
 
-{% demos 25 %}
+{% demos 26 %}

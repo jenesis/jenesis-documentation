@@ -38,7 +38,7 @@ Every generator resolves its tool in its own dependency group, named after the t
 project's dependencies. The version floats `RELEASE` until you pin it - see *[Pinning &amp; bills of
 materials](/tool/pinning/)*, which is also where the checksums for these tools belong.
 
-{% demos 13, 14, 15 %}
+{% demos 14, 15, 16 %}
 
 ## Where the contracts live
 
