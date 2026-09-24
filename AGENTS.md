@@ -18,7 +18,7 @@ repositories next to this one; the paths below are relative to such a checkout.
 | `src/jpx/` | jpx, the module runner | [jenesis/jenesis](https://github.com/jenesis/jenesis) | `sources/build/jenesis/Jpx.java`, `sources/build/jenesis/docker/`, `sdk/jpx/`, `demo/demo-65-jpx` | `java build/jenesis/Jpx.java <target>` from a project that carries `build/jenesis/` |
 | `src/launcher/` | Jenesis Launcher | [jenesis/jenesis-launcher](https://github.com/jenesis/jenesis-launcher) | `sources/build/jenesis/launcher/**`; what the build writes into a jar is `sources/build/jenesis/step/Launcher.java` in jenesis/jenesis | `demo-05` and `demo-06` ship a `build/DemoLauncher.java` |
 | `src/modules/` | the Jenesis Module Index | [jenesis/jenesis-modules](https://github.com/jenesis/jenesis-modules) | `worker/index.js` (the service), `sources/build/jenesis/crawler/**`, `data/**`, `.github/workflows/` (schedules) | `curl -sI https://repo.jenesis.build/...` - the live service answers |
-| `src/repository/` | Jenesis Repository | [jenesis/jenesis-repository](https://github.com/jenesis/jenesis-repository) | `source/**`, `test/**`, `Dockerfile`, `source/bundle/module-info.java`, each module's `application.properties`, `RepositoryProperties.java` | `java -Djenesis.execute.module=source+bundle build/jenesis/Execute.java`, then `curl` against it |
+| `src/repository/` | Jenesis Repository | [jenesis/jenesis-repository](https://github.com/jenesis/jenesis-repository) | `source/**`, `test/**`, `Dockerfile`, `source/bundle/module-info.java`, each module's `application.properties`, `RepositoryProperties.java` | `docker run jenesisbuild/jenesis-repository` (or a local build of it), then the console and the clients against it |
 
 What is not in those repositories is not documented. A capability has to be findable in the tool's source
 tree, on its current default branch, before a chapter describes it.
@@ -127,14 +127,18 @@ than a heading and must match the id the repository server emits, not the wordin
   `/sources/` and `/documentation/` serve named modules only, `/artifact/` also automatic ones; an unknown
   version answers a best-effort 302 with `Jenesis-BestEffort: true`. The service is not a Maven
   `<repository>` URL.
-- **Repository.** The launchable module is `source/bundle` (`AllInOne`; the console is `…bundle.Console` on
-  port 8081, a separate process). Settings are Spring Boot settings bound from `jenreg.*` (`JENREG_*`, `-D`,
-  `allinone.properties`, profiles). Nothing is proxied until `jenreg.proxy.<format>` is set; keys are enforced
-  by default and the first one comes from `jenreg.bootstrap-key`; a key is read from `Jenesis-Repository-Key`
-  or from `Authorization` (bearer, bare, or as a Basic password). **The server links to the docs**: every
-  security and consistency advisory carries `https://jenesis.build/repository/observability/#<advisory id>`,
-  so each id in `SecurityPosture.java` and `NodeDivergenceAdvisor.java` needs a matching `<span id="…">`
-  anchor in `src/repository/observability.md`. Adding an advisory means adding its row and anchor.
+- **Repository.** The section is written for someone running the published image
+  (`jenesisbuild/jenesis-repository`) and follows the console: a chapter is organised by the console's sections
+  and pages, and names them as the console does (**Access → Credentials**). Running from source gets one short
+  chapter. The image is the launchable module `source/bundle`: repository, console and build cache in one process
+  on port 8080. Settings are Spring Boot settings bound from `jenreg.*` (`JENREG_*`, `-D`, `bundle.properties`).
+  Nothing is proxied until an upstream is named; keys are enforced by default, and the first console sign-in is
+  the administrator key (`JENREG_KEY_LOGIN=true`, `JENREG_UI_ADMIN_KEY`). Verify a chapter by running the image
+  and doing what it says, through the console and the clients. **The server links to the docs**: every security
+  and consistency advisory carries `https://jenesis.build/repository/operations/#<advisory id>`, so each id in
+  `SecurityPosture.java`, `TenantPosture.java` and `NodeDivergenceAdvisor.java` needs a matching
+  `<span id="…">` anchor in the advisory table of `src/repository/operations.md`. Adding an advisory means
+  adding its row and anchor.
 
 ## Landing page and shared files
 

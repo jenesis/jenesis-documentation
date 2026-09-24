@@ -1,129 +1,79 @@
 ---
-order: 12
-title: The console
-description: The web console the server serves - reaching it, signing in, the overview and the admin screens, browsing artifacts, downloading a listing, reading the server's logs and consistency, and issuing keys.
+order: 3
+title: Finding your way around
+description: The console's two navigation levels - the sections across the top and the pages beside the content - the pages of a repository, and which pages each role sees.
 ---
 
-Jenesis Repository ships a web console for browsing what the repository holds and for reading how the server
-is doing. It runs inside the server: the same process serves `/console` beside `/repository/`, reads the
-same store, and answers the console's own calls to `/api/logs`, `/api/consistency` and `/api/credentials`
-from the same origin. This chapter shows how to reach it, sign in, and use each screen.
+The console is where you look after a deployment: what its repositories hold, what the gate decided, who may do
+what, and how the server is configured. It runs inside the server, on the same port, so there is nothing else to
+start - open the server's address in a browser and sign in. This chapter shows how it is laid out, so the
+chapters that follow can say "open **Access → Credentials**" and you know where that is.
 
-## Reaching it
+## Two levels
 
-Start the server as in [Getting started](/repository/getting-started/) and open `http://localhost:8080/`,
-which redirects to `/console`. There is nothing else to start and no second port: the console listens where
-the server listens (`PORT`, 8080 by default). `jenreg.console=false` takes it out of the process entirely -
-its screens, its sign-in and everything that hangs off them - and leaves the repository's own endpoints
-alone, which is the shape for a node that serves clients only.
+Every page has the same frame. The bar across the top holds the **sections** - the first choice you make - and
+the list down the left side holds the **pages** of the section you are in. The page itself sits on the sheet in
+the middle, and a line at the foot names the product.
+
+| Section | Pages |
+| --- | --- |
+| **Repositories** | All repositories, and each repository by name |
+| **Build cache** | Projects |
+| **Access** | Credentials, Members |
+| **Operations** | Metrics, Security posture, Walks, and Deploy once it is switched on |
+| **Settings** | Setup, Settings, Tenant settings, Modules, Installed providers, Instances |
+
+A section is shown only when it holds a page you may open, and clicking it opens its first page. Nothing is
+hidden behind a menu: what you may see is always in one of those two places.
+
+## Inside a repository
+
+Opening a repository changes the list on the left: it now names the repository, offers **All repositories** to
+go back, and lists that repository's own pages under three headings.
+
+| Heading | Pages |
+| --- | --- |
+| **Contents** | Overview, Browse & search, Staging, Import |
+| **Screening** | Quarantine, Refused, Vulnerabilities, Findings, Signers |
+| **Lifecycle** | Retention & cleanup, Pins |
+
+Every repository has the same pages, so moving between two of them keeps you on the page you were reading. A
+page whose feature a deployment does not carry - staging, or the vulnerability feeds - is simply not listed.
+
+## The header
+
+Beside the sections, the header carries four more things:
+
+- **The security posture count** - a warning badge with the number of configuration advisories the deployment
+  currently raises, shown to administrators of the deployment. It links to **Operations → Security posture**.
+- **The theme switch** - the half-filled circle flips between light and dark, and follows your operating
+  system's preference until you choose. The choice is remembered per browser.
+- **Your name** - the name you signed in with. Clicking it signs you out.
+- **A notice strip** - above everything, when the deployment has something to say wherever you are, such as
+  running read-only.
+
+On a narrow screen the sections move into the list on the left, which folds away behind a **Menu** button.
+
+## Who sees what
+
+What you may see and do follows your role in the deployment. There are three roles, plus the deployment's own
+administrators:
+
+| Role | Can |
+| --- | --- |
+| **Viewer** | Read every repository page and the build cache's projects. |
+| **Editor** | Everything a viewer can, and change things: save a retention policy, pin a version, release or discard a held artifact, promote a staging upload. |
+| **Admin** | Everything an editor can, and manage access: **Credentials**, **Members**, and manual uploads through **Deploy**. |
+| **Super-administrator** | Everything, across the whole deployment: the **Operations** pages other than **Deploy**, and all of **Settings**. |
+
+A page you may read but not change shows its data without the forms that would change it.
+
+Signing in and holding a role are separate. Anyone your identity provider signs in reaches the console, but
+someone who holds no role sees a page saying so, with the identifier an administrator needs to grant them one.
+[Access](/repository/access/) covers both halves.
 
 <div class="note">
-  The <strong>Logs</strong>, <strong>Consistency</strong> and <strong>Credentials</strong> cards call the
-  server's <code>/api/logs</code>, <code>/api/consistency</code> and <code>/api/credentials</code>. They are
-  the same origin, so nothing needs routing - but a console session is not a repository key, and each of
-  those cards asks you for one (below).
+  The console renders what is already known and never waits. Where work runs in the background - a rescan, a
+  cleanup preview, an import - the page says it is running and refreshes itself until it finishes, so you can
+  keep reading while it does.
 </div>
-
-## Signing in
-
-Every page except sign-in requires a session. Sign-in is OAuth2: a GitHub OAuth app, a single OpenID Connect
-provider (Google, Keycloak, Okta, Entra ID, Auth0, …), or both, each configured with a few `jenreg.ui.*`
-settings listed in [Authentication & access](/repository/authentication/). The sign-in page shows one button
-per configured provider; with none configured it shows a notice instead of failing.
-
-Signing in and holding access are separate. Sign-in succeeds for anyone your identity provider authenticates
-- the provider decides who may authenticate, and the console does not relitigate that - while what a person may
-*see* comes from the rights they hold. Someone who holds nothing gets a screen saying so, carrying the
-provider-qualified id an administrator has to grant to, rather than an error page.
-
-Only an **administrator** may perform a mutating action, and nobody administers the deployment until their
-provider-qualified id - `github/<id>` or `oidc/<subject>` - holds that grant. `jenreg.ui.admins` **seeds** those
-grants on every boot; it is not the record of them, so dropping an id from it does not revoke that person's
-administration, and an administrator granted through the API is equally real. Listing `*` is refused at
-startup: an administrator is a holder of rights, and a wildcard names no holder.
-
-For a local run, the `dev` Spring profile adds a form login at `/login/dev` with two built-in accounts,
-`admin`/`admin` (an admin) and `viewer`/`viewer` (a user); the sign-in page lists it beside any provider you
-configured. The profile also lets the session cookie travel over plain `http`, which it must to survive a
-sign-in without TLS.
-
-<div class="warning">
-  The <code>dev</code> profile is for a laptop. Its built-in accounts are an authentication bypass anywhere
-  else, so the server refuses to start under the profile on anything but the loopback address, and raises the
-  <code>jenreg.profile.dev</code> advisory while the profile is active.
-</div>
-
-Console sign-in is separate from the keys that gate the server's artifact API: a console session grants no
-rights on the wire, and the three cards that call the server's API ask you for a key.
-
-## The overview and the admin screens
-
-`/console` is the **Overview**: the installed cards on one page, under a header that carries **Sign out**, the
-theme switch, a badge with the number of open security-posture advisories, and a read-only banner when the
-deployment runs with `jenreg.read-only=true`. Four cards ship with the console:
-
-| Card | What it shows |
-|---|---|
-| **Browse** | The repository's artifacts as a folder tree, with a link to the full browse page. |
-| **Logs** | A tail of the server's recent log entries, with level and text filters and auto-follow. |
-| **Consistency** | The per-node report of a multi-node deployment, or a single-node notice. |
-| **Credentials** | The keys the server authorises with: list them, issue one with a label, revoke one. |
-
-A card that fails to render says so in its own place and leaves the others untouched.
-
-Three further screens are for admins, reached from the **Administration** menu in the header:
-
-| Screen | Path | What it shows |
-|---|---|---|
-| **Installed providers** | `/catalog` | Every extension point the deployment carries, and under each the modules on the module path that fill it - formats, stores, importers, fetchers - with whether each is installed and switched on. |
-| **Security posture** | `/posture` | The server's configuration advisories, severity first, each with its fix. |
-| **Metrics** | `/observability` | Current values, health states and background-task status reported by installed modules, with a line of description each. |
-
-## Browsing artifacts
-
-`/browse` is a breadcrumbed file browser over the repository's published paths. It works the same for every
-format because it reads the repository's own listing rather than knowing about Maven or OCI layouts:
-
-- It shows the **request paths** artifacts are published under - `maven/org/apache/commons/…`,
-  `oci/…`, `raw/…` - not the content-addressed storage underneath, so what you see is what a client requests.
-- Each row is a **folder** or an **artifact**; artifacts show their stored size. A folder's children are
-  listed only when you open it, one level at a time, so a large repository browses as quickly as a small one.
-  A folder is cut off with a notice once 1 000 children are listed, or once 50 000 have been examined to
-  fill them - the second cap is what bounds a folder whose children are mostly withheld.
-- No artifact is ever opened to render a row, and the browse never reaches outside the published tree: a
-  `path` that tries `..` is cleaned, and an artifact the server currently withholds is omitted, so the browse
-  and a plain `GET` always agree.
-
-## Downloading a listing
-
-**Download asset listing** on the browse page streams the published artifacts as `assets.ndjson` - one JSON
-object per line with `path`, `size` and `sha256`, read from the publication records without opening a blob.
-One download holds at most 10 000 entries (`/assets?limit=` asks for fewer); when more remain, its last line
-is `{"cursor":"…"}`, and `/assets?cursor=…` continues from there, so a large repository is exported in
-slices. It is the console's counterpart of the server's `GET /api/assets`, which adds the format, coordinate
-and version per entry; see [Migration & import](/repository/migration-import/).
-
-## Reading the server's logs and consistency
-
-The **Logs** card tails `GET /api/logs` and the **Consistency** card reads `GET /api/consistency`. Both
-endpoints show deployment-wide state, so the server gates them to a key with a deployment-wide `*` grant; each
-card has a field to paste one, and sends it as the `Jenesis-Repository-Key` header. On a server running with
-authentication off, leave the field empty. Neither card fetches anything until you press **Refresh**, so
-it opens empty rather than erroring; refreshing without a key against an enforcing server reports
-`error: status 401`. [Observability](/repository/observability/) describes both endpoints and their fields.
-
-## Issuing keys
-
-The **Credentials** card is the console's view of `/api/credentials`. Paste a key that carries
-`manage:read` and the card lists the tenant's credentials with their labels, expiry, use and grants;
-issuing and revoking need `manage:write`, which does not confer the read. The bootstrap key holds `*`, so
-it covers both. **Issue a key** mints one with the label you typed and shows the secret **once**: only
-its hash is stored, so copy it before you leave the page. **Revoke** removes a key at once. A freshly issued
-key has no rights until it is granted some, which - like rotation and address allowlists - is an API call;
-[Authentication & access](/repository/authentication/) covers the whole surface.
-
-## Theme and accessibility
-
-The theme switch in the header offers **Auto**, **Light** and **Dark**; Auto follows the operating system,
-and the choice is remembered per browser. Every console page starts with a skip-to-content link for
-keyboard users, and every interactive element shows a visible focus ring.

@@ -1,114 +1,106 @@
 ---
-order: 7
-title: Proxying
-description: Serving what the repository does not hold yet - pointing a format at an upstream, how a miss becomes a cached local hit, the negative cache, revalidation, digest checks, and the settings behind them.
+order: 6
+title: Proxying upstreams
+description: Serving what the repository does not hold yet from Maven Central, npm, Docker Hub or a private registry - format upstreams, repository definitions with fallbacks and groups, upstream credentials, and how a fetched artifact is checked and kept.
 ---
 
-A repository is most useful as a build's **single front door**: it serves your own artifacts and, on a miss,
-fetches the public ones from upstream, stores them, and serves them from then on. Jenesis Repository does
-this per format - the Maven layout can pull through from Maven Central, the OCI registry from Docker Hub -
-once you tell it where upstream is. Nothing is proxied until you do.
+A repository is most useful as a build's **single front door**: it serves your own packages and, on a miss,
+fetches the public ones from upstream, screens them, keeps them, and serves them from then on. Nothing is
+fetched from anywhere until you name an upstream, so a new deployment makes no outbound call on its own.
 
-## Pointing a format upstream
+## A format upstream
 
-One setting per format names its upstream, keyed by the format id:
+The quickest way is one upstream per format, under **Settings → Settings → Format upstreams**: enter a format
+and the URL it fetches its misses from, and save.
 
-```bash
-JENREG_PROXY_MAVEN=https://repo1.maven.org/maven2/
-JENREG_PROXY_OCI=https://registry-1.docker.io/
-```
+| Format | A common upstream |
+| --- | --- |
+| `maven` | `https://repo1.maven.org/maven2/` |
+| `npm` | `https://registry.npmjs.org/` |
+| `pypi` | `https://pypi.org/` |
+| `oci` | `https://registry-1.docker.io/` |
 
-With `JENREG_PROXY_MAVEN` set, `http://localhost:8080/repository/maven/` resolves everything on Maven
-Central as well as what you published, so a build needs one `<mirror>` entry. With `JENREG_PROXY_OCI` set,
-`docker pull localhost:8080/library/debian` fetches the image through your server. An upstream should be
-`https`: the server warns loudly at boot about one that is not, but proxies through it all the same.
+From then on a Maven build pointed at `/repository/maven/` resolves everything on Maven Central as well as what
+you published, and `docker pull repo.example.com/library/debian` fetches the image through your server. The same
+setting can be given in the environment, as `JENREG_PROXY_MAVEN=https://repo1.maven.org/maven2/`.
 
-## How a miss becomes a local hit
+## Signed packages from upstream
 
-A `GET` or `HEAD` is served locally first. When that is a `404` and the format has an upstream, the format
-maps the request to the upstream URL and fetches it. An **immutable artifact** - a jar, a POM of a released
-version, an image layer - is stored content-addressed as it streams through, and served. The next request
-for it is a plain local hit that never touches the network again. The copy is a stream, digest and all, so a
-multi-hundred-megabyte layer is mirrored in a small, fixed heap.
+Maven Central signs what it serves, and the gate checks every signature it finds. A new deployment trusts no
+signer yet, so the first time it fetches a signed artifact from Maven Central, the artifact is **held in
+Quarantine** with the reason *No trusted signer*, and the build that asked gets `404`. Decide once, under
+**Settings → Settings** in the **Compliance** group, how this deployment should treat signers it does not know:
 
-A **mutable index** - a `maven-metadata.xml` - is never cached that way, because it changes upstream. It is
-fetched fresh on each request, so an artifact published upstream after your first look shows through. To
-avoid re-downloading an index that has not changed, the fetcher **revalidates** it: it remembers the `ETag`
-or `Last-Modified` and sends a conditional request, and a `304 Not Modified` answers from the remembered
-bytes. The upstream is still asked every time; only the transfer is saved.
+- **Trust the signers you rely on.** Paste their public keys into `signature-trusted-keys`, and optionally pin
+  them to their namespaces with `signature-trusted-signers` - `org.apache.* = openpgp:…`. The strictest choice, and
+  the most work.
+- **Look the keys up.** `signature-key-discovery=keyserver.ubuntu.com,keys.openpgp.org` fetches each signer's key
+  from the public keyservers in the background, and `signature-key-discovery-accept=true` trusts what they serve.
+- **Allow signatures from unknown signers.** `signature-untrusted=ALLOW` admits them. A signature that does not match
+  its bytes is still refused, and a package whose signer changes between versions is still held.
 
-### The negative cache
+A setting changes what happens from then on; an artifact already held stays in **Quarantine** until an editor
+releases it.
 
-A build tool makes a flood of requests for things that are not upstream at all: a version range it probes,
-a missing `SNAPSHOT`, an optional classifier, a `.sha256` a client guesses at. Re-asking upstream for each
-one multiplies load and can trip its rate limit. So a definite upstream **`404` is remembered** for a short
-window and answered from memory.
+## Repository definitions
 
-Only a definite `404` is cached. A transport failure or an auth challenge (`401`, `403`) is not, since it
-is transient or resolvable, and every success passes through untouched. An entry expires after
-`jenreg.proxy-miss-ttl` - one minute by default - so a newly published artifact is picked up within that
-window.
+A **definition** says what a repository is made of, and is where more than one upstream, or a mix of hosted and
+fetched content, is described. Definitions are edited under **Settings → Settings → Repository definitions**, a
+name and a definition each:
 
-### Verifying what upstream sent
+| Definition | The repository |
+| --- | --- |
+| `hosted` | Accepts uploads and fetches nothing - what a repository is when it has no definition. |
+| `proxy https://repo1.maven.org/maven2/` | Only fetches from the upstream, and refuses uploads. |
+| `group internal,central` | Serves from each named repository in turn, and refuses uploads. |
+| `writable fallback https://repo1.maven.org/maven2/` | Accepts uploads *and* fetches misses from the upstream. |
 
-Where upstream publishes a digest, the fetched bytes are held to it **before anything is linked**. The blob
-may be stored first - that is how the digest is computed while the bytes stream - but nothing points at it
-until the check passes. A Maven artifact is checked against the `.sha1` published beside it, and a mismatch
-is refused rather than served. The OCI mirror verifies every blob against the `sha256:` digest that
-addresses it, and a manifest against the digest the upstream registry reports.
+A fallback may be another repository by name instead of a URL, and several fallbacks are tried in order. Each
+can carry options:
 
-The raw layout is the exception. A plain file mirror publishes no digest for what it serves, so a raw
-pull-through is stored and served on the upstream's word alone.
+| Option | Effect |
+| --- | --- |
+| `nocache` | Serve what the upstream returns without keeping it. |
+| `harden` | Screen every fetched file in full before serving a byte of it. |
+| `unscreened` | Skip the gate for this upstream - flagged as a warning on the Repositories page. |
+| `match=<ecosystem>:<pattern>` | Only send matching coordinates to this fallback, such as `match=maven:com.example.*`. |
 
-That matters because the alternative is worse than a failed download. A proxy that stores whatever upstream
-returned turns one bad response - a corrupted mirror, a tampered hop - into a durable local artifact that
-every later client receives. Refusing at the point of fetch keeps a bad byte from becoming the repository's
-own answer.
+A definition is checked when it is saved: one that could not work is refused with the reason, and one that works
+but is risky - a plaintext upstream, mixed screening - is saved and listed under **Definition warnings** on the
+**Repositories** page.
 
-Two documents are answered `502` rather than `404` when this server could not read them upstream, or
-refused what it read: a `maven-metadata.xml`, and Gradle's `.module` descriptor. A client resolves against
-the absence of both, so a `404` would read as "this coordinate has nothing" and resolve something else
-without an error.
+## Private upstreams
 
-### The OCI mirror
+An upstream that needs credentials gets them under **Settings → Settings → Upstream credentials**: the host name,
+and a user name and password, a bearer token, or a header name and value. The credential is sent to that host
+alone, whichever repository fetches from it.
 
-The OCI format follows the Distribution **bearer-token handshake** an upstream registry demands: a `401`
-with a `Bearer` challenge is exchanged for a token and the fetch is retried. A multi-architecture image
-index is fetched, stored and served as it is; the client then asks for the per-architecture manifest by
-digest, and that fetch is proxied in turn. A mirrored layer dedupes against everything else the repository
-holds, because an OCI digest is the store's own key.
+An upstream must be `https` on a public address: a plaintext URL, or one that resolves to a private, loopback or
+cloud-metadata address, is refused unless `proxy-allow-internal` permits it - a fetch carries your credentials,
+and an unscreened address would turn the proxy into a way into your own network.
 
-Only blobs and manifests are proxied. `tags/list` and `_catalog` are served from this server's own stored
-documents, so a mirrored registry's tag list shows what this server holds, never the upstream's catalogue.
+## What happens on a miss
 
-## The fetcher module
+A request is always answered locally first. On a miss, the repository fetches from the upstream and:
 
-All upstream traffic - a proxy fetch, an import, a revalidation - goes through one HTTP fetcher, which is a
-discovered module like every other capability. Without it the server still runs: it serves only what it
-holds, and an import is refused with `501`. An installed fetcher can be switched off with
-`jenreg.http=false`, which has the same effect.
+- **checks it** - against the digest the upstream publishes where there is one, a Maven artifact against its
+  `.sha1`, an image layer against its `sha256:` name - and refuses a mismatch rather than keeping it;
+- **screens it** through the same gate a publish passes, as described in [Screening what comes
+  in](/repository/screening/);
+- **keeps it**, so the next request is a local hit that never reaches the upstream.
 
-<div class="warning">
-  Selecting a fetcher by name with <code>jenreg.fetcher=&lt;name&gt;</code> is different from leaving the
-  choice to discovery. A named fetcher that no installed module answers to <strong>fails the boot</strong>,
-  because an operator who named a transport and silently got none would see every proxy route answer
-  <code>404</code> as if upstream held nothing.
+An index that changes upstream - a `maven-metadata.xml`, an npm package document - is fetched fresh each time,
+with a conditional request so an unchanged one costs no transfer. A definite `404` from upstream is remembered for
+a minute (`proxy-miss-ttl`), so a build probing for things that do not exist does not flood the upstream.
+
+## The cooldown on fresh versions
+
+A version the upstream published **within the last two days** is held for review rather than served. A brand-new
+release is the most likely moment for a compromised or malicious package, before anyone has noticed; two days lets
+the feeds catch up. The hold is a quarantine, not a refusal: an editor can release it from **Quarantine**
+at once. `immaturity-hold-days` changes the window, and `0` removes it.
+
+<div class="note">
+  <code>proxy-enabled</code> switches fetching off for the whole deployment while keeping every upstream you
+  configured - useful for a deployment that must serve only what it already holds for a while.
 </div>
-
-A single fetch is bounded by `jenreg.proxy.request-timeout`, one minute by default, so a hanging upstream
-cannot hold a request open indefinitely. This one key is read as a system property
-(`-Djenreg.proxy.request-timeout=PT30S`), not from the environment.
-
-## Settings
-
-| Key | Default | Effect |
-|---|---|---|
-| `jenreg.proxy.<format>` | *(unset - no proxying)* | The upstream URL for a format: `jenreg.proxy.maven`, `jenreg.proxy.oci`, `jenreg.proxy.raw`. |
-| `jenreg.proxy-miss-ttl` | `60s` | How long an upstream `404` is remembered; ISO-8601 (`PT90S`) or `90s` / `5m`; `0` disables the negative cache. |
-| `jenreg.proxy.request-timeout` | `PT1M` | Per-request upstream timeout, ISO-8601 or plain seconds. System property only. |
-| `jenreg.http` | `true` | Switch the HTTP fetcher off; the server then serves local content only. |
-| `jenreg.fetcher` | *(discovered)* | Select a fetcher by name; a name nothing answers to fails the boot. |
-
-Leave the miss window at its default unless an upstream publishes very frequently and you need a miss
-re-checked sooner. Lowering it trades a little more upstream traffic for faster pickup of a just-published
-artifact; raising it shields a rate-limited upstream from a build tool's probing.

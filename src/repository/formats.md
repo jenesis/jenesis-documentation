@@ -1,117 +1,107 @@
 ---
-order: 6
-title: Formats
-description: The four layouts the server speaks - Maven, the Jenesis module layout, OCI/Docker and raw files - their URLs, what each accepts and serves, and the settings that switch them.
+order: 5
+title: Connecting your build tools
+description: The URL and the credential each package client uses against Jenesis Repository - Maven and Gradle, npm, PyPI, container images, Go and the rest - and how to switch a format off.
 ---
 
-A **format** is what lets a particular client talk to the repository: Maven and Gradle speak the Maven
-layout, a Jenesis build resolves module names through the module layout, `docker` speaks the OCI registry
-protocol, and `curl` can store plain files. Jenesis Repository ships four formats. Each is a discovered
-module on the server's module path, so a deployment speaks exactly the formats it carries, and every one of
-them stores its artifacts in the same content-addressed store.
+Every client talks to the repository in its own protocol, at its own URL under `/repository/`, and presents
+the same kind of credential: a key issued under **Access → Credentials**. This chapter lists the URL and the
+credential form for each client. The examples use `repo.example.com` and a key in `$KEY`.
 
-| Format | Id | Served at | Clients |
-|---|---|---|---|
-| Maven layout | `maven` | `/repository/maven/` | Maven, Gradle, a Jenesis `pom.xml` build |
-| Module layout | `jenesis` | `/repository/module/` and `/repository/artifact/` | A Jenesis modular build, `curl` |
-| OCI registry | `oci` | `/v2/` | `docker`, `podman`, any OCI client |
-| Raw files | `raw` | `/repository/raw/` | `curl`, scripts, anything that can `PUT` |
+## How a client presents its key
 
-## The Maven layout
+A key travels in whichever form a client can send, and the server accepts all three:
 
-`/repository/maven/` is a drop-in Maven repository URL for publishing and resolving. A `PUT` stores the
-uploaded file content-addressed and links its path; a `GET` serves it back. Point a `<distributionManagement>` entry
-at the URL and `mvn deploy` publishes to it; a `<repository>` entry with the same URL resolves from it:
+| Form | Used by |
+| --- | --- |
+| `Authorization: Basic` with the key as the **password** | Maven, Gradle, pip, Docker, Helm, NuGet restore, apt, dnf and most others - the user name is not checked, so any value will do. |
+| `Authorization: Bearer <key>` | npm, Cargo, Hugging Face, a Jenesis build, and any client with a token setting. |
+| `Jenesis-Repository-Key: <key>` | `curl` and scripts. |
 
-```xml
-<distributionManagement>
-  <repository>
-    <id>jenesis</id>
-    <url>http://localhost:8080/repository/maven/</url>
-  </repository>
-</distributionManagement>
-```
+A request without a key is answered `401` with a challenge, which is what Maven and Docker wait for before they
+send the credentials they hold. A key that lacks the right is answered `403`.
 
-The server stores what you upload and nothing more: it does not generate a POM for a jar, so publish the POM
-alongside the jar as a normal Maven deploy does. A published `maven-metadata.xml` is stored and served back
-**verbatim**. If you would rather have the server derive the version list from the artifacts it holds, opt
-in with `jenreg.maven-metadata-compute=true`: the document is then kept as a stored listing that every
-upload under the coordinate updates, and a read serves it as it is.
+## The clients
 
-With an upstream configured (see *[Proxying](/repository/proxying/)*), the same URL also serves everything
-from Maven Central, so one `<mirror>` entry covers your own artifacts and the public ones.
+| Ecosystem | Point the client at | Credential |
+| --- | --- | --- |
+| Maven | `https://repo.example.com/repository/maven/` | `settings.xml` server entry, key as password |
+| Gradle (Maven layout) | `https://repo.example.com/repository/maven/` | `credentials { password = key }` |
+| Gradle (Ivy layout) | `https://repo.example.com/repository/ivy/` | `credentials { password = key }` |
+| npm | `https://repo.example.com/repository/npm/` | `.npmrc` `_authToken` |
+| PyPI | upload to `https://repo.example.com/repository/pypi/`, install from `…/pypi/simple/` | twine `-u __token__ -p $KEY`; pip `https://__token__:$KEY@…` |
+| Containers | `repo.example.com` (the registry answers at `/v2/`) | `docker login`, key as password |
+| Go | `GOPROXY=https://jenesis:$KEY@repo.example.com/repository/go` | in the URL |
+| Cargo | `sparse+https://repo.example.com/repository/cargo/<name>/` | `credentials.toml` token |
+| NuGet | `https://repo.example.com/repository/nuget/v3/index.json` | push with the key as API key; restore with `nuget.config` credentials |
+| RubyGems | `https://repo.example.com/repository/rubygems` | `GEM_HOST_API_KEY` to push; key as password in the source URL to install |
+| Helm | `https://repo.example.com/repository/helm/<name>` | `helm repo add … --username jenesis --password $KEY` |
+| Composer | `https://repo.example.com/repository/composer/<name>` | `auth.json` `http-basic` |
+| Conan | `https://repo.example.com/repository/conan/<name>` | `conan remote login`, key as password |
+| Conda | `https://repo.example.com/repository/conda/<channel>` | key as password in the channel URL |
+| Debian | `https://repo.example.com/repository/debian` | apt `auth.conf` |
+| RPM | `https://repo.example.com/repository/rpm/<name>` | `.repo` file `password=` |
+| Alpine | `https://repo.example.com/repository/apk/<name>` | in the repository URL |
+| CocoaPods | `https://repo.example.com/repository/cocoapods/<name>` | `~/.netrc` |
+| Swift | `https://repo.example.com/repository/swift/<name>` | `registries.json` plus `~/.netrc` |
+| Terraform / OpenTofu | `https://repo.example.com/repository/terraform/<name>` | CLI configuration `credentials` block |
+| Hugging Face | `HF_ENDPOINT=https://repo.example.com/repository/huggingface/hf` | `HF_TOKEN=$KEY` |
+| Homebrew bottles | `HOMEBREW_BOTTLE_DOMAIN=https://repo.example.com/repository/homebrew/<name>` | bearer token |
+| winget | `https://repo.example.com/repository/winget/<name>` as a `Microsoft.Rest` source | bearer token |
+| Raw files | `https://repo.example.com/repository/raw/<path>` | any of the three forms |
+| Jenesis modules | `-Djenesis.module.uri=https://repo.example.com/repository/module/` | `-Djenesis.module.token=$KEY` |
 
-### Every modular jar is a published module too
+Where a URL carries `<name>`, the format keeps separate spaces inside the one repository - a Cargo registry, a
+Helm chart repository, a Conda channel, a Swift registry - and the name is yours to choose. Publishing under a new name creates it.
 
-When a jar published to the Maven layout carries a `module-info` or an `Automatic-Module-Name`, the server
-reads the module name from the stored bytes and **cross-publishes** the jar into the module layout. A Jenesis
-build that declares `requires <that module>` then resolves it from the same server with no second upload.
-The bridge runs one way: a module published directly to the module layout stays there.
+## Maven and Gradle
 
-## The module layout
+Maven publishes with `mvn deploy` and resolves through `<repositories>` or a `<mirror>`, all at the one URL;
+[Getting started](/repository/getting-started/) shows the `settings.xml` entry. Gradle uses the same URL with a
+`maven { url … ; credentials { username = "jenesis"; password = key } }` block, or the Ivy layout at
+`/repository/ivy/` when a build publishes Ivy descriptors.
 
-The module layout resolves artifacts **by Java module name**, under the `/module/` and `/artifact/` shapes
-the [Jenesis Module Index](/modules/) also serves:
+The repository stores what you upload, POMs and `maven-metadata.xml` included, and serves them back verbatim.
 
-```
-GET /repository/module/<name>/<version>/<name>.jar     a specific version
-GET /repository/module/<name>/<name>.jar               the latest version
-```
+**Every modular jar is a published module too.** When a jar published through Maven carries a
+`module-info` or an `Automatic-Module-Name`, the repository also serves it by module name at
+`/repository/module/`, so a Jenesis build that `requires` that module resolves it from the same server with no
+second upload.
 
-A Jenesis build reaches it through `jenesis.module.uri`, exactly as it reaches the public index - so a
-private server and the public index are interchangeable from the build's point of view. The `<version>`
-segment is the Maven version the jar was published under, not one read from its `module-info`.
+## Containers
 
-A `PUT` under `/repository/module/` or `/repository/artifact/` stores a file at that path; most modules
-arrive through the Maven cross-publish above instead, which links the two `/module/` shapes shown.
-
-## The OCI registry
-
-The OCI format implements the Distribution API at `/v2/`, at the host root because the Docker protocol pins
-it there. `docker push` and `docker pull` talk to the server directly:
+The registry answers at the host root, because the container protocol fixes it at `/v2/`:
 
 ```bash
+docker login repo.example.com -u jenesis -p "$KEY"
 docker tag my-app repo.example.com/my-app:1.0
 docker push repo.example.com/my-app:1.0
 docker pull repo.example.com/my-app:1.0
 ```
 
-It supports monolithic and chunked blob uploads, manifests addressed by tag or by digest (the media type is
-kept beside the manifest so a pull returns it verbatim), `HEAD` existence checks, `tags/list`, and
-`_catalog`. Both listings are stored documents a tag push keeps current, and a client's `n` and `last`
-window is cut out of the document as it streams, so listing a registry of many images costs one read and a
-page of a hundred names costs a hundred names, however many tags exist. An OCI blob is addressed by its
-`sha256:` digest, which is the very key the store uses, so image layers dedupe against everything else the
-repository holds. With an upstream registry configured, the same
-endpoint is a pull-through mirror (see *[Proxying](/repository/proxying/)*).
+Image layers are stored by their digest, so a layer shared by many images - or identical to a file stored by
+another format - is kept once.
 
 ## Raw files
 
-The raw format is a plain file store under `/repository/raw/` for artifacts that belong to no ecosystem -
-installers, archives, datasets, signed binaries:
+For artifacts that belong to no ecosystem - installers, archives, datasets - the raw format is a plain file
+store:
 
 ```bash
-curl -T installer.msi http://localhost:8080/repository/raw/tools/installer-1.2.msi
-curl    http://localhost:8080/repository/raw/tools/installer-1.2.msi -o installer.msi
-curl    http://localhost:8080/repository/raw/tools/          # lists the directory
-curl -X DELETE http://localhost:8080/repository/raw/tools/installer-1.2.msi
+curl -H "Jenesis-Repository-Key: $KEY" -T installer.msi \
+  https://repo.example.com/repository/raw/tools/installer-1.2.msi
+curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/raw/tools/installer-1.2.msi -o installer.msi
+curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/raw/tools/     # lists the folder
 ```
 
-`PUT` stores a file content-addressed, `GET` serves it, `GET` on a trailing slash lists the directory, and
-`DELETE` removes the path. The bytes share the store with every other format, so a raw upload that matches a
-jar or an image layer costs no extra space.
+## Switching a format off
 
-## Settings
+Every format is on until you switch it off. `JENREG_<FORMAT>=false` keeps one from starting, exactly as if it
+were not installed: its URLs answer `404` and nothing is imported for it. The names are the ones in the URLs -
+`maven`, `npm`, `pypi`, `oci`, `go`, `cargo`, `nuget`, `rubygems`, `helm`, and so on - and **Settings → Modules**
+switches them from the console, taking effect on the next restart.
 
-Every format is on until you switch it off. `jenreg.<id>=false` (as an environment variable,
-`JENREG_MAVEN=false`, `JENREG_JENESIS=false`, `JENREG_OCI=false`, `JENREG_RAW=false`) keeps a format from
-activating, exactly as if its module were absent: its paths answer `404` and its importer is skipped.
-
-| Key | Default | Effect |
-|---|---|---|
-| `jenreg.maven` / `jenreg.jenesis` / `jenreg.oci` / `jenreg.raw` | `true` | Switch a format off with `false`. |
-| `jenreg.maven-metadata-compute` | `false` | Derive `maven-metadata.xml` from stored versions instead of serving the uploaded file. |
-| `jenreg.proxy.maven` / `jenreg.proxy.oci` / `jenreg.proxy.raw` | *(unset)* | The upstream a format pulls through from; the module layout does not proxy. See *[Proxying](/repository/proxying/)*. |
-
-A server with every format switched off is still a valid server - it answers `404` to every artifact
-request until a format is on to claim it.
+<div class="note">
+  Some clients refuse to send a credential over plain HTTP - the Go command among them - so a deployment that
+  serves real clients runs behind TLS. <a href="/repository/deploying/">Running in production</a> covers it.
+</div>

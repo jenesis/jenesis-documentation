@@ -1,11 +1,11 @@
 ---
-order: 5
+order: 15
 title: What it costs to run
 description: Where the bill of a Jenesis Repository deployment comes from - the store's storage, transfer and operations - which lines grow with your traffic and which grow with your repository, where the traps are on each provider, and when a store that does not charge per request is the cheaper choice.
 ---
 
 Jenesis Repository keeps no database. Everything it knows - an artifact's bytes, the pointer that names them, a
-hold marker, a credential, a listing - is an object in the store you configured in [Storage](/repository/storage/).
+hold marker, a credential, a listing - is an object in the store you configured in [Running in production](/repository/deploying/).
 That makes the bill unusually easy to read: it is the store's bill, and nothing else. There are three lines on it,
 they grow with entirely different things, and knowing which is which is most of what this page is for.
 
@@ -51,7 +51,7 @@ moves this line far more than any choice made here.
 
 One pass reads the store whole: the rebuild walk that regenerates every stored listing from the artifacts, so a
 listing a crash left stale is repaired (`jenreg.rebuild.interval`, weekly by default, `off` to disable). Where the
-[garbage collector](/repository/storage/) is enabled, its pass reads the store whole too, and for a reason worth
+[garbage collector](/repository/retention/) is enabled, its pass reads the store whole too, and for a reason worth
 understanding before you tune anything.
 
 Deciding that a stored blob is unreferenced means establishing that *nothing anywhere* points at it. That cannot be
@@ -218,7 +218,7 @@ developer's machine and not for a deployment.
 
 Beyond the preconditions, each backend needs only what any object store offers: ranged reads, prefix listing with
 pagination, delete, and the object's length. The credentials each one takes, and the rest of its settings, are in
-[Storage](/repository/storage/).
+[Running in production](/repository/deploying/).
 
 ## The filesystem is a real answer, and it is not single-node
 
