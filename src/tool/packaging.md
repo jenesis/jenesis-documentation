@@ -396,10 +396,8 @@ regardless of case and also with an extension, so `META-INF/LICENSE.txt` counts,
 takes the whole folder below it.
 
 <div class="warning">
-  A dependency whose jar carries no licence file cannot contribute one, and many jars carry none. Where a
-  module is packed into a <code>.jmod</code>, linked, packaged with jpackage or compiled into a native image,
-  <code>-Djenesis.legal.strict=true</code> fails the build on such a jar rather than shipping it without its
-  notices.
+  A dependency whose jar carries no licence file cannot contribute one, and many jars carry none: such a jar
+  adds nothing to <code>legal/</code>, so check its licence before shipping it.
 </div>
 
 {% demos 8, 19, 66 %}

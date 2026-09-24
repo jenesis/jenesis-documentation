@@ -185,7 +185,6 @@ rather than being served by one configured for something else.
 | `jenesis.stage.tests` | `false` | Include test-variant artifacts when staging, and the modules tagged `@jenesis.test abstract` that they require. |
 | `jenesis.sbom.cyclonedx` | `true` | Emit a CycloneDX SBOM; set `false` to skip it. |
 | `jenesis.legal.notices` | `META-INF/NOTICE,META-INF/LICENSE,META-INF/license/,META-INF/licenses/,LICENSE,about.html` | Comma-separated jar entries taken as legal notices into a `.jmod`, a linked or packaged image and beside a native image, from the module's jar and from each runtime dependency's jar; names match regardless of case and also with an extension, and an entry ending in `/` takes the folder below it (see *[Packaging](/tool/packaging/#licences-in-each-form)*). |
-| `jenesis.legal.strict` | `false` | Fail the build of a module whose jar or runtime dependency carries none of the `jenesis.legal.notices` entries. |
 | `jenesis.compliance` | `true` | Run the licence and vulnerability checks; `false` skips both. |
 | `jenesis.source.<tool>` | `true` | Per-linter switch (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`). |
 | `jenesis.validator.spotbugs` | `true` | Run SpotBugs when its filter file is present. |
