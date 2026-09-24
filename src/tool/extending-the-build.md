@@ -106,8 +106,8 @@ the same input fails the build.
 
 ## Transforming and inspecting what the build produced
 
-A plugin in a module slot sees one module. Two slots see them all: a plugin named under **`transform`** or
-**`inspect`** runs once over everything the build produced, after every module is built and before anything is
+A plugin in a module slot sees one module. Two slots see them all: a plugin named under **`postprocess/transform`** or
+**`postprocess/inspect`** runs once over everything the build produced, after every module is built and before anything is
 staged. A transform adds files to the modules - a notice, a report, a signature of your own - and an inspection
 checks the result and fails the build when it is wrong:
 
