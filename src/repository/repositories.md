@@ -14,7 +14,12 @@ screening and lifecycle pages have chapters of their own.
 Every client URL under `/repository/` reaches the deployment's repository - `releases`, unless
 `JENREG_DEFAULT_REPOSITORY` names another. A Maven client at `/repository/maven/`, npm at `/repository/npm/`
 and pip at `/repository/pypi/simple/` all read and write that one repository, each through its own format. It
-comes into being with the first artifact published to it, and appears on the **Repositories** page from then on.
+exists from the start and is listed on the **Repositories** page.
+
+Any other repository is **created** before anything is published into it - under **Repositories → New
+repository**, or by defining it. A publish into a repository that was never created is refused with `404`, so a
+misspelled name in a build's configuration fails rather than becoming a repository; switch
+`create-repository-on-publish` on under **Settings → Settings** to let a publish create the repository it names.
 
 Other repositories exist to feed that one. A repository can be **defined** to fetch what it does not hold from
 an upstream registry, or to group several others behind one name - which is how a single client URL serves both
@@ -35,7 +40,11 @@ formats stored in it and badges that describe its shape:
 A definition that is valid but risky - an upstream over plain HTTP, a fallback that skips screening - is listed
 under **Definition warnings** at the top, so it is seen rather than discovered.
 
-Two tenant-wide limits sit at the foot of the page:
+**New repository** creates an empty repository by name - letters, digits, hyphens and underscores. On this
+deployment only the repository clients reach answers by URL; one created beside it serves as a member of a group
+or a fallback, and the page says so when it is created.
+
+Beside it, below the list, are two tenant-wide limits:
 
 - **Storage quota** - the most the deployment may store, across every repository, in bytes; a publish that
   would exceed it is refused. `0` means no limit, and the page shows how much is stored now.
