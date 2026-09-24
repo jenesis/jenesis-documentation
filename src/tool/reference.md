@@ -124,6 +124,7 @@ in one step.
 | `jenesis.project.metadata` | *(unset)* | Path-separated list of project-level POM metadata files (conventionally one `project.properties`). |
 | `jenesis.project.sources` | `false` | Also assemble a per-module sources jar. |
 | `jenesis.project.documentation` | `false` | Also assemble a per-module javadoc jar. |
+| `jenesis.project.resources` | *(unset)* | Comma-separated `<path>:<target>` pairs of project files or folders placed among the resources of every module, as `LICENSE:META-INF/LICENSE,NOTICE:META-INF/NOTICE` (see *[Supply-chain features](/tool/supply-chain/#the-licence-text-in-the-jar)*). |
 | `jenesis.project.watch` | `false` | Keep the process alive and rebuild on every source change (see *[Building &amp; running](/tool/building-and-running/)*). |
 
 ### The entry point (`build/jenesis/Make.java`)
@@ -183,6 +184,8 @@ rather than being served by one configured for something else.
 | `jenesis.archive.timestamp` | `1980-02-01T00:00:00Z` | The date and time recorded on every entry of the jars, jmods and zips the build produces; an ISO-8601 date-time with an offset between `1980-01-01T00:00:02Z` and `2099-12-31T23:59:59Z`. Empty turns the fixed time off, which is discouraged (see *[Building &amp; running](/tool/building-and-running/#reproducible-archives)*). |
 | `jenesis.stage.tests` | `false` | Include test-variant artifacts when staging, and the modules tagged `@jenesis.test abstract` that they require. |
 | `jenesis.sbom.cyclonedx` | `true` | Emit a CycloneDX SBOM; set `false` to skip it. |
+| `jenesis.legal.notices` | `META-INF/NOTICE,META-INF/LICENSE,META-INF/license/,META-INF/licenses/,LICENSE,about.html` | Comma-separated jar entries taken as legal notices into a `.jmod`, a linked or packaged image and beside a native image, from the module's jar and from each runtime dependency's jar; names match regardless of case and also with an extension, and an entry ending in `/` takes the folder below it (see *[Packaging](/tool/packaging/#licences-in-each-form)*). |
+| `jenesis.legal.strict` | `false` | Fail the build of a module whose jar or runtime dependency carries none of the `jenesis.legal.notices` entries. |
 | `jenesis.compliance` | `true` | Run the licence and vulnerability checks; `false` skips both. |
 | `jenesis.source.<tool>` | `true` | Per-linter switch (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`). |
 | `jenesis.validator.spotbugs` | `true` | Run SpotBugs when its filter file is present. |
@@ -212,7 +215,8 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.pin.checksum` | `true` | Whether `pin` writes SHA checksums alongside versions. |
 | `jenesis.pin.retain` | `groups` | Which lines a refresh keeps although it did not write them: `groups` those of a group the run resolved nothing in, `all` every one (a project built in more than one layout), `none` none. |
 | `jenesis.platform.<token>` | *(detected)* | Add (`=true`) or remove (`=false`) a platform token used to select guarded pins. |
-| `jenesis.plugin.<name>` | `true` | `false` leaves out the plugin `<name>` that `jenesis-plugins.properties` names (see *[Extending the build](/tool/extending-the-build/#adding-plugins-to-the-stock-build)*). |
+| `jenesis.plugin.<name>` | `true` | `false` leaves out the plugin `<name>` that `jenesis.plugins.properties` names (see *[Extending the build](/tool/extending-the-build/#adding-plugins-to-the-stock-build)*). |
+| `jenesis.project.plugins` | `true` | `false` leaves out every plugin that `jenesis.plugins.properties` names, while `pin` still pins those of `postprocess` (see *[Extending the build](/tool/extending-the-build/#pinning-them)*). |
 | `jenesis.project.digest` | `SHA-256` | Digest algorithm the `pin` step uses to checksum artifacts. |
 | `jenesis.openpgp.command` | `gpgv` | Binary forked to verify detached OpenPGP signatures. A name is looked up on the `PATH`; a value containing a separator is used as a path. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.openpgp.expiry` | `signing` | What an expired signing key means: `ignored` accepts it whenever it signed, `signing` accepts what it signed before it expired, `current` always rejects it. |
@@ -355,6 +359,7 @@ Wired by keys in `packaging.properties` - see *[Packaging](/tool/packaging/)*.
 
 | Step | Produces |
 | --- | --- |
+| `legal` | The legal notices of the module's jar and its runtime dependencies, for its `.jmod` and a native image. |
 | `jmod` | A `.jmod` link-time module. |
 | `jlink` | A custom runtime image. |
 | `jpackage` | A native installer or self-contained app image. |
@@ -367,7 +372,9 @@ Wired by keys in `packaging.properties` - see *[Packaging](/tool/packaging/)*.
 ### Top level
 
 The `build`, `stage`, `export`, `release`, and `pin` modules are the top-level targets in the table above;
-each layout wires the `maven` and/or `modular` staging and export sub-steps under them.
+each layout wires the `maven` and/or `modular` staging and export sub-steps under them. When a project names
+plugins of `postprocess`, `build` also holds `postprocess/transform/<name>` and `postprocess/inspect/<name>`, which run over
+every module after it is built (see *[Extending the build](/tool/extending-the-build/#transforming-and-inspecting-what-the-build-produced)*).
 
 ## Source declarations
 

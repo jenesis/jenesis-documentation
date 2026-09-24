@@ -155,7 +155,7 @@ works on a `pom.xml`'s `<!--jenesis.pin ... -->` block, where it selects a coord
   guards fail the build, while an unmatched guard with no fallback simply leaves the module unpinned.
 </div>
 
-{% demos 23, 24 %}
+{% demos 24, 25 %}
 
 ## Enforcing the pins
 
@@ -186,7 +186,7 @@ every version was a decision somebody wrote down.
   a checksum to satisfy strict mode.
 </div>
 
-{% demos 25 %}
+{% demos 26 %}
 
 ## Refreshing the pins
 
@@ -254,7 +254,7 @@ The second line shows the other source a BOM can come from: **a published Maven 
 third form names a module, which resolves a BOM published under that module name through the module index
 or from your local module repository, versioned and checksummed, or floating to the latest published file.
 
-{% demos 17 %}
+{% demos 18 %}
 
 ### Which source seals how much
 

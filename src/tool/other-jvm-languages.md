@@ -42,7 +42,7 @@ already produced.
   <code>.java</code> sources for resolution.
 </div>
 
-{% demos 38, 41, 43 %}
+{% demos 39, 42, 44 %}
 
 ## Which packages you can export
 
@@ -130,7 +130,7 @@ group, and `scalac` loads the plugin the same way.
 The plugin's version is pinned the usual way, coordinated to the compiler - the `pin` step writes back its
 `@jenesis.pin` line for you.
 
-{% demos 40 %}
+{% demos 41 %}
 
 ## API documentation
 

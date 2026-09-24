@@ -118,7 +118,7 @@ jpackage has flags of its own - an icon, a vendor, a description, a licence file
 the tools below. One flag is derived for you: `--app-version` comes from `jenesis.project.version` with any
 non-numeric suffix stripped, because jpackage accepts only dotted numbers - `1.4.0-SNAPSHOT` becomes `1.4.0`.
 
-{% demos 6, 7 %}
+{% demos 7, 8 %}
 
 ## Native installers
 
@@ -136,7 +136,7 @@ own packaging tooling on the `PATH`: `dpkg-deb`/`fakeroot` for `deb` and `rpmbui
 WiX Toolset on Windows, the bundled `productbuild`/`hdiutil` on macOS. For that reason an installer is usually
 built locally, while the tooling-free `app-image` covers the packaging path in CI.
 
-{% demos 6, 7 %}
+{% demos 7, 8 %}
 
 ## Runtime images and `.jmod` files
 
@@ -156,8 +156,8 @@ descriptor sits at the project root, `module-<folder>` otherwise - `module-sourc
 `sources/`. The `docker` context below uses the same naming.
 
 `jmod=true` packs the module into a **`.jmod`**, staged beside the modular jar. Its one advantage over a jar is
-that it can carry native libraries, commands, and config files, which `jlink` then lays into the runtime's
-`lib/`, `bin/`, and `conf/`. The three steps chain - `jmod → jlink → jpackage` - so a config file packed this
+that it can carry native libraries, commands, config files and legal notices, which `jlink` then lays into the
+runtime's `lib/`, `bin/`, `conf/` and `legal/`. The three steps chain - `jmod → jlink → jpackage` - so a config file packed this
 way reaches the shipped app, where the program reads it from `<java.home>/conf/`. Packed into a jar instead,
 it would be stranded there.
 
@@ -171,7 +171,7 @@ it would be stranded there.
   <code>jlink</code> accepts.
 </div>
 
-{% demos 7, 52 %}
+{% demos 8, 53 %}
 
 ## Making a closure linkable
 
@@ -204,7 +204,7 @@ rewrite - which is how a single module opts out of a project-wide file.
   downloaded, so a rewritten jar's bytes can never reach a <code>@jenesis.pin</code> checksum.
 </div>
 
-{% demos 18 %}
+{% demos 19 %}
 
 ## Bundles for a JRE base
 
@@ -255,7 +255,7 @@ aggregate for many services, at the cost of coupling to that base's JVM version.
   correction; you never splice it in yourself.
 </div>
 
-{% demos 8 %}
+{% demos 9 %}
 
 ## A container build context
 
@@ -297,7 +297,7 @@ the base, so image environment belongs in a base image rather than in build conf
   <code>buildah bud</code> consume the same folder.
 </div>
 
-{% demos 6, 7 %}
+{% demos 7, 8 %}
 
 ## A single executable jar
 
@@ -318,7 +318,7 @@ verified and the build stays reproducible.
   troubleshooting.
 </div>
 
-{% demos 6, 7 %}
+{% demos 7, 8 %}
 
 ## Native images
 
@@ -354,7 +354,7 @@ directory to maintain.
   inside every jar - the way to vet exactly what reflection is baked into a published artifact.
 </div>
 
-{% demos 65 %}
+{% demos 66 %}
 
 ### native-image or jpackage?
 
@@ -364,3 +364,42 @@ compiles the program *and* its runtime into machine code: near-instant startup a
 of GraalVM, a slow compile, and complete reachability metadata. They are alternatives, not a progression.
 Choose jpackage for a faithful bundle of the JVM you tested against, and native-image when startup and
 footprint matter more.
+
+## Licences in each form
+
+A shipped program carries the code of its dependencies, and with it their licences and notices. How each form
+passes them on follows from how it holds the jars:
+
+| Form | Where the licences travel |
+| --- | --- |
+| Module jar | It holds your own code only. Its licence text is placed with `jenesis.project.resources` (see *[Supply-chain features](/tool/supply-chain/#the-licence-text-in-the-jar)*), and the embedded SBOM names the licence of every dependency. |
+| Bundle | Every jar of the closure is stored intact under `jars/`, so each dependency's licence files travel inside its own jar. |
+| Launcher jar | Each jar is unpacked under a prefix of its own, `jars/<jar>/`, and nothing is merged, so every jar keeps its files. |
+| Container build context | The jars are copied intact into `jars/` beside the `Dockerfile`. |
+| Class-path application image | The jars stay intact in the image's application folder (`lib/app/` on Linux), and the runtime jpackage links carries the JDK's own notices in its `legal/` folder. |
+| Runtime image, modular application image | Linking takes the code out of the jars, so the notices are collected into the module's `.jmod` and laid into the runtime under `legal/<module>/`: the module's own at its root, and each runtime dependency's in a folder named after its jar. |
+| Native image | The jars are compiled away, so the same notices go into a `licenses/` folder beside the binary, staged in `stage/native/output/`. |
+
+Linking always goes through the module's `.jmod`, so a runtime keeps the notices however it is configured:
+without `jmod=true`, `jlink` and a modular `jpackage` build the `.jmod` for linking alone and do not stage it.
+The runtime of the `java-modular-executable` demo, which redistributes `org.slf4j`, carries that library's
+licence:
+
+```
+target/stage/runtime/output/module-sources/legal/demo.modular.executable/
+`-- org.slf4j-2.0.16/LICENSE.txt
+```
+
+`jenesis.legal.notices` names the jar entries taken as notices, comma-separated. The default is
+`META-INF/NOTICE,META-INF/LICENSE,META-INF/license/,META-INF/licenses/,LICENSE,about.html`. A name matches
+regardless of case and also with an extension, so `META-INF/LICENSE.txt` counts, and an entry ending in `/`
+takes the whole folder below it.
+
+<div class="warning">
+  A dependency whose jar carries no licence file cannot contribute one, and many jars carry none. Where a
+  module is packed into a <code>.jmod</code>, linked, packaged with jpackage or compiled into a native image,
+  <code>-Djenesis.legal.strict=true</code> fails the build on such a jar rather than shipping it without its
+  notices.
+</div>
+
+{% demos 8, 19, 66 %}
