@@ -45,7 +45,7 @@ The name decides more than where jpx looks. It also decides how the program is r
 Named either way, the two install the same jars and verify against the same digest. What differs is the
 paths recorded for the launch, which the next chapter shows.
 
-{% demos 66 %}
+{% demos 67 %}
 
 ### Resolving over module descriptors only
 

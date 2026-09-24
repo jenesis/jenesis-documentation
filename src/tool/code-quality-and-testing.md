@@ -56,7 +56,7 @@ defaults to `true`, so file discovery alone normally decides; the property is an
 For example, `-Djenesis.source.checkstyle=false` keeps `checkstyle.xml` in place but skips Checkstyle, while
 PMD and SpotBugs still run.
 
-{% demos 31, 39, 42, 44 %}
+{% demos 32, 40, 43, 45 %}
 
 ## Analysis inside the compiler
 
@@ -108,7 +108,7 @@ with the file but no tag the build stops and names the `@jenesis.plugin` line th
 `-Djenesis.compile.errorprone=false` keeps the file and the declaration in place but compiles without the
 plugin.
 
-{% demos 12 %}
+{% demos 13 %}
 
 ## Formatting
 
@@ -145,7 +145,7 @@ After a rewrite, a plain build passes the verify gate again.
   project's <code>codenarc.xml</code> lints but nothing reformats.
 </div>
 
-{% demos 31 %}
+{% demos 32 %}
 
 ## Where the reports land
 
@@ -179,7 +179,7 @@ line by line. JaCoCo, like every tool here, resolves in its own group (`jacoco`)
   Set <code>-Djenesis.observe.jacoco=false</code> to suppress it even when the file is present.
 </div>
 
-{% demos 33 %}
+{% demos 34 %}
 
 ## Narrowing a test run
 
@@ -235,7 +235,7 @@ on every save and a narrowed test pass keeps the feedback loop tight.
   the whole suite - a plain <code>build</code> with selection off.
 </div>
 
-{% demos 34 %}
+{% demos 35 %}
 
 ## Mutation testing
 
@@ -260,7 +260,7 @@ project's own resolved `junit-platform`, so it always lines up with the test fra
 lands under `reports/pitest/`, and `-Djenesis.mutate.pitest=false` suppresses the run while keeping the file in
 place.
 
-{% demos 35 %}
+{% demos 36 %}
 
 ## API compatibility
 
@@ -318,7 +318,7 @@ is compared. It is a released artifact like any other, so `pin` records it with 
 tool - one line, not a closure. `-Djenesis.artifact.japicmp=false` suppresses the comparison while keeping
 the file in place.
 
-{% demos 37 %}
+{% demos 38 %}
 
 ## Seeing every failure at once
 

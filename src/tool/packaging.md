@@ -118,7 +118,7 @@ jpackage has flags of its own - an icon, a vendor, a description, a licence file
 the tools below. One flag is derived for you: `--app-version` comes from `jenesis.project.version` with any
 non-numeric suffix stripped, because jpackage accepts only dotted numbers - `1.4.0-SNAPSHOT` becomes `1.4.0`.
 
-{% demos 6, 7 %}
+{% demos 7, 8 %}
 
 ## Native installers
 
@@ -136,7 +136,7 @@ own packaging tooling on the `PATH`: `dpkg-deb`/`fakeroot` for `deb` and `rpmbui
 WiX Toolset on Windows, the bundled `productbuild`/`hdiutil` on macOS. For that reason an installer is usually
 built locally, while the tooling-free `app-image` covers the packaging path in CI.
 
-{% demos 6, 7 %}
+{% demos 7, 8 %}
 
 ## Runtime images and `.jmod` files
 
@@ -171,7 +171,7 @@ it would be stranded there.
   <code>jlink</code> accepts.
 </div>
 
-{% demos 7, 52 %}
+{% demos 8, 53 %}
 
 ## Making a closure linkable
 
@@ -204,7 +204,7 @@ rewrite - which is how a single module opts out of a project-wide file.
   downloaded, so a rewritten jar's bytes can never reach a <code>@jenesis.pin</code> checksum.
 </div>
 
-{% demos 18 %}
+{% demos 19 %}
 
 ## Bundles for a JRE base
 
@@ -255,7 +255,7 @@ aggregate for many services, at the cost of coupling to that base's JVM version.
   correction; you never splice it in yourself.
 </div>
 
-{% demos 8 %}
+{% demos 9 %}
 
 ## A container build context
 
@@ -297,7 +297,7 @@ the base, so image environment belongs in a base image rather than in build conf
   <code>buildah bud</code> consume the same folder.
 </div>
 
-{% demos 6, 7 %}
+{% demos 7, 8 %}
 
 ## A single executable jar
 
@@ -318,7 +318,7 @@ verified and the build stays reproducible.
   troubleshooting.
 </div>
 
-{% demos 6, 7 %}
+{% demos 7, 8 %}
 
 ## Native images
 
@@ -354,7 +354,7 @@ directory to maintain.
   inside every jar - the way to vet exactly what reflection is baked into a published artifact.
 </div>
 
-{% demos 65 %}
+{% demos 66 %}
 
 ### native-image or jpackage?
 
@@ -402,4 +402,4 @@ takes the whole folder below it.
   notices.
 </div>
 
-{% demos 7, 18, 65 %}
+{% demos 8, 19, 66 %}
