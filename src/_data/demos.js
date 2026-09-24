@@ -118,12 +118,13 @@ export default {
       demos: [
         { slug: "demo-51-custom-assembler", name: "Custom assembler", blurb: "Wrapping the stock assembler so sources are preprocessed before they compile." },
         { slug: "demo-52-custom-jmod", name: "jlink & jpackage", blurb: "A custom .jmod carrying extra content, linked into a runtime and packaged into an app." },
-        { slug: "demo-53-internal-module", name: "Internal build module", blurb: "A plugin named in jenesis-plugins.properties, compiled from local source and configured by its own properties file." },
+        { slug: "demo-53-internal-module", name: "Internal build module", blurb: "A plugin named in jenesis.plugins.properties, compiled from local source and configured by its own properties file." },
         { slug: "demo-54-external-module", name: "External build module", blurb: "The same plugin resolved by its module name from a repository." },
         { slug: "demo-55-custom-maven", name: "Custom Maven build", blurb: "Driving a multi-module Maven-layout build from your own entry point with the convenience factory." },
         { slug: "demo-56-custom-modular", name: "Custom modular build", blurb: "The same for a modular project." },
         { slug: "demo-57-custom-build", name: "Custom build", blurb: "A code-generating build graph wired entirely by hand." },
         { slug: "demo-58-tools-api", name: "Running a build in-process", blurb: "A build, and the program it produced, run inside another program's JVM through java.util.spi.ToolProvider." },
+        { slug: "demo-67-transform-inspect", name: "Transform and inspect", blurb: "Plugins that run once over everything the build produced: one attaches a notice to every module, the other checks it is there before anything is staged." },
       ],
     },
     {
