@@ -1,23 +1,38 @@
 ---
-order: 10
-title: Migration & import
-description: Bringing an existing repository's contents into Jenesis Repository - the import job, the Nexus, Artifactory, Maven, index and Jenesis connectors, archive uploads, and listing everything back out again.
+order: 14
+title: Migrating in and out
+description: Bringing an existing repository's contents into Jenesis Repository - the Import page, the Nexus, Artifactory, Maven, index and Jenesis connectors, archive uploads - and listing everything back out again.
 ---
 
 Most teams adopting Jenesis Repository already have artifacts somewhere else. This chapter shows how to move
-them in with one request, how to follow and resume the job, how to load an archive of files in one go, and
-how to list everything back out when you leave.
+them in, how to follow and resume the job, how to load an archive of files in one go, and how to list
+everything back out when you leave.
 
 ## Starting an import
 
-An import is a background job. You `POST` a small JSON body to `/repository/admin/import`, the server answers
-at once with a job id, and the job walks the source and publishes every artifact it finds into this
-repository. The walk runs server-side through the same upstream fetcher that pull-through proxying uses, so
-the upstream fetcher module must be installed - without it the request is refused with `501`.
+An import is a background job that walks another repository manager and publishes every artifact it finds
+into this repository, through the same gate a client's upload passes. Open the repository you are importing
+into and choose **Import**. Under **Start a migration**:
+
+| Field | Meaning |
+| --- | --- |
+| **Source** | The connector to walk with - Nexus, Artifactory, a Maven repository, a package index or another Jenesis Repository. |
+| **Base URL** | The address of the source. It must be `https` and resolve to a public host (see below). |
+| **Source repository** | The repository to read - a Nexus or Artifactory repository name, or the path under the base URL. |
+| **Format** | For Artifactory and index sources, the ecosystem of the source repository. |
+| **Username**, **Password / token** | Credentials sent to the source, if it needs them. |
+
+**Start migration** answers at once, and **Migrations** below lists every job with how many artifacts it has
+imported, skipped, held for review and rejected, refreshing while one runs. A job that stopped part-way offers
+**Resume from cursor**, which continues from its last checkpoint rather than starting over; **Dismiss** removes a
+finished job from the list, and finished jobs are dismissed on their own after seven days.
+
+The same import can be started from a script with a `POST` to `/repository/admin/import` and a key that may write
+to the repository:
 
 ```bash
-curl -X POST http://localhost:8080/repository/admin/import \
-  -H 'Content-Type: application/json' \
+curl -X POST https://repo.example.com/repository/admin/import \
+  -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
   -d '{
         "source": "nexus",
         "url": "https://nexus.example.com",
@@ -28,10 +43,7 @@ curl -X POST http://localhost:8080/repository/admin/import \
 # 202  {"job":"a1b2c3…","state":"running"}
 ```
 
-On a deployment that enforces authentication, add the `Jenesis-Repository-Key` header with a key that may
-write to the target repository. With authentication switched off, no header is needed.
-
-The request fields:
+The request fields, which match the form:
 
 | Field | Required | Meaning |
 |---|---|---|
@@ -62,7 +74,7 @@ The job writes its state into the store, so it survives a restart and any node c
 with the id the `POST` returned:
 
 ```bash
-curl http://localhost:8080/repository/admin/import/a1b2c3…
+curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/admin/import/a1b2c3…
 ```
 
 ```json
@@ -160,7 +172,7 @@ publish each entry as if it had been deployed on its own. The feature is off by 
 to, with the `Jenesis-Explode: zip` header:
 
 ```bash
-curl -X PUT http://localhost:8080/repository/maven/ \
+curl -X PUT -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/maven/ \
   -H 'Jenesis-Explode: zip' \
   --data-binary @artifacts.zip
 ```
@@ -179,11 +191,11 @@ stably ordered, paged JSON list - the same listing the `jenesis` connector reads
 imports from this one:
 
 ```bash
-curl 'http://localhost:8080/api/assets?limit=500'
+curl -H "Jenesis-Repository-Key: $KEY" 'https://repo.example.com/api/assets?limit=500'
 ```
 
 ```json
-{"repository":"default",
+{"repository":"releases",
  "assets":[{"path":"maven/org/example/app/1.0/app-1.0.jar","size":48213,"sha256":"9f3b…",
             "format":"maven","ecosystem":"Maven","coordinate":"org.example:app","version":"1.0",
             "prerelease":false}],
@@ -196,9 +208,8 @@ Pass the returned `cursor` back as `?cursor=` for the next page; it is `null` on
 `limit` defaults to 500 and is capped at 1 000, and `repo` names another repository than the one the
 request routed to. The read needs `repository:read` on the repository it lists.
 
-The web console offers the same walk as a download (`assets.ndjson`, one object per line with `path`,
-`size` and `sha256`), described in [The console](/repository/console/). The bytes themselves are addressed by
-the paths the listing returns, so any HTTP client can copy a repository out.
+The bytes themselves are addressed by the paths the listing returns, so any HTTP client can copy a
+repository out - and another Jenesis Repository imports one directly with the `jenesis` connector above.
 
 ## Settings
 

@@ -128,8 +128,8 @@ smallest complete thing that runs. **Tables** carry option sets: a key, its defa
 
 ## Colour scheme
 
-The palette is the Jenesis brand kit, shared with the Jenesis Repository console (`app.css` is the same file in
-both projects, so a change here belongs there too):
+The palette is the Jenesis brand kit. The Jenesis Repository console is laid out after this site but keeps a
+stylesheet of its own, so a change here does not reach it - a look the two should share is changed in both:
 
 | Token | Value | Used for |
 |---|---|---|

@@ -1,57 +1,56 @@
 ---
 order: 1
 title: Introduction
-description: What Jenesis Repository is, who it is for, and the path through the chapters.
+description: What Jenesis Repository is, what it serves, and how this section follows the console.
 ---
 
-**Jenesis Repository is a self-hosted artifact repository with no database.** It serves the Maven layout,
-the Jenesis module layout, an OCI/Docker registry and plain files, all from one store - a directory on disk,
-an S3-compatible bucket, Google Cloud Storage or Azure Blob. Publish a jar once and every Maven, Gradle or
-Jenesis build can resolve it; publish a modular jar and a Jenesis build can resolve it by module name too.
+**Jenesis Repository is a self-hosted artifact repository with no database.** One server hosts your own
+packages and caches the public ones for more than twenty package ecosystems - Maven and Gradle, npm, PyPI,
+container images, Go, Cargo, NuGet, RubyGems, Helm, Debian and RPM packages, and more - each served to its own
+native client. It screens what comes in against vulnerability and malware feeds, holds back what fails your
+policy for review, keeps a remote build cache for the Jenesis build tool, and runs a web console to look after
+it all.
 
-It is built for a team that wants a small repository it can run itself, and for a company that wants to
-see exactly what it would be running before it commits. The whole server is a handful of Java modules on a
-JDK: clone it, start it against a folder, and you have a repository. Importing from Nexus, Artifactory or any
-Maven repository is built in, and the server's own web console lets you browse what it holds.
+You run it from one Docker image, `jenesisbuild/jenesis-repository`, and everything it holds lives in one place:
+a directory on a volume, or a bucket on S3, Google Cloud Storage or Azure Blob.
 
 ## Three things to know up front
 
-- **The store is the only state.** Artifacts, checksums, indexes and settings all live in one place - a
-  directory, or a bucket. Back that up and you have backed up the repository; copy it and you have moved
-  the repository. There is no database to install, tune or migrate.
-- **Artifacts stream through, never into memory.** An upload or a download is copied from the network to
-  the store and back without being held whole, so a 4 KB POM and a 4 GB image layer cost the server the same
-  fixed amount of heap.
-- **Every capability is a module you can switch off.** Each format, storage backend and import connector is
-  a Java module the server discovers at startup. `JENREG_MAVEN=false` turns the Maven layout off exactly as
-  if its module were absent; `JENREG_STORE=s3` selects a backend. You shape a deployment with configuration,
-  not by rebuilding it.
+- **The store is the only state.** Artifacts, indexes, settings and keys all live in the one directory or
+  bucket. Back it up and you have backed up the repository; copy it and you have moved it. There is no database
+  to install, tune or migrate.
+- **Artifacts stream through, never into memory.** An upload or a download is copied between the network and the
+  store without being held whole, so a small POM and a multi-gigabyte image layer cost the server the same
+  small, fixed amount of memory.
+- **Every capability can be switched off.** Each format, storage backend and screening feed is a module the
+  server discovers at startup, and a setting turns it off exactly as if it were absent. You shape a deployment
+  with configuration, not by building a different image.
+
+## How this section is organised
+
+The chapters follow the console. After the first two, each covers one of its sections, in the order they appear
+across the top of the page:
+
+1. **Getting started** - run the image, sign in, issue a key, and publish with Maven and npm.
+2. **Finding your way around** - the console's two navigation levels, the pages of a repository, and who sees
+   what.
+3. **Repositories** - what a repository is here, and its overview, browse, staging and import pages.
+4. **Connecting your build tools** - the URL and credential form for every client.
+5. **Proxying upstreams** - serving Maven Central, Docker Hub and other registries through your repository.
+6. **Screening what comes in** - the gate, the review queue, and the vulnerability, findings and signer
+   pages.
+7. **Retention, pins and cleanup** - how long a repository keeps what it holds, and reclaiming space.
+8. **The build cache** - projects, and pointing the Jenesis build tool at them.
+9. **Access** - signing people in, members and roles, credentials for build tools, and keyless CI.
+10. **Operations** - metrics, the security posture, scheduled walks, manual uploads, webhooks and rate limits.
+11. **Settings** - the first-run guide, the settings catalogue, modules, and backing settings up.
+12. **Running in production** - object storage, the Helm chart, TLS and backups.
+13. **Migrating in and out** - importing from Nexus, Artifactory and others, and taking everything out again.
+14. **What it costs to run** - where an object store's bill comes from, and how to keep it small.
+15. **Running from source** - for those who want to change the server itself.
+16. **Configuration reference** - every setting in one place.
 
 <div class="tip">
-  Start with <strong>Getting started</strong>: it takes you from a clone to a running repository, a published
-  artifact, and the console, and it shows how configuration works before anything else builds on it.
+  Start with <strong>Getting started</strong>: it takes you from <code>docker run</code> to a published artifact
+  in a few minutes, and shows the console's layout before anything else builds on it.
 </div>
-
-## What's in this section
-
-1. **Introduction** - you are here.
-2. **Getting started** - run the server from source, configure it the Spring Boot way, publish and resolve
-   an artifact, open the console, and see the alternatives - a container image built from the clone, and
-   the cloud stores.
-3. **Architecture** - the plugin model, the content-addressed store, and the path an upload takes.
-4. **Storage** - the filesystem, S3-compatible, Google Cloud Storage and Azure Blob backends, their
-   settings, and the storage quota.
-5. **What it costs to run** - the operations a request costs the store, the providers' list prices they meet,
-   and when a store without request charges is the cheaper choice.
-6. **Formats** - the Maven layout, the Jenesis module layout, the OCI/Docker registry and the raw layout,
-   and the settings that switch each on or off.
-7. **Proxying** - pull-through caching of an upstream such as Maven Central, revalidation, and the negative
-   cache.
-8. **Authentication & access** - the bootstrap key, issuing and revoking keys and their grants, running
-   open or read-only, anonymous read rights, and signing in to the console.
-9. **Rate limiting** - the per-tenant request ceiling and what it sheds.
-10. **Migration & import** - importing from Nexus, Artifactory, a Maven repository or another Jenesis
-   Repository, batch uploads, and listing everything the server holds so you can leave with it.
-11. **Observability** - logs, metrics, the security-posture report, and the multi-node consistency check.
-12. **The console** - reaching the web console, signing in, and browsing repositories and artifacts.
-13. **Configuration reference** - every setting in one place, with its default.
