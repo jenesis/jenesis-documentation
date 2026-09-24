@@ -374,7 +374,7 @@ passes them on follows from how it holds the jars:
 | --- | --- |
 | Module jar | It holds your own code only. Its licence text is placed with `jenesis.project.resources` (see *[Supply-chain features](/tool/supply-chain/#the-licence-text-in-the-jar)*), and the embedded SBOM names the licence of every dependency. |
 | Bundle | Every jar of the closure is stored intact under `jars/`, so each dependency's licence files travel inside its own jar. |
-| Launcher jar | Each jar is unpacked under a prefix of its own, `jars/<jar>/`, and nothing is merged, so every jar keeps its files. |
+| Launcher jar | Each jar is unpacked under a prefix of its own, `jars/<jar>/`, and nothing is merged, so every jar keeps its files. The launcher's own `META-INF/LICENSE` and `META-INF/NOTICE` sit at the root beside its classes. |
 | Container build context | The jars are copied intact into `jars/` beside the `Dockerfile`. |
 | Class-path application image | The jars stay intact in the image's application folder (`lib/app/` on Linux), and the runtime jpackage links carries the JDK's own notices in its `legal/` folder. |
 | Runtime image, modular application image | Linking takes the code out of the jars, so the notices are collected into the module's `.jmod` and laid into the runtime under `legal/<module>/`: the module's own at its root, and each runtime dependency's in a folder named after its jar. |
