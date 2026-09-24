@@ -99,7 +99,7 @@ modules require it. It can be tested like any other module: a module tagged `@je
 is run as the other test modules are, and staged as the test variant of `demo.greeter.testing`. Since `abstract`
 is a Java keyword it can never be a module name, so the two forms of the tag never collide.
 
-{% demos 3, 4, 32 %}
+{% demos 3, 4, 33 %}
 
 ### Skipping the tests
 
@@ -152,7 +152,7 @@ The jar that comes out runs the baseline on a Java 21 runtime and the override o
 implementations, selected by the JVM. Nothing else is needed: producing an overlay is what marks the jar
 `Multi-Release: true`, the flag that tells the JVM to look in the versioned directory at all.
 
-{% demos 9 %}
+{% demos 10 %}
 
 ### Source and API-documentation jars
 
@@ -170,7 +170,7 @@ documentation tool (`javadoc` for Java) and adds a `-javadoc.jar`. Both are off 
 build time you do not want on every inner-loop run. Turn them on for a release, or record them in a profile
 (see *[Configuration](/tool/configuration/)*).
 
-{% demos 61 %}
+{% demos 63 %}
 
 ### Reproducible archives
 
@@ -197,7 +197,7 @@ fixes the line endings of every file Git treats as text, whatever machine checks
 * text=auto eol=lf
 ```
 
-{% demos 63 %}
+{% demos 65 %}
 
 ## Passing extra arguments to a tool
 
@@ -230,7 +230,7 @@ applies to *every* forked `java` process, the program `Execute` runs included, w
   extra <code>javac</code> flags.
 </div>
 
-{% demos 10 %}
+{% demos 11 %}
 
 ## Annotation processing
 
@@ -259,7 +259,7 @@ compiler runs it.
 The same tag, with a compiler name in front (`@jenesis.plugin kotlinc <coordinate>`), declares a compiler
 plugin for another language - covered in *Other JVM languages*.
 
-{% demos 11, 36 %}
+{% demos 12, 37 %}
 
 ## Running a module's main
 
@@ -313,7 +313,7 @@ java -Djenesis.execute.module=tools \
   current project is the job of <a href="/jpx/">jpx</a>.
 </div>
 
-{% demos 6, 7 %}
+{% demos 7, 8 %}
 
 ## Attaching a Java agent
 
@@ -360,7 +360,7 @@ module demo.agents.test {
   are ordinary dependencies otherwise: they resolve, pin, and appear in the bill of materials like any other.
 </div>
 
-{% demos 48 %}
+{% demos 49 %}
 
 ## Granting native access
 
@@ -452,7 +452,7 @@ build on it:
 java -Djenesis.dependency.native=warn build/jenesis/Make.java
 ```
 
-{% demos 49, 50 %}
+{% demos 50, 51 %}
 
 ## Watch mode
 
@@ -582,4 +582,4 @@ another match. GitHub's hosted Linux runners install the JDKs of `actions/setup-
 so a job that searches for one restricts it first, with `chmod -R go-w` on its folder. Windows has no such
 check, so there the search relies on the protection of `C:\Program Files` and of your user profile.
 
-{% demos 64 %}
+{% demos 6 %}

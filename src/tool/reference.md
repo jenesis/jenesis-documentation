@@ -216,7 +216,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.pin.retain` | `groups` | Which lines a refresh keeps although it did not write them: `groups` those of a group the run resolved nothing in, `all` every one (a project built in more than one layout), `none` none. |
 | `jenesis.platform.<token>` | *(detected)* | Add (`=true`) or remove (`=false`) a platform token used to select guarded pins. |
 | `jenesis.plugin.<name>` | `true` | `false` leaves out the plugin `<name>` that `jenesis.plugins.properties` names (see *[Extending the build](/tool/extending-the-build/#adding-plugins-to-the-stock-build)*). |
-| `jenesis.project.plugins` | `true` | `false` leaves out every plugin that `jenesis.plugins.properties` names, while `pin` still pins those of `transform` and `inspect` (see *[Extending the build](/tool/extending-the-build/#pinning-them)*). |
+| `jenesis.project.plugins` | `true` | `false` leaves out every plugin that `jenesis.plugins.properties` names, while `pin` still pins those of `postprocess` (see *[Extending the build](/tool/extending-the-build/#pinning-them)*). |
 | `jenesis.project.digest` | `SHA-256` | Digest algorithm the `pin` step uses to checksum artifacts. |
 | `jenesis.openpgp.command` | `gpgv` | Binary forked to verify detached OpenPGP signatures. A name is looked up on the `PATH`; a value containing a separator is used as a path. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.openpgp.expiry` | `signing` | What an expired signing key means: `ignored` accepts it whenever it signed, `signing` accepts what it signed before it expired, `current` always rejects it. |
@@ -373,7 +373,7 @@ Wired by keys in `packaging.properties` - see *[Packaging](/tool/packaging/)*.
 
 The `build`, `stage`, `export`, `release`, and `pin` modules are the top-level targets in the table above;
 each layout wires the `maven` and/or `modular` staging and export sub-steps under them. When a project names
-plugins of `transform` or `inspect`, `build` also holds `transform/<name>` and `inspect/<name>`, which run over
+plugins of `postprocess`, `build` also holds `postprocess/transform/<name>` and `postprocess/inspect/<name>`, which run over
 every module after it is built (see *[Extending the build](/tool/extending-the-build/#transforming-and-inspecting-what-the-build-produced)*).
 
 ## Source declarations

@@ -27,7 +27,7 @@ Like every packaging feature, it only runs for a module that declares a main cla
 tag (or `<mainClass>` POM property) the other packaging steps key off. A module without one is skipped, so a
 library is left alone and an application needs no launcher-specific configuration.
 
-{% demos 6, 7 %}
+{% demos 7, 8 %}
 
 ## What the build writes
 

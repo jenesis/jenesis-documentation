@@ -28,12 +28,13 @@ The key is `<name>+<slot>`. The **name** is the plugin's own, and holds neither 
 module of the stock build the plugin adds to, named as the build log shows it: `check`, `format`, `compliance`,
 `binary`, `binary/generated`, `binary/compiled`, `binary/validate`, `artifact`, `observed`, `documentation` and
 `documentation/generate`. A key without `+<slot>` adds the plugin to the module build itself, and an unknown slot
-is refused; the two slots that run once for the whole build, `transform` and `inspect`, have a section of their
+is refused; the two slots that run once for the whole build, `postprocess/transform` and `postprocess/inspect`, have a section of their
 own below. The value says where the plugin comes from:
 
 - a value starting with `./` is a folder of the project, compiled from source on every build, and
 - anything else is a module name, resolved as `module/<name>` from the Jenesis module repository whatever the
-  project's layout, with the local export (`~/.jenesis`) searched first.
+  project's layout, with the local export (`~/.jenesis`) searched first. A value that is neither, such as a path
+  starting with `../`, fails the build.
 
 Either may end in `@<provider>`, which selects the provider annotated `@BuildModuleName("<provider>")` when the plugin
 module provides several: `signing+artifact=demo.signing@jarsigner`. Without it, the module must provide exactly
@@ -101,7 +102,7 @@ the same input fails the build.
   <em><a href="/tool/build-performance-and-isolation/#what-runs-on-the-host">What runs on the host</a></em>).
 </div>
 
-{% demos 53, 54 %}
+{% demos 54, 55 %}
 
 ## Transforming and inspecting what the build produced
 
@@ -112,11 +113,12 @@ checks the result and fails the build when it is wrong:
 
 ```properties
 # jenesis.plugins.properties
-notice+transform=./notice
-audit+inspect=./audit
+notice+postprocess/transform=./notice
+audit+postprocess/inspect=./audit
 ```
 
-Both run as part of `build`, as `build/transform/<name>` and `build/inspect/<name>`, so everything that builds
+Both run as part of `build`, in `build/postprocess`, which keeps the transforms under `transform/<name>` and the
+inspections under `inspect/<name>`, apart from its own steps, so a plugin may take any name. Everything that builds
 on it - `stage`, `export`, `release`, `pin`, `dependencies`, `ide` and `Execute.java` - sees what the transforms
 added and never runs past a failed inspection. The line itself switches such a plugin on, as no
 `plugin-<name>.properties` applies to it. Transforms run in the order the file names them, each seeing what the
@@ -125,7 +127,7 @@ used for a module slot cannot also name one of them.
 
 ### Configuring them
 
-A plugin of `transform` or `inspect` reads its values from **`jenesis.plugins.arguments.properties`** beside
+A plugin of `postprocess` reads its values from **`jenesis.plugins.arguments.properties`** beside
 `jenesis.plugins.properties`, one line per value as `<plugin>.<key>`, and from nowhere else - never from the
 command line:
 
@@ -177,7 +179,7 @@ plugin-audit/module/build.jenesis=0.14.0 SHA-256/...
 plugin-notice/module/build.jenesis=0.14.0 SHA-256/...
 ```
 
-`pin` writes the file and pins every plugin of `transform` and `inspect` the file names, including one a setting
+`pin` writes the file and pins every plugin of `postprocess` the file names, including one a setting
 switches off, so a plugin that only a profile switches on is pinned all the same. The plugins run with
 everything that builds, `pin` among it, so an inspection that fails stops `pin` too. This pins without running
 any plugin:
@@ -186,7 +188,7 @@ any plugin:
 java -Djenesis.project.plugins=false build/jenesis/Make.java pin
 ```
 
-{% demos 67 %}
+{% demos 56 %}
 
 ## Writing a build step
 
@@ -315,7 +317,7 @@ public GreetingModule(SequencedMap<String, String> properties) {
 ```
 
 The steps a plugin adds are handed their inputs as arguments. An input bound with `@<input>` arrives as the
-argument `../inputs/<input>`, and a plugin of `transform` or `inspect` finds each module's inventory as an
+argument `../inputs/<input>`, and a plugin of `postprocess` finds each module's inventory as an
 `inventory.properties` in the folders of its arguments:
 
 ```java
@@ -388,7 +390,7 @@ InferredMultiProjectAssembler checked = stock.check(check -> check.custom("place
 - `custom(map)` sets every added module at once, a `SequencedMap<String, BuildExecutorModule>` in the order
   they are wired.
 
-The plugins of `transform` and `inspect` are a value of the project rather than of the assembler: `plugins()`
+The plugins of `postprocess` are a value of the project rather than of the assembler: `plugins()`
 answers the `ProjectPlugins` that `jenesis.plugins.properties` declared, and `transform(name, step)` and
 `inspect(name, step)` add one more, a step or a module, refusing a name that is taken already. Here
 `ReleaseAudit` is a `BuildStep` of the project that throws when a module's inventory lacks what every release must
@@ -420,7 +422,7 @@ points at `preprocess`. `javac`, the jar step, and the tests all consume the tra
 of the build is untouched. Any pass that produces a `sources/` tree - template expansion, code generation,
 licence-header stamping - fits the same shape.
 
-{% demos 51, 52 %}
+{% demos 52, 53 %}
 
 ### Starting on the selected JDK
 
@@ -462,7 +464,7 @@ This is a middle ground: no layout, no goals, no `Project`, yet you did not wire
 no generated POM). For full control - a custom repository, strict pinning, a different digest, or emitting a
 POM as well - switch to the longer `make(...)` overload that `Project` itself uses.
 
-{% demos 55, 56 %}
+{% demos 57, 58 %}
 
 ### Wiring the graph by hand
 
@@ -486,7 +488,7 @@ cached outputs whose inputs are unchanged. The `generate` step above synthesises
 There is no phase lifecycle to fit into: a build is just steps wired to steps, and here you wire them
 yourself.
 
-{% demos 57 %}
+{% demos 59 %}
 
 ## Running a build inside another program
 
@@ -524,5 +526,5 @@ The tools are found by name when `build.jenesis` is a resolved module or a jar o
 mode registers no service, so a program there constructs `new MakeTool()`, `new ExecuteTool()` or
 `new JpxTool()` itself; the contract is the same.
 
-{% demos 58 %}
+{% demos 60 %}
 

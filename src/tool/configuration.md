@@ -93,7 +93,7 @@ java build/jenesis/Make.java -Djenesis.project.version=1.0.0 build
 Only `jenesis.*` settings may be written there; any other `-D` is refused, naming what would be valid,
 because a JVM option has to reach the JVM and therefore belongs before the main class.
 
-{% demos 45 %}
+{% demos 46 %}
 
 ## Where tool configuration lives
 
@@ -156,7 +156,7 @@ Select profiles with the `jenesis.make.profiles` property - a comma-separated li
 </div>
 
 Profiles **chain**: any loaded file may itself set `jenesis.make.profiles` to pull in more, transitively.
-The [`profiles`](https://github.com/jenesis/jenesis/tree/main/demo/demo-45-profiles) demo ships a `release`
+The [`profiles`](https://github.com/jenesis/jenesis/tree/main/demo/demo-46-profiles) demo ships a `release`
 profile that turns on source jars and chains to a `supply-chain` profile that enforces strict pinning:
 
 ```properties
@@ -177,7 +177,7 @@ java -Djenesis.make.profiles=release build/jenesis/Make.java stage
 A missing `jenesis-<name>.properties` is skipped, not an error, so a profile may contribute only a
 configuration folder, only a properties file, or both.
 
-{% demos 45 %}
+{% demos 46 %}
 
 ## Precedence
 

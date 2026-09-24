@@ -32,7 +32,7 @@ requires the module by name, and the local repositories are read before any remo
 the latest export, with a pinned version that version's build. A consumer does not notice a new export on its
 own; it takes one when it is rebuilt with `-Djenesis.executor.rebuild=true`.
 
-{% demos 60 %}
+{% demos 62 %}
 
 ## Staging the release tree
 
@@ -123,7 +123,7 @@ that is not a 40-character Git tree id fails the build. When
 notation SPDX uses for a download location: `git+https://github.com/jenesis/jenesis.git@<revision>`. A tag of
 `HEAD`, which a `pom.xml` declares for the root of its repository, counts as no tag there.
 
-{% demos 61 %}
+{% demos 63 %}
 
 ## Publishing a bill of materials
 
@@ -142,7 +142,7 @@ into the local module repository beside the module jar:
 Another project consumes it with `@jenesis.bom demo.bom`, exactly the way it consumes a hand-written file. The
 BOM travels through the module layout only; the Maven export never carries it.
 
-{% demos 17 %}
+{% demos 18 %}
 
 ## Signing the jar itself
 
@@ -207,7 +207,7 @@ detached signature made afterwards covers the signed bytes.
   delete <code>target/</code> after a key rotation.
 </div>
 
-{% demos 59 %}
+{% demos 61 %}
 
 ## The last mile: signing and uploading
 
