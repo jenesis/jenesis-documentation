@@ -289,6 +289,7 @@ Explained in [Settings](/repository/settings/).
 | Key | Default | Applies | Effect |
 | --- | --- | --- | --- |
 | `block-private-import-hosts` | `true` | on restart | Reject a migration URL that is plaintext http, or that resolves to a loopback, link-local or private address. |
+| `create-repository-on-publish` | `false` | at once | Let a publish create the repository it names; off, a repository is created in the console or by a definition, and a request to one that does not exist answers `404`. |
 | `default-repository` | `releases` | on restart | Repository the console browses by default. |
 | `default-tenant` | `default` | on restart | Tenant a request resolves to when its key carries none. |
 | `public-url` | *(empty)* | on restart | The address clients reach this deployment at (https://repo.example.com), for the absolute URLs generated indexes carry. |

@@ -13,7 +13,7 @@ chapters that follow can say "open **Access → Credentials**" and you know wher
 
 Every page has the same frame. The bar across the top holds the **sections** - the first choice you make - and
 the list down the left side holds the **pages** of the section you are in. The page itself sits on the sheet in
-the middle, and a line at the foot names the product.
+the middle.
 
 | Section | Pages |
 | --- | --- |
