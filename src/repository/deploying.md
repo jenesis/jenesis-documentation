@@ -1,7 +1,7 @@
 ---
 order: 13
 title: Running in production
-description: Taking Jenesis Repository from a laptop to a team - choosing where the store lives, running several servers, TLS and a reverse proxy, the Helm chart, signing people in, and backups.
+description: Taking Jenesis Repository from a laptop to a team - choosing where the store lives, running several servers, TLS and a reverse proxy, the Helm chart, a template per cloud, signing people in, and backups.
 ---
 
 The container from [Getting started](/repository/getting-started/) is already the production server - there is
@@ -108,6 +108,34 @@ helm install jenesis oci://registry-1.docker.io/jenesisbuild/jenesis --version 1
 | `ingress.*` | An ingress in front of the service |
 
 The server listens on 8080, and the chart points the liveness and readiness probes at `/actuator/health`.
+
+## On a cloud
+
+For a managed container service there is a template per cloud in the repository's
+[`deploy/`](https://github.com/jenesis/jenesis-repository/tree/main/deploy) folder. Each one provisions that
+cloud's object store, selects it, and runs the published image over it with the store's credential wired in, so a
+first deployment is one command:
+
+| Cloud | Template | Runs on | Store |
+| --- | --- | --- | --- |
+| Google Cloud | [`deploy/gcp`](https://github.com/jenesis/jenesis-repository/tree/main/deploy/gcp) (Terraform) | Cloud Run | `gcs`, as the service's own account |
+| AWS | [`deploy/aws`](https://github.com/jenesis/jenesis-repository/tree/main/deploy/aws) (CloudFormation) | ECS Fargate behind a load balancer | `s3`, as the task role |
+| Azure | [`deploy/azure`](https://github.com/jenesis/jenesis-repository/tree/main/deploy/azure) (Bicep) | Container Apps | `azure-blob` |
+| Scaleway | [`deploy/scaleway`](https://github.com/jenesis/jenesis-repository/tree/main/deploy/scaleway) (Terraform) | Serverless Containers | `s3`, as an IAM application's key |
+
+```bash
+cd deploy/gcp
+terraform init
+terraform apply -var project_id=my-project -var bucket_name=my-artifacts \
+  -var 'secrets={JENREG_BOOTSTRAP_KEY="jenk_…", JENREG_UI_ADMIN_KEY="…"}'
+```
+
+Every template takes the image as a parameter that defaults to `latest`; pin a release for a deployment that should
+not move on its own. Because authentication is on, each takes the two starter credentials as secrets - the API's
+bootstrap key and the console's starter key - and any other setting as an environment variable by its `JENREG_*`
+name. The Google Cloud, Azure and Scaleway services start private, reachable only through the cloud's own access
+control, until a parameter publishes them; the AWS load balancer is public from the start and answers on plain
+HTTP until you give it a certificate. The folder's README says what every template takes.
 
 ## Backups
 
