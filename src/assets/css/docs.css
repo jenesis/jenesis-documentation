@@ -200,7 +200,8 @@ body { --pico-line-height: 1.6; }
   background: var(--pico-code-background-color); border: 1px solid var(--pico-muted-border-color);
   border-radius: var(--app-radius-md); padding: var(--app-space-4); overflow-x: auto; font-size: var(--app-font-size-sm);
 }
-.docs-content :not(pre) > code { font-size: 0.9em; }
+/* A long URL or setting in running text breaks where it must rather than pushing the page sideways. */
+.docs-content :not(pre) > code { font-size: 0.9em; overflow-wrap: anywhere; }
 .docs-content table { display: block; overflow-x: auto; }
 
 /* Section links: a chapter heading copies a link to itself (anchor.js). The marker stays in the layout at
