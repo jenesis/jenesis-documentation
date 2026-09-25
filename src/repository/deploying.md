@@ -87,11 +87,12 @@ and every change they make is attributed to them.
 
 ## The Helm chart
 
-On Kubernetes, the `jenesis` chart deploys the same image with a service, probes and a volume or an object store:
+On Kubernetes, the `jenesis` chart deploys the same image with a service, probes and a volume or an object store.
+It is published beside the image, one chart version per release, and each version deploys the image released with
+it - so pin the release you want with `--version`:
 
 ```bash
-helm install jenesis oci://registry-1.docker.io/jenesisbuild/jenesis \
-  --set image.registry=docker.io/jenesisbuild \
+helm install jenesis oci://registry-1.docker.io/jenesisbuild/jenesis --version 1.0.0 \
   --set store.backend=s3 --set store.s3.bucket=my-artifacts \
   --set ui.oidc.issuerUri=https://login.example.com/realms/main \
   --set ui.oidc.clientId=jenesis \
