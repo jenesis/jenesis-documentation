@@ -214,8 +214,8 @@ detached signature made afterwards covers the signed bytes.
 One destination the tool publishes to by itself: a Jenesis module repository, the layout a modular build
 resolves module names from. `export` reaches one machine; once `jenesis.release.uri` names a repository,
 `release` puts each staged module there as its `release/jenesis` step, for every machine that resolves
-from it. A `java` repository of a [Jenesis Repository](/repository/) serves that layout, at the same address a build
-names in `jenesis.module.uri`:
+from it. A `jenesis` repository of a [Jenesis Repository](/repository/) takes that release and serves the layout, at
+the same address a build names in `jenesis.module.uri`:
 
 ```bash
 java -Djenesis.project.version=1.0.0 \
@@ -243,8 +243,8 @@ address in `jenesis.properties` releases without a key. A plaintext `http:` addr
 `-Djenesis.repository.insecure=true` allows it.
 
 A project that publishes to Maven does not need this step to reach module consumers: a `java` repository of a
-Jenesis Repository also makes a module available from a Maven publish. A modular jar deployed to its Maven
-layout, by JReleaser, `mvn deploy` or any other tool, is served by its module name as well.
+Jenesis Repository takes Maven publishes only, and makes a module available from one. A modular jar deployed to its
+Maven layout, by JReleaser, `mvn deploy` or any other tool, is served by its module name as well.
 
 ## The last mile: signing and uploading
 
