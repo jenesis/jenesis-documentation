@@ -12,50 +12,62 @@ here.
 ## Run the image
 
 You need Docker, and nothing else. The server keeps everything it holds - artifacts, indexes, settings, keys -
-in one folder, so give that folder a volume of its own and choose a key you will sign in with the first time:
+in one folder, so give that folder a volume of its own and tell the server where it is:
 
 ```bash
-ADMIN_KEY=$(openssl rand -hex 20)
-echo "$ADMIN_KEY"       # keep this: it is how you sign in the first time
-
 docker run -d --name jenesis -p 8080:8080 \
-  -v jenesis-data:/data \
-  -e JENREG_FILESYSTEM_ROOT=/data \
-  -e JENREG_KEY_LOGIN=true \
-  -e JENREG_UI_ADMIN_KEY="$ADMIN_KEY" \
+  -v jenesis-data:/data -e JENREG_FILESYSTEM_ROOT=/data \
   jenesisbuild/jenesis-repository
 ```
 
-Three settings, each with one job:
-
-| Setting | What it does |
-| --- | --- |
-| `JENREG_FILESYSTEM_ROOT` | Where the repository lives inside the container. It is required: without it the server refuses to start and names the setting, rather than inventing a folder that disappears with the container. |
-| `JENREG_KEY_LOGIN` | Offers "Sign in with a key" on the console's sign-in page. |
-| `JENREG_UI_ADMIN_KEY` | The key that signs you in as the deployment's administrator. |
+`JENREG_FILESYSTEM_ROOT` is the one setting a start needs. Without it the server refuses to start and names the
+setting, rather than inventing a folder that disappears with the container - or, worse, one a deployment meant for
+an object store would quietly fill.
 
 The server listens on port 8080 and answers there for everything: the console, the repository's clients and the
-API. It is ready when its health endpoint says so:
+API. When it has started, and nobody can sign in to it yet, it prints a welcome with a one-time key:
 
 ```bash
-curl -s http://localhost:8080/actuator/health        # {"groups":[…],"status":"UP"}
+docker logs jenesis
 ```
 
-<div class="warning">
-  The administrator key grants everything, and the server says so in its log for as long as it is set. It is
-  there to get you in; once you have signed people in through your identity provider, remove it and restart. The
-  <a href="/repository/access/">Access</a> chapter shows how.
-</div>
+```text
+==============================================================================
+
+   WELCOME TO JENESIS REPOSITORY
+
+   Nobody can sign in to this deployment yet, so this start made a one-time key:
+
+       jfr_…
+
+   Open http://localhost:8080/ui/ (or this server's address), choose
+   "Sign in with a key" and paste it. The setup guide opens after you sign in.
+
+   The key works until 2026-09-25 13:00 UTC, and only until an administrator is set up.
+   If it runs out first, restart the server and it prints a new one.
+
+==============================================================================
+```
+
+The key is shown once and stored only as a hash. It stops working after an hour, or as soon as the deployment has
+an administrator, whichever comes first; a restart of a deployment that still has none prints a new one.
 
 ## Sign in
 
 Open `http://localhost:8080` in a browser; the console lives under `/ui/`, and the address redirects there. The
-sign-in page offers **Sign in with a key**; choose it and paste the key you kept.
+sign-in page offers **Sign in with a key**; choose it and paste the key from the log.
 
-The first sign-in with that key lands on **Setup**, a short guide through the decisions a new deployment
-should make - which advisory feeds to consult, what the gate does with a vulnerable or malicious package,
-retention. Every step is optional and every answer can be changed later. **Skip for now** takes you into the
+The sign-in lands on **Setup**, a short guide through the decisions a new deployment should make. Its first step
+is the one to take now: grant a real administrator and issue a real credential, because the one-time key is about
+to stop working. The rest - which advisory feeds to consult, what the gate does with a vulnerable or malicious
+package, retention - is optional, and every answer can be changed later. **Skip for now** takes you into the
 console, and the guide stays reachable as **Settings → Setup**.
+
+<div class="warning">
+  Signing in with a key is on by default, because it is how a deployment is entered before anything else is set
+  up. Once your identity provider signs people in, switch it off with <code>JENREG_KEY_LOGIN=false</code>. The
+  <a href="/repository/access/">Access</a> chapter shows how.
+</div>
 
 The console is laid out in two levels. Across the top are its sections - **Repositories**, **Build cache**,
 **Access**, **Operations** and **Settings** - and down the left side are the pages of the section you are in.

@@ -17,7 +17,6 @@ it - and start the server:
 git clone --recurse-submodules https://github.com/jenesis/jenesis-repository.git
 cd jenesis-repository
 JENREG_FILESYSTEM_ROOT=/tmp/jenesis-repository \
-JENREG_KEY_LOGIN=true JENREG_UI_ADMIN_KEY=a-long-local-key \
   java -Djenesis.execute.module=source+bundle build/jenesis/Execute.java
 ```
 

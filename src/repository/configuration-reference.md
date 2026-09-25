@@ -280,7 +280,7 @@ Explained in [Access](/repository/access/).
 | Key | Default | Applies | Effect |
 | --- | --- | --- | --- |
 | `console` | `true` | on restart | Whether this deployment serves the admin console. |
-| `key-login` | `false` | on restart | Whether the console accepts a pasted login key as a sign-in method - a demo / simple-deployment on-ramp usable without SSO, disabled by default. |
+| `key-login` | `true` | on restart | Whether the console accepts a pasted login key as a sign-in method - the way into a deployment before single sign-on is set up, on by default. A deployment nobody can sign in to yet prints a one-time key at start, valid for an hour. |
 | `setup-wizard` | `true` | at once | Send a super-admin who signs in with the starter key to the first-run setup screen, which walks the decisions a new deployment should make: |
 
 ### Defaults

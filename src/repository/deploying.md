@@ -82,8 +82,8 @@ JENREG_UI_OIDC_CLIENT_SECRET=…
 JENREG_UI_ADMINS=oidc/8f3c1a…
 ```
 
-Then remove `JENREG_UI_ADMIN_KEY` and `JENREG_KEY_LOGIN` and restart: every person now signs in as themselves,
-and every change they make is attributed to them.
+Then remove `JENREG_UI_ADMIN_KEY` if you set one, set `JENREG_KEY_LOGIN=false` and restart: every person now
+signs in as themselves, and every change they make is attributed to them.
 
 ## The Helm chart
 
