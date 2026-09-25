@@ -6,7 +6,7 @@ description: The URL and the credential each package client uses against Jenesis
 
 Every client talks to a repository of its own type, in its own protocol, and presents the same kind of
 credential: a key issued under **Access → Credentials**. This chapter lists the type, the URL and the credential
-form for each client. The examples use `repo.example.com`, the `default` tenant, a repository named `<repo>`
+form for each client. The examples use `repo.example.com`, the `releases` tenant, a repository named `<repo>`
 created with the type in the table, and a key in `$KEY`.
 
 A repository's URL is `/repository/<tenant>/<repo>/`, and a repository of one format leaves that format's name
@@ -34,7 +34,7 @@ Each client needs a repository of its type and is pointed at an address inside i
 repository's own URL, written `$REPO` below:
 
 ```bash
-REPO=https://repo.example.com/repository/default/<repo>
+REPO=https://repo.example.com/repository/releases/<repo>
 ```
 
 ### Java and the JVM
@@ -82,7 +82,7 @@ REPO=https://repo.example.com/repository/default/<repo>
 
 | Client | Type | Point it at | Key |
 | --- | --- | --- | --- |
-| Containers | `oci` | `repo.example.com/default/<repo>/<image>` - the registry answers at `/v2/` | `docker login`, the key as password |
+| Containers | `oci` | `repo.example.com/releases/<repo>/<image>` - the registry answers at `/v2/` | `docker login`, the key as password |
 | Helm | `helm` | `$REPO/<name>` | `helm repo add … --username jenesis --password $KEY` |
 | Terraform, OpenTofu | `terraform` | `$REPO/<name>` | a `credentials` block in the CLI configuration |
 
@@ -96,12 +96,12 @@ Where a URL carries `<name>`, the format keeps separate spaces inside the one re
 Helm chart repository, a Conda channel, a Swift registry - and the name is yours to choose. Publishing under a new
 name creates that space; the repository itself has to exist first. The Terraform discovery document at
 `/.well-known/terraform.json` names one registry path for the whole host, `terraform.prefix`, which is
-`/repository/default/terraform/registry` - a `terraform` repository named `terraform` - unless you set it.
+`/repository/releases/terraform/registry` - a `terraform` repository named `terraform` - unless you set it.
 
 ## Maven, Gradle and Jenesis
 
 A repository holds one format, so each tool needs a repository of the type it speaks. Maven, Gradle and a Jenesis
-build all read the Maven layout from a `maven` or `java` repository at `/repository/default/<repo>/maven/`; a Gradle
+build all read the Maven layout from a `maven` or `java` repository at `/repository/releases/<repo>/maven/`; a Gradle
 build that publishes Ivy descriptors needs an `ivy` repository, and a Jenesis build that resolves modules by name a
 `jenesis` or `java` repository. What a client uploads - POMs and `maven-metadata.xml` included - is stored and
 served back verbatim. A key goes wherever the tool keeps credentials outside the project, so it is never
@@ -117,7 +117,7 @@ The key is the password of a server entry in `~/.m2/settings.xml`; the user name
     <server>
       <id>jenesis</id>
       <username>jenesis</username>
-      <password>jenk_default.…</password>
+      <password>jenk_releases.…</password>
     </server>
   </servers>
 </settings>
@@ -130,14 +130,14 @@ The project names the repository by that id, to publish with `mvn deploy` and to
   <distributionManagement>
     <repository>
       <id>jenesis</id>
-      <url>https://repo.example.com/repository/default/<repo>/maven/</url>
+      <url>https://repo.example.com/repository/releases/<repo>/maven/</url>
     </repository>
   </distributionManagement>
 
   <repositories>
     <repository>
       <id>jenesis</id>
-      <url>https://repo.example.com/repository/default/<repo>/maven/</url>
+      <url>https://repo.example.com/repository/releases/<repo>/maven/</url>
     </repository>
   </repositories>
 </project>
@@ -151,7 +151,7 @@ or groups a proxy with your own releases - name it as a mirror in `settings.xml`
   <mirror>
     <id>jenesis</id>
     <mirrorOf>*</mirrorOf>
-    <url>https://repo.example.com/repository/default/<repo>/maven/</url>
+    <url>https://repo.example.com/repository/releases/<repo>/maven/</url>
   </mirror>
 </mirrors>
 ```
@@ -163,7 +163,7 @@ A repository named `jenesis` with `PasswordCredentials` reads its user name and 
 
 ```properties
 jenesisUsername=jenesis
-jenesisPassword=jenk_default.…
+jenesisPassword=jenk_releases.…
 ```
 
 The build resolves from the repository and publishes to it with `./gradlew publish`:
@@ -178,7 +178,7 @@ plugins {
 repositories {
     maven {
         name = "jenesis"
-        url = uri("https://repo.example.com/repository/default/<repo>/maven/")
+        url = uri("https://repo.example.com/repository/releases/<repo>/maven/")
         credentials(PasswordCredentials::class)
     }
 }
@@ -192,7 +192,7 @@ publishing {
     repositories {
         maven {
             name = "jenesis"
-            url = uri("https://repo.example.com/repository/default/<repo>/maven/")
+            url = uri("https://repo.example.com/repository/releases/<repo>/maven/")
             credentials(PasswordCredentials::class)
         }
     }
@@ -211,7 +211,7 @@ plugins {
 repositories {
     ivy {
         name = "jenesis"
-        url = uri("https://repo.example.com/repository/default/<ivy-repo>/")
+        url = uri("https://repo.example.com/repository/releases/<ivy-repo>/")
         credentials(PasswordCredentials::class)
     }
 }
@@ -225,7 +225,7 @@ publishing {
     repositories {
         ivy {
             name = "jenesis"
-            url = uri("https://repo.example.com/repository/default/<ivy-repo>/")
+            url = uri("https://repo.example.com/repository/releases/<ivy-repo>/")
             credentials(PasswordCredentials::class)
         }
     }
@@ -241,18 +241,18 @@ modular jar published into it served by module name as well. A token is never re
 user-global `~/.jenesis/jenesis.properties`:
 
 ```properties
-jenesis.maven.uri=https://repo.example.com/repository/default/<repo>/maven/
-jenesis.maven.token=jenk_default.…
-jenesis.module.uri=https://repo.example.com/repository/default/<repo>/
-jenesis.module.token=jenk_default.…
+jenesis.maven.uri=https://repo.example.com/repository/releases/<repo>/maven/
+jenesis.maven.token=jenk_releases.…
+jenesis.module.uri=https://repo.example.com/repository/releases/<repo>/
+jenesis.module.token=jenk_releases.…
 ```
 
 or in the environment, which suits a CI job:
 
 ```bash
-export MAVEN_REPOSITORY_URI=https://repo.example.com/repository/default/<repo>/maven/
+export MAVEN_REPOSITORY_URI=https://repo.example.com/repository/releases/<repo>/maven/
 export MAVEN_REPOSITORY_TOKEN="$KEY"
-export JENESIS_REPOSITORY_URI=https://repo.example.com/repository/default/<repo>/
+export JENESIS_REPOSITORY_URI=https://repo.example.com/repository/releases/<repo>/
 export JENESIS_REPOSITORY_TOKEN="$KEY"
 java build/jenesis/Make.java
 ```
@@ -275,9 +275,9 @@ with the tenant and the `oci` repository it lives in, so an image `my-app` in a 
 
 ```bash
 docker login repo.example.com -u jenesis -p "$KEY"
-docker tag my-app repo.example.com/default/images/my-app:1.0
-docker push repo.example.com/default/images/my-app:1.0
-docker pull repo.example.com/default/images/my-app:1.0
+docker tag my-app repo.example.com/releases/images/my-app:1.0
+docker push repo.example.com/releases/images/my-app:1.0
+docker pull repo.example.com/releases/images/my-app:1.0
 ```
 
 The registry's catalog, `GET /v2/_catalog`, lists every image in the tenant's `oci` repositories by the name a
@@ -293,9 +293,9 @@ store. One named `files` holds paths directly under its URL:
 
 ```bash
 curl -H "Jenesis-Repository-Key: $KEY" -T installer.msi \
-  https://repo.example.com/repository/default/files/tools/installer-1.2.msi
-curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/default/files/tools/installer-1.2.msi -o installer.msi
-curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/default/files/tools/     # lists the folder
+  https://repo.example.com/repository/releases/files/tools/installer-1.2.msi
+curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/releases/files/tools/installer-1.2.msi -o installer.msi
+curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/releases/files/tools/     # lists the folder
 ```
 
 ## Switching a format off

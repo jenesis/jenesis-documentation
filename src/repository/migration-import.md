@@ -35,7 +35,7 @@ The same import can be started from a script with a `POST` to `/api/repository/i
 `?repo=`, and a key that may write to the repository:
 
 ```bash
-curl -X POST 'https://repo.example.com/api/repository/import?repo=releases' \
+curl -X POST 'https://repo.example.com/api/repository/import?repo=libraries' \
   -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
   -d '{
         "source": "nexus",
@@ -78,7 +78,7 @@ The job writes its state into the store, so it survives a restart and any node c
 with the id the `POST` returned:
 
 ```bash
-curl -H "Jenesis-Repository-Key: $KEY" 'https://repo.example.com/api/repository/import/a1b2c3…?repo=releases'
+curl -H "Jenesis-Repository-Key: $KEY" 'https://repo.example.com/api/repository/import/a1b2c3…?repo=libraries'
 ```
 
 ```json
@@ -175,7 +175,7 @@ publish each entry as if it had been deployed on its own. The feature is off by 
 to, with the `Jenesis-Explode: zip` header:
 
 ```bash
-curl -X PUT -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/default/releases/maven/ \
+curl -X PUT -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/releases/libraries/maven/ \
   -H 'Jenesis-Explode: zip' \
   --data-binary @artifacts.zip
 ```
@@ -194,13 +194,13 @@ repository as a flat, stably ordered, paged JSON list - the same listing the `je
 another instance imports from this one:
 
 ```bash
-curl -H "Jenesis-Repository-Key: $KEY" 'https://repo.example.com/api/assets?repo=releases&limit=500'
+curl -H "Jenesis-Repository-Key: $KEY" 'https://repo.example.com/api/assets?repo=libraries&limit=500'
 ```
 
 ```json
-{"repository":"releases",
+{"repository":"libraries",
  "assets":[{"path":"/maven/org/example/app/1.0/app-1.0.jar",
-            "served":"/repository/default/releases/maven/org/example/app/1.0/app-1.0.jar",
+            "served":"/repository/releases/libraries/maven/org/example/app/1.0/app-1.0.jar",
             "size":48213,"sha256":"9f3b…",
             "format":"maven","ecosystem":"Maven","coordinate":"org.example:app","version":"1.0",
             "prerelease":false}],

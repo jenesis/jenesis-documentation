@@ -21,9 +21,9 @@ and the URL it fetches its misses from, and save.
 | `oci` | `https://registry-1.docker.io/` |
 
 From then on every repository holding that format fetches its misses from the upstream: a Maven build pointed at
-a Maven repository named `releases` - `/repository/default/releases/maven/` - resolves everything on Maven Central
+a Maven repository named `libraries` - `/repository/releases/libraries/maven/` - resolves everything on Maven Central
 as well as what you published, and with an `oci` repository named `images`,
-`docker pull repo.example.com/default/images/library/debian` fetches the image through your server - the tenant
+`docker pull repo.example.com/releases/images/library/debian` fetches the image through your server - the tenant
 and the repository lead the image's name, and the rest is its name upstream. The repository has to exist first; a
 request to one that was never created is answered `404`, upstream or not. The same setting can be given in the
 environment, as `JENREG_PROXY_MAVEN=https://repo1.maven.org/maven2/`.

@@ -36,7 +36,7 @@ docker logs jenesis
 
    WELCOME TO JENESIS REPOSITORY
 
-   Nobody can sign in to this deployment yet, so this start made a one-time key:
+   Nobody can sign in yet, so here is a one-time key to get started:
 
        jfr_…
 
@@ -79,12 +79,12 @@ A repository holds one type of artifact, and it is created before anything is pu
 into a repository that does not exist is refused with `404`. Create two:
 
 1. Open **Repositories → All repositories**.
-2. Under **New repository**, enter the name `releases`, choose the type **maven**, and press **Create
+2. Under **New repository**, enter the name `libraries`, choose the type **maven**, and press **Create
    repository**.
 3. Do the same with the name `npm` and the type **npm**.
 
-Every URL names the tenant and then the repository: a new deployment serves the tenant `default`, so these two
-answer at `/repository/default/releases/` and `/repository/default/npm/`. A script creates a repository with a
+Every URL names the tenant and then the repository: a new deployment serves the tenant `releases`, so these two
+answer at `/repository/releases/libraries/` and `/repository/releases/npm/`. A script creates a repository with a
 `PUT` of that URL naming the type - [Repositories](/repository/repositories/) shows how - and
 [Connecting your build tools](/repository/formats/) lists the other types.
 
@@ -104,13 +104,13 @@ A new key holds no rights until you grant some. `*` with **deploy** lets it read
 The rest of this chapter uses the key as `$KEY`:
 
 ```bash
-KEY=jenk_default.…
+KEY=jenk_releases.…
 ```
 
 ## Publish and resolve with Maven
 
-A Maven repository keeps Maven's own `maven/` segment in its URLs, so `releases` answers Maven at
-`/repository/default/releases/maven/`. Put the key in `~/.m2/settings.xml` as the password of a server entry - the
+A Maven repository keeps Maven's own `maven/` segment in its URLs, so `libraries` answers Maven at
+`/repository/releases/libraries/maven/`. Put the key in `~/.m2/settings.xml` as the password of a server entry - the
 user name is not checked:
 
 ```xml
@@ -119,7 +119,7 @@ user name is not checked:
     <server>
       <id>jenesis</id>
       <username>jenesis</username>
-      <password>jenk_default.…</password>
+      <password>jenk_releases.…</password>
     </server>
   </servers>
 </settings>
@@ -130,10 +130,10 @@ Publish a jar, then resolve it back:
 ```bash
 mvn deploy:deploy-file -Dfile=app.jar \
   -DgroupId=com.example -DartifactId=app -Dversion=1.0 -Dpackaging=jar \
-  -DrepositoryId=jenesis -Durl=http://localhost:8080/repository/default/releases/maven/
+  -DrepositoryId=jenesis -Durl=http://localhost:8080/repository/releases/libraries/maven/
 
 mvn dependency:get -Dartifact=com.example:app:1.0 \
-  -DremoteRepositories=jenesis::default::http://localhost:8080/repository/default/releases/maven/
+  -DremoteRepositories=jenesis::default::http://localhost:8080/repository/releases/libraries/maven/
 ```
 
 In a project, the same URL goes into `<distributionManagement>` to publish and into `<repositories>` to
@@ -141,24 +141,24 @@ resolve, each with the `jenesis` id so Maven finds the credentials.
 
 ## Publish and resolve with npm
 
-The `npm` repository is the registry at `/repository/default/npm/`. Point npm at it and give it the key as a
+The `npm` repository is the registry at `/repository/releases/npm/`. Point npm at it and give it the key as a
 token:
 
 ```bash
-npm config set registry http://localhost:8080/repository/default/npm/
-npm config set //localhost:8080/repository/default/npm/:_authToken "$KEY"
+npm config set registry http://localhost:8080/repository/releases/npm/
+npm config set //localhost:8080/repository/releases/npm/:_authToken "$KEY"
 
 npm publish                  # from a package's folder
 npm install my-package       # from anywhere else
 ```
 
 Every other client follows the same pattern - a repository of its type, its URL under
-`/repository/default/`, and the key as a password or a token.
+`/repository/releases/`, and the key as a password or a token.
 [Connecting your build tools](/repository/formats/) lists them all.
 
 ## See it in the console
 
-Back in the console, **Repositories** lists `releases` and `npm`. Open `releases`: the overview shows its most
+Back in the console, **Repositories** lists `libraries` and `npm`. Open `libraries`: the overview shows its most
 recent releases, and the pages on the left take you into it - **Browse & search** walks the stored files, and
 **Quarantine**, **Vulnerabilities** and their neighbours show what the gate decided about each artifact on its way
 in.
