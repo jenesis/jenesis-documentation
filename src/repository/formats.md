@@ -267,9 +267,11 @@ carries a `module-info` or an `Automatic-Module-Name`, a `java` repository also 
 upload. A `maven` repository serves the Maven layout alone; creating it again with the type `java` makes it a
 `java` repository, with every URL it answered still answering.
 
-A Jenesis build also puts its own modules into a `java` repository with `release`, once `jenesis.release.uri`
+A Jenesis build puts its own modules into a `jenesis` repository with `release`, once `jenesis.release.uri`
 names the repository's address and `jenesis.release.token` a key that may publish to it: one put of each
-module's jar under its version, below `module/`. Both settings have environment variables of their own,
+module's jar under its version, below `module/`. A `java` repository refuses that put - Maven drives its
+publication - so modules a build releases go to a `jenesis` repository, and modules published through Maven reach
+module consumers from a `java` one. Both settings have environment variables of their own,
 `JENESIS_RELEASE_URI` and `JENESIS_RELEASE_TOKEN`, so a CI job keeps the key it releases with apart from the key
 it resolves with. *[Publishing](/tool/publishing/)* describes the release.
 
