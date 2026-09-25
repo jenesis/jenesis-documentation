@@ -4,7 +4,7 @@ title: Getting started
 description: Run Jenesis Repository from its Docker image, sign in to the console, create repositories, issue a key for your build tools, and publish and resolve your first artifacts with Maven and npm.
 ---
 
-This chapter takes you from nothing to a running repository in a few minutes. You start the server from its
+This chapter takes you from nothing to a repository running on your own machine in a few minutes. You start the server from its
 Docker image, sign in to the web console, create a repository for Maven and one for npm, issue a key for your
 build tools, and publish and resolve an artifact with each. Everything later in this section builds on what is
 here.
@@ -40,7 +40,7 @@ docker logs jenesis
 
        jfr_…
 
-   Open http://localhost:8080/ui/ (or this server's address), choose
+   Open http://localhost:8080 (or this server's address), choose
    "Sign in with a key" and paste it. The setup guide opens after you sign in.
 
    The key works until 2026-09-25 13:00 UTC, and only until an administrator is set up.
@@ -54,8 +54,8 @@ an administrator, whichever comes first; a restart of a deployment that still ha
 
 ## Sign in
 
-Open `http://localhost:8080` in a browser; the console lives under `/ui/`, and the address redirects there. The
-sign-in page offers **Sign in with a key**; choose it and paste the key from the log.
+Open `http://localhost:8080` in a browser. The sign-in page offers **Sign in with a key**; choose it and paste the
+key from the log.
 
 The sign-in lands on **Setup**, a short guide through the decisions a new deployment should make. Its first step
 is the one to take now: grant a real administrator and issue a real credential, because the one-time key is about

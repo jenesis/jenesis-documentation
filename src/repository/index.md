@@ -5,11 +5,11 @@ description: What Jenesis Repository is, what it serves, and how this section fo
 ---
 
 **Jenesis Repository is a self-hosted artifact repository with no database.** One server hosts your own
-packages and caches the public ones for more than twenty package ecosystems - Maven and Gradle, npm, PyPI,
-container images, Go, Cargo, NuGet, RubyGems, Helm, Debian and RPM packages, and more - each served to its own
-native client. It screens what comes in against vulnerability and malware feeds, holds back what fails your
-policy for review, keeps a remote build cache for the Jenesis build tool, and runs a web console to look after
-it all.
+packages and caches the public ones for more than twenty package ecosystems - Java, npm, PyPI, container images,
+Go, Cargo, NuGet, RubyGems, Helm, Debian and RPM packages, and more - each served to its own native client. It
+screens what comes in against vulnerability and malware feeds, holds back what fails your policy for review, and
+runs a web console to look after it all. If you build with the Jenesis build tool, it can also keep a remote build
+cache for it.
 
 You run it from one Docker image, `jenesisbuild/jenesis-repository`, and everything it holds lives in one place:
 a directory on a volume, or a bucket on S3, Google Cloud Storage or Azure Blob.
@@ -17,19 +17,16 @@ a directory on a volume, or a bucket on S3, Google Cloud Storage or Azure Blob.
 ## Three things to know up front
 
 - **The store is the only state.** Artifacts, indexes, settings and keys all live in the one directory or
-  bucket. Back it up and you have backed up the repository; copy it and you have moved it. There is no database
-  to install, tune or migrate.
+  bucket. Back it up and you have backed up the repository; copy it and you have moved it; replicate it, and a
+  server started over the replica is a fail-over, or one more server to read from. There is no database to
+  install, tune or migrate.
 - **Artifacts stream through, never into memory.** An upload or a download is copied between the network and the
   store without being held whole, so a small POM and a multi-gigabyte image layer cost the server the same
   small, fixed amount of memory.
-- **Everything is a module.** Each format, storage backend, screening feed and console page is a Java module
-  that plugs into the server through a service interface, and the server assembles itself from whichever modules
-  it finds at startup. So a feature of your own is a module that implements that interface - a new package
-  format, a storage backend, a screening source - added to a composition of your own; and a feature you do not
-  want is left out of the composition, or switched off with a setting exactly as if it were absent. Adding or
-  removing one never means changing the rest, which is what keeps the repository manager easy to extend and to
-  maintain. [Compose a smaller server](/repository/from-source/#compose-a-smaller-server) shows how a composition
-  is built.
+- **Everything is a module.** Formats, storage backends, screening feeds and console pages are all modules
+  behind a service interface. A feature of your own is one more module beside them - added without a fork to
+  maintain, and without waiting on anyone else to change an integration for you. A feature you do not want is
+  simply left out. [Compose a smaller server](/repository/from-source/#compose-a-smaller-server) shows how.
 
 ## How this section is organised
 

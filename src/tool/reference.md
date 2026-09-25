@@ -252,7 +252,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 
 | Key (env fallback) | Default | Effect |
 | --- | --- | --- |
-| `jenesis.cache.uri` | *(none)* | Shared build cache: a `file://` or `http(s)://` URI (see *[Build performance &amp; isolation](/tool/build-performance-and-isolation/)*). Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.cache.uri` | *(none)* | Shared build cache: a `file://` or `http(s)://` URI (see *[Build performance &amp; isolation](/tool/build-performance-and-isolation/)*; [Jenesis Repository](/repository/build-cache/) is a reference cache server). Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.project.cache` | *(off)* | Project-local on-disk build cache (a path; empty enables `.jenesis/cache`). A project's own file names only a folder inside the project. |
 | `jenesis.cache.project` (`JENESIS_CACHE_PROJECT`) | *(unset)* | Project header sent to an HTTP cache. |
 | `jenesis.cache.key` (`JENESIS_CACHE_KEY`) | *(unset)* | Auth key sent to an HTTP cache. Command line or `~/.jenesis/jenesis.properties` only. |

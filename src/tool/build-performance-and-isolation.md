@@ -217,6 +217,9 @@ environment variables. `-Djenesis.cache.connect` and `-Djenesis.cache.read` set 
 durations (`PT1S` and `PT10S` by default). A non-URI value is rejected; use `file://` for an on-disk
 location.
 
+[Jenesis Repository](/repository/build-cache/) serves this protocol, and is the reference implementation of a
+cache server for it: projects, keys granted per project, and size limits, on the same server as your artifacts.
+
 The shared cache can be used two ways:
 
 - **As a replacement** - the shared cache only, no local tier. Fitting for an ephemeral CI runner whose disk is
