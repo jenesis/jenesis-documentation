@@ -6,9 +6,7 @@ description: The console's two navigation levels - the sections across the top a
 
 The console is where you look after a deployment: what its repositories hold, what the gate decided, who may do
 what, and how the server is configured. It runs inside the server, on the same port, so there is nothing else to
-start - open the server's address in a browser and sign in. Every console page lives under `/ui/`, and the
-server's bare address redirects there: signing in is `/ui/login`, and signing out posts to `/ui/logout`. An
-identity provider returns the browser to `/login/oauth2/code/github` or `/login/oauth2/code/oidc`, which is the
+start - open the server's address in a browser and sign in. An identity provider returns the browser to `/login/oauth2/code/github` or `/login/oauth2/code/oidc`, which is the
 callback address to register with it. This chapter shows how it is laid out, so the
 chapters that follow can say "open **Access → Credentials**" and you know where that is.
 
