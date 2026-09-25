@@ -309,7 +309,7 @@ Read by the `release` target - see *[Publishing](/tool/publishing/)*.
 
 | Key | Default | Effect |
 | --- | --- | --- |
-| `jenesis.release.uri` (`JENESIS_RELEASE_URI`) | *(unset)* | The Jenesis module repository `release` puts each staged module into, with one put of its jar at `module/<module>/<version>/<module>.jar`, so every module needs a version: the `https:` address of a `java` repository of a Jenesis Repository, the one `jenesis.module.uri` names. Unset, `release` puts nothing there. Its environment variable is not the one a build resolves through. |
+| `jenesis.release.uri` (`JENESIS_RELEASE_URI`) | *(unset)* | The Jenesis module repository `release` puts each staged module into, with one put of its jar at `module/<module>/<version>/<module>.jar`, so every module needs a version: the `https:` address of a `jenesis` repository of a Jenesis Repository, the one `jenesis.module.uri` names; a `java` repository takes Maven publishes only and refuses the put. Unset, `release` puts nothing there. Its environment variable is not the one a build resolves through. |
 | `jenesis.release.token` (`JENESIS_RELEASE_TOKEN`) | *(unset)* | `Authorization` header sent to that repository, as given. Command line, `~/.jenesis/jenesis.properties` or the environment only. It travels only to a `jenesis.release.uri` named in the environment, on the command line or there, never to one a project's own file named. Its environment variable is not the one sent to the resolving repositories. |
 | `jenesis.jreleaser.config` | *(discovered)* | The release-tool configuration file; must exist when named. |
 | `jenesis.jreleaser.dryRun` | `true` | Perform every local phase and skip every remote one; `false` publishes. |
