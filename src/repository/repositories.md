@@ -93,7 +93,7 @@ from the moment it is created. A repository that holds files but no type - one k
 types - is listed with a **no format** badge and answers nothing until an editor gives it one with **Give
 format**.
 
-Below them, under **Limits**, are two tenant-wide limits:
+Below them, under **Limits**, are two limits that apply to all repositories together:
 
 - **Storage quota** - the most the deployment may store, across every repository, in bytes; a publish that
   would exceed it is refused. `0` means no limit, and the page shows how much is stored now.
