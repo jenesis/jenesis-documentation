@@ -31,11 +31,11 @@ imported, skipped, held for review and rejected, refreshing while one runs. A jo
 **Resume from cursor**, which continues from its last checkpoint rather than starting over; **Dismiss** removes a
 finished job from the list, and finished jobs are dismissed on their own after seven days.
 
-The same import can be started from a script with a `POST` to the repository's `admin/import` path -
-`/repository/<tenant>/<repository>/admin/import` - and a key that may write to the repository:
+The same import can be started from a script with a `POST` to `/api/repository/import`, naming the repository in
+`?repo=`, and a key that may write to the repository:
 
 ```bash
-curl -X POST https://repo.example.com/repository/default/releases/admin/import \
+curl -X POST 'https://repo.example.com/api/repository/import?repo=releases' \
   -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
   -d '{
         "source": "nexus",
@@ -60,7 +60,7 @@ The request fields, which match the form:
 | `resume` | no | The id of an earlier job. The walk continues under that same id, from its recorded position. |
 
 The other connectors report a format per asset, so they take none. Only `POST` starts a job; any other
-method on `admin/import` answers `405`, and an import into a repository that holds no type answers `400`. A
+method on `/api/repository/import` answers `405`, and an import into a repository that holds no type answers `400`. A
 deployment in read-only mode refuses imports with `403`.
 
 <div class="warning">
@@ -78,7 +78,7 @@ The job writes its state into the store, so it survives a restart and any node c
 with the id the `POST` returned:
 
 ```bash
-curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/default/releases/admin/import/a1b2c3…
+curl -H "Jenesis-Repository-Key: $KEY" 'https://repo.example.com/api/repository/import/a1b2c3…?repo=releases'
 ```
 
 ```json
