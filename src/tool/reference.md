@@ -49,6 +49,7 @@ property). The top-level targets the shipped layouts register:
 | `stage` | Materialise the release tree under `target/stage/…` (see *[Publishing](/tool/publishing/)*). |
 | `export` | Publish the staged tree - into the local Maven repository (`~/.m2`), the local module repository (`~/.jenesis`), or both, depending on the layout. |
 | `release` | Hand the staged tree to a configured release tool; a dry run unless told otherwise (see *[Publishing](/tool/publishing/)*). |
+| `plugin/<name>` | Run a plugin the project names under the hook point `plugin`, which runs only when named (see *[Extending the build](/tool/extending-the-build/#plugins-for-the-whole-project)*). |
 | `pin` | Rewrite every `pom.xml` / `module-info.java` so the transitive closure is pinned at source (see *[Pinning &amp; bills of materials](/tool/pinning/)*). |
 | `dependencies` | Print each module's resolved dependency graph with licences. |
 | `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata at the project root. |
@@ -215,7 +216,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.pin.retain` | `groups` | Which lines a refresh keeps although it did not write them: `groups` those of a group the run resolved nothing in, `all` every one (a project built in more than one layout), `none` none. |
 | `jenesis.platform.<token>` | *(detected)* | Add (`=true`) or remove (`=false`) a platform token used to select guarded pins. |
 | `jenesis.plugin.<name>` | `true` | `false` leaves out the plugin `<name>` that `jenesis.plugins.properties` names (see *[Extending the build](/tool/extending-the-build/#adding-plugins-to-the-stock-build)*). |
-| `jenesis.project.plugins` | `true` | `false` leaves out every plugin that `jenesis.plugins.properties` names, while `pin` still pins those of `postprocess` (see *[Extending the build](/tool/extending-the-build/#pinning-them)*). |
+| `jenesis.project.plugins` | `true` | `false` leaves out every plugin that `jenesis.plugins.properties` names, while `pin` still pins those of the whole project (see *[Extending the build](/tool/extending-the-build/#pinning-them)*). |
 | `jenesis.project.digest` | `SHA-256` | Digest algorithm the `pin` step uses to checksum artifacts. |
 | `jenesis.openpgp.command` | `gpgv` | Binary forked to verify detached OpenPGP signatures. A name is looked up on the `PATH`; a value containing a separator is used as a path. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.openpgp.expiry` | `signing` | What an expired signing key means: `ignored` accepts it whenever it signed, `signing` accepts what it signed before it expired, `current` always rejects it. |
@@ -372,8 +373,13 @@ Wired by keys in `packaging.properties` - see *[Packaging](/tool/packaging/)*.
 
 The `build`, `stage`, `export`, `release`, and `pin` modules are the top-level targets in the table above;
 each layout wires the `maven` and/or `modular` staging and export sub-steps under them. When a project names
-plugins of `postprocess`, `build` also holds `postprocess/transform/<name>` and `postprocess/inspect/<name>`, which run over
-every module after it is built (see *[Extending the build](/tool/extending-the-build/#transforming-and-inspecting-what-the-build-produced)*).
+plugins of the whole project, `build` also holds `preprocess/custom/<name>`, which runs before any module is built,
+and `postprocess/transform/<name>` and `postprocess/inspect/<name>`, which run over every module after it is built,
+while `stage` holds `transform/<name>` and `inspect/<name>` - with the stock staging then in `staged/<tree>` and
+each `stage/<tree>` merging it with what the transforms of stage added - `export` and `release` hold
+`custom/<name>` beside their own steps, and the top-level `plugin` holds a plugin of the hook point `plugin` as
+`plugin/<name>`, run only when named; `stage/project` holds what the transforms placed in the project (see *[Extending the
+build](/tool/extending-the-build/#plugins-for-the-whole-project)*).
 
 ## Source declarations
 
