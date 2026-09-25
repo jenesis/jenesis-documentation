@@ -26,6 +26,17 @@ A whole invocation can live in a file: `jpx @run.args` stands for the arguments 
 per line, with `#` a comment to the end of a line, quotes holding what would otherwise split, and `@@<text>`
 an argument that begins with an `@`. A file names no further file.
 
+The `jpx` command reads the `jenesis.*` settings - the repositories, the toolchain search path, a plaintext
+repository allowed with `jenesis.repository.insecure` - as options of the JVM it starts, which it takes from
+`JAVA_OPTS`:
+
+```bash
+JAVA_OPTS="-Djenesis.module.uri=https://repo.example.com/repository/releases/<repo>/" jpx org.example.tool
+```
+
+A `-D` given after `jpx` is read as the target rather than as a setting, and `~/.jenesis/jenesis.properties`
+is not read.
+
 `--modular` is covered under [Choosing a target](/jpx/targets/); `--docker` and `--hash` under
 [Isolation & verification](/jpx/isolation-and-verification/); `--pin` under
 [Using jpx from Java](/jpx/programmatic/), whose `pinned` and `command` calls it prints.
