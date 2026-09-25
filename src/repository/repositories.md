@@ -112,17 +112,26 @@ in [Screening what comes in](/repository/screening/).
 ## Staging
 
 A staging upload holds a set of files back from the repository until you decide. A client publishes under a
-staging id of its choosing - `staging/<id>/` after the repository's URL, then the path it would otherwise
-publish to - instead of straight to the release path:
+staging id of its choosing - to `/staging/<tenant>/<repository>/<id>/` followed by the path it would otherwise
+publish to within the repository - instead of straight to the release path:
 
 ```bash
 curl -H "Jenesis-Repository-Key: $KEY" -T app-1.0.jar \
-  http://localhost:8080/repository/default/releases/staging/rc1/maven/com/example/app/1.0/app-1.0.jar
+  http://localhost:8080/staging/default/releases/rc1/maven/com/example/app/1.0/app-1.0.jar
 ```
 
 Nothing staged is resolvable. **Staging** lists the open ids with how many files each holds, and each has two
 buttons: **promote** publishes everything staged under the id as one release, and **drop** discards it. Both need
 the editor role, and a dropped id is gone for good.
+
+A script does the same through the repository's operations, which name the repository in `?repo=` and take a key
+that may read it (to list) or write to it (to promote or drop):
+
+```bash
+curl -H "Jenesis-Repository-Key: $KEY" 'http://localhost:8080/api/repository/staging?repo=releases'
+curl -X POST -H "Jenesis-Repository-Key: $KEY" \
+  'http://localhost:8080/api/repository/staging/rc1/promote?repo=releases'
+```
 
 ## Import
 
