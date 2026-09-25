@@ -31,9 +31,9 @@ by the module-info version the publisher embedded. Pick the route that matches t
 
 The `<file>` segment is required and its name must start with the module name; everything after that is the
 extension, either after a `.` or after `-<classifier>.`. `/artifact/` passes any extension through, while the
-other three accept **`.jar`, optionally followed by `.asc`** for the detached signature - which follows the
-`-sources` / `-javadoc` decoration, so the signature served is the one over that jar. For a checksum sidecar,
-use `/artifact/`.
+other three accept **`.jar`, optionally followed by `.asc`** for the detached OpenPGP signature **or by
+`.sigstore.json`** for the Sigstore bundle - which follows the `-sources` / `-javadoc` decoration, so the
+signature served is the one over that jar. For a checksum sidecar, use `/artifact/`.
 
 <div class="note">
   Only a <strong>named</strong> module - one shipping a real <code>module-info.class</code> - is reachable
@@ -111,8 +111,9 @@ names and is not a client of this route.
 
 ## `module`, `sources`, and `documentation` routes
 
-These three are keyed by the module-info version, serve named modules only, and accept `.jar` or
-`.jar.asc`. They map to the main jar, the sources jar, and the javadoc jar of the same artifact:
+These three are keyed by the module-info version, serve named modules only, and accept `.jar`,
+`.jar.asc` or `.jar.sigstore.json`. They map to the main jar, the sources jar, and the javadoc jar of the
+same artifact:
 
 ```
 GET /module/org.slf4j/2.0.9/org.slf4j.jar
@@ -126,7 +127,13 @@ GET /documentation/org.slf4j/2.0.9/org.slf4j.jar
 
 GET /module/org.slf4j/2.0.9/org.slf4j.jar.asc
 → 302 …/org/slf4j/slf4j-api/2.0.9/slf4j-api-2.0.9.jar.asc
+
+GET /module/net.bytebuddy/1.18.14/net.bytebuddy.jar.sigstore.json
+→ 302 …/net/bytebuddy/byte-buddy/1.18.14/byte-buddy-1.18.14.jar.sigstore.json
 ```
+
+Few publishers upload a Sigstore bundle yet, and the service redirects without checking that one exists, so
+a request for a bundle the release lacks follows the redirect to a 404.
 
 A named release whose declared module-info version differs from its Maven version is left out of these
 routes, because the service promises that the two agree (see the guarantee below). Such a release remains
