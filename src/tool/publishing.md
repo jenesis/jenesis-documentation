@@ -1,7 +1,7 @@
 ---
 order: 14
 title: Publishing
-description: Publishing locally with export, staging a correct release bundle with the metadata a repository demands, publishing a bill of materials, and driving a release tool from the build.
+description: Publishing locally with export, staging a correct release bundle with the metadata a repository demands, publishing a bill of materials, releasing into a Jenesis module repository, and driving a release tool from the build.
 ---
 
 A build ends at artifacts under `target/`. **Publishing** is what makes them available to somebody else: the
@@ -209,9 +209,47 @@ detached signature made afterwards covers the signed bytes.
 
 {% demos 61 %}
 
+## Releasing into a Jenesis module repository
+
+One destination the tool publishes to by itself: a Jenesis module repository, the layout a modular build
+resolves module names from. `export` reaches one machine; once `jenesis.release.uri` names a repository,
+`release` puts each staged module there as its `release/jenesis` step, for every machine that resolves
+from it. A `java` repository of a [Jenesis Repository](/repository/) serves that layout, at the same address a build
+names in `jenesis.module.uri`:
+
+```bash
+java -Djenesis.project.version=1.0.0 \
+     -Djenesis.release.uri=https://repo.example.com/repository/releases/<repo>/ \
+     -Djenesis.release.token=<key> \
+     build/jenesis/Make.java release
+```
+
+Each module is put once: its jar, under its version, at `module/<module>/<version>/<module>.jar` below that
+address. What is staged beside the jar, such as the `-sources.jar` or the POM, stays in the staged tree. A project
+whose `jenesis.module.uri` names the same address then resolves the module by its name at that version.
+`release` does this in the `modular` and `modular_to_maven` layouts, and
+refuses to run in the `maven` layout, which stages no modular tree.
+
+A release needs a version: a module staged without one, as when `jenesis.project.version` is not set, fails
+the release before anything is put into the repository, and so does a module staged at more than one
+version.
+
+The key is sent as the `Authorization` header, exactly as given. Where the settings are not given, a release
+reads the `JENESIS_RELEASE_URI` and `JENESIS_RELEASE_TOKEN` environment variables - never the variables naming
+the repositories a build resolves from, so a CI job keeps its release key apart from the key it reads with.
+The key is a credential: only the command line, `~/.jenesis/jenesis.properties` or the environment may name it,
+and it is never sent to a repository that a file of the project named, so a project that names its own release
+address in `jenesis.properties` releases without a key. A plaintext `http:` address is refused unless
+`-Djenesis.repository.insecure=true` allows it.
+
+A project that publishes to Maven does not need this step to reach module consumers: a `java` repository of a
+Jenesis Repository also makes a module available from a Maven publish. A modular jar deployed to its Maven
+layout, by JReleaser, `mvn deploy` or any other tool, is served by its module name as well.
+
 ## The last mile: signing and uploading
 
-The remote upload and GPG signing are not Jenesis's job. Point **[JReleaser](https://jreleaser.org/)** at
+For Maven Central, and for every other publication beyond a Jenesis module repository, the remote upload and
+GPG signing are not Jenesis's job. Point **[JReleaser](https://jreleaser.org/)** at
 `target/stage/maven/output/` and it signs every artifact and uploads the bundle to Central. Jenesis stops at
 the unsigned, validated bundle, so credentials and signing keys never enter the build.
 
