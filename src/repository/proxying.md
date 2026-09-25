@@ -20,9 +20,13 @@ and the URL it fetches its misses from, and save.
 | `pypi` | `https://pypi.org/` |
 | `oci` | `https://registry-1.docker.io/` |
 
-From then on a Maven build pointed at `/repository/maven/` resolves everything on Maven Central as well as what
-you published, and `docker pull repo.example.com/library/debian` fetches the image through your server. The same
-setting can be given in the environment, as `JENREG_PROXY_MAVEN=https://repo1.maven.org/maven2/`.
+From then on every repository holding that format fetches its misses from the upstream: a Maven build pointed at
+a Maven repository named `releases` - `/repository/default/releases/maven/` - resolves everything on Maven Central
+as well as what you published, and with an `oci` repository named `images`,
+`docker pull repo.example.com/default/images/library/debian` fetches the image through your server - the tenant
+and the repository lead the image's name, and the rest is its name upstream. The repository has to exist first; a
+request to one that was never created is answered `404`, upstream or not. The same setting can be given in the
+environment, as `JENREG_PROXY_MAVEN=https://repo1.maven.org/maven2/`.
 
 ## Signed packages from upstream
 
@@ -45,8 +49,9 @@ releases it.
 ## Repository definitions
 
 A **definition** says what a repository is made of, and is where more than one upstream, or a mix of hosted and
-fetched content, is described. Definitions are edited under **Settings → Settings → Repository definitions**, a
-name and a definition each:
+fetched content, is described. It describes a repository rather than creating one: the repository is created with
+its type as [Repositories](/repository/repositories/) describes, and the definition then routes what it serves.
+Definitions are edited under **Settings → Settings → Repository definitions**, a name and a definition each:
 
 | Definition | The repository |
 | --- | --- |

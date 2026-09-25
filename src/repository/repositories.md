@@ -4,31 +4,55 @@ title: Repositories
 description: What a repository is, the Repositories page, and the pages inside one - its overview, browsing and searching what it holds, staging a release, and importing from elsewhere.
 ---
 
-A repository is a named space of artifacts. It holds every format at once - a Maven jar, an npm package and a
-container image can sit side by side in one repository - and it is the thing the **Repositories** section of
-the console is about. This chapter covers the section and the **Contents** pages inside a repository; the
-screening and lifecycle pages have chapters of their own.
+A repository is a named space of artifacts of one **type**: a format such as `maven`, `npm`, `pypi` or `oci`, or
+a combined type that holds several formats together, such as `java` - Maven and the Jenesis module layout in one.
+It is the thing the **Repositories** section of the console is about. This chapter covers the section and the
+**Contents** pages inside a repository; the screening and lifecycle pages have chapters of their own.
 
-## The repository your clients reach
+## How a repository comes into being
 
-Every client URL under `/repository/` reaches the deployment's repository - `releases`, unless
-`JENREG_DEFAULT_REPOSITORY` names another. A Maven client at `/repository/maven/`, npm at `/repository/npm/`
-and pip at `/repository/pypi/simple/` all read and write that one repository, each through its own format. It
-exists from the start and is listed on the **Repositories** page.
+A repository is **created**, with its type, before anything is published into it or resolved from it - under
+**Repositories → New repository**, or with a `PUT` of its URL naming the type:
 
-Any other repository is **created** before anything is published into it - under **Repositories → New
-repository**, or by defining it. A publish into a repository that was never created is refused with `404`, so a
-misspelled name in a build's configuration fails rather than becoming a repository; switch
-`create-repository-on-publish` on under **Settings → Settings** to let a publish create the repository it names.
+```bash
+curl -X PUT -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
+  -d '{"value":"npm"}' https://repo.example.com/repository/default/npm
+```
 
-Other repositories exist to feed that one. A repository can be **defined** to fetch what it does not hold from
-an upstream registry, or to group several others behind one name - which is how a single client URL serves both
-your own packages and Maven Central. [Proxying upstreams](/repository/proxying/) shows how.
+The answer is `201` when the repository is created and `200` when it already holds that type. A repository that
+holds `maven` may be created again as `java`, which holds everything `maven` does, and becomes one - every URL it
+answered still answers. Any other change of type is refused with `409`, since what is stored there would stop
+answering, and a type the deployment does not offer is refused with `400` and the list of those it does. Creating a
+repository is administration: the key needs `manage:write`, which the **admin** role grants, and in the console it
+takes the editor role.
+
+Nothing else creates a repository. A request to one that was never created is answered `404`, and a publish into
+one is refused with `404` and a sentence saying so - so a misspelled name in a build's configuration fails rather
+than becoming a repository. A repository whose format has been switched off answers `404` the same way until the
+format is back.
+
+## The URL a client reaches
+
+Every URL names the tenant first and the repository second: `/repository/<tenant>/<repository>/…`, or
+`/v2/<tenant>/<repository>/<image>` for container images. A deployment serves one tenant - `default`, unless
+`JENREG_DEFAULT_TENANT` names another - and answers `404` for a URL that names any other.
+
+A repository of one format leaves that format's name out of its URLs: an `npm` repository named `npm` is the
+registry `/repository/default/npm/`, and a `pypi` one named `python` is installed from
+`/repository/default/python/simple/`. Maven and the Jenesis module layout keep theirs - a Maven repository named
+`releases` answers at `/repository/default/releases/maven/`, and a `java` repository at both `…/maven/` and
+`…/module/` - which is what lets the two share one repository. [Connecting your build
+tools](/repository/formats/) gives the URL for every client.
+
+A repository can also be **defined** to fetch what it does not hold from an upstream registry, or to group
+several others behind one name - which is how a single client URL serves both your own packages and Maven
+Central. A definition describes a repository; it does not create one. [Proxying upstreams](/repository/proxying/)
+shows how.
 
 ## The Repositories page
 
-**Repositories → All repositories** lists the repositories that hold something, each with the marks of the
-formats stored in it and badges that describe its shape:
+**Repositories → All repositories** lists the tenant's repositories, each with the mark of the type it holds, the
+type's name, and badges that describe its shape:
 
 | Badge | Meaning |
 | --- | --- |
@@ -40,9 +64,11 @@ formats stored in it and badges that describe its shape:
 A definition that is valid but risky - an upstream over plain HTTP, a fallback that skips screening - is listed
 under **Definition warnings** at the top, so it is seen rather than discovered.
 
-**New repository** creates an empty repository by name - letters, digits, hyphens and underscores. On this
-deployment only the repository clients reach answers by URL; one created beside it serves as a member of a group
-or a fallback, and the page says so when it is created.
+**New repository** creates one: a name - letters, digits, hyphens and underscores - and a type from those the
+deployment offers. It answers at `/repository/<tenant>/<name>/`, or `/v2/<tenant>/<name>/` for container images,
+from the moment it is created. A repository that holds files but no type - one kept from before repositories had
+types - is listed with a **no format** badge and answers nothing until an editor gives it one with **Give
+format**.
 
 Beside it, below the list, are two tenant-wide limits:
 
@@ -69,8 +95,8 @@ Opening a repository lands on its **Overview**: what it is and what it published
 
 ## Browse & search
 
-**Browse & search** walks the repository as its clients see it: the request paths artifacts are published
-under - `maven/com/example/…`, `npm/…`, `raw/…` - rather than how they are stored underneath.
+**Browse & search** walks the paths the repository's format lays its artifacts out under - `maven/com/example/…`
+in a Maven repository, `npm/…` in an npm one - rather than how they are stored underneath.
 
 - A folder opens in place with the arrow beside it, one level at a time, so a large repository browses as
   quickly as a small one. A folder with a very large number of children is cut short with a notice that says so.
@@ -86,11 +112,12 @@ in [Screening what comes in](/repository/screening/).
 ## Staging
 
 A staging upload holds a set of files back from the repository until you decide. A client publishes under a
-staging id of its choosing instead of straight to the release path:
+staging id of its choosing - `staging/<id>/` after the repository's URL, then the path it would otherwise
+publish to - instead of straight to the release path:
 
 ```bash
 curl -H "Jenesis-Repository-Key: $KEY" -T app-1.0.jar \
-  http://localhost:8080/repository/releases/staging/rc1/maven/com/example/app/1.0/app-1.0.jar
+  http://localhost:8080/repository/default/releases/staging/rc1/maven/com/example/app/1.0/app-1.0.jar
 ```
 
 Nothing staged is resolvable. **Staging** lists the open ids with how many files each holds, and each has two
