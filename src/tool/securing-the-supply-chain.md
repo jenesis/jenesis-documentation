@@ -332,6 +332,40 @@ exception, so an identity is an additional answer where one exists rather than a
 
 {% demos 28 %}
 
+## Modules resolved by name
+
+In the `modular` layout a dependency is a module the module repository resolves by its name - the Jenesis
+Module Index unless `jenesis.module.uri` names another - rather than a Maven coordinate, and a declaration names
+it the same way:
+
+```java
+/**
+ * @jenesis.pin org.assertj.core 3.27.0
+ * @jenesis.signature OpenPGP/BE685132AFD2740D9095F9040CC0B712FEE75827 org.assertj.core
+ */
+```
+
+The signature is fetched from the module repository beside the jar, as `<module>.jar.asc` for a key and
+`<module>.jar.sigstore.json` for an identity, below the module's version. The module index answers with the
+file Maven Central publishes beside the artifact the module comes from, so both forms work wherever the
+publisher uploaded them, and an identity is declared as above:
+
+```java
+/**
+ * @jenesis.pin net.bytebuddy 1.18.14
+ * @jenesis.signature Sigstore/github.com/raphw/byte-buddy net.bytebuddy
+ */
+```
+
+```
+[VERIFIED]  main/module/net.bytebuddy 1.18.14 Sigstore/github.com/raphw/byte-buddy as https://github.com/raphw/byte-buddy/.github/workflows/main.yml@refs/heads/master, recorded 2026-09-14T22:00:31Z
+```
+
+Two things differ from a Maven coordinate. A token ending in `/*` names a groupId, so it never covers a
+module: each module a key or an identity signs is listed by its name. And the module layout carries no POM, so
+the jar's signature is the only one checked. The `modular_to_maven` layout resolves a module through its Maven
+coordinate, and its declarations take the Maven form shown above.
+
 ## The one build a pin cannot protect
 
 A pinned project is easy to reason about: the pins sit in your own sources, reviewed like any other change,
