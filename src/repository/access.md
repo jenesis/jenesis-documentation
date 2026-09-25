@@ -91,8 +91,9 @@ Three roles are built in, and the **Roles** section adds your own as a name and 
 | **deploy** | the above, and `repository:write`, `cache:write` |
 | **admin** | everything |
 
-The repository rights publish and resolve; they administer nothing. Everything else the API does - settings,
-keys, groups, tenants, retention runs, walks - takes `manage:read` or `manage:write` over `*`, and the parts that
+The repository rights publish and resolve, and run the operations on one repository - its cleanup, retention,
+pins, imports and staged releases. Everything else the API does - settings, keys, groups, tenants, walks - takes
+`manage:read` or `manage:write` over `*`, and the parts that
 concern the whole deployment rather than one tenant (its settings, upstreams, logs and tenants) also a key of the
 operator tenant: the default tenant, unless `JENREG_OPERATOR_TENANT` names another. So a **deploy** key in a CI
 job can publish into every repository and still cannot change how the deployment is run.
