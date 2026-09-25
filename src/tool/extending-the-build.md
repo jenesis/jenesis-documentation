@@ -24,7 +24,8 @@ greeting+binary/generated=./plugin
 signing+artifact=demo.signing
 ```
 
-The key is `<name>+<hook point>`. The **name** is the plugin's own, and holds neither `/` nor `+`. The **hook
+The key is `<name>+<hook point>`. The **name** is the plugin's own, holds neither `/` nor `+`, and serves one
+hook point only: the plugin's configuration file, pins and setting are named after it. The **hook
 point** says where in the build the plugin joins, as the next section describes; a key without `+<hook point>`
 adds the plugin to the module build itself, and an unknown hook point is refused. The value says where the
 plugin comes from:
