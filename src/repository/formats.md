@@ -30,120 +30,67 @@ send the credentials they hold. A key that lacks the right is answered `403`.
 
 ## The clients
 
-Each client below is listed with the repository type it needs, the address to point it at, and where its key goes.
+Each client needs a repository of its type and is pointed at an address inside it. The addresses start with the
+repository's own URL, written `$REPO` below:
+
+```bash
+REPO=https://repo.example.com/repository/default/<repo>
+```
 
 ### Java and the JVM
 
-**Maven** · type `maven` or `java`\
-URL: `https://repo.example.com/repository/default/<repo>/maven/`\
-Key: a `settings.xml` server entry, the key as password
-
-**Gradle, Maven layout** · type `maven` or `java`\
-URL: `https://repo.example.com/repository/default/<repo>/maven/`\
-Key: `credentials { password = key }`
-
-**Gradle, Ivy layout** · type `ivy`\
-URL: `https://repo.example.com/repository/default/<repo>/`\
-Key: `credentials { password = key }`
-
-**Jenesis modules** · type `jenesis` or `java`\
-URL: `-Djenesis.module.uri=https://repo.example.com/repository/default/<repo>/`\
-Key: `-Djenesis.module.token=$KEY`
+| Client | Type | Point it at | Key |
+| --- | --- | --- | --- |
+| Maven | `maven`, `java` | `$REPO/maven/` | a `settings.xml` server entry, the key as password |
+| Gradle, Maven layout | `maven`, `java` | `$REPO/maven/` | `credentials { password = key }` |
+| Gradle, Ivy layout | `ivy` | `$REPO/` | `credentials { password = key }` |
+| Jenesis modules | `jenesis`, `java` | `jenesis.module.uri=$REPO/` | `jenesis.module.token=$KEY` |
 
 ### Language package managers
 
-**npm** · type `npm`\
-URL: `https://repo.example.com/repository/default/<repo>/`\
-Key: `_authToken` in `.npmrc`
-
-**PyPI** · type `pypi`\
-Upload: `https://repo.example.com/repository/default/<repo>/`\
-Install: `https://repo.example.com/repository/default/<repo>/simple/`\
-Key: twine `-u __token__ -p $KEY`; pip `https://__token__:$KEY@…`
-
-**Go** · type `go`\
-URL: `GOPROXY=https://jenesis:$KEY@repo.example.com/repository/default/<repo>`\
-Key: in the URL
-
-**Cargo** · type `cargo`\
-URL: `sparse+https://repo.example.com/repository/default/<repo>/<name>/`\
-Key: a token in `credentials.toml`
-
-**NuGet** · type `nuget`\
-URL: `https://repo.example.com/repository/default/<repo>/v3/index.json`\
-Key: the key as API key to push; `nuget.config` credentials to restore
-
-**RubyGems** · type `rubygems`\
-URL: `https://repo.example.com/repository/default/<repo>`\
-Key: `GEM_HOST_API_KEY` to push; the key as password in the source URL to install
-
-**Composer** · type `composer`\
-URL: `https://repo.example.com/repository/default/<repo>/<name>`\
-Key: `http-basic` in `auth.json`
-
-**Swift** · type `swift`\
-URL: `https://repo.example.com/repository/default/<repo>/<name>`\
-Key: `registries.json` plus `~/.netrc`
-
-**CocoaPods** · type `cocoapods`\
-URL: `https://repo.example.com/repository/default/<repo>/<name>`\
-Key: `~/.netrc`
+| Client | Type | Point it at | Key |
+| --- | --- | --- | --- |
+| npm | `npm` | `$REPO/` | `_authToken` in `.npmrc` |
+| PyPI | `pypi` | upload to `$REPO/`, install from `$REPO/simple/` | twine `-u __token__ -p $KEY`; pip `https://__token__:$KEY@…` |
+| Go | `go` | `GOPROXY=$REPO` | in the URL: `https://jenesis:$KEY@repo.example.com/…` |
+| Cargo | `cargo` | `sparse+$REPO/<name>/` | a token in `credentials.toml` |
+| NuGet | `nuget` | `$REPO/v3/index.json` | the key as API key to push; `nuget.config` credentials to restore |
+| RubyGems | `rubygems` | `$REPO` | `GEM_HOST_API_KEY` to push; the key as password in the source URL to install |
+| Composer | `composer` | `$REPO/<name>` | `http-basic` in `auth.json` |
+| Swift | `swift` | `$REPO/<name>` | `registries.json` plus `~/.netrc` |
+| CocoaPods | `cocoapods` | `$REPO/<name>` | `~/.netrc` |
 
 ### Native code, data and models
 
-**Conan** · type `conan`\
-URL: `https://repo.example.com/repository/default/<repo>/<name>`\
-Key: `conan remote login`, the key as password
-
-**Conda** · type `conda`\
-URL: `https://repo.example.com/repository/default/<repo>/<channel>`\
-Key: the key as password in the channel URL
-
-**Hugging Face** · type `huggingface`\
-URL: `HF_ENDPOINT=https://repo.example.com/repository/default/<repo>/hf`\
-Key: `HF_TOKEN=$KEY`
+| Client | Type | Point it at | Key |
+| --- | --- | --- | --- |
+| Conan | `conan` | `$REPO/<name>` | `conan remote login`, the key as password |
+| Conda | `conda` | `$REPO/<channel>` | the key as password in the channel URL |
+| Hugging Face | `huggingface` | `HF_ENDPOINT=$REPO/hf` | `HF_TOKEN=$KEY` |
 
 ### Operating-system packages
 
-**Debian** · type `debian`\
-URL: `https://repo.example.com/repository/default/<repo>`\
-Key: apt `auth.conf`
-
-**RPM** · type `rpm`\
-URL: `https://repo.example.com/repository/default/<repo>/<name>`\
-Key: `password=` in the `.repo` file
-
-**Alpine** · type `apk`\
-URL: `https://repo.example.com/repository/default/<repo>/<name>`\
-Key: in the repository URL
-
-**Homebrew bottles** · type `homebrew`\
-URL: `HOMEBREW_BOTTLE_DOMAIN=https://repo.example.com/repository/default/<repo>/<name>`\
-Key: a bearer token
-
-**winget** · type `winget`\
-URL: `https://repo.example.com/repository/default/<repo>/<name>`, as a `Microsoft.Rest` source\
-Key: a bearer token
+| Client | Type | Point it at | Key |
+| --- | --- | --- | --- |
+| Debian | `debian` | `$REPO` | apt `auth.conf` |
+| RPM | `rpm` | `$REPO/<name>` | `password=` in the `.repo` file |
+| Alpine | `apk` | `$REPO/<name>` | in the repository URL |
+| Homebrew bottles | `homebrew` | `HOMEBREW_BOTTLE_DOMAIN=$REPO/<name>` | a bearer token |
+| winget | `winget` | `$REPO/<name>` as a `Microsoft.Rest` source | a bearer token |
 
 ### Containers and infrastructure
 
-**Containers** · type `oci`\
-Image: `repo.example.com/default/<repo>/<image>` - the registry answers at `/v2/`\
-Key: `docker login`, the key as password
-
-**Helm** · type `helm`\
-URL: `https://repo.example.com/repository/default/<repo>/<name>`\
-Key: `helm repo add … --username jenesis --password $KEY`
-
-**Terraform and OpenTofu** · type `terraform`\
-URL: `https://repo.example.com/repository/default/<repo>/<name>`\
-Key: a `credentials` block in the CLI configuration
+| Client | Type | Point it at | Key |
+| --- | --- | --- | --- |
+| Containers | `oci` | `repo.example.com/default/<repo>/<image>` - the registry answers at `/v2/` | `docker login`, the key as password |
+| Helm | `helm` | `$REPO/<name>` | `helm repo add … --username jenesis --password $KEY` |
+| Terraform, OpenTofu | `terraform` | `$REPO/<name>` | a `credentials` block in the CLI configuration |
 
 ### Anything else
 
-**Raw files** · type `raw`\
-URL: `https://repo.example.com/repository/default/<repo>/<path>`\
-Key: any of the three forms
+| Client | Type | Point it at | Key |
+| --- | --- | --- | --- |
+| Raw files | `raw` | `$REPO/<path>` | any of the three forms |
 
 Where a URL carries `<name>`, the format keeps separate spaces inside the one repository - a Cargo registry, a
 Helm chart repository, a Conda channel, a Swift registry - and the name is yours to choose. Publishing under a new

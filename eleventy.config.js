@@ -18,6 +18,19 @@ export default function (eleventy) {
   // copy-link affordance in anchor.js has something to copy. A heading that already carries a hand-written
   // anchor (`## <span id="...">`) keeps only that one: those ids are published link targets, they do not
   // always match the wording, and a second id on the heading would duplicate them.
+  // Inline code offers a line break after the characters a path, a URL or a dotted key is built from - `/`, `.`,
+  // `=`, `?`, `&` and `_` - so a long one wraps at a seam rather than mid-word, and a table holding one can fit its
+  // column without breaking anything anywhere. A <wbr> is invisible and is not copied with the text.
+  eleventy.amendLibrary("md", (markdown) => {
+    const escape = markdown.utils.escapeHtml;
+    markdown.renderer.rules.code_inline = (tokens, index, options, env, self) => {
+      const token = tokens[index];
+      const content = Array.from(token.content, (character) =>
+        escape(character) + ("/.=?&_".includes(character) ? "<wbr>" : "")).join("");
+      return `<code${self.renderAttrs(token)}>${content}</code>`;
+    };
+  });
+
   eleventy.amendLibrary("md", (markdown) => {
     markdown.core.ruler.push("headingIds", (state) => {
       const taken = new Set();

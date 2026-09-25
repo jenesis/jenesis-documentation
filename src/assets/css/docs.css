@@ -203,7 +203,9 @@ body { --pico-line-height: 1.6; }
 }
 /* A long URL or setting in running text breaks where it must rather than pushing the page sideways. */
 .docs-content :not(pre) > code { font-size: 0.9em; overflow-wrap: anywhere; }
-/* In a table the column widths come from the cells, so a key stays whole and the prose beside it wraps instead. */
+/* A table cell breaks inline code only at the seams the site marks with <wbr> (after `/`, `.`, `=`, `?`, `&` and
+   `_`), never mid-word, so a key or a value is never split. A bare URL in the prose may still break anywhere. */
+.docs-content td { overflow-wrap: anywhere; }
 .docs-content td code { overflow-wrap: normal; }
 .docs-content table { display: block; overflow-x: auto; }
 
