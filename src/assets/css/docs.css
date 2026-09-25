@@ -29,7 +29,6 @@
   --docs-demo-bg: #ece5f7;
   --docs-demo-fg: #4b2a7a;
 
-  --docs-measure: 46rem;              /* readable line length for prose */
   --docs-sidebar-width: 16rem;
   --docs-header-height: 3.5rem;
 }
@@ -188,7 +187,9 @@ body { --pico-line-height: 1.6; }
 .docs-menu a[aria-current] { color: var(--pico-primary); font-weight: 600; }
 
 .docs-content { padding: var(--app-space-5) 0 var(--app-space-6); min-width: 0; }
-.docs-content article { max-width: var(--docs-measure); }
+/* The chapter fills its column, so its right edge lines up with the header's as the menu's left edge lines up
+   with the logo, and a wide table or code sample gets the room the page has. */
+.docs-content article { max-width: none; }
 .docs-content h1 { font-size: var(--app-font-size-2xl); margin-bottom: var(--app-space-5); }
 .docs-content h2 {
   font-size: var(--app-font-size-xl); margin-top: var(--app-space-6); margin-bottom: var(--app-space-3);
@@ -202,6 +203,8 @@ body { --pico-line-height: 1.6; }
 }
 /* A long URL or setting in running text breaks where it must rather than pushing the page sideways. */
 .docs-content :not(pre) > code { font-size: 0.9em; overflow-wrap: anywhere; }
+/* In a table the column widths come from the cells, so a key stays whole and the prose beside it wraps instead. */
+.docs-content td code { overflow-wrap: normal; }
 .docs-content table { display: block; overflow-x: auto; }
 
 /* Section links: a chapter heading copies a link to itself (anchor.js). The marker stays in the layout at
@@ -280,7 +283,7 @@ body { --pico-line-height: 1.6; }
 .docs-pager {
   display: flex; justify-content: space-between; gap: var(--app-space-4);
   margin-top: var(--app-space-6); padding-top: var(--app-space-4);
-  border-top: 1px solid var(--pico-muted-border-color); max-width: var(--docs-measure);
+  border-top: 1px solid var(--pico-muted-border-color);
 }
 .docs-pager a {
   display: flex; flex-direction: column; text-decoration: none;
