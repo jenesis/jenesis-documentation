@@ -70,7 +70,7 @@ with their directory groups already.
 ## Credentials
 
 **Access → Credentials** is where keys for build tools are issued and looked after. A key looks like
-`jenk_default.…`: a recognisable prefix, the deployment's tenant, a secret and a checksum.
+`jenk_releases.…`: a recognisable prefix, the deployment's tenant, a secret and a checksum.
 
 **New credential** issues one: a label, an optional expiry, and **Generate credential**. The key is shown
 **once**, on the credential's page, and only a hash of it is kept. That page then offers:
@@ -108,7 +108,7 @@ tokens to accept:
 | Issuer | `https://token.actions.githubusercontent.com` |
 | Audience (optional) | `jenesis` |
 | Subject glob (optional) | `repo:acme/app:*` - only this repository's workflows |
-| Project and rights | `releases`, `repository:read,repository:write` |
+| Project and rights | `libraries`, `repository:read,repository:write` |
 | Lifetime | `PT15M` |
 
 The job posts its token to `/api/token` and receives a key valid for that lifetime, with its expiry:

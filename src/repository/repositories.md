@@ -16,7 +16,7 @@ A repository is **created**, with its type, before anything is published into it
 
 ```bash
 curl -X PUT -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
-  -d '{"value":"npm"}' https://repo.example.com/repository/default/npm
+  -d '{"value":"npm"}' https://repo.example.com/repository/releases/npm
 ```
 
 The answer is `201` when the repository is created and `200` when it already holds that type. A repository that
@@ -44,7 +44,7 @@ repository** at the foot of its own page, and it asks you to type `delete <name>
 other deletion in the console asks the same way.
 
 ```bash
-curl -X DELETE -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/default/npm
+curl -X DELETE -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/releases/npm
 ```
 
 The repository stops answering at once; what it held is removed in the background, so the answer is `202` however
@@ -56,13 +56,13 @@ repository takes `manage:write`; a key that may only publish into it is refused.
 ## The URL a client reaches
 
 Every URL names the tenant first and the repository second: `/repository/<tenant>/<repository>/…`, or
-`/v2/<tenant>/<repository>/<image>` for container images. A deployment serves one tenant - `default`, unless
+`/v2/<tenant>/<repository>/<image>` for container images. A deployment serves one tenant - `releases`, unless
 `JENREG_DEFAULT_TENANT` names another - and answers `404` for a URL that names any other.
 
 A repository of one format leaves that format's name out of its URLs: an `npm` repository named `npm` is the
-registry `/repository/default/npm/`, and a `pypi` one named `python` is installed from
-`/repository/default/python/simple/`. Maven and the Jenesis module layout keep theirs - a Maven repository named
-`releases` answers at `/repository/default/releases/maven/`, and a `java` repository at both `…/maven/` and
+registry `/repository/releases/npm/`, and a `pypi` one named `python` is installed from
+`/repository/releases/python/simple/`. Maven and the Jenesis module layout keep theirs - a Maven repository named
+`libraries` answers at `/repository/releases/libraries/maven/`, and a `java` repository at both `…/maven/` and
 `…/module/` - which is what lets the two share one repository. [Connecting your build
 tools](/repository/formats/) gives the URL for every client.
 
@@ -140,7 +140,7 @@ publish to within the repository - instead of straight to the release path:
 
 ```bash
 curl -H "Jenesis-Repository-Key: $KEY" -T app-1.0.jar \
-  http://localhost:8080/staging/default/releases/rc1/maven/com/example/app/1.0/app-1.0.jar
+  http://localhost:8080/staging/releases/libraries/rc1/maven/com/example/app/1.0/app-1.0.jar
 ```
 
 Nothing staged is resolvable. **Staging** lists the open ids with how many files each holds, and each has two

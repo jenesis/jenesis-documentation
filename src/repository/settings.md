@@ -79,7 +79,7 @@ in this deployment, and is it on?" without reading a log.
 ## Instances
 
 **Instances** lists the tenants of the deployment, opens one to work in, and reclaims disk space across all of
-them. A deployment serves one tenant, `default`, unless `JENREG_DEFAULT_TENANT` names another.
+them. A deployment serves one tenant, `releases`, unless `JENREG_DEFAULT_TENANT` names another.
 
 ## How startup settings reach the server
 

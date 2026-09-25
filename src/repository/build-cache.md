@@ -10,8 +10,8 @@ done once - on a colleague's machine, in an earlier CI job - is not done again. 
 it switches it off with `JENREG_BUILD_CACHE=false`. The cache answers on the same port, authorises with
 the same keys, and is looked after in the console under **Build cache**.
 
-Each tenant has a cache of its own, at `/build/<tenant>/` - `/build/default/` on a deployment that serves the
-`default` tenant. A key reaches its own tenant's cache and no other: a request naming another tenant's cache is
+Each tenant has a cache of its own, at `/build/<tenant>/` - `/build/releases/` on a deployment that serves the
+`releases` tenant. A key reaches its own tenant's cache and no other: a request naming another tenant's cache is
 answered `403`.
 
 ## Projects
@@ -38,7 +38,7 @@ grants** enter the project's name - or `*` for every project - with the role:
 Give the Jenesis build tool the tenant's cache as its address, with the project and the key:
 
 ```bash
-java -Djenesis.cache.uri=https://repo.example.com/build/default \
+java -Djenesis.cache.uri=https://repo.example.com/build/releases \
      -Djenesis.cache.project=my_project \
      -Djenesis.cache.key="$KEY" \
      build/jenesis/Make.java

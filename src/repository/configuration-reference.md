@@ -290,7 +290,7 @@ Explained in [Settings](/repository/settings/).
 | Key | Default | Applies | Effect |
 | --- | --- | --- | --- |
 | `block-private-import-hosts` | `true` | on restart | Reject a migration URL that is plaintext http, or that resolves to a loopback, link-local or private address. |
-| `default-tenant` | `default` | on restart | The tenant this deployment serves - the first part of every URL, `/repository/<tenant>/…`, `/v2/<tenant>/…` and `/build/<tenant>/…`. |
+| `default-tenant` | `releases` | on restart | The tenant this deployment serves - the first part of every URL, `/repository/<tenant>/…`, `/v2/<tenant>/…` and `/build/<tenant>/…`. |
 | `public-url` | *(empty)* | on restart | The address clients reach this deployment at (https://repo.example.com), for the absolute URLs generated indexes carry. |
 | `rate-limit` | `6000` | on restart | Requests a minute per tenant before `429`; `0` removes the limit, and a tenant's own ceiling on the **Repositories** page replaces it. |
 | `trusted-proxies` | *(empty)* | on restart | Comma-separated CIDRs of reverse proxies whose X-Forwarded-For, X-Forwarded-Proto and X-Forwarded-Host are believed. |
@@ -301,7 +301,7 @@ Explained in [Connecting your build tools](/repository/formats/).
 
 | Key | Default | Applies | Effect |
 | --- | --- | --- | --- |
-| `terraform.prefix` | `/repository/default/terraform/registry` | on restart | The path this deployment serves its Terraform registry under, as the discovery document at /.well-known/terraform.json reports it. |
+| `terraform.prefix` | `/repository/releases/terraform/registry` | on restart | The path this deployment serves its Terraform registry under, as the discovery document at /.well-known/terraform.json reports it. |
 
 ### Maven
 
