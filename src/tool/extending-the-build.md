@@ -26,10 +26,10 @@ signing+artifact=demo.signing
 
 The key is `<name>+<slot>`. The **name** is the plugin's own, and holds neither `/` nor `+`. The **slot** is the
 module of the stock build the plugin adds to, named as the build log shows it: `check`, `format`, `compliance`,
-`binary`, `binary/generated`, `binary/compiled`, `binary/validate`, `artifact`, `observed`, `documentation` and
-`documentation/generate`. A key without `+<slot>` adds the plugin to the module build itself, and an unknown slot
-is refused; the two slots that run once for the whole build, `postprocess/transform` and `postprocess/inspect`, have a section of their
-own below. The value says where the plugin comes from:
+`binary`, `binary/generated`, `binary/compiled`, `binary/validate`, `artifact`, `observed`, `documentation`,
+`documentation/generate` and `package`. A key without `+<slot>` adds the plugin to the module build itself, and an
+unknown slot is refused; the five slots that run once for the whole project - `preprocess`, `postprocess/transform`,
+`postprocess/inspect`, `export` and `release` - have a section of their own below. The value says where the plugin comes from:
 
 - a value starting with `./` is a folder of the project, compiled from source on every build, and
 - anything else is a module name, resolved as `module/<name>` from the Jenesis module repository whatever the
@@ -104,30 +104,59 @@ the same input fails the build.
 
 {% demos 54, 55 %}
 
-## Transforming and inspecting what the build produced
+### Adding a package
 
-A plugin in a module slot sees one module. Two slots see them all: a plugin named under **`postprocess/transform`** or
-**`postprocess/inspect`** runs once over everything the build produced, after every module is built and before anything is
-staged. A transform adds files to the modules - a notice, a report, a signature of your own - and an inspection
-checks the result and fails the build when it is wrong:
+A plugin under **`package`** joins the packaging of each module where its `plugin-<name>.properties` is found, as
+`package/custom/<name>`. It is handed the module's jar and its runtime dependencies, together with whatever
+`packaging.properties` asks Jenesis to build - a runtime image, a `jpackage` image, a launcher - so it can wrap or
+sign one of them into a package of its own: an AppImage, an installer built with other tools, a distribution
+zip. What it writes into a `packages/` folder is staged with the other packages in `stage/packages/`, and a
+package whose name another packager, or `jpackage`, writes already fails the build rather than replacing it.
+
+## Plugins for the whole project
+
+A plugin in a module slot sees one module. Five slots run a plugin once for the whole project instead:
 
 ```properties
 # jenesis.plugins.properties
+licence+preprocess=./licence
 notice+postprocess/transform=./notice
 audit+postprocess/inspect=./audit
+publish+export=./publish
+announce+release=./announce
 ```
 
-Both run as part of `build`, in `build/postprocess`, which keeps the transforms under `transform/<name>` and the
-inspections under `inspect/<name>`, apart from its own steps, so a plugin may take any name. Everything that builds
-on it - `stage`, `export`, `release`, `pin`, `dependencies`, `ide` and `Execute.java` - sees what the transforms
-added and never runs past a failed inspection. The line itself switches such a plugin on, as no
-`plugin-<name>.properties` applies to it. Transforms run in the order the file names them, each seeing what the
-ones before it added, and the inspections run after all of them. Their names take no `/`, `.` or `+`, and a name
-used for a module slot cannot also name one of them.
+| Slot | Runs as | Runs | Is handed |
+| --- | --- | --- | --- |
+| `preprocess` | `build/preprocess/custom/<name>` | before any module is built | only what it binds |
+| `postprocess/transform` | `build/postprocess/transform/<name>` | after every module is built | every module's inventory |
+| `postprocess/inspect` | `build/postprocess/inspect/<name>` | after the transforms | the same, plus what they added |
+| `export` | `export/custom/<name>` | with `export`, beside its stock steps | everything staged |
+| `release` | `release/custom/<name>` | with `release`, beside its stock steps | everything staged |
+
+Each keeps its plugins apart from its own steps, so a plugin may take any name. The line itself switches such a
+plugin on, as no `plugin-<name>.properties` applies to it. Their names take no `/`, `.` or `+`, and a name used
+for a module slot cannot also name one of them.
+
+A **preprocessor** checks the project before anything is compiled: a licence header, a forbidden file, a policy
+on what the repository holds. It hands the build nothing, so it can stop the build early but never feed it; a
+file every module needs comes from a plugin in `binary/generated` instead.
+
+A **transform** adds files to the modules - a notice, a report, a signature of your own - and an **inspection**
+checks the result and fails the build when it is wrong. Both run as part of `build`, in `build/postprocess`, so
+everything that builds on it - `stage`, `export`, `release`, `pin`, `dependencies`, `ide` and `Execute.java` -
+sees what the transforms added and never runs past a failed inspection. Transforms run in the order the file
+names them, each seeing what the ones before it added, and the inspections run after all of them.
+
+An **exporter** and a **releaser** deliver what was staged - to an internal repository, a bucket, a registry, a
+release page - and run only when `export` or `release` is asked for. Naming `export/custom` or `release/custom`
+runs the plugins alone, without the steps Jenesis runs there itself. Such a step writes outside the build, so it
+overrides `shouldRun` to run every time it is selected, as the stock export steps do, rather than only when
+what it reads has changed.
 
 ### Configuring them
 
-A plugin of `postprocess` reads its values from **`jenesis.plugins.arguments.properties`** beside
+A plugin of the whole project reads its values from **`jenesis.plugins.arguments.properties`** beside
 `jenesis.plugins.properties`, one line per value as `<plugin>.<key>`, and from nowhere else - never from the
 command line:
 
@@ -147,9 +176,9 @@ Since these plugins run with every build, one that takes long is best switched o
 `jenesis.plugin.<name>=false` and switched back on in the profile that ships. `-Djenesis.project.plugins=false`
 leaves out every plugin at once, those of the module slots included.
 
-### What a plugin sees, and what it may add
+### What a transform and an inspection see, and what they may add
 
-Each plugin is handed the inventory of every module: its jar, sources and documentation, its POM, and every
+Each of them is handed the inventory of every module: its jar, sources and documentation, its POM, and every
 dependency it resolved, each with the jar it resolved to. A transform adds to a module by writing files into its
 own output and naming them in an `inventory.properties` there, under the prefix the inventory gives the module
 (its build identity, such as `module-sources`):
@@ -179,7 +208,7 @@ plugin-audit/module/build.jenesis=0.14.0 SHA-256/...
 plugin-notice/module/build.jenesis=0.14.0 SHA-256/...
 ```
 
-`pin` writes the file and pins every plugin of `postprocess` the file names, including one a setting
+`pin` writes the file and pins every plugin of the whole project the file names, including one a setting
 switches off, so a plugin that only a profile switches on is pinned all the same. The plugins run with
 everything that builds, `pin` among it, so an inspection that fails stops `pin` too. This pins without running
 any plugin:
@@ -317,7 +346,7 @@ public GreetingModule(SequencedMap<String, String> properties) {
 ```
 
 The steps a plugin adds are handed their inputs as arguments. An input bound with `@<input>` arrives as the
-argument `../inputs/<input>`, and a plugin of `postprocess` finds each module's inventory as an
+argument `../inputs/<input>`, and a transform or an inspection finds each module's inventory as an
 `inventory.properties` in the folders of its arguments:
 
 ```java
@@ -390,9 +419,10 @@ InferredMultiProjectAssembler checked = stock.check(check -> check.custom("place
 - `custom(map)` sets every added module at once, a `SequencedMap<String, BuildExecutorModule>` in the order
   they are wired.
 
-The plugins of `postprocess` are a value of the project rather than of the assembler: `plugins()`
-answers the `ProjectPlugins` that `jenesis.plugins.properties` declared, and `transform(name, step)` and
-`inspect(name, step)` add one more, a step or a module, refusing a name that is taken already. Here
+The plugins of the whole project are a value of the project rather than of the assembler: `plugins()`
+answers the `ProjectPlugins` that `jenesis.plugins.properties` declared, and `preprocess(name, step)`,
+`transform(name, step)`, `inspect(name, step)`, `export(name, step)` and `release(name, step)` add one more, a
+step or a module, refusing a name that is taken already. Here
 `ReleaseAudit` is a `BuildStep` of the project that throws when a module's inventory lacks what every release must
 carry:
 
@@ -403,7 +433,7 @@ project = project.plugins(project.plugins().inspect("audit", new ReleaseAudit())
 
 A plugin that `pin` should pin also needs its `resolution()`, the part of an `InternalModule` or `ExternalModule`
 that resolves the plugin's closure without building it; `ProjectPlugins` takes those by name beside the
-transforms and inspections.
+plugins themselves.
 
 #### Redirecting a module's inputs
 
