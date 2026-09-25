@@ -134,7 +134,7 @@ target/
 `target/` holds the **result** of a build - the jars, the reports, the staged release tree - and is named by
 `jenesis.project.target`. `.jenesis/` holds the **mechanics** that make the next build faster: the
 dependencies and keys it downloaded, so nothing foreign is fetched twice; the cache that lets an unchanged
-step be skipped; the compiled engine; and a running daemon's port, token and log.
+step be skipped; the compiled engine and its ahead-of-time cache; and a running daemon's port, token and log.
 
 Neither is yours to keep. `rm -rf target .jenesis` costs a slower next build and nothing else, and both rules
 hold whether the engine is vendored as source or tracked as a submodule - a submodule sits at

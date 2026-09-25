@@ -141,6 +141,7 @@ line and from `jenesis.properties` at the project root.
 | `jenesis.make.compile` | `true` | Compile the build sources once and run the build from those classes, over a class loader of their own. One batch compile beats the launcher compiling class by class as it loads them, so this is faster even for a build that runs a single time. |
 | `jenesis.make.classes` | `.jenesis/classes` | Where those classes land, relative to the project root. They go under `.jenesis/` with the rest of the build's by-products, so nothing lands in the sources. A project's own file names only a folder inside the project. |
 | `jenesis.make.daemon` | `false` | Hand the build to a reused JVM, which keeps a warm JIT between calls. `--stop` as the sole selector shuts it down. |
+| `jenesis.make.aot` | `false` | Start the build from an ahead-of-time cache of the engine, trained by the first build and read by every later one. Refused beside `jenesis.make.daemon` and beside `jenesis.make.compile=false`. |
 | `jenesis.toolchain.version` | *(unset)* | The JDK the build runs on, as `25`, `25.0.3` or `25-temurin`. `Make.java` and `Execute.java` start again on a matching installed JDK when the running one does not match (see *[Building &amp; running](/tool/building-and-running/#the-jdk-a-build-runs-on)*). |
 | `jenesis.toolchain.searchpath` | `@` | Comma-separated folders searched for that JDK, absolute or under `~`, with `*` for any one folder name; `@` stands for the operating system's usual locations, and empty only checks the running JDK. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.toolchain.installer` | *(unset)* | A program run with the version as its last argument when no JDK on the search path matches, such as `jenesis-jdk`; a name is looked up on the `PATH`, a path is absolute or starts with `~`. Command line or `~/.jenesis/jenesis.properties` only (see *[Building &amp; running](/tool/building-and-running/#installing-a-missing-jdk)*). |
@@ -162,6 +163,28 @@ rather than being served by one configured for something else.
 | --- | --- | --- |
 | `jenesis.daemon.idle` | `10800` | Seconds of idleness after which the daemon exits. |
 | `jenesis.daemon.options` | `-Xmx2g` | JVM options for the daemon process itself, whitespace separated. Command line or `~/.jenesis/jenesis.properties` only. |
+
+An ahead-of-time cache answers the same cost without a process. It is a file of the engine's classes, already
+loaded and linked, which a starting JVM maps instead of loading them again: nothing stays resident between
+builds, there is no idle timeout, and the cache survives a reboot. The first build with `jenesis.make.aot`
+trains it, which takes a build of a few seconds and some 20 MB on disk, and every later build starts from it.
+It applies where the engine runs compiled, as the installed `jenesis` command runs it, which is where it saves
+the most - a no-op build of a one-class project falls from 0.69 to 0.43 seconds. From the classes in
+`.jenesis/classes`, a build packs them into a jar and starts a second JVM that can use the cache, which keeps
+less of the saving. Source mode is out of its reach, because `java build/jenesis/Make.java` runs in a JVM that
+started before the cache could be named, so there the setting changes nothing. The `jenesis-make` tool, which
+runs inside another program's JVM, refuses it.
+
+The engine and the JVM a cache was trained for are hashed into its name, as `engine-<hex>.aot`, so a changed
+engine or an upgraded JDK trains a new one and the one that no longer fits is removed. `help`, `skill`,
+`configuration` and `properties` only print, so they neither train nor use a cache. The daemon keeps a warm JIT
+the cache does not, so it stays ahead in a tight edit-build loop on a large project; where builds are frequent
+and small, or a machine builds many projects now and then, the cache is the better trade.
+
+| Property | Default | Effect |
+| --- | --- | --- |
+| `jenesis.aot.file` | `.jenesis/engine.aot` | Where the cache lives, relative to the project root; the hash is written before the extension. A project's own file names only a location inside the project. |
+| `jenesis.aot.lifetime` | *(unset)* | An ISO-8601 age, such as `PT12H` or `P7D`, after which the cache is trained again; unset keeps it until the engine or the JVM changes. |
 
 | `jenesis.make.global` | `$HOME` | Base folder whose `.jenesis/` subfolder holds the user-global `jenesis.properties`; empty string disables it. Command-line only. |
 | `jenesis.project.configuration` | `build.jenesis/` | Comma-separated project-wide configuration folders; `@` splices the default back in, and `@<name>` splices what `jenesis.<name>` or the environment variable `<name>` holds. |
