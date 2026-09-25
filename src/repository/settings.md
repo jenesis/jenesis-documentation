@@ -81,6 +81,18 @@ in this deployment, and is it on?" without reading a log.
 **Instances** lists the tenants of the deployment, opens one to work in, and reclaims disk space across all of
 them. A deployment serves one tenant, `releases`, unless `JENREG_DEFAULT_TENANT` names another.
 
+A script manages tenants the same way, with a key of the operator tenant that holds the manage rights:
+
+```bash
+curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/api/admin/tenants              # list
+curl -X PUT -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/api/admin/tenants/acme  # create
+curl -X DELETE -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/api/admin/tenants/acme
+jenesis-repo tenants create acme
+```
+
+Deleting a tenant removes everything it owns - its repositories and their artifacts, its credentials, its audit
+trail and its members - and cannot be undone.
+
 ## How startup settings reach the server
 
 The server is configured the way any Spring Boot application is. Every setting has a key under `jenreg.`, and the
