@@ -16,15 +16,17 @@ on:
 
 | Mechanism | Switched on by |
 | --- | --- |
-| **A key** | `JENREG_KEY_LOGIN=true`, with `JENREG_UI_ADMIN_KEY` for the first administrator |
+| **A key** | on by default; `JENREG_KEY_LOGIN=false` switches it off |
 | **OpenID Connect** - Keycloak, Okta, Entra ID, Google, Auth0 and any other issuer | `JENREG_UI_OIDC_ISSUER_URI`, `JENREG_UI_OIDC_CLIENT_ID`, `JENREG_UI_OIDC_CLIENT_SECRET`, and `JENREG_UI_OIDC_NAME` to label the button |
 | **GitHub** | `JENREG_UI_GITHUB_CLIENT_ID` and `JENREG_UI_GITHUB_CLIENT_SECRET`, from a GitHub OAuth app |
 | **LDAP or Active Directory** | `JENREG_UI_LDAP_URL`, with the settings below |
 
-**Key sign-in** is the way into a new deployment: the administrator key from [Getting
-started](/repository/getting-started/) signs you in as the deployment's administrator. It is meant to get you
-started, not to stay - once people sign in through your identity provider, remove `JENREG_UI_ADMIN_KEY` and
-`JENREG_KEY_LOGIN` and restart.
+**Key sign-in** is the way into a new deployment. A start that finds nobody able to sign in prints a one-time key
+in its log, as [Getting started](/repository/getting-started/) shows: it signs in as the deployment's
+administrator for an hour, or until an administrator exists. A deployment provisioned from configuration can name
+its own key instead, `JENREG_UI_ADMIN_KEY`, which is re-provisioned on every start for as long as it is set; the
+server then prints no key. Either is meant to get you started, not to stay - once people sign in through your
+identity provider, remove `JENREG_UI_ADMIN_KEY`, set `JENREG_KEY_LOGIN=false` and restart.
 
 **LDAP** binds as the person signing in, either directly from a pattern or by searching for them first:
 
