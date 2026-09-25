@@ -241,6 +241,32 @@ Two conditions, both about the file system rather than about the server:
   serves it is not; the backend gives you consistency across nodes, and says nothing about what happens when the
   mount goes away. An object store bundles both, which is most of why it is the usual answer at scale.
 
+**Backing it up is ordinary file backup, and it is naturally incremental.** Most of the store is content-addressed
+blobs, each named by its hash and never changed once written, so a run after the first carries little more than
+what was published since. Two common ways:
+
+- **File-system snapshots, sent incrementally.** On ZFS, `zfs snapshot` takes an instant copy of the dataset that
+  holds the root, consistent across every file, and `zfs send -i` ships only the blocks changed since the previous
+  snapshot to another machine; Btrfs does the same with `btrfs send -p`.
+
+  ```bash
+  zfs snapshot tank/jenesis@2026-09-25
+  zfs send -i tank/jenesis@2026-09-24 tank/jenesis@2026-09-25 | ssh backup zfs receive pool/jenesis
+  ```
+
+- **restic or BorgBackup.** Both keep every run as a snapshot of its own while storing only new and changed data,
+  deduplicated and encrypted, on a disk, an SSH server or an object store. Point them at a file-system snapshot
+  (ZFS, Btrfs or LVM) rather than at the live directory, so a publish that lands during the run is either wholly
+  in the backup or not in it at all. The `.cas/` directory holds lock files and `.upload*.tmp` files are uploads
+  still in flight; neither is worth keeping.
+
+  ```bash
+  restic -r sftp:backup:/srv/restic backup /mnt/jenesis-snapshot --exclude .cas --exclude '.upload*.tmp'
+  ```
+
+A restore is the reverse: put the files back under the root and start the server, as
+[Backups](/repository/deploying/#backups) describes for every backend.
+
 So the choice is not one node against many. It is whether you want to run the storage that makes the directory
 durable and available, or rent it - and the cost sections above are the same question asked about money.
 
