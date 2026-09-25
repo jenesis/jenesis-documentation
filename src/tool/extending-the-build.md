@@ -24,13 +24,10 @@ greeting+binary/generated=./plugin
 signing+artifact=demo.signing
 ```
 
-The key is `<name>+<slot>`. The **name** is the plugin's own, and holds neither `/` nor `+`. The **slot** is the
-module of the stock build the plugin adds to, named as the build log shows it: `check`, `format`, `compliance`,
-`binary`, `binary/generated`, `binary/compiled`, `binary/validate`, `artifact`, `observed`, `documentation`,
-`documentation/generate` and `package`. A key without `+<slot>` adds the plugin to the module build itself, and an
-unknown slot is refused; the eight slots that run once for the whole project - `preprocess`, `postprocess/transform`,
-`postprocess/inspect`, `stage/transform`, `stage/inspect`, `export`, `release` and `plugin` - have a section of their
-own below. The value says where the plugin comes from:
+The key is `<name>+<hook point>`. The **name** is the plugin's own, and holds neither `/` nor `+`. The **hook
+point** says where in the build the plugin joins, as the next section describes; a key without `+<hook point>`
+adds the plugin to the module build itself, and an unknown hook point is refused. The value says where the
+plugin comes from:
 
 - a value starting with `./` is a folder of the project, compiled from source on every build, and
 - anything else is a module name, resolved as `module/<name>` from the Jenesis module repository whatever the
@@ -41,12 +38,59 @@ Either may end in `@<provider>`, which selects the provider annotated `@BuildMod
 module provides several: `signing+artifact=demo.signing@jarsigner`. Without it, the module must provide exactly
 one unannotated provider.
 
-A plugin reads what the module it joins reads, and its output belongs to that module like any of the stock
-steps': a plugin in `binary/generated` that writes a `sources/` tree has it compiled with the project's own
-sources, and a plugin in `artifact` reads the jars the build produced. The plugins of a slot are wired inside
-a sub-module named `custom`, which no stock module uses, so a plugin's name never collides with a stock step.
+### Hook points
 
-A plugin runs in a module only where **`plugin-<name>.properties`** is found, looked up like any other
+A **hook point** is a place in the build graph that Jenesis leaves open for plugins. It is named by its path, as
+the build log shows it - `binary/generated` is the source generation of a module's `binary` build,
+`stage/transform` a place in `stage` - and it decides three things about a plugin: when it runs, what it is handed
+as input, and where what it writes goes. A plugin never inspects the build around it: it reads the folders its
+hook point hands it, and what it writes travels onwards by the same folder conventions the stock steps follow,
+so a `sources/` tree written in `binary/generated` is compiled, and a `maven/` folder written in
+`stage/transform` joins the staged Maven tree. Every hook point keeps its plugins in a namespace of its own -
+`custom/`, `transform/`, `inspect/` or `plugin/` - beside the stock steps, so a plugin may take any name.
+
+Hook points come in two kinds. A **module** hook point runs a plugin once in every module of the project that
+configures it; a **project** hook point runs it once for the whole project. They are listed here in the order
+the build reaches them:
+
+| Hook point | Kind | Runs as | When a plugin runs, and what it is handed |
+| --- | --- | --- | --- |
+| `preprocess` | project | `build/preprocess/custom/<name>` | Before any module is built, handed only what it binds. It hands the build nothing, so it can stop the build early but never feed it. |
+| `check` | module | `check/custom/<name>` | Beside the stock source checks, handed the module's sources and manifests. |
+| `format` | module | `format/custom/<name>` | Beside the stock formatters, handed the same. |
+| `compliance` | module | `compliance/custom/<name>` | Beside the licence and vulnerability checks, handed the manifests and the resolved dependencies. |
+| `binary/generated` | module | `binary/generated/custom/<name>` | Before compilation, beside the stock generators; a `sources/` tree it writes is compiled with the module. |
+| `binary/compiled` | module | `binary/compiled/custom/<name>` | Beside the stock compilers, handed what they compile. |
+| `binary/validate` | module | `binary/validate/custom/<name>` | After compilation, beside the bytecode checks, handed the compiled classes. |
+| `binary` | module | `binary/custom/<name>` | Within the module's compile toolchain, handed what the toolchain reads. |
+| `artifact` | module | `artifact/custom/<name>` | Once the module's jar is built, handed it with the module's dependencies. |
+| `observed` | module | `observed/custom/<name>` | With the module's tests, beside the stock observers such as coverage. |
+| `documentation/generate` | module | `documentation/generate/custom/<name>` | Beside the stock documentation generators. |
+| `documentation` | module | `documentation/custom/<name>` | Within the documentation build, handed the compiled module. |
+| *(none)* | module | `custom/<name>` | In the module build itself, handed everything the module reads. |
+| `package` | module | `package/custom/<name>` | When the module is packaged, handed its jar, its dependencies and the stock images; what it writes into `packages/` is staged in `stage/packages/`. |
+| `postprocess/transform` | project | `build/postprocess/transform/<name>` | After every module is built, handed every module's inventory, in the order the file names them; adds files to the modules or to the whole project. |
+| `postprocess/inspect` | project | `build/postprocess/inspect/<name>` | After the transforms, handed the same with what they added; fails the build by throwing. |
+| `stage/transform` | project | `stage/transform/<name>` | After the stock staging, handed every staged tree; what it writes under a tree's name joins that tree. |
+| `stage/inspect` | project | `stage/inspect/<name>` | After the transforms of stage, handed the staged trees with what they added. |
+| `export` | project | `export/custom/<name>` | With `export`, beside the stock export steps, handed everything staged. |
+| `release` | project | `release/custom/<name>` | With `release`, beside JReleaser, handed everything staged. |
+| `plugin` | project | `plugin/<name>` | Only when `plugin/<name>` is named, handed only what it binds; nothing waits for it and it waits for nothing. |
+
+The path of a module hook point lies within each module's build, as the build log shows it under
+`build/maven/` or `build/modules/`; the path of a project hook point is the same in every project.
+The module hook points run while the module is built, so everything after them sees what they add;
+`postprocess` still belongs to `build`, so `stage`, `export`, `release`, `pin`, `dependencies`, `ide` and
+`Execute.java` never run past a failed inspection. `stage` runs only when a goal needs it, and `export`,
+`release` and `plugin` only when they are asked for.
+
+### Plugins of a module
+
+A plugin in a module hook point reads what the module it joins reads, and its output belongs to that module like
+any of the stock steps': a plugin in `binary/generated` that writes a `sources/` tree has it compiled with the
+project's own sources, and a plugin in `artifact` reads the jars the build produced.
+
+It runs in a module only where **`plugin-<name>.properties`** is found, looked up like any other
 configuration file - in `build.jenesis/`, with the profiles first - so the same line can serve every module of
 a project and still run only in those that configure it. The file's values are handed to the plugin when it
 is created:
@@ -69,6 +113,11 @@ A plugin found in the local export is built on your machine and is not checked a
 
 `-Djenesis.plugin.<name>=false` leaves a plugin out, as the stock tools are switched off, without editing the
 file, and `-Djenesis.project.plugins=false` leaves out every plugin the file names.
+
+A plugin in **`package`** can wrap or sign one of the images `packaging.properties` asks Jenesis to build - a
+runtime image, a `jpackage` image, a launcher - into a package of its own: an AppImage, an installer built with
+other tools, a distribution zip. A package whose name another packager, or `jpackage`, writes already fails the
+build rather than replacing it.
 
 ### Handing a plugin files of the project
 
@@ -105,18 +154,10 @@ the same input fails the build.
 
 {% demos 54, 55 %}
 
-### Adding a package
-
-A plugin under **`package`** joins the packaging of each module where its `plugin-<name>.properties` is found, as
-`package/custom/<name>`. It is handed the module's jar and its runtime dependencies, together with whatever
-`packaging.properties` asks Jenesis to build - a runtime image, a `jpackage` image, a launcher - so it can wrap or
-sign one of them into a package of its own: an AppImage, an installer built with other tools, a distribution
-zip. What it writes into a `packages/` folder is staged with the other packages in `stage/packages/`, and a
-package whose name another packager, or `jpackage`, writes already fails the build rather than replacing it.
-
 ## Plugins for the whole project
 
-A plugin in a module slot sees one module. Eight slots run a plugin once for the whole project instead:
+A plugin in a project hook point runs once for the whole project. The line in `jenesis.plugins.properties`
+switches it on by itself, as no `plugin-<name>.properties` applies to it:
 
 ```properties
 # jenesis.plugins.properties
@@ -130,49 +171,30 @@ announce+release=./announce
 lines+plugin=./lines
 ```
 
-| Slot | Runs as | Runs | Is handed |
-| --- | --- | --- | --- |
-| `preprocess` | `build/preprocess/custom/<name>` | before any module is built | only what it binds |
-| `postprocess/transform` | `build/postprocess/transform/<name>` | after every module is built | every module's inventory |
-| `postprocess/inspect` | `build/postprocess/inspect/<name>` | after the transforms | the same, plus what they added |
-| `stage/transform` | `stage/transform/<name>` | after the stock staging | everything staged |
-| `stage/inspect` | `stage/inspect/<name>` | after the transforms of stage | the staged trees with what they added |
-| `export` | `export/custom/<name>` | with `export`, beside its stock steps | everything staged |
-| `release` | `release/custom/<name>` | with `release`, beside its stock steps | everything staged |
-| `plugin` | `plugin/<name>` | only when `plugin/<name>` is named | only what it binds |
-
-Each keeps its plugins apart from its own steps, so a plugin may take any name. The line itself switches such a
-plugin on, as no `plugin-<name>.properties` applies to it. Their names take no `/`, `.` or `+`, and a name used
-for a module slot cannot also name one of them.
+Their names take no `/`, `.` or `+`, and a name used for a module hook point cannot also name one of them.
 
 A **preprocessor** checks the project before anything is compiled: a licence header, a forbidden file, a policy
-on what the repository holds. It hands the build nothing, so it can stop the build early but never feed it; a
-file every module needs comes from a plugin in `binary/generated` instead.
+on what the repository holds. A file every module needs comes from a plugin in `binary/generated` instead.
 
 A **transform** adds files to the modules - a notice, a report, a signature of your own - and an **inspection**
-checks the result and fails the build when it is wrong. Both run as part of `build`, in `build/postprocess`, so
-everything that builds on it - `stage`, `export`, `release`, `pin`, `dependencies`, `ide` and `Execute.java` -
-sees what the transforms added and never runs past a failed inspection. Transforms run in the order the file
-names them, each seeing what the ones before it added, and the inspections run after all of them.
+checks the result and fails the build when it is wrong. Transforms run in the order the file names them, each
+seeing what the ones before it added, and the inspections run after all of them.
 
-A **transform of stage** runs once the stock staging is done and is handed every staged tree. What it writes into a
-folder named after one - `maven/`, `modular/`, `packages/`, `project/` and the others under `target/stage/` - joins
-that tree where it stands, so `export`, `release`, a `jreleaser.yml` and their plugins take it like anything else
-staged: checksums or signatures beside every file, repository metadata, a manifest of what ships. A file the tree
-holds already fails the build rather than being replaced. An **inspection of stage** then checks the staged trees
-with what was added, and nothing is exported or released past one that fails.
+A **transform of stage** writes into a folder named after a staged tree - `maven/`, `modular/`, `packages/`,
+`project/` and the others under `target/stage/` - and what it writes joins that tree where it stands, so
+`export`, `release`, a `jreleaser.yml` and their plugins take it like anything else staged: checksums or
+signatures beside every file, repository metadata, a manifest of what ships. A file the tree holds already fails
+the build rather than being replaced. An **inspection of stage** then checks the staged trees with what was added,
+and nothing is exported or released past one that fails.
 
 An **exporter** and a **releaser** deliver what was staged - to an internal repository, a bucket, a registry, a
-release page - and run only when `export` or `release` is asked for. Naming `export/custom` or `release/custom`
-runs the plugins alone, without the steps Jenesis runs there itself. Such a step writes outside the build, so it
-overrides `shouldRun` to run every time it is selected, as the stock export steps do, rather than only when
-what it reads has changed.
+release page. Naming `export/custom` or `release/custom` runs the plugins alone, without the steps Jenesis runs
+there itself. Such a step writes outside the build, so it overrides `shouldRun` to run every time it is selected,
+as the stock export steps do, rather than only when what it reads has changed.
 
-A plugin under **`plugin`** belongs to no goal: nothing waits for it, it waits for nothing, and it runs only when its
-own selector is named, as `java build/jenesis/Make.java plugin/lines`. It is handed only what it binds, so it starts
-at once - a report over the project's own files, a task run by hand. What needs the built or staged result belongs
-in one of the hooks that follow them. `plugin/` holds nothing but these plugins, so a name never collides with
-anything of Jenesis.
+A plugin under **`plugin`** belongs to no goal and starts at once, as
+`java build/jenesis/Make.java plugin/lines`: a report over the project's own files, a task run by hand. What
+needs the built or staged result belongs in one of the hook points that follow them.
 
 ### Configuring them
 
@@ -192,9 +214,9 @@ values of its own in `jenesis.plugins.arguments-<profile>.properties`, which win
 profile, and of two active profiles the one named first wins. That is why the plugin files are named with dots:
 in a file name, a dash after a name always introduces a profile, as in `jenesis-<profile>.properties`.
 
-Since these plugins run with every build, one that takes long is best switched off in `jenesis.properties` with
+Since the plugins in `build` run with every build, one that takes long is best switched off in `jenesis.properties` with
 `jenesis.plugin.<name>=false` and switched back on in the profile that ships. `-Djenesis.project.plugins=false`
-leaves out every plugin at once, those of the module slots included.
+leaves out every plugin at once, those of the module hook points included.
 
 ### What a transform and an inspection see, and what they may add
 
@@ -431,7 +453,7 @@ System.exit(new Execution(project).execute(args));
 chaining a `sign` step onto it. `Execution` builds the project and runs the module that declares a main class,
 as `build/jenesis/Execute.java` does for the stock build.
 
-The stock modules take additional steps and modules in code as well, through the same `custom` slot a plugin is
+The stock modules take additional steps and modules in code as well, through the same `custom` namespace a plugin is
 wired into:
 
 ```java

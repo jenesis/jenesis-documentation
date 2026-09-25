@@ -49,7 +49,7 @@ property). The top-level targets the shipped layouts register:
 | `stage` | Materialise the release tree under `target/stage/…` (see *[Publishing](/tool/publishing/)*). |
 | `export` | Publish the staged tree - into the local Maven repository (`~/.m2`), the local module repository (`~/.jenesis`), or both, depending on the layout. |
 | `release` | Hand the staged tree to a configured release tool; a dry run unless told otherwise (see *[Publishing](/tool/publishing/)*). |
-| `plugin/<name>` | Run a plugin the project names under the slot `plugin`, which runs only when named (see *[Extending the build](/tool/extending-the-build/#plugins-for-the-whole-project)*). |
+| `plugin/<name>` | Run a plugin the project names under the hook point `plugin`, which runs only when named (see *[Extending the build](/tool/extending-the-build/#plugins-for-the-whole-project)*). |
 | `pin` | Rewrite every `pom.xml` / `module-info.java` so the transitive closure is pinned at source (see *[Pinning &amp; bills of materials](/tool/pinning/)*). |
 | `dependencies` | Print each module's resolved dependency graph with licences. |
 | `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata at the project root. |
@@ -377,7 +377,7 @@ plugins of the whole project, `build` also holds `preprocess/custom/<name>`, whi
 and `postprocess/transform/<name>` and `postprocess/inspect/<name>`, which run over every module after it is built,
 while `stage` holds `transform/<name>` and `inspect/<name>` - with the stock staging then in `staged/<tree>` and
 each `stage/<tree>` merging it with what the transforms of stage added - `export` and `release` hold
-`custom/<name>` beside their own steps, and the top-level `plugin` holds a plugin of the slot `plugin` as
+`custom/<name>` beside their own steps, and the top-level `plugin` holds a plugin of the hook point `plugin` as
 `plugin/<name>`, run only when named; `stage/project` holds what the transforms placed in the project (see *[Extending the
 build](/tool/extending-the-build/#plugins-for-the-whole-project)*).
 
