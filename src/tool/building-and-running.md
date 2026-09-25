@@ -28,8 +28,10 @@ when it is the tools themselves that are heavy, `-Djenesis.process.concurrency=<
   attribute, so the artifact is directly launchable.
 - **Test** compiles and runs the module's tests. Jenesis **auto-detects the test framework** from the test
   dependencies you already declare - JUnit Platform (JUnit 5 and later), JUnit 4, or TestNG - and resolves the
-  matching console runner for you, so you never add it as an explicit dependency. In the modular layouts the
-  tests live in their own test module, built after the module under test (next section).
+  matching console runner for you, so you never add it as an explicit dependency. A module can also state its
+  engine: a `test.properties` in its configuration folder holding `engine=junit-platform`, `junit4` or
+  `testng` decides it, the same in every checkout and every CI run. In the modular layouts the tests live in
+  their own test module, built after the module under test (next section).
 
 <div class="note">
   Every phase is cached the way <em>Core concepts</em> described: a second <code>build</code> recompiles and

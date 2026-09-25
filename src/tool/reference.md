@@ -132,7 +132,8 @@ in one step.
 
 `Make` is the entry point every command names. It carries no build logic and names no engine class, so the
 Java launcher compiles one small file rather than the whole engine before the build starts. These settings are read from the command
-line and from `jenesis.properties` at the project root.
+line, from your own `~/.jenesis/jenesis.properties` and from `jenesis.properties` at the project root, in that
+order of precedence.
 
 | Property | Default | Effect |
 | --- | --- | --- |
@@ -186,7 +187,10 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.aot.file` | `.jenesis/engine.aot` | Where the cache lives, relative to the project root; the hash is written before the extension. A project's own file names only a location inside the project. |
 | `jenesis.aot.lifetime` | *(unset)* | An ISO-8601 age, such as `PT12H` or `P7D`, after which the cache is trained again; unset keeps it until the engine or the JVM changes. |
 
+| Property | Default | Effect |
+| --- | --- | --- |
 | `jenesis.make.global` | `$HOME` | Base folder whose `.jenesis/` subfolder holds the user-global `jenesis.properties`; empty string disables it. Command-line only. |
+| `jenesis.make.provided` | *(derived)* | The settings the project's own files supplied, comma-separated and named without the `jenesis.` prefix. `Make` derives it, and no file may set it; it is how a repository or cache that a project's file named is never sent a credential. |
 | `jenesis.project.configuration` | `build.jenesis/` | Comma-separated project-wide configuration folders; `@` splices the default back in, and `@<name>` splices what `jenesis.<name>` or the environment variable `<name>` holds. |
 | `jenesis.project.boms` | the configuration folders | Path-separated list of folders searched for `pin-<name>.properties` files. |
 | `jenesis.project.artifacts` | `.jenesis/artifacts` | The project-local folder resolved artifacts are materialised into (hard-linked from `~/.m2` where possible), in every layout. It also holds a copy of each repository's `maven-metadata.xml`, so a `RELEASE` or range still resolves when the repository is unreachable. A project's own file names only a folder inside the project. |
@@ -200,7 +204,6 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.test.skip` | `false` | Register no test steps, so no tests run. Naming the key with no value is `true`; `=false` runs the tests. |
 | `jenesis.test.filter` | *(unset)* | Comma-separated `<classRegex>[#<method>]` list; runs only matching tests. |
 | `jenesis.test.tag` | *(unset)* | Comma-separated test tags / groups to include. |
-| `jenesis.test.engine` | *(auto)* | Force the engine: `junit-platform`, `junit4`, or `testng`. |
 | `jenesis.test.parallel` | `false` | Run tests in parallel where the framework supports it. |
 | `jenesis.test.reporting` | `false` | Emit test reports under `reports/tests/`: legacy JUnit XML and Open Test Reporting XML for `junit-platform`, TestNG's own report for `testng`. |
 | `jenesis.test.incremental` | *(off)* | Run only the tests a change can reach; the value names the digest algorithm. |
@@ -237,6 +240,8 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.pin.file` | *(unset)* | Write the whole project's pins to this properties file instead of rewriting the module declarations. A project's own file names only a folder inside the project. |
 | `jenesis.pin.checksum` | `true` | Whether `pin` writes SHA checksums alongside versions. |
 | `jenesis.pin.retain` | `groups` | Which lines a refresh keeps although it did not write them: `groups` those of a group the run resolved nothing in, `all` every one (a project built in more than one layout), `none` none. |
+| `jenesis.pin.provided` | *(unset)* | Comma-separated pin files, relative to the project root, whose entries the file `jenesis.pin.file` names leaves out where the version and the checksum are the same. |
+| `jenesis.pin.concurrency` | *(processor count)* | How many modules' pins `pin` rewrites at once; `0` is unbounded. |
 | `jenesis.platform.<token>` | *(detected)* | Add (`=true`) or remove (`=false`) a platform token used to select guarded pins. |
 | `jenesis.plugin.<name>` | `true` | `false` leaves out the plugin `<name>` that `jenesis.plugins.properties` names (see *[Extending the build](/tool/extending-the-build/#adding-plugins-to-the-stock-build)*). |
 | `jenesis.project.plugins` | `true` | `false` leaves out every plugin that `jenesis.plugins.properties` names, while `pin` still pins those of the whole project (see *[Extending the build](/tool/extending-the-build/#pinning-them)*). |
@@ -256,6 +261,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.maven.uri` (`MAVEN_REPOSITORY_URI`) | Maven Central | Upstream Maven repository URL(s); supports filters and references. A project's own file may name them, and `jenesis.maven.token` is then not sent. |
 | `jenesis.maven.local` (`MAVEN_REPOSITORY_LOCAL`) | `~/.m2/repository` | Local Maven repository for reads and `export`. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.maven.token` (`MAVEN_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the Maven upstream. Command line or `~/.jenesis/jenesis.properties` only. It travels only to a `jenesis.maven.uri` named in the environment, on the command line or there, never to the built-in public repository. |
+| `jenesis.maven.segments` | `2` | How many leading dot-separated segments of a module name form its Maven groupId when a module is published or resolved by the coordinate convention; a name with fewer becomes the groupId whole. A `maven:<segments>:<uri>` entry of `jenesis.module.uri` sets it for that remote alone. |
 | `jenesis.module.uri` (`JENESIS_REPOSITORY_URI`) | `https://repo.jenesis.build/` | The Jenesis Module Index URL(s) module names resolve through; same list/filter/`@` grammar. A project's own file may name them, and `jenesis.module.token` is then not sent. |
 | `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | `~/.jenesis` | The local module repository, read first and written by `export`. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.module.source` | `service` | Who resolves a module name: `service` asks the index at `jenesis.module.uri`, `git` reads its published data itself and fetches from `jenesis.maven.uri`. |
