@@ -579,8 +579,12 @@ variable. The Jenesis command-line install ships one, `jenesis-jdk`.
 Where SDKMAN, mise or Scoop installed Jenesis, there is nothing to turn on: the `jenesis` command names its
 own `jenesis-jdk` in `JENESIS_TOOLCHAIN_INSTALLER` for the run it starts, unless the variable is set already,
 and `jenesis-jdk` installs the JDK with that tool in turn. Nothing is written to your files to arrange it, and
-the variable ends with the run. A build started from the sources, as `java build/jenesis/Make.java`, has no
-installing tool to call back, and runs an installer only where you name one.
+the variable ends with the run. A build started from the sources names the installer on its own command line:
+
+```bash
+java -Djenesis.toolchain.version=25-zulu -Djenesis.toolchain.installer=jenesis-jdk build/jenesis/Make.java
+```
+
 
 The setting wins over the environment variable, and an empty one, `-Djenesis.toolchain.installer=`, runs no
 installer at all. `jenesis-jdk` turns the version into a request for the tool that installed Jenesis:
