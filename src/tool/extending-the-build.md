@@ -50,35 +50,46 @@ so a `sources/` tree written in `binary/generated` is compiled, and a `maven/` f
 `custom/`, `transform/`, `inspect/` or `plugin/` - beside the stock steps, so a plugin may take any name.
 
 Hook points come in two kinds. A **module** hook point runs a plugin once in every module of the project that
-configures it; a **project** hook point runs it once for the whole project. They are listed here in the order
-the build reaches them:
+configures it; a **project** hook point runs it once for the whole project. `preprocess` runs before any module is
+built and the other project hook points after every module is, so the module hook points sit between them; each
+table lists its hook points in the order the build reaches them.
 
-| Hook point | Kind | Runs as | When a plugin runs, and what it is handed |
-| --- | --- | --- | --- |
-| `preprocess` | project | `build/preprocess/custom/<name>` | Before any module is built, handed only what it binds. It hands the build nothing, so it can stop the build early but never feed it. |
-| `check` | module | `check/custom/<name>` | Beside the stock source checks, handed the module's sources and manifests. |
-| `format` | module | `format/custom/<name>` | Beside the stock formatters, handed the same. |
-| `compliance` | module | `compliance/custom/<name>` | Beside the licence and vulnerability checks, handed the manifests and the resolved dependencies. |
-| `binary/generated` | module | `binary/generated/custom/<name>` | Before compilation, beside the stock generators; a `sources/` tree it writes is compiled with the module. |
-| `binary/compiled` | module | `binary/compiled/custom/<name>` | Beside the stock compilers, handed what they compile. |
-| `binary/validate` | module | `binary/validate/custom/<name>` | After compilation, beside the bytecode checks, handed the compiled classes. |
-| `binary` | module | `binary/custom/<name>` | Within the module's compile toolchain, handed what the toolchain reads. |
-| `artifact` | module | `artifact/custom/<name>` | Once the module's jar is built, handed it with the module's dependencies. |
-| `observed` | module | `observed/custom/<name>` | With the module's tests, beside the stock observers such as coverage. |
-| `documentation/generate` | module | `documentation/generate/custom/<name>` | Beside the stock documentation generators. |
-| `documentation` | module | `documentation/custom/<name>` | Within the documentation build, handed the compiled module. |
-| *(none)* | module | `custom/<name>` | In the module build itself, handed everything the module reads. |
-| `package` | module | `package/custom/<name>` | When the module is packaged, handed its jar, its dependencies and the stock images; what it writes into `packages/` is staged in `stage/packages/`. |
-| `postprocess/transform` | project | `build/postprocess/transform/<name>` | After every module is built, handed every module's inventory, in the order the file names them; adds files to the modules or to the whole project. |
-| `postprocess/inspect` | project | `build/postprocess/inspect/<name>` | After the transforms, handed the same with what they added; fails the build by throwing. |
-| `stage/transform` | project | `stage/transform/<name>` | After the stock staging, handed every staged tree; what it writes under a tree's name joins that tree. |
-| `stage/inspect` | project | `stage/inspect/<name>` | After the transforms of stage, handed the staged trees with what they added. |
-| `export` | project | `export/custom/<name>` | With `export`, beside the stock export steps, handed everything staged. |
-| `release` | project | `release/custom/<name>` | With `release`, beside JReleaser, handed everything staged. |
-| `plugin` | project | `plugin/<name>` | Only when `plugin/<name>` is named, handed only what it binds; nothing waits for it and it waits for nothing. |
+A plugin of a module hook point runs as `<hook point>/custom/<name>` within each module's build, as the build log
+shows it under `build/maven/` or `build/modules/` - `binary/generated/custom/<name>`, say - and a plugin with no hook
+point runs as `custom/<name>`, in the module build itself:
 
-The path of a module hook point lies within each module's build, as the build log shows it under
-`build/maven/` or `build/modules/`; the path of a project hook point is the same in every project.
+| Module hook point | When a plugin runs, and what it is handed |
+| --- | --- |
+| `check` | Beside the stock source checks, handed the module's sources and manifests. |
+| `format` | Beside the stock formatters, handed the same. |
+| `compliance` | Beside the licence and vulnerability checks, handed the manifests and the resolved dependencies. |
+| `binary/generated` | Before compilation, beside the stock generators; a `sources/` tree it writes is compiled with the module. |
+| `binary/compiled` | Beside the stock compilers, handed what they compile. |
+| `binary/validate` | After compilation, beside the bytecode checks, handed the compiled classes. |
+| `binary` | Within the module's compile toolchain, handed what the toolchain reads. |
+| `artifact` | Once the module's jar is built, handed it with the module's dependencies. |
+| `observed` | With the module's tests, beside the stock observers such as coverage. |
+| `documentation/generate` | Beside the stock documentation generators. |
+| `documentation` | Within the documentation build, handed the compiled module. |
+| *(none)* | In the module build itself, handed everything the module reads. |
+| `package` | When the module is packaged, handed its jar, its dependencies and the stock images; what it writes into `packages/` is staged in `stage/packages/`. |
+
+A plugin of a project hook point runs under the goal it belongs to, at the same path in every project:
+`build/preprocess/custom/<name>`, `build/postprocess/transform/<name>` and `build/postprocess/inspect/<name>`,
+`stage/transform/<name>` and `stage/inspect/<name>`, `export/custom/<name>`, `release/custom/<name>`, and
+`plugin/<name>`:
+
+| Project hook point | When a plugin runs, and what it is handed |
+| --- | --- |
+| `preprocess` | Before any module is built, handed only what it binds. It hands the build nothing, so it can stop the build early but never feed it. |
+| `postprocess/transform` | After every module is built, handed every module's inventory, in the order the file names them; adds files to the modules or to the whole project. |
+| `postprocess/inspect` | After the transforms, handed the same with what they added; fails the build by throwing. |
+| `stage/transform` | After the stock staging, handed every staged tree; what it writes under a tree's name joins that tree. |
+| `stage/inspect` | After the transforms of stage, handed the staged trees with what they added. |
+| `export` | With `export`, beside the stock export steps, handed everything staged. |
+| `release` | With `release`, beside JReleaser, handed everything staged. |
+| `plugin` | Only when `plugin/<name>` is named, handed only what it binds; nothing waits for it and it waits for nothing. |
+
 The module hook points run while the module is built, so everything after them sees what they add;
 `postprocess` still belongs to `build`, so `stage`, `export`, `release`, `pin`, `dependencies`, `ide` and
 `Execute.java` never run past a failed inspection. `stage` runs only when a goal needs it, and `export`,
