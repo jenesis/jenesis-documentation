@@ -572,16 +572,21 @@ java -Djenesis.toolchain.searchpath= build/jenesis/Make.java
 
 ### Installing a missing JDK
 
-Jenesis installs no JDK by itself. It runs an installer you name in `jenesis.toolchain.installer` when no JDK
-on the search path matches, and the Jenesis command-line install ships one, `jenesis-jdk`. Turn it on once,
-for every project:
+Jenesis installs no JDK by itself. It runs an installer you name when no JDK on the search path matches, in
+`jenesis.toolchain.installer` or, where that is not set, in the `JENESIS_TOOLCHAIN_INSTALLER` environment
+variable. The Jenesis command-line install ships one, `jenesis-jdk`.
+
+Where SDKMAN installed Jenesis, there is nothing to turn on: the `jenesis` command names its own
+`jenesis-jdk` in `JENESIS_TOOLCHAIN_INSTALLER` whenever the variable is unset, and `jenesis-jdk` installs the
+JDK with SDKMAN in turn. Anywhere else, turn it on once, for every project:
 
 ```bash
 jenesis-jdk --enable
 ```
 
-That adds `jenesis.toolchain.installer=jenesis-jdk` to your `~/.jenesis/jenesis.properties`. `jenesis-jdk`
-turns the version into a request for the tool that installs JDKs on your machine:
+That adds `jenesis.toolchain.installer=jenesis-jdk` to your `~/.jenesis/jenesis.properties`. The setting wins
+over the environment variable, and an empty one, `-Djenesis.toolchain.installer=`, runs no installer at all.
+`jenesis-jdk` turns the version into a request for the tool that installs JDKs on your machine:
 
 | Tool | What it installs |
 | --- | --- |
