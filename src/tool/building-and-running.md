@@ -478,6 +478,39 @@ Setting `jenesis.project.watch=true` in a `jenesis.properties` file makes watch 
 already skips a module's tests when none of its inputs changed; it can go finer and re-run only the tests a
 change can reach - a development-loop optimisation covered in *[Code quality & testing](/tool/code-quality-and-testing/)*.
 
+## Opening the project in an IDE
+
+The `ide` selector writes project files for IntelliJ IDEA, VS Code and Eclipse from what the build resolved, so an
+editor sees exactly the modules, sources and jars the build uses:
+
+```bash
+java build/jenesis/Make.java ide
+```
+
+`ide/idea`, `ide/vscode` or `ide/eclipse` writes the files of one editor only:
+
+| Editor | Files |
+| --- | --- |
+| IntelliJ IDEA | an `.iml` beside each module, plus `.idea/modules.xml` and `.idea/misc.xml` |
+| Eclipse | a `.project` and a `.classpath` in each module |
+| VS Code | `.vscode/settings.json` |
+
+The files are generated, so keep them out of version control. Each editor compiles into a folder of its own -
+`target/.idea`, `target/.vscode`, and a `.eclipse/` folder in each module - never into the build's output. A module
+of the project is linked as a module rather than as its jar, so navigation crosses from one module into another.
+
+The Java version comes from `@jenesis.release` (see *[Choosing the Java version](#choosing-the-java-version)*), not
+from the JDK that ran the build, so the editor refuses what `javac` would refuse. Which JDK provides that version is
+your editor's choice: the first run names IntelliJ IDEA's project JDK after the bare version, and a later run keeps
+whatever name you picked there.
+
+A module's classpath holds what the module declares. The tools the build resolves for itself - Checkstyle, PMD,
+SpotBugs, a formatter - stay out of it. A test module is marked as test sources, and an `@jenesis.test abstract`
+module as ordinary sources, since other modules compile against it.
+
+Run `ide` again after changing a dependency or adding a module: the files name the resolved jars by their path, so
+a stale file points at a jar the build no longer produces.
+
 ## The JDK a build runs on
 
 A build runs on the JDK that started it, unless the project names one. `jenesis.toolchain.version` does, in

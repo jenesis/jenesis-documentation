@@ -52,7 +52,7 @@ property). The top-level targets the shipped layouts register:
 | `plugin/<name>` | Run a plugin the project names under the hook point `plugin`, which runs only when named (see *[Extending the build](/tool/extending-the-build/#plugins-for-the-whole-project)*). |
 | `pin` | Rewrite every `pom.xml` / `module-info.java` so the transitive closure is pinned at source (see *[Pinning &amp; bills of materials](/tool/pinning/)*). |
 | `dependencies` | Print each module's resolved dependency graph with licences. |
-| `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata at the project root. |
+| `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata at the project root (see *[Building &amp; running](/tool/building-and-running/#opening-the-project-in-an-ide)*). |
 | `help` | Print a one-screen orientation: how to start, the selectors, and how to make a step verbose. |
 | `skill` | Print the briefing a coding agent works from. |
 | `metadata` | Refresh the metadata module outputs without building artifacts. |
