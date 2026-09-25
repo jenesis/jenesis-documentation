@@ -194,13 +194,20 @@ own output and naming them in an `inventory.properties` there, under the prefix 
 module-sources.attachment.notice=notices/module-sources/NOTICE.txt
 ```
 
+The key after the prefix is any key the module's inventory knows, read by the stages as the module's own:
+
 - **`<module>.attachment.<classifier>`** is staged beside the module's jar under that classifier:
   `<artifact>-<version>-<classifier>.<extension>` in the Maven tree, `<module>-<classifier>.<extension>` in the
   modular tree.
 - **`<module>.report.<name>`** is staged with the module's reports under `stage/reports/`.
 
-A transform adds and never replaces: an inventory naming anything else, or a module the build does not have,
-fails the build, and so does an attachment whose file name the build stages already. A transform that brings
+What a transform adds is its author's responsibility. A module the build does not have fails the build, and so
+does a key two transforms add, or an attachment whose file name the build stages already.
+
+What belongs to no module - an aggregated report, a site, a distribution of every module - a transform writes into
+a **`project/`** folder of its own output, laid out as it sees fit. `stage` copies it as it stands into
+`target/stage/project/output/`, where exporters and releasers find it with the rest, and a file two transforms
+place at the same path fails the build. A transform that brings
 its own SBOM, say, attaches it as `cyclonedx` once `-Djenesis.sbom.cyclonedx=false` has switched off the stock
 one. An inspection reads the same inventories plus what the transforms added, and fails the build by throwing.
 It writes only into its own output: an inspection that changes a file it was handed fails the build as well.
