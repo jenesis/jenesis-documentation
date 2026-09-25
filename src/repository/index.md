@@ -22,9 +22,14 @@ a directory on a volume, or a bucket on S3, Google Cloud Storage or Azure Blob.
 - **Artifacts stream through, never into memory.** An upload or a download is copied between the network and the
   store without being held whole, so a small POM and a multi-gigabyte image layer cost the server the same
   small, fixed amount of memory.
-- **Every capability can be switched off.** Each format, storage backend and screening feed is a module the
-  server discovers at startup, and a setting turns it off exactly as if it were absent. You shape a deployment
-  with configuration, not by building a different image.
+- **Everything is a module.** Each format, storage backend, screening feed and console page is a Java module
+  that plugs into the server through a service interface, and the server assembles itself from whichever modules
+  it finds at startup. So a feature of your own is a module that implements that interface - a new package
+  format, a storage backend, a screening source - added to a composition of your own; and a feature you do not
+  want is left out of the composition, or switched off with a setting exactly as if it were absent. Adding or
+  removing one never means changing the rest, which is what keeps the repository manager easy to extend and to
+  maintain. [Compose a smaller server](/repository/from-source/#compose-a-smaller-server) shows how a composition
+  is built.
 
 ## How this section is organised
 
