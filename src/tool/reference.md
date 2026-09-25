@@ -375,9 +375,10 @@ The `build`, `stage`, `export`, `release`, and `pin` modules are the top-level t
 each layout wires the `maven` and/or `modular` staging and export sub-steps under them. When a project names
 plugins of the whole project, `build` also holds `preprocess/custom/<name>`, which runs before any module is built,
 and `postprocess/transform/<name>` and `postprocess/inspect/<name>`, which run over every module after it is built,
-while `export` and `release` hold `custom/<name>` beside their own steps, and the top-level `plugin` holds a
-plugin of the slot `plugin` as `plugin/<name>`, run only when named; `stage/project` then holds what the transforms
-placed in the project (see *[Extending the
+while `stage` holds `transform/<name>` and `inspect/<name>` - with the stock staging then in `staged/<tree>` and
+each `stage/<tree>` merging it with what the transforms of stage added - `export` and `release` hold
+`custom/<name>` beside their own steps, and the top-level `plugin` holds a plugin of the slot `plugin` as
+`plugin/<name>`, run only when named; `stage/project` holds what the transforms placed in the project (see *[Extending the
 build](/tool/extending-the-build/#plugins-for-the-whole-project)*).
 
 ## Source declarations
