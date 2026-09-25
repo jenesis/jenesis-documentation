@@ -26,10 +26,32 @@ answering, and a type the deployment does not offer is refused with `400` and th
 repository is administration: the key needs `manage:write`, which the **admin** role grants, and in the console it
 takes the editor role.
 
+A repository may carry a **description** - one line of up to 280 characters, shown under its name in the list -
+given at creation beside the type, `{"value":"npm","description":"Internal packages"}`, or later on its own,
+`{"description":"…"}`, which changes the description of a repository that exists and leaves its type alone. An empty
+description clears it.
+
 Nothing else creates a repository. A request to one that was never created is answered `404`, and a publish into
 one is refused with `404` and a sentence saying so - so a misspelled name in a build's configuration fails rather
 than becoming a repository. A repository whose format has been switched off answers `404` the same way until the
 format is back.
+
+## Deleting a repository
+
+Deleting a repository removes it **and everything it holds** - every artifact, index, staged upload and pin, and
+its definition - and cannot be undone. In the console it is the **Delete** button on its row, or **Delete
+repository** at the foot of its own page, and it asks you to type `delete <name>` before it does anything. Every
+other deletion in the console asks the same way.
+
+```bash
+curl -X DELETE -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/default/npm
+```
+
+The repository stops answering at once; what it held is removed in the background, so the answer is `202` however
+large it is, and the list shows it as **being deleted** until it is gone - after which the name can be created
+again. A deletion that a restart interrupted is finished by deleting again. Like creating one, deleting a
+repository takes `manage:write`; a key that may only publish into it is refused. From the command line,
+`jenesis-repo repos delete <name>` asks for the same typed confirmation, or takes `--yes` in a script.
 
 ## The URL a client reaches
 
@@ -51,8 +73,9 @@ shows how.
 
 ## The Repositories page
 
-**Repositories → All repositories** lists the tenant's repositories, each with the mark of the type it holds, the
-type's name, and badges that describe its shape:
+**Repositories → All repositories** lists the tenant's repositories beside the form that creates one. Each is shown
+with the mark of the type it holds, its description, the type's name, when it was created, and badges that describe
+its shape:
 
 | Badge | Meaning |
 | --- | --- |
@@ -64,13 +87,13 @@ type's name, and badges that describe its shape:
 A definition that is valid but risky - an upstream over plain HTTP, a fallback that skips screening - is listed
 under **Definition warnings** at the top, so it is seen rather than discovered.
 
-**New repository** creates one: a name - letters, digits, hyphens and underscores - and a type from those the
-deployment offers. It answers at `/repository/<tenant>/<name>/`, or `/v2/<tenant>/<name>/` for container images,
+**New repository** creates one: a name - letters, digits, hyphens and underscores - a type from those the
+deployment offers, and optionally a description. It answers at `/repository/<tenant>/<name>/`, or `/v2/<tenant>/<name>/` for container images,
 from the moment it is created. A repository that holds files but no type - one kept from before repositories had
 types - is listed with a **no format** badge and answers nothing until an editor gives it one with **Give
 format**.
 
-Beside it, below the list, are two tenant-wide limits:
+Below them, under **Limits**, are two tenant-wide limits:
 
 - **Storage quota** - the most the deployment may store, across every repository, in bytes; a publish that
   would exceed it is refused. `0` means no limit, and the page shows how much is stored now.
