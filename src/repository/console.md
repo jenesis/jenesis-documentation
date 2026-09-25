@@ -6,7 +6,10 @@ description: The console's two navigation levels - the sections across the top a
 
 The console is where you look after a deployment: what its repositories hold, what the gate decided, who may do
 what, and how the server is configured. It runs inside the server, on the same port, so there is nothing else to
-start - open the server's address in a browser and sign in. This chapter shows how it is laid out, so the
+start - open the server's address in a browser and sign in. Every console page lives under `/ui/`, and the
+server's bare address redirects there: signing in is `/ui/login`, and signing out posts to `/ui/logout`. An
+identity provider returns the browser to `/login/oauth2/code/github` or `/login/oauth2/code/oidc`, which is the
+callback address to register with it. This chapter shows how it is laid out, so the
 chapters that follow can say "open **Access → Credentials**" and you know where that is.
 
 ## Two levels
@@ -19,7 +22,7 @@ the middle.
 | --- | --- |
 | **Repositories** | All repositories, and each repository by name |
 | **Build cache** | Projects |
-| **Access** | Credentials, Members |
+| **Access** | Credentials, Members, Audit trail |
 | **Operations** | Metrics, Security posture, Walks, and Deploy once it is switched on |
 | **Settings** | Setup, Settings, Tenant settings, Modules, Installed providers, Instances |
 
@@ -62,8 +65,8 @@ administrators:
 | Role | Can |
 | --- | --- |
 | **Viewer** | Read every repository page and the build cache's projects. |
-| **Editor** | Everything a viewer can, and change things: save a retention policy, pin a version, release or discard a held artifact, promote a staging upload. |
-| **Admin** | Everything an editor can, and manage access: **Credentials**, **Members**, and manual uploads through **Deploy**. |
+| **Editor** | Everything a viewer can, and change things: create a repository, save a retention policy, pin a version, release or discard a held artifact, promote a staging upload. |
+| **Admin** | Everything an editor can, and manage access: **Credentials**, **Members**, the **Audit trail**, the tenant's storage quota and rate limit, and manual uploads through **Deploy**. |
 | **Super-administrator** | Everything, across the whole deployment: the **Operations** pages other than **Deploy**, and all of **Settings**. |
 
 A page you may read but not change shows its data without the forms that would change it.

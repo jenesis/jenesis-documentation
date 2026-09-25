@@ -69,7 +69,8 @@ See [Repositories](/repository/repositories/).
 
 | Key | Default | Effect |
 | --- | --- | --- |
-| `repositories.<name>` | *(empty)* | A repository definition, as on **Settings → Repository definitions**. |
+| `tenancy` | `fixed` | How a request's tenant is decided, read once at startup. `fixed` serves the one tenant `default-tenant` names and answers `404` for a URL naming any other; a name no installed routing answers to refuses to start. |
+| `repositories.<name>` | *(empty)* | A repository definition, as on **Settings → Repository definitions**. It routes a repository that exists; it does not create one. |
 | `proxy.<format>` | *(empty)* | The upstream a format fetches a miss from, as on **Settings → Format upstreams**. |
 | `proxy-miss-ttl` | `60s` | How long an upstream miss is remembered. |
 
@@ -289,9 +290,7 @@ Explained in [Settings](/repository/settings/).
 | Key | Default | Applies | Effect |
 | --- | --- | --- | --- |
 | `block-private-import-hosts` | `true` | on restart | Reject a migration URL that is plaintext http, or that resolves to a loopback, link-local or private address. |
-| `create-repository-on-publish` | `false` | at once | Let a publish create the repository it names; off, a repository is created in the console or by a definition, and a request to one that does not exist answers `404`. |
-| `default-repository` | `releases` | on restart | Repository the console browses by default. |
-| `default-tenant` | `default` | on restart | Tenant a request resolves to when its key carries none. |
+| `default-tenant` | `default` | on restart | The tenant this deployment serves - the first part of every URL, `/repository/<tenant>/…`, `/v2/<tenant>/…` and `/build/<tenant>/…`. |
 | `public-url` | *(empty)* | on restart | The address clients reach this deployment at (https://repo.example.com), for the absolute URLs generated indexes carry. |
 | `rate-limit` | `6000` | on restart | Requests a minute per tenant before `429`; `0` removes the limit, and a tenant's own ceiling on the **Repositories** page replaces it. |
 | `trusted-proxies` | *(empty)* | on restart | Comma-separated CIDRs of reverse proxies whose X-Forwarded-For, X-Forwarded-Proto and X-Forwarded-Host are believed. |
@@ -302,7 +301,7 @@ Explained in [Connecting your build tools](/repository/formats/).
 
 | Key | Default | Applies | Effect |
 | --- | --- | --- | --- |
-| `terraform.prefix` | `/repository/terraform/registry` | on restart | The path this deployment serves its Terraform registry under, as the discovery document at /.well-known/terraform.json reports it. |
+| `terraform.prefix` | `/repository/default/terraform/registry` | on restart | The path this deployment serves its Terraform registry under, as the discovery document at /.well-known/terraform.json reports it. |
 
 ### Maven
 

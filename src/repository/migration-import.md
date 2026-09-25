@@ -11,8 +11,12 @@ everything back out when you leave.
 ## Starting an import
 
 An import is a background job that walks another repository manager and publishes every artifact it finds
-into this repository, through the same gate a client's upload passes. Open the repository you are importing
-into and choose **Import**. Under **Start a migration**:
+into this repository, through the same gate a client's upload passes. The repository is created first, with the
+type of what you are bringing in (see [Repositories](/repository/repositories/)): an import into a repository that
+holds no type is refused before it starts, and a repository holds one type, so an import lays out only the formats
+it holds - a Nexus instance with Maven and Docker repositories is brought into a `maven` repository and an `oci`
+one, one import each. Open the repository you are importing into and choose **Import**. Under **Start a
+migration**:
 
 | Field | Meaning |
 | --- | --- |
@@ -27,11 +31,11 @@ imported, skipped, held for review and rejected, refreshing while one runs. A jo
 **Resume from cursor**, which continues from its last checkpoint rather than starting over; **Dismiss** removes a
 finished job from the list, and finished jobs are dismissed on their own after seven days.
 
-The same import can be started from a script with a `POST` to `/repository/admin/import` and a key that may write
-to the repository:
+The same import can be started from a script with a `POST` to the repository's `admin/import` path -
+`/repository/<tenant>/<repository>/admin/import` - and a key that may write to the repository:
 
 ```bash
-curl -X POST https://repo.example.com/repository/admin/import \
+curl -X POST https://repo.example.com/repository/default/releases/admin/import \
   -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
   -d '{
         "source": "nexus",
@@ -56,8 +60,8 @@ The request fields, which match the form:
 | `resume` | no | The id of an earlier job. The walk continues under that same id, from its recorded position. |
 
 The other connectors report a format per asset, so they take none. Only `POST` starts a job; any other
-method on `/repository/admin/import` answers `405`. A deployment in read-only mode refuses imports with
-`403`.
+method on `admin/import` answers `405`, and an import into a repository that holds no type answers `400`. A
+deployment in read-only mode refuses imports with `403`.
 
 <div class="warning">
   The import URL is screened before anything is fetched: it must be <code>https</code>, and it must not resolve
@@ -74,7 +78,7 @@ The job writes its state into the store, so it survives a restart and any node c
 with the id the `POST` returned:
 
 ```bash
-curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/admin/import/a1b2c3…
+curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/default/releases/admin/import/a1b2c3…
 ```
 
 ```json
@@ -85,8 +89,8 @@ curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/admin
 | Field | Meaning |
 |---|---|
 | `state` | `running`, `completed` or `failed`. |
-| `imported`, `skipped`, `held`, `rejected` | Running counts. An asset is skipped when no installed importer handles its format, and when that format is switched off. |
-| `skippedFormats` | The formats that were skipped, so you can see what a missing format module cost you. |
+| `imported`, `skipped`, `held`, `rejected` | Running counts. An asset is skipped when its format is not one the repository holds, when no installed importer handles its format, and when that format is switched off. |
+| `skippedFormats` | The formats that were skipped, so you can see what the repository's type or a missing format module left behind. |
 | `cursor` | The walk's last checkpoint, kept for a resume. `null` once the walk is finished. |
 | `asset` | The last asset imported. |
 | `error` | The failure message when `state` is `failed`. |
@@ -135,10 +139,9 @@ up front. It migrates whatever the installed format can enumerate from the sourc
 ### Jenesis
 
 `jenesis` walks another Jenesis Repository through its `/api/assets` listing (below), so one instance
-migrates into another. Its credential is the source's API key, passed as the `password`. The first
-download settles the source's serving-path shape - a source that names the repository in its serving
-path and one that serves its space at `/repository/` directly are both read - so nothing about the
-source's layout needs configuring.
+migrates into another. `repository` names the source repository, and the credential is the source's API key,
+passed as the `password`. Each asset is downloaded from the path the listing says the source serves it at, so
+nothing about the source's layout needs configuring.
 
 ## What the importers write
 
@@ -146,7 +149,7 @@ A connector hands each asset to the importer for its format. Three ship with the
 
 | Importer | Accepts source formats | Writes |
 |---|---|---|
-| Maven | `maven`, `maven2` | The artifact at its Maven path. A jar that carries a module name is cross-published into the module layout, exactly as a normal Maven publish is. |
+| Maven | `maven`, `maven2` | The artifact at its Maven path. A jar that carries a module name is cross-published into the module layout, exactly as a normal Maven publish is, which a `java` repository serves. |
 | OCI / Docker | `oci`, `docker` | Layers, configs and manifests into the content-addressed store, where they dedupe against everything else. |
 | Raw | `raw`, `generic` | The file at its path under the raw layout. |
 
@@ -172,7 +175,7 @@ publish each entry as if it had been deployed on its own. The feature is off by 
 to, with the `Jenesis-Explode: zip` header:
 
 ```bash
-curl -X PUT -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/maven/ \
+curl -X PUT -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/default/releases/maven/ \
   -H 'Jenesis-Explode: zip' \
   --data-binary @artifacts.zip
 ```
@@ -186,29 +189,31 @@ is understood; another encoding answers `415`.
 
 ## Listing everything back out
 
-Leaving is as easy as arriving. `GET /api/assets` lists every published artifact in a repository as a flat,
-stably ordered, paged JSON list - the same listing the `jenesis` connector reads when another instance
-imports from this one:
+Leaving is as easy as arriving. `GET /api/assets?repo=<repository>` lists every published artifact in a
+repository as a flat, stably ordered, paged JSON list - the same listing the `jenesis` connector reads when
+another instance imports from this one:
 
 ```bash
-curl -H "Jenesis-Repository-Key: $KEY" 'https://repo.example.com/api/assets?limit=500'
+curl -H "Jenesis-Repository-Key: $KEY" 'https://repo.example.com/api/assets?repo=releases&limit=500'
 ```
 
 ```json
 {"repository":"releases",
- "assets":[{"path":"maven/org/example/app/1.0/app-1.0.jar","size":48213,"sha256":"9f3b…",
+ "assets":[{"path":"/maven/org/example/app/1.0/app-1.0.jar",
+            "served":"/repository/default/releases/maven/org/example/app/1.0/app-1.0.jar",
+            "size":48213,"sha256":"9f3b…",
             "format":"maven","ecosystem":"Maven","coordinate":"org.example:app","version":"1.0",
             "prerelease":false}],
  "cursor":"bWF2ZW4v…"}
 ```
 
-Each entry carries the request path, size and SHA-256 straight from the publication record - no artifact is
-opened - plus the format's reading of it: `format`, `ecosystem`, `coordinate`, `version` and `prerelease`.
-Pass the returned `cursor` back as `?cursor=` for the next page; it is `null` once the listing is exhausted.
-`limit` defaults to 500 and is capped at 1 000, and `repo` names another repository than the one the
-request routed to. The read needs `repository:read` on the repository it lists.
+Each entry carries the path, size and SHA-256 straight from the publication record - no artifact is opened -
+plus `served`, the URL path a client downloads it from, and the format's reading of it: `format`, `ecosystem`,
+`coordinate`, `version` and `prerelease`. Pass the returned `cursor` back as `?cursor=` for the next page; it is
+`null` once the listing is exhausted. `repo` is required and names a repository of the tenant the server serves;
+`limit` defaults to 500 and is capped at 1 000. The read needs `repository:read` on the repository it lists.
 
-The bytes themselves are addressed by the paths the listing returns, so any HTTP client can copy a
+The bytes themselves are addressed by the `served` paths the listing returns, so any HTTP client can copy a
 repository out - and another Jenesis Repository imports one directly with the `jenesis` connector above.
 
 ## Settings

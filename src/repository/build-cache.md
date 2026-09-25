@@ -6,8 +6,12 @@ description: The remote build cache the repository keeps for the Jenesis build t
 
 Beside its repositories, the server keeps a **remote build cache** for the [Jenesis build tool](/tool/). A build
 that finds a step's result in the cache downloads it instead of running the step, so work done once - on a
-colleague's machine, in an earlier CI job - is not done again. The cache answers at `/cache/` on the same port,
-authorises with the same keys, and is looked after in the console under **Build cache**.
+colleague's machine, in an earlier CI job - is not done again. The cache answers on the same port, authorises with
+the same keys, and is looked after in the console under **Build cache**.
+
+Each tenant has a cache of its own, at `/build/<tenant>/` - `/build/default/` on a deployment that serves the
+`default` tenant. A key reaches its own tenant's cache and no other: a request naming another tenant's cache is
+answered `403`.
 
 ## Projects
 
@@ -30,16 +34,18 @@ grants** enter the project's name - or `*` for every project - with the role:
 
 ## Pointing a build at it
 
-Give the Jenesis build tool the cache's address, the project and the key:
+Give the Jenesis build tool the tenant's cache as its address, with the project and the key:
 
 ```bash
-java -Djenesis.cache.uri=https://repo.example.com/cache \
+java -Djenesis.cache.uri=https://repo.example.com/build/default \
      -Djenesis.cache.project=my_project \
      -Djenesis.cache.key="$KEY" \
      build/jenesis/Make.java
 ```
 
-The project and the key travel as headers, never in the URL, and both can come from the environment instead -
+The build tool appends each result's address - the step and the digest of its inputs, `/<step>/<inputs>` - to
+that URL. The project and the key travel as headers (`Jenesis-Cache-Project` and `Jenesis-Cache-Key`), never in
+the URL, and both can come from the environment instead -
 `JENESIS_CACHE_PROJECT` and `JENESIS_CACHE_KEY` - which is the usual way in CI. The build tool's chapter on
 [build performance](/tool/build-performance-and-isolation/) covers the rest of the client side: layering the
 remote cache behind the local one, and timeouts.

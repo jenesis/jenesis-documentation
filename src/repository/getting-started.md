@@ -1,12 +1,13 @@
 ---
 order: 2
 title: Getting started
-description: Run Jenesis Repository from its Docker image, sign in to the console, issue a key for your build tools, and publish and resolve your first artifacts with Maven and npm.
+description: Run Jenesis Repository from its Docker image, sign in to the console, create repositories, issue a key for your build tools, and publish and resolve your first artifacts with Maven and npm.
 ---
 
 This chapter takes you from nothing to a running repository in a few minutes. You start the server from its
-Docker image, sign in to the web console, issue a key for your build tools, and publish and resolve an artifact
-with Maven and with npm. Everything later in this section builds on what is here.
+Docker image, sign in to the web console, create a repository for Maven and one for npm, issue a key for your
+build tools, and publish and resolve an artifact with each. Everything later in this section builds on what is
+here.
 
 ## Run the image
 
@@ -48,8 +49,8 @@ curl -s http://localhost:8080/actuator/health        # {"groups":[…],"status":
 
 ## Sign in
 
-Open `http://localhost:8080` in a browser. The sign-in page offers **Sign in with a key**; choose it and paste
-the key you kept.
+Open `http://localhost:8080` in a browser; the console lives under `/ui/`, and the address redirects there. The
+sign-in page offers **Sign in with a key**; choose it and paste the key you kept.
 
 The first sign-in with that key lands on **Setup**, a short guide through the decisions a new deployment
 should make - which advisory feeds to consult, what the gate does with a vulnerable or malicious package,
@@ -59,6 +60,21 @@ console, and the guide stays reachable as **Settings → Setup**.
 The console is laid out in two levels. Across the top are its sections - **Repositories**, **Build cache**,
 **Access**, **Operations** and **Settings** - and down the left side are the pages of the section you are in.
 [Finding your way around](/repository/console/) walks through them.
+
+## Create the repositories
+
+A repository holds one type of artifact, and it is created before anything is published into it - a publish
+into a repository that does not exist is refused with `404`. Create two:
+
+1. Open **Repositories → All repositories**.
+2. Under **New repository**, enter the name `releases`, choose the type **maven**, and press **Create
+   repository**.
+3. Do the same with the name `npm` and the type **npm**.
+
+Every URL names the tenant and then the repository: a new deployment serves the tenant `default`, so these two
+answer at `/repository/default/releases/` and `/repository/default/npm/`. A script creates a repository with a
+`PUT` of that URL naming the type - [Repositories](/repository/repositories/) shows how - and
+[Connecting your build tools](/repository/formats/) lists the other types.
 
 ## Issue a key for your build tools
 
@@ -81,8 +97,9 @@ KEY=jenk_default.…
 
 ## Publish and resolve with Maven
 
-The repository answers Maven at `/repository/maven/`. Put the key in `~/.m2/settings.xml` as the password of a
-server entry - the user name is not checked:
+A Maven repository keeps Maven's own `maven/` segment in its URLs, so `releases` answers Maven at
+`/repository/default/releases/maven/`. Put the key in `~/.m2/settings.xml` as the password of a server entry - the
+user name is not checked:
 
 ```xml
 <settings>
@@ -101,10 +118,10 @@ Publish a jar, then resolve it back:
 ```bash
 mvn deploy:deploy-file -Dfile=app.jar \
   -DgroupId=com.example -DartifactId=app -Dversion=1.0 -Dpackaging=jar \
-  -DrepositoryId=jenesis -Durl=http://localhost:8080/repository/maven/
+  -DrepositoryId=jenesis -Durl=http://localhost:8080/repository/default/releases/maven/
 
 mvn dependency:get -Dartifact=com.example:app:1.0 \
-  -DremoteRepositories=jenesis::default::http://localhost:8080/repository/maven/
+  -DremoteRepositories=jenesis::default::http://localhost:8080/repository/default/releases/maven/
 ```
 
 In a project, the same URL goes into `<distributionManagement>` to publish and into `<repositories>` to
@@ -112,25 +129,27 @@ resolve, each with the `jenesis` id so Maven finds the credentials.
 
 ## Publish and resolve with npm
 
-The same repository answers npm at `/repository/npm/`. Point npm at it and give it the key as a token:
+The `npm` repository is the registry at `/repository/default/npm/`. Point npm at it and give it the key as a
+token:
 
 ```bash
-npm config set registry http://localhost:8080/repository/npm/
-npm config set //localhost:8080/repository/npm/:_authToken "$KEY"
+npm config set registry http://localhost:8080/repository/default/npm/
+npm config set //localhost:8080/repository/default/npm/:_authToken "$KEY"
 
 npm publish                  # from a package's folder
 npm install my-package       # from anywhere else
 ```
 
-Every other client follows the same pattern - a URL under `/repository/` and the key as a password or a token.
+Every other client follows the same pattern - a repository of its type, its URL under
+`/repository/default/`, and the key as a password or a token.
 [Connecting your build tools](/repository/formats/) lists them all.
 
 ## See it in the console
 
-Back in the console, **Repositories** now lists `releases`, the repository a deployment serves by default. Open
-it: the overview shows its most recent releases, and the pages on the left take you into it - **Browse & search**
-walks the stored files, and **Quarantine**, **Vulnerabilities** and their neighbours show what the gate decided
-about each artifact on its way in.
+Back in the console, **Repositories** lists `releases` and `npm`. Open `releases`: the overview shows its most
+recent releases, and the pages on the left take you into it - **Browse & search** walks the stored files, and
+**Quarantine**, **Vulnerabilities** and their neighbours show what the gate decided about each artifact on its way
+in.
 
 ## Stopping, upgrading and backing up
 
