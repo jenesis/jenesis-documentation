@@ -576,17 +576,14 @@ Jenesis installs no JDK by itself. It runs an installer you name when no JDK on 
 `jenesis.toolchain.installer` or, where that is not set, in the `JENESIS_TOOLCHAIN_INSTALLER` environment
 variable. The Jenesis command-line install ships one, `jenesis-jdk`.
 
-Where SDKMAN installed Jenesis, there is nothing to turn on: the `jenesis` command names its own
-`jenesis-jdk` in `JENESIS_TOOLCHAIN_INSTALLER` whenever the variable is unset, and `jenesis-jdk` installs the
-JDK with SDKMAN in turn. Anywhere else, turn it on once, for every project:
+Where SDKMAN, mise or Scoop installed Jenesis, there is nothing to turn on: the `jenesis` command names its
+own `jenesis-jdk` in `JENESIS_TOOLCHAIN_INSTALLER` for the run it starts, unless the variable is set already,
+and `jenesis-jdk` installs the JDK with that tool in turn. Nothing is written to your files to arrange it, and
+the variable ends with the run. A build started from the sources, as `java build/jenesis/Make.java`, has no
+installing tool to call back, and runs an installer only where you name one.
 
-```bash
-jenesis-jdk --enable
-```
-
-That adds `jenesis.toolchain.installer=jenesis-jdk` to your `~/.jenesis/jenesis.properties`. The setting wins
-over the environment variable, and an empty one, `-Djenesis.toolchain.installer=`, runs no installer at all.
-`jenesis-jdk` turns the version into a request for the tool that installs JDKs on your machine:
+The setting wins over the environment variable, and an empty one, `-Djenesis.toolchain.installer=`, runs no
+installer at all. `jenesis-jdk` turns the version into a request for the tool that installed Jenesis:
 
 | Tool | What it installs |
 | --- | --- |
@@ -594,7 +591,8 @@ over the environment variable, and an empty one, `-Djenesis.toolchain.installer=
 | mise | The newest build of the vendor matching the numbers, as mise resolves it. mise names Zulu builds by Zulu's own version, so for Zulu it installs the newest build of the feature release. |
 | Scoop, on Windows | The package of the vendor and feature release from Scoop's `java` bucket, in its newest build. |
 
-`jenesis-jdk` prefers the tool Jenesis itself was installed with; `--tool=sdkman` or `--tool=mise` picks one.
+`jenesis-jdk` calls back the tool Jenesis itself was installed with, and picks none of its own:
+`--tool=sdkman` or `--tool=mise` names one when you run it yourself.
 A word of the version names the vendor - `temurin`, `zulu`, `corretto`, `liberica`, `microsoft`,
 `sapmachine`, `semeru`, `graalvm`, `oracle` or `jetbrains` - and Temurin is installed when none does. Scoop
 offers Temurin, Zulu, Corretto, Liberica and GraalVM only.
@@ -603,7 +601,7 @@ Any other program works as well. Jenesis calls it with its own arguments followe
 home folder rather than the project, and treats a non-zero exit as a failed build. The program has to install
 into a folder on the search path: Jenesis searches once more afterwards, and checks what it finds like any
 other JDK. A name is looked up in the folders of `PATH` that are absolute, and a path has to be absolute or
-start with `~`.
+start with `~`; a value that names an existing file is that program as a whole, spaces included.
 
 ### What a project cannot set
 
