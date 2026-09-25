@@ -28,8 +28,8 @@ The key is `<name>+<slot>`. The **name** is the plugin's own, and holds neither 
 module of the stock build the plugin adds to, named as the build log shows it: `check`, `format`, `compliance`,
 `binary`, `binary/generated`, `binary/compiled`, `binary/validate`, `artifact`, `observed`, `documentation`,
 `documentation/generate` and `package`. A key without `+<slot>` adds the plugin to the module build itself, and an
-unknown slot is refused; the five slots that run once for the whole project - `preprocess`, `postprocess/transform`,
-`postprocess/inspect`, `export` and `release` - have a section of their own below. The value says where the plugin comes from:
+unknown slot is refused; the six slots that run once for the whole project - `preprocess`, `postprocess/transform`,
+`postprocess/inspect`, `export`, `release` and `plugin` - have a section of their own below. The value says where the plugin comes from:
 
 - a value starting with `./` is a folder of the project, compiled from source on every build, and
 - anything else is a module name, resolved as `module/<name>` from the Jenesis module repository whatever the
@@ -115,7 +115,7 @@ package whose name another packager, or `jpackage`, writes already fails the bui
 
 ## Plugins for the whole project
 
-A plugin in a module slot sees one module. Five slots run a plugin once for the whole project instead:
+A plugin in a module slot sees one module. Six slots run a plugin once for the whole project instead:
 
 ```properties
 # jenesis.plugins.properties
@@ -124,6 +124,7 @@ notice+postprocess/transform=./notice
 audit+postprocess/inspect=./audit
 publish+export=./publish
 announce+release=./announce
+checksums+plugin=./checksums
 ```
 
 | Slot | Runs as | Runs | Is handed |
@@ -133,6 +134,7 @@ announce+release=./announce
 | `postprocess/inspect` | `build/postprocess/inspect/<name>` | after the transforms | the same, plus what they added |
 | `export` | `export/custom/<name>` | with `export`, beside its stock steps | everything staged |
 | `release` | `release/custom/<name>` | with `release`, beside its stock steps | everything staged |
+| `plugin` | `plugin/<name>` | only when `plugin/<name>` is named | what `build` and `stage` produced |
 
 Each keeps its plugins apart from its own steps, so a plugin may take any name. The line itself switches such a
 plugin on, as no `plugin-<name>.properties` applies to it. Their names take no `/`, `.` or `+`, and a name used
@@ -153,6 +155,11 @@ release page - and run only when `export` or `release` is asked for. Naming `exp
 runs the plugins alone, without the steps Jenesis runs there itself. Such a step writes outside the build, so it
 overrides `shouldRun` to run every time it is selected, as the stock export steps do, rather than only when
 what it reads has changed.
+
+A plugin under **`plugin`** belongs to no goal: nothing waits for it, and it runs only when its own selector is
+named, as `java build/jenesis/Make.java plugin/checksums`. It is handed what `build` and `stage` produced, so it
+suits a benchmark, a documentation site or a smoke test against a staged image. `plugin/` holds nothing but these
+plugins, so a name never collides with anything of Jenesis.
 
 ### Configuring them
 
@@ -421,7 +428,8 @@ InferredMultiProjectAssembler checked = stock.check(check -> check.custom("place
 
 The plugins of the whole project are a value of the project rather than of the assembler: `plugins()`
 answers the `ProjectPlugins` that `jenesis.plugins.properties` declared, and `preprocess(name, step)`,
-`transform(name, step)`, `inspect(name, step)`, `export(name, step)` and `release(name, step)` add one more, a
+`transform(name, step)`, `inspect(name, step)`, `export(name, step)`, `release(name, step)` and `goal(name, step)`
+add one more, a
 step or a module, refusing a name that is taken already. Here
 `ReleaseAudit` is a `BuildStep` of the project that throws when a module's inventory lacks what every release must
 carry:
