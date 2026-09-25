@@ -211,6 +211,7 @@ body { --pico-line-height: 1.6; }
 .docs-content h2, .docs-content h3 { scroll-margin-top: calc(var(--docs-header-height) + var(--app-space-4)); }
 .docs-content h2:focus, .docs-content h3:focus { outline: none; }
 .docs-anchor { cursor: pointer; }
+.docs-anchor__link::before { content: "#"; }
 .docs-anchor__link {
   margin-left: var(--app-space-2); font-size: var(--app-font-size-base); font-weight: 400;
   color: var(--pico-muted-color); text-decoration: none; opacity: 0; transition: opacity var(--pico-transition);

@@ -45,7 +45,8 @@
     var link = document.createElement("a");
     link.className = "docs-anchor__link";
     link.href = "#" + id;
-    link.textContent = "#";
+    // The marker is drawn by the stylesheet rather than written into the heading, so copying a heading copies
+    // its words and not a trailing "#"; the label below is what a screen reader announces.
     link.setAttribute("aria-label", "Copy link to this section");
     link.title = "Copy link to this section";
     heading.classList.add("docs-anchor");

@@ -151,21 +151,174 @@ name creates that space; the repository itself has to exist first. The Terraform
 `/.well-known/terraform.json` names one registry path for the whole host, `terraform.prefix`, which is
 `/repository/default/terraform/registry` - a `terraform` repository named `terraform` - unless you set it.
 
-## Maven and Gradle
+## Maven, Gradle and Jenesis
 
-Maven publishes with `mvn deploy` and resolves through `<repositories>` or a `<mirror>`, all at the one URL;
-[Getting started](/repository/getting-started/) shows the `settings.xml` entry. Gradle uses the same URL with a
-`maven { url … ; credentials { username = "jenesis"; password = key } }` block, or an `ivy` repository's URL when
-a build publishes Ivy descriptors.
+A repository holds one format, so each tool needs a repository of the type it speaks. Maven, Gradle and a Jenesis
+build all read the Maven layout from a `maven` or `java` repository at `/repository/default/<repo>/maven/`; a Gradle
+build that publishes Ivy descriptors needs an `ivy` repository, and a Jenesis build that resolves modules by name a
+`jenesis` or `java` repository. What a client uploads - POMs and `maven-metadata.xml` included - is stored and
+served back verbatim. A key goes wherever the tool keeps credentials outside the project, so it is never
+committed with the build.
 
-The repository stores what you upload, POMs and `maven-metadata.xml` included, and serves them back verbatim.
+### Maven
+
+The key is the password of a server entry in `~/.m2/settings.xml`; the user name is not checked:
+
+```xml
+<settings>
+  <servers>
+    <server>
+      <id>jenesis</id>
+      <username>jenesis</username>
+      <password>jenk_default.…</password>
+    </server>
+  </servers>
+</settings>
+```
+
+The project names the repository by that id, to publish with `mvn deploy` and to resolve from:
+
+```xml
+<project>
+  <distributionManagement>
+    <repository>
+      <id>jenesis</id>
+      <url>https://repo.example.com/repository/default/<repo>/maven/</url>
+    </repository>
+  </distributionManagement>
+
+  <repositories>
+    <repository>
+      <id>jenesis</id>
+      <url>https://repo.example.com/repository/default/<repo>/maven/</url>
+    </repository>
+  </repositories>
+</project>
+```
+
+To send every download through the repository instead - when it [proxies](/repository/proxying/) Maven Central
+or groups a proxy with your own releases - name it as a mirror in `settings.xml` rather than in each project:
+
+```xml
+<mirrors>
+  <mirror>
+    <id>jenesis</id>
+    <mirrorOf>*</mirrorOf>
+    <url>https://repo.example.com/repository/default/<repo>/maven/</url>
+  </mirror>
+</mirrors>
+```
+
+### Gradle
+
+A repository named `jenesis` with `PasswordCredentials` reads its user name and key from `jenesisUsername` and
+`jenesisPassword`, which belong in `~/.gradle/gradle.properties`:
+
+```properties
+jenesisUsername=jenesis
+jenesisPassword=jenk_default.…
+```
+
+The build resolves from the repository and publishes to it with `./gradlew publish`:
+
+```kotlin
+// build.gradle.kts
+plugins {
+    `java-library`
+    `maven-publish`
+}
+
+repositories {
+    maven {
+        name = "jenesis"
+        url = uri("https://repo.example.com/repository/default/<repo>/maven/")
+        credentials(PasswordCredentials::class)
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("library") {
+            from(components["java"])
+        }
+    }
+    repositories {
+        maven {
+            name = "jenesis"
+            url = uri("https://repo.example.com/repository/default/<repo>/maven/")
+            credentials(PasswordCredentials::class)
+        }
+    }
+}
+```
+
+A build that publishes Ivy descriptors uses an `ivy` repository instead, at the repository's own URL. Gradle's
+default Ivy layout is the one the repository accepts, so nothing more needs saying:
+
+```kotlin
+plugins {
+    `java-library`
+    `ivy-publish`
+}
+
+repositories {
+    ivy {
+        name = "jenesis"
+        url = uri("https://repo.example.com/repository/default/<ivy-repo>/")
+        credentials(PasswordCredentials::class)
+    }
+}
+
+publishing {
+    publications {
+        create<IvyPublication>("library") {
+            from(components["java"])
+        }
+    }
+    repositories {
+        ivy {
+            name = "jenesis"
+            url = uri("https://repo.example.com/repository/default/<ivy-repo>/")
+            credentials(PasswordCredentials::class)
+        }
+    }
+}
+```
+
+### Jenesis
+
+A [Jenesis](/tool/) build resolves Maven coordinates from `jenesis.maven.uri` and modules by name from
+`jenesis.module.uri`, and both can be the one `java` repository: its Maven layout under `maven/`, and every
+modular jar published into it served by module name as well. A token is never read from a project's own
+`jenesis.properties` - it would be committed with the build - so the address and the key both go in your
+user-global `~/.jenesis/jenesis.properties`:
+
+```properties
+jenesis.maven.uri=https://repo.example.com/repository/default/<repo>/maven/
+jenesis.maven.token=jenk_default.…
+jenesis.module.uri=https://repo.example.com/repository/default/<repo>/
+jenesis.module.token=jenk_default.…
+```
+
+or in the environment, which suits a CI job:
+
+```bash
+export MAVEN_REPOSITORY_URI=https://repo.example.com/repository/default/<repo>/maven/
+export MAVEN_REPOSITORY_TOKEN="$KEY"
+export JENESIS_REPOSITORY_URI=https://repo.example.com/repository/default/<repo>/
+export JENESIS_REPOSITORY_TOKEN="$KEY"
+java build/jenesis/Make.java
+```
+
+Either way a build that names only the repository resolves from it alone. Append `,@` to an address to fall back
+to the public defaults for whatever the repository does not hold - `…/<repo>/maven/,@` - though a repository that
+proxies them already answers for them.
 
 **In a `java` repository, every modular jar is a published module too.** When a jar published through Maven
 carries a `module-info` or an `Automatic-Module-Name`, a `java` repository also serves it by module name under
-`module/` - `jenesis.module.uri` is the repository's own URL, `/repository/default/<repo>/` - so a Jenesis build
-that `requires` that module resolves it from the same repository with no second upload. A `maven` repository
-serves the Maven layout alone; creating it again with the type `java` makes it a `java` repository, with every
-URL it answered still answering.
+`module/`, so a Jenesis build that `requires` that module resolves it from the same repository with no second
+upload. A `maven` repository serves the Maven layout alone; creating it again with the type `java` makes it a
+`java` repository, with every URL it answered still answering.
 
 ## Containers
 
