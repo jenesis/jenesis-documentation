@@ -203,7 +203,7 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | --- | --- | --- |
 | `jenesis.test.skip` | `false` | Register no test steps, so no tests run. Naming the key with no value is `true`; `=false` runs the tests. |
 | `jenesis.test.filter` | *(unset)* | Comma-separated `<classRegex>[#<method>]` list; runs only matching tests. |
-| `jenesis.test.tag` | *(unset)* | Comma-separated tag names, a test running where it carries one of them, and `!<name>` to leave out the tests carrying it; translated for the test framework. A run remembers what it covered until the tests' inputs change, so a later selection runs only what no earlier run did (see *[Code quality & testing](/tool/code-quality-and-testing/#narrowing-a-test-run)*). |
+| `jenesis.test.tag` | *(unset)* | Comma-separated tag names, a test running where it carries one of them, names joined by `&` for the tests carrying all of them, and `!<name>` to leave out the tests carrying it; translated for the test framework. A run remembers what it covered until the tests' inputs change, so a later selection runs only what no earlier run did (see *[Code quality & testing](/tool/code-quality-and-testing/#narrowing-a-test-run)*). |
 | `jenesis.test.parallel` | `false` | Run tests in parallel where the framework supports it. |
 | `jenesis.test.reporting` | `false` | Emit test reports under `reports/tests/`: legacy JUnit XML and Open Test Reporting XML for `junit-platform`, TestNG's own report for `testng`. |
 | `jenesis.test.incremental` | *(off)* | Run only the tests a change can reach; the value names the digest algorithm. |
