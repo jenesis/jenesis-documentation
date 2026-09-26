@@ -366,7 +366,8 @@
 .lp-file__head code, .lp-file > summary code { background: transparent; padding: 0; color: var(--app-brand-cream); font-size: 0.8rem; }
 .lp-file__meta { white-space: nowrap; }
 .lp-file pre { margin: 0; padding: 0.8rem 0; background: transparent; overflow-x: auto; font-size: 0.78rem; line-height: 1.55; }
-.lp-file pre code { display: block; background: transparent; color: var(--lp-code-text); padding: 0; font-size: inherit; }
+/* The code is as wide as its longest line, not as the box, so a line's highlight runs on when the box scrolls. */
+.lp-file pre code { display: inline-block; min-width: 100%; box-sizing: border-box; background: transparent; color: var(--lp-code-text); padding: 0; font-size: inherit; }
 .lp-line { display: block; padding: 0 0.85rem; min-height: 1.55em; }
 .lp-line--out { color: var(--app-brand-amber); }
 .lp-line--add { background: rgba(201, 126, 44, 0.16); box-shadow: inset 3px 0 0 var(--app-brand-amber); }
