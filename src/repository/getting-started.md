@@ -79,9 +79,9 @@ A repository holds one type of artifact, and it is created before anything is pu
 into a repository that does not exist is refused with `404`. Create two:
 
 1. Open **Repositories → All repositories**.
-2. Under **New repository**, enter the name `libraries`, choose the type **maven**, and press **Create
+2. Under **New repository**, enter the name `libraries`, choose the format **maven**, and press **Create
    repository**.
-3. Do the same with the name `npm` and the type **npm**.
+3. Do the same with the name `npm` and the format **npm**.
 
 Every URL names the tenant and then the repository: a new deployment serves the tenant `releases`, so these two
 answer at `/repository/releases/libraries/` and `/repository/releases/npm/`. A script creates a repository with a

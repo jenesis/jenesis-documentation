@@ -151,9 +151,9 @@ A script does the same through the repository's operations, which name the repos
 that may read it (to list) or write to it (to promote or drop):
 
 ```bash
-curl -H "Jenesis-Repository-Key: $KEY" 'http://localhost:8080/api/repository/staging?repo=releases'
+curl -H "Jenesis-Repository-Key: $KEY" 'http://localhost:8080/api/repository/staging?repo=libraries'
 curl -X POST -H "Jenesis-Repository-Key: $KEY" \
-  'http://localhost:8080/api/repository/staging/rc1/promote?repo=releases'
+  'http://localhost:8080/api/repository/staging/rc1/promote?repo=libraries'
 ```
 
 ## Import
