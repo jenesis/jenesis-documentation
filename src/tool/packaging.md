@@ -155,7 +155,9 @@ The folder under `output/` is the module's build identity rather than its name: 
 descriptor sits at the project root, `module-<folder>` otherwise - `module-sources` for a module under
 `sources/`. The `docker` context below uses the same naming.
 
-`jmod=true` packs the module into a **`.jmod`**, staged beside the modular jar. Its one advantage over a jar is
+`jmod=true` packs the module into a **`.jmod`**, staged beside the modular jar. It holds everything the jar holds -
+the classes, the resources and the embedded [SBOM](/tool/supply-chain/) - so a runtime linked from it serves the
+same resources. Its one advantage over a jar is
 that it can carry native libraries, commands, config files and legal notices, which `jlink` then lays into the
 runtime's `lib/`, `bin/`, `conf/` and `legal/`. The three steps chain - `jmod → jlink → jpackage` - so a config file packed this
 way reaches the shipped app, where the program reads it from `<java.home>/conf/`. Packed into a jar instead,
