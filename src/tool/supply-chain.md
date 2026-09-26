@@ -35,6 +35,9 @@ places, one per consumer:
 
 - **Embedded in the jar**, at `META-INF/sbom/<artifact>.cdx.json`, so the bill of materials travels inside the
   artifact. The jar's manifest records `Sbom-Format: CycloneDX` and an `Sbom-Location` header pointing at it.
+  An executable [launcher jar](/launcher/producing-a-launcher-jar/) carries a document of its own at the same
+  place, which describes the project as an `application` and adds the launcher it shades as a dependency - once
+  if the module already depends on the same version, beside it if on another.
 - **As a report**, collected on `stage` into `target/stage/reports/output/sbom/<module>/` alongside the other
   build reports.
 - **As a Maven attachment**, when a Maven repository is staged: `stage` drops

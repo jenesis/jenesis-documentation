@@ -31,7 +31,7 @@ library is left alone and an application needs no launcher-specific configuratio
 
 ## What the build writes
 
-The build resolves the published launcher artifact and produces the jar in four moves. Everything the
+The build resolves the published launcher artifact and produces the jar in five moves. Everything the
 launcher needs at run time - the layout described in [*How it works*](/launcher/how-it-works/) - is put in
 place here:
 
@@ -49,8 +49,13 @@ place here:
    project that declares a [module layer](/tool/dependencies/#keeping-a-dependency-private) gets a
    `modulepath.<layer>` list beside them, and a `classpath.<layer>` when the layer holds jars that name no
    module.
-4. **The manifest gets one attribute**, `Main-Class: build.jenesis.launcher.Launcher`, so `java -jar` starts
+4. **The manifest names the launcher** as `Main-Class: build.jenesis.launcher.Launcher`, so `java -jar` starts
    the launcher.
+5. **The jar gets a bill of materials of its own** when the module gets one (see
+   *[Supply-chain features](/tool/supply-chain/)*): a CycloneDX document at `META-INF/sbom/<artifact>.cdx.json`, which the
+   manifest names with `Sbom-Format` and `Sbom-Location`. It lists what the module's document lists and adds the
+   launcher as a dependency of the project, which it describes as an `application`. The module's own document
+   stays in `jars/classes.jar/`.
 
 That is the complete set. The other descriptor keys and manifest attributes the launcher understands -
 bundled agents, module-access grants, signer reconstruction - are for a jar you assemble yourself; the
