@@ -83,7 +83,7 @@ export default function (eleventy) {
     });
   });
 
-  // `{% demos 18, 20 %}` closes a section with the demos that exercise it, one link per line, each named
+  // `{% demos 21, 22 %}` closes a section with the demos that exercise it, one link per line, each named
   // "Demo <number>: <name>" from demos.js. An unknown number fails the build rather than printing a dead link.
   const demoByNumber = new Map(
     demos.groups.flatMap((group) => group.demos).map((demo) => [Number(demo.slug.split("-")[1]), demo])
