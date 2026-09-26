@@ -188,22 +188,29 @@ test step executes:
 
 ```bash
 java -Djenesis.test.filter='calc.*Test#addsTwo' build/jenesis/Make.java
-java -Djenesis.test.tag='!(slow)' build/jenesis/Make.java
+java -Djenesis.test.tag='fast,io,!slow' build/jenesis/Make.java
 ```
 
 `jenesis.test.filter` takes a comma-separated list of `<classRegex>[#<method>]` entries and runs only what
-matches. `jenesis.test.tag` selects by the tags or groups your test framework already understands. On the
-JUnit Platform that is a tag expression, so `!(slow)` excludes; TestNG takes plain group names; JUnit 4
+matches. `jenesis.test.tag` takes a comma-separated list of tag names, whatever the test framework: a test runs
+where it carries one of them, and a name preceded by `!` leaves out the tests carrying it, so the line above runs
+the tests tagged `fast` or `io` that are not tagged `slow`, and `!slow` alone runs every test but those. Names
+joined by `&` select the tests carrying all of them: `fast&io,db` runs the tests tagged both `fast` and `io`, and
+those tagged `db`. Jenesis translates the list for the framework - into a tag expression on the JUnit Platform,
+into groups and excluded groups for TestNG, which has no way to require several groups and so rejects `&`; JUnit 4
 cannot select categories through its console runner and rejects the property.
 
-A narrowed run is still the same step, so its result is remembered together with **what it covered**. A later
-run is skipped only when nothing changed *and* the recorded scope covers the request: the same filter, or a
-tag selection the last run already included. Asking for anything else runs the tests again, and so does
-anything the comparison cannot decide, because a skipped test is not a passed test.
+A narrowed run is still the same step, so its result is remembered together with **what it covered**, and every
+later run adds to that memory until the tests or what they test change. A request runs only what no remembered
+run covered: after `fast`, asking for `fast,io` runs the tests tagged `io` that are not tagged `fast`, asking for
+`fast` again runs nothing, a run of `fast` covers a request for `fast&io`, and a run of every test covers any
+request. A run that left tests out covers only a
+request that leaves them out too. The filter is compared as it is written, so a different filter runs the tests
+again and starts a new memory.
 
 <div class="tip">
   To run the tests when nothing at all has changed - a flaky test, a debugging session - pass
-  <code>-Djenesis.test.force=true</code>. It drops the comparison for that run only. Narrowing belongs on a
+  <code>-Djenesis.test.force=true</code>. It forgets what earlier runs covered and runs the whole selection. Narrowing belongs on a
   developer machine, though: a build that populates a
   <a href="/tool/build-performance-and-isolation/">shared cache</a> should run the full suite, or a narrowed
   result can be served to someone asking for more.
