@@ -110,6 +110,11 @@ declares, and its data against the hash that control member carries.
 A Swift registry proxies another organisation's registry, since there is no public one. Its release lists are
 served without the upstream's release URLs, so a client resolves each release through this repository, and a
 source archive is checked against the checksum in its release metadata.
+A Terraform registry's provider package documents are served naming this repository's paths. The upstream's
+signed `SHA256SUMS` and signing keys are passed on unchanged, so `terraform init` verifies the provider as it would
+against the upstream, and the zip is checked against its `shasum` before it is kept. A module whose source is a
+`.tar.gz` downloads through this repository. A module whose source is a git repository, as most public modules are,
+is fetched by the client from that repository.
 
 ## The cooldown on fresh versions
 
