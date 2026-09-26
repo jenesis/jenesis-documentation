@@ -1,0 +1,28 @@
+load("@rules_java//java:java_library.bzl", "java_library")
+
+java_library(
+    name = "base",
+    srcs = glob(["src/main/java/**/*.java"]),
+    javacopts = ["--release", "21"],
+)
+
+java_library(
+    name = "java25",
+    srcs = glob(["src/main/java25/**/*.java"]),
+    javacopts = ["--release", "25"],
+)
+
+genrule(
+    name = "app",
+    srcs = [":base", ":java25"],
+    outs = ["app.jar"],
+    cmd = """
+        mkdir -p $(@D)/base $(@D)/java25
+        unzip -q -o $(location :base) -d $(@D)/base
+        unzip -q -o $(location :java25) -d $(@D)/java25
+        rm -rf $(@D)/base/META-INF $(@D)/java25/META-INF
+        $(JAVABASE)/bin/jar --create --file $@ --main-class demo.app.Main \
+            -C $(@D)/base . --release 25 -C $(@D)/java25 .
+    """,
+    toolchains = ["@rules_java//toolchains:current_java_runtime"],
+)

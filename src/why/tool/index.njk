@@ -1,0 +1,243 @@
+---
+layout: landing.njk
+permalink: /why/tool/
+title: Jenesis - you already wrote the build script
+description: The Java build tool that reads your module-info.java as the build. Twelve common builds, side by side with Maven, Gradle and Bazel, each one built and run.
+contact: hello@jenesis.build
+contactSubject: Jenesis
+docs: /tool/
+product: Jenesis
+logo: jenesis-tool
+repo: https://github.com/jenesis/jenesis
+nav:
+  - { href: "#examples", label: "Examples" }
+  - { href: "#verify-what-the-build-downloads", label: "Supply chain" }
+  - { href: "#two-versions-of-one-library", label: "Layers" }
+  - { href: "#start", label: "Get started" }
+eleventyExcludeFromCollections: true
+---
+{% set bc = buildComparison %}
+<div id="top"></div>
+
+<section class="lp-hero">
+  <div class="lp-wrap lp-hero__grid">
+    <div class="lp-hero__copy">
+      <p class="lp-eyebrow">Build tool for Java · Open source</p>
+      <h1>You already wrote <span class="lp-accent">the build script.</span></h1>
+      <p class="lp-lede">
+        A <code>module-info.java</code> names the module, what it requires and what it exports - Java-native,
+        and compiled and checked by <code>javac</code>. Jenesis reads it as the build. <code>java build/jenesis/Make.java</code> compiles, tests and packages the
+        project with the JDK you already have - nothing else to write and no plugin to install.
+      </p>
+      <ul class="lp-pills" aria-label="At a glance">
+        <li><strong>Nothing else to write</strong></li>
+        <li><strong>Pinned and signed</strong></li>
+        <li>Only a JDK</li>
+        <li>Reads a <code>pom.xml</code> too</li>
+      </ul>
+      <div class="lp-actions">
+        <a class="lp-button" href="#examples">See twelve builds side by side</a>
+        <a class="lp-button lp-button--ghost" href="#start">Get started</a>
+      </div>
+    </div>
+
+    <figure class="lp-terminal" aria-label="A Jenesis project and its build command">
+      <div class="lp-terminal__bar" aria-hidden="true"><span></span><span></span><span></span></div>
+      <pre><code><span class="lp-prompt">$</span> curl -fsSL https://get.jenesis.build | bash
+<span class="lp-prompt">$</span> cat sources/module-info.java
+<span class="lp-dim">/**
+ * @jenesis.release 25
+ * @jenesis.main demo.app.Main
+ */</span>
+module demo.app {
+    requires org.slf4j;
+    requires com.fasterxml.jackson.databind;
+    requires info.picocli;
+    requires static org.jspecify;
+}
+<span class="lp-prompt">$</span> <span class="lp-strong">java build/jenesis/Make.java</span></code></pre>
+    </figure>
+  </div>
+</section>
+
+<section class="lp-band lp-band--ink" id="examples" aria-labelledby="examples-title">
+  <div class="lp-wrap">
+    <p class="lp-eyebrow">Side by side</p>
+    <h2 id="examples-title">Twelve common builds, in four tools.</h2>
+    <p class="lp-section-lede">
+      Each section below is one build need, written for Jenesis, Maven, Gradle and Bazel. Every file shown was
+      built and run with that tool. Where a tool needs a plugin, code by
+      hand, or cannot do it at all, the section says so - Jenesis included.
+    </p>
+    <ul class="lp-legend" aria-label="What the badges mean">
+      <li><span class="lp-badge lp-badge--built">{{ bc.statuses.built }}</span> the tool does it</li>
+      <li><span class="lp-badge lp-badge--plugin">{{ bc.statuses.plugin }}</span> a plugin or ruleset does it</li>
+      <li><span class="lp-badge lp-badge--manual">{{ bc.statuses.manual }}</span> build code you write and keep</li>
+      <li><span class="lp-badge lp-badge--none">{{ bc.statuses["none"] }}</span> no way found</li>
+    </ul>
+    <p class="lp-versions">
+      Built and run on Java 25 with
+      {% for t in bc.tools %}{{ t.release }}{% if loop.revindex == 2 %} and {% elif not loop.last %}, {% endif %}{% endfor %};
+      the bill of materials with Jenesis main at commit e8c62a9.
+    </p>
+  </div>
+</section>
+
+{% for s in bc.sections %}
+<section class="lp-need" id="{{ s.id }}" aria-labelledby="{{ s.id }}-title">
+  <div class="lp-wrap lp-need__grid">
+    <div class="lp-need__text">
+      <p class="lp-eyebrow">{{ loop.index }} of {{ loop.length }}</p>
+      <h2 id="{{ s.id }}-title">{{ s.title }}</h2>
+      {{ s.lede | safe }}
+      <ul class="lp-verdicts" aria-label="How each tool does it">
+        {% for t in bc.tools %}{% set e = s.tools[t.key] %}
+        <li class="lp-verdict">
+          <span class="lp-verdict__who">
+            <span class="lp-verdict__tool">{{ t.name }}</span>
+            <span class="lp-badge lp-badge--{{ e.status }}">{{ e.badge or bc.statuses[e.status] }}</span>
+          </span>
+          <span class="lp-verdict__text">{{ e.verdict | safe }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="lp-tabs lp-tabs--code" data-tabs data-tabs-sync>
+      <div class="lp-tabs__list" role="tablist" aria-label="{{ s.title }}, by tool">
+        {% for t in bc.tools %}{% set e = s.tools[t.key] %}
+        <button role="tab" id="tab-{{ s.id }}-{{ t.key }}" data-key="{{ t.key }}" aria-controls="panel-{{ s.id }}-{{ t.key }}" aria-selected="{{ 'true' if loop.first else 'false' }}"{% if not loop.first %} tabindex="-1"{% endif %}>
+{{ t.name }}</button>
+        {% endfor %}
+      </div>
+      {% for t in bc.tools %}{% set e = s.tools[t.key] %}
+      <div class="lp-tabs__panel" role="tabpanel" id="panel-{{ s.id }}-{{ t.key }}" aria-labelledby="tab-{{ s.id }}-{{ t.key }}"{% if not loop.first %} hidden{% endif %}>
+        {% if e.gap %}
+        <div class="lp-gap"><p>{{ e.gap | safe }}</p></div>
+        {% endif %}
+        {% for f in e.files %}
+          {% if f.generated or not f.lines %}
+          <details class="lp-file lp-file--generated">
+            <summary><code>{{ f.path }}</code><span class="lp-file__meta">{% if f.generated %}written by <code>{{ f.generated }}</code>{% else %}{{ f.note }}{% endif %}{% if f.count %} · {{ f.count }} line{{ '' if f.count == 1 else 's' }}{% endif %}</span></summary>
+            {% if f.lines %}<pre><code>{% for l in f.lines %}<span class="lp-line{% if l.added %} lp-line--add{% endif %}">{{ l.text }}</span>{% endfor %}</code></pre>{% endif %}
+            {% if f.generated and f.note %}<p class="lp-file__note">{{ f.note }}</p>{% endif %}
+          </details>
+          {% else %}
+          <figure class="lp-file">
+            <figcaption class="lp-file__head"><code>{{ f.path }}</code><span class="lp-file__meta">{{ f.count }} line{{ '' if f.count == 1 else 's' }}</span></figcaption>
+            {% if f.segments %}
+            {% for seg in f.segments %}
+            {% if seg.folded %}
+            <details class="lp-fold">
+              <summary>{{ seg.label }}</summary>
+              <pre><code>{% for l in seg.lines %}<span class="lp-line">{{ l.text }}</span>{% endfor %}</code></pre>
+            </details>
+            {% else %}
+            <pre class="lp-seg"><code>{% for l in seg.lines %}<span class="lp-line lp-line--own{% if l.added %} lp-line--add{% endif %}">{{ l.text }}</span>{% endfor %}</code></pre>
+            {% endif %}
+            {% endfor %}
+            {% else %}
+            <pre><code>{% for l in f.lines %}<span class="lp-line{% if l.added %} lp-line--add{% endif %}">{{ l.text }}</span>{% endfor %}</code></pre>
+            {% endif %}
+            {% if f.note %}<p class="lp-file__note">{{ f.note }}</p>{% endif %}
+          </figure>
+          {% endif %}
+        {% endfor %}
+        {% if e.layout %}
+        <figure class="lp-file">
+          <figcaption class="lp-file__head"><code>Where the sources go</code></figcaption>
+          <pre><code>{% for l in e.layout.split("\n") %}<span class="lp-line">{{ l }}</span>{% endfor %}</code></pre>
+        </figure>
+        {% endif %}
+        {% if e.commands %}
+        <figure class="lp-file">
+          <figcaption class="lp-file__head"><code>Commands</code></figcaption>
+          <pre><code>{% for l in e.commands.split("\n") %}<span class="lp-line">$ {{ l }}</span>{% endfor %}</code></pre>
+        </figure>
+        {% endif %}
+        {% if e.notes %}
+        <div class="lp-notes">
+          <p class="lp-notes__title">Worth knowing</p>
+          <ul>{% for n in e.notes %}<li>{{ n | safe }}</li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+        <p class="lp-verified">{{ bc.setup[t.key] | safe }} Built and run with {{ e.version or t.version }}.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% if s.extra %}{% include "landing-tool/" + s.extra + ".njk" %}{% endif %}
+</section>
+{% endfor %}
+
+<section class="lp-band lp-band--tint" id="start" aria-labelledby="start-title">
+  <div class="lp-wrap">
+    <p class="lp-eyebrow">Get started</p>
+    <h2 id="start-title">A JDK is all it needs.</h2>
+    <p class="lp-section-lede">
+      A Jenesis build lives with the project: its engine is plain Java source under <code>build/jenesis/</code>,
+      launched by the JDK directly. Installing it is populating that folder.
+    </p>
+    <div class="lp-tabs" data-tabs>
+      <div class="lp-tabs__list" role="tablist" aria-label="How to install">
+        <button role="tab" id="tab-curl" aria-controls="panel-curl" aria-selected="true">Install script</button>
+        <button role="tab" id="tab-sdkman" aria-controls="panel-sdkman" aria-selected="false" tabindex="-1">SDKMAN</button>
+        <button role="tab" id="tab-brew" aria-controls="panel-brew" aria-selected="false" tabindex="-1">Homebrew</button>
+      </div>
+      <div class="lp-tabs__panel" role="tabpanel" id="panel-curl" aria-labelledby="tab-curl">
+        <ol class="lp-howto">
+          <li>
+            <p>From the project root, write <code>build/jenesis/</code> and build.</p>
+            <div class="lp-command"><pre><code>curl -fsSL https://get.jenesis.build | bash
+java build/jenesis/Make.java</code></pre></div>
+          </li>
+        </ol>
+      </div>
+      <div class="lp-tabs__panel" role="tabpanel" id="panel-sdkman" aria-labelledby="tab-sdkman" hidden>
+        <ol class="lp-howto">
+          <li>
+            <p>Install once, then initialise each project from the installed copy.</p>
+            <div class="lp-command"><pre><code>sdk install jenesis
+jenesis-init
+java build/jenesis/Make.java</code></pre></div>
+          </li>
+        </ol>
+      </div>
+      <div class="lp-tabs__panel" role="tabpanel" id="panel-brew" aria-labelledby="tab-brew" hidden>
+        <ol class="lp-howto">
+          <li>
+            <p>Install once, then initialise each project from the installed copy.</p>
+            <div class="lp-command"><pre><code>brew install jenesis/tap/jenesis
+jenesis-init
+java build/jenesis/Make.java</code></pre></div>
+          </li>
+        </ol>
+      </div>
+    </div>
+    <p class="lp-after">
+      <a class="lp-link" href="{{ docs }}getting-started/">Getting started, step by step &rarr;</a>
+    </p>
+  </div>
+</section>
+
+<section class="lp-band" id="faq" aria-labelledby="faq-title">
+  <div class="lp-wrap lp-faq">
+    <h2 id="faq-title">Questions</h2>
+    <details>
+      <summary>Does my project have to use the Java Module System?</summary>
+      <p>No. Jenesis reads a <code>pom.xml</code> as the description of what to build, which is the quickest way to
+        try it on a project you already have. Where a project declares no modules, its jars resolve by coordinate
+        and compile on the class path.</p>
+    </details>
+    <details>
+      <summary>What if a convention does not cover my build?</summary>
+      <p>The extension is a small Java function or module describing one step, launched by the JDK like the rest
+        of the build - with types, an IDE and refactoring, the same as your application.</p>
+    </details>
+    <details>
+      <summary>How were the examples on this page made?</summary>
+      <p>Each one is a project that was built and run with its tool, and the files shown are
+        copied from it unchanged. The versions are named under every example.</p>
+    </details>
+  </div>
+</section>

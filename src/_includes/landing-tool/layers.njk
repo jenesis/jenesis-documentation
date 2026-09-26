@@ -1,0 +1,41 @@
+<div class="lp-wrap lp-extra lp-extra--wide">
+  <h3>What shading costs, seen on the real jars</h3>
+  <p class="lp-extra__lede">
+    Shading copies a library's classes into another jar and renames them. The jars below were built by the Maven
+    and Gradle examples in this section and then inspected; the Jenesis side is the launcher jar of the layer
+    example.
+  </p>
+  <div class="lp-costs">
+    <article class="lp-cost-card">
+      <h4>Licences lose their owner</h4>
+      <p>jackson-core's <code>LICENSE</code> and <code>NOTICE</code> land at the root of the library's
+        <code>META-INF/</code>, where they read as the library's own. If the library has its own, jackson's are
+        dropped with a warning. The Apache transformers delete <code>LICENSE</code> and add an Apache Software
+        Foundation attribution that is wrong for Jackson. In an application jar, one version's
+        <code>NOTICE</code> replaces the other's.</p>
+    </article>
+    <article class="lp-cost-card">
+      <h4>Scanners report the wrong version</h4>
+      <p>The dependency-reduced POM no longer names jackson-core, and the application's SBOM does not list the
+        shaded copy. syft, run on the application's shaded jar, reports jackson-core 2.15.4 only - while the
+        application runs 2.22.3 from the same jar.</p>
+    </article>
+    <article class="lp-cost-card">
+      <h4>Stack traces name classes nobody published</h4>
+      <p>A parse error surfaces as <code>demo.library.shaded.jackson.core.JsonParseException</code>, which the
+        application's <code>catch (JsonProcessingException e)</code> does not catch. Jackson's sources jar has no
+        such classes; Maven needs three settings to publish sources a debugger can map.</p>
+    </article>
+    <article class="lp-cost-card">
+      <h4>Before packaging, it is another program</h4>
+      <p>Relocation happens when the jar is packaged. Until then - a multi-module compile, a test run, the IDE -
+        the library runs on the application's jackson-core 2.22.3, a version it does not ship with.</p>
+    </article>
+  </div>
+  <div class="lp-aside">
+    <strong>With a layer,</strong> jackson-core 2.15.4 keeps all of its files, <code>LICENSE</code> and
+    <code>NOTICE</code> included, unchanged. syft finds both versions in the launcher jar, the build's SBOM lists
+    both, and a stack trace names the original classes with the version of the module that threw:
+    <code>com.fasterxml.jackson.core@2.15.4/com.fasterxml.jackson.core.base.ParserMinimalBase._reportInvalidEOF</code>.
+  </div>
+</div>

@@ -1,0 +1,42 @@
+load("@package_metadata//:defs.bzl", "package_metadata")
+load("@package_metadata//licenses/rules:license.bzl", "license")
+load("@rules_java//java:java_binary.bzl", "java_binary")
+load("@supply_chain_tools//sbom:cyclonedx.bzl", "cyclonedx")
+load("@supply_chain_tools//sbom:sbom.bzl", "sbom")
+
+package(default_package_metadata = [":package_metadata"])
+
+package_metadata(
+    name = "package_metadata",
+    attributes = [":license"],
+    purl = "pkg:maven/demo/app@1.0.0",
+)
+
+license(
+    name = "license",
+    kind = "@package_metadata//licenses/spdx:Apache-2.0",
+    text = "LICENSE",
+)
+
+java_binary(
+    name = "app",
+    srcs = glob(["src/main/java/**/*.java"]),
+    main_class = "demo.app.Main",
+    deps = [
+        "@maven//:org_slf4j_slf4j_api",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:info_picocli_picocli",
+        "@maven//:org_jspecify_jspecify",
+    ],
+)
+
+sbom(
+    name = "app_sbom",
+    target = ":app",
+)
+
+cyclonedx(
+    name = "app_cyclonedx",
+    out = "app.cdx.json",
+    sbom = ":app_sbom",
+)

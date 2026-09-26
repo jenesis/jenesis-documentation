@@ -1,0 +1,51 @@
+<div class="lp-wrap lp-extra">
+  <div class="lp-extra__side">
+    <h3>The three checks, by tool</h3>
+    <table class="lp-matrix">
+      <thead><tr><th scope="col"></th><th scope="col">SHA-256 checksums</th><th scope="col">OpenPGP</th><th scope="col">Sigstore</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Jenesis</th>
+          <td><span class="lp-badge lp-badge--built">Built in</span></td>
+          <td><span class="lp-badge lp-badge--built">Built in</span></td>
+          <td><span class="lp-badge lp-badge--built">Built in</span></td></tr>
+        <tr><th scope="row">Maven</th>
+          <td><span class="lp-badge lp-badge--built">Built in</span></td>
+          <td><span class="lp-badge lp-badge--plugin">Third-party</span></td>
+          <td><span class="lp-badge lp-badge--plugin">Third-party</span></td></tr>
+        <tr><th scope="row">Gradle</th>
+          <td><span class="lp-badge lp-badge--built">Built in</span></td>
+          <td><span class="lp-badge lp-badge--built">Built in</span></td>
+          <td><span class="lp-badge lp-badge--manual">By hand</span></td></tr>
+        <tr><th scope="row">Bazel</th>
+          <td><span class="lp-badge lp-badge--built">Built in</span></td>
+          <td><span class="lp-badge lp-badge--manual">By hand</span></td>
+          <td><span class="lp-badge lp-badge--manual">By hand</span></td></tr>
+      </tbody>
+    </table>
+    <p class="lp-small">Every check was proven by tampering: a changed checksum, a changed jar, a wrong key or a
+      wrong Sigstore identity failed the build in each tool.</p>
+  </div>
+  <div class="lp-extra__text">
+    <h3>Who verifies the verifier?</h3>
+    <p>
+      A verifier downloaded from the repository it is meant to check verifies nothing. Jenesis ships no OpenPGP
+      code for that reason: it runs the system's <code>gpgv</code>, which reads only a keyring built from the
+      fingerprints you declared. Sigstore bundles are checked in process with the JDK's own cryptography, against
+      a trust root that ships with Jenesis.
+    </p>
+    <ul class="lp-marks">
+      <li class="lp-mark lp-mark--bad"><strong>Maven</strong> - pgpverify and Sigmund, with Bouncy Castle and sigstore-java, are resolved from
+        Maven Central, the repository they verify, and loaded before they run.</li>
+      <li class="lp-mark lp-mark--partial"><strong>Gradle</strong> - Bouncy Castle ships inside the distribution, so nothing is downloaded to verify.
+        The distribution itself is only checked when <code>distributionSha256Sum</code> is set, which
+        <code>gradle wrapper</code> does not do by default.</li>
+      <li class="lp-mark lp-mark--partial"><strong>Bazel</strong> - Bazelisk checks the Bazel release's signature, and Bazel Central Registry archives
+        are pinned by checksum. The OpenPGP and Sigstore checks above run the host's <code>gpg</code> and a
+        <code>cosign</code> binary pinned in the build.</li>
+    </ul>
+    <p class="lp-small">
+      In all four tools the checksums are recorded from what the first download returned. A signature is what
+      ties them to a publisher, and Jenesis can require one for every pinned dependency.
+    </p>
+  </div>
+</div>

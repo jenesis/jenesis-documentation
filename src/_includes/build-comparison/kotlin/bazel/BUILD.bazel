@@ -1,0 +1,21 @@
+load("@rules_kotlin//kotlin:core.bzl", "define_kt_toolchain", "kt_compiler_plugin")
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_binary")
+
+define_kt_toolchain(
+    name = "kotlin_toolchain",
+    jvm_target = "25",
+)
+
+kt_compiler_plugin(
+    name = "serialization_plugin",
+    id = "org.jetbrains.kotlin.serialization",
+    deps = ["@rules_kotlin//kotlin/compiler:kotlinx-serialization-compiler-plugin"],
+)
+
+kt_jvm_binary(
+    name = "app",
+    srcs = glob(["src/main/kotlin/**/*.kt"]),
+    main_class = "demo.app.MainKt",
+    plugins = [":serialization_plugin"],
+    deps = ["@maven//:org_jetbrains_kotlinx_kotlinx_serialization_json_jvm"],
+)

@@ -1,0 +1,33 @@
+load("@rules_java//java:java_binary.bzl", "java_binary")
+load("@rules_java//java:java_library.bzl", "java_library")
+
+java_binary(
+    name = "avro_tools",
+    main_class = "org.apache.avro.tool.Main",
+    runtime_deps = ["@maven//:org_apache_avro_avro_tools"],
+)
+
+genrule(
+    name = "user_srcs",
+    srcs = ["src/main/avro/user.avsc"],
+    outs = ["user.srcjar"],
+    cmd = """
+        $(location :avro_tools) compile schema $< $(@D)/avro-gen
+        $(JAVABASE)/bin/jar --create --file $@ -C $(@D)/avro-gen .
+    """,
+    toolchains = ["@rules_java//toolchains:current_java_runtime"],
+    tools = [":avro_tools"],
+)
+
+java_library(
+    name = "user",
+    srcs = [":user_srcs"],
+    deps = ["@maven//:org_apache_avro_avro"],
+)
+
+java_binary(
+    name = "app",
+    srcs = glob(["src/main/java/**/*.java"]),
+    main_class = "demo.app.Main",
+    deps = [":user"],
+)
