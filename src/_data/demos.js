@@ -38,6 +38,7 @@ export default {
         { slug: "demo-11-javac-arguments", name: "Compiler arguments", blurb: "Passing custom arguments to javac." },
         { slug: "demo-12-annotations", name: "Annotation processing", blurb: "Running an annotation processor." },
         { slug: "demo-13-error-prone", name: "Error Prone", blurb: "A static-analysis plugin running inside javac, catching a bug the compiler accepts." },
+        { slug: "demo-69-java-preview", name: "Preview features", blurb: "A module that uses a preview feature of Java 25, compiled and run with it enabled." },
       ],
     },
     {
