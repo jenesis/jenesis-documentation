@@ -1,0 +1,57 @@
+load("@rules_java//java:java_binary.bzl", "java_binary")
+
+java_binary(
+    name = "app",
+    srcs = glob(["src/main/java/**/*.java"]),
+    data = [":openpgp_verified", ":sigstore_verified"],
+    main_class = "demo.app.Main",
+    runtime_deps = ["@maven//:dev_sigstore_protobuf_specs"],
+    deps = [
+        "@maven//:org_slf4j_slf4j_api",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:info_picocli_picocli",
+        "@maven//:org_jspecify_jspecify",
+    ],
+)
+
+SIGNED_JARS = [
+    "@maven//:com/fasterxml/jackson/core/jackson-annotations/2.22/jackson-annotations-2.22.jar",
+    "@maven//:com/fasterxml/jackson/core/jackson-core/2.22.3/jackson-core-2.22.3.jar",
+    "@maven//:com/fasterxml/jackson/core/jackson-databind/2.22.3/jackson-databind-2.22.3.jar",
+    "@maven//:dev/sigstore/protobuf-specs/0.5.2/protobuf-specs-0.5.2.jar",
+    "@maven//:info/picocli/picocli/4.7.7/picocli-4.7.7.jar",
+    "@maven//:org/jspecify/jspecify/1.0.1/jspecify-1.0.1.jar",
+    "@maven//:org/slf4j/slf4j-api/2.0.20/slf4j-api-2.0.20.jar",
+]
+
+genrule(
+    name = "openpgp_verified",
+    srcs = SIGNED_JARS + ["trusted-keys.asc"] + glob(["signatures/*.asc"]),
+    outs = ["openpgp_verified.txt"],
+    cmd = """
+        export GNUPGHOME=$$(mktemp -d)
+        gpg --batch --quiet --import $(location trusted-keys.asc)
+        for jar in $(locations {jars}); do
+            gpg --batch --verify signatures/$$(basename $$jar).asc $$jar
+        done
+        touch $@
+    """.format(jars = ") $(locations ".join(SIGNED_JARS)),
+)
+
+genrule(
+    name = "sigstore_verified",
+    srcs = [
+        "@maven//:dev/sigstore/protobuf-specs/0.5.2/protobuf-specs-0.5.2.jar",
+        "signatures/protobuf-specs-0.5.2.jar.sigstore.json",
+    ],
+    outs = ["sigstore_verified.txt"],
+    tools = ["@cosign//file"],
+    cmd = """
+        HOME=$$(mktemp -d) $(location @cosign//file) verify-blob \
+            --bundle $(location signatures/protobuf-specs-0.5.2.jar.sigstore.json) \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp '^https://github.com/sigstore/protobuf-specs/' \
+            $(location @maven//:dev/sigstore/protobuf-specs/0.5.2/protobuf-specs-0.5.2.jar)
+        touch $@
+    """,
+)

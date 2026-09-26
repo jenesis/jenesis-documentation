@@ -1,0 +1,54 @@
+<div class="lp-wrap lp-extra">
+  <div class="lp-extra__text">
+    <h3>Why not test package-private code from the same package?</h3>
+    <p>
+      Package-private access is for classes that are written and changed together - the collaborators inside one
+      package. A test that sits in that package and calls into it depends on those internals, and nothing
+      declares the dependency: the build never records that the tests read the implementation. A refactoring
+      that keeps the public behaviour can still break them.
+    </p>
+    <p>
+      The Java Module System cannot express the arrangement at all. A package belongs to exactly one module, so a
+      test in the same package cannot be a module of its own. It can only be compiled into the module under test
+      with <code>--patch-module</code>, and then what runs is no longer what the module descriptor describes.
+      A qualified export states the dependency instead, in the file that already describes the module.
+    </p>
+    <h3>Maven 4 invents a second descriptor</h3>
+    <p>
+      Maven 4 and its 4.x compiler plugin, both still pre-releases, compile same-package tests into the module
+      under test. What the tests need beyond the module's own descriptor goes into a new file,
+      <code>module-info-patch.maven</code>, in a syntax only Maven reads, with Maven-only keywords such as
+      <code>TEST-MODULE-PATH</code>. The compiler honours it; Surefire does not, so what the test run needs is
+      repeated as JVM arguments in <code>argLine</code>.
+    </p>
+    <figure class="lp-file">
+      <figcaption class="lp-file__head"><code>src/test/java/module-info-patch.maven</code><span class="lp-file__meta">a test that also uses java.net.http</span></figcaption>
+      <pre><code><span class="lp-line">patch-module demo.app {</span><span class="lp-line">    add-modules TEST-MODULE-PATH, java.net.http;</span><span class="lp-line">    add-reads TEST-MODULE-PATH, java.net.http;</span><span class="lp-line">}</span></code></pre>
+    </figure>
+  </div>
+  <div class="lp-extra__side">
+    <h3>Testing with the Java Module System</h3>
+    <table class="lp-matrix">
+      <thead><tr><th scope="col"></th><th scope="col">Tests as their own module</th><th scope="col">Tests inside the module</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Jenesis</th>
+          <td><span class="lp-badge lp-badge--built">Built in</span> A test module names the module it tests.</td>
+          <td><span class="lp-badge lp-badge--none">Not offered</span> A package belongs to one module.</td></tr>
+        <tr><th scope="row">Maven 3.9</th>
+          <td><span class="lp-badge lp-badge--built">Built in</span> A <code>module-info.java</code> in the test sources; Surefire runs it as a named module.</td>
+          <td><span class="lp-badge lp-badge--built">Built in</span> Same-package tests run on the module path.</td></tr>
+        <tr><th scope="row">Maven 4 <small>(pre-release)</small></th>
+          <td><span class="lp-badge lp-badge--manual">Deprecated</span> Still runs, with a warning to use <code>module-info-patch.maven</code> - which patches the main module instead.</td>
+          <td><span class="lp-badge lp-badge--manual">Patch file</span> <code>module-info-patch.maven</code> for compiling, <code>argLine</code> for running.</td></tr>
+        <tr><th scope="row">Gradle 9.8</th>
+          <td><span class="lp-badge lp-badge--built">Built in</span> A <code>module-info.java</code> in the test sources.</td>
+          <td><span class="lp-badge lp-badge--manual">By hand</span> A second copy of the main descriptor and <code>--patch-module</code> arguments, or the GradleX plugin. By default tests run on the class path.</td></tr>
+        <tr><th scope="row">Bazel 9.2</th>
+          <td><span class="lp-badge lp-badge--none">Class path</span> It compiles as a module, but runs unnamed.</td>
+          <td><span class="lp-badge lp-badge--none">Class path</span> Nothing is ever put on a module path at run time.</td></tr>
+      </tbody>
+    </table>
+    <p class="lp-small">Gradle's own documentation says there is no special support for whitebox tests inside a
+      module, and that IDEs do not pick up the arguments its recipe adds.</p>
+  </div>
+</div>
