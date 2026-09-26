@@ -137,7 +137,7 @@ placed file builds the jars again. A path must exist and stay within the project
 target must be a relative path without `..` that no other pair names. A module that brings a resource of its own
 at the same path fails the build rather than losing one of the two.
 
-{% demos 29 %}
+{% demos 31 %}
 
 ## Licence compliance
 
@@ -200,7 +200,7 @@ licence check and the SBOM's licence identifiers. The project's own licences are
 its SBOM names them by SPDX id as well. It is distinct from `licensing.properties`, which is the
 enforcement policy, not the classification.
 
-{% demos 30 %}
+{% demos 32 %}
 
 ## Vulnerability scanning
 
@@ -234,7 +234,7 @@ An unrecognised key fails the build. The licence and vulnerability checks are tw
 To keep both files in place but skip both checks for a single build, pass the default-`true` override
 `-Djenesis.compliance=false`.
 
-{% demos 31 %}
+{% demos 33 %}
 
 ## Hardening the whole build
 
@@ -257,4 +257,4 @@ That leaves one gap: a tampered POM could try to introduce a dependency the jar 
 strict mode rejects, so a manipulated POM cannot quietly pull in an unverified artifact. This is why strict
 pinning is recommended for builds in unsecured environments and for releases.
 
-{% demos 26 %}
+{% demos 28 %}

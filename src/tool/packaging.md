@@ -133,7 +133,7 @@ the tools below. Some flags are derived for you, and a flag in the file takes pr
 Each is passed only where the project declares the value and the package type takes the flag: an application
 image takes no licence file and no URL.
 
-{% demos 7, 8 %}
+{% demos 8, 9 %}
 
 ## Native installers
 
@@ -151,7 +151,7 @@ own packaging tooling on the `PATH`: `dpkg-deb`/`fakeroot` for `deb` and `rpmbui
 WiX Toolset on Windows, the bundled `productbuild`/`hdiutil` on macOS. For that reason an installer is usually
 built locally, while the tooling-free `app-image` covers the packaging path in CI.
 
-{% demos 7, 8 %}
+{% demos 8, 9 %}
 
 ## Runtime images and `.jmod` files
 
@@ -188,7 +188,7 @@ it would be stranded there.
   <code>jlink</code> accepts.
 </div>
 
-{% demos 8, 53 %}
+{% demos 9, 55 %}
 
 ## Making a closure linkable
 
@@ -221,7 +221,7 @@ rewrite - which is how a single module opts out of a project-wide file.
   downloaded, so a rewritten jar's bytes can never reach a <code>@jenesis.pin</code> checksum.
 </div>
 
-{% demos 19 %}
+{% demos 21 %}
 
 ## Bundles for a JRE base
 
@@ -272,7 +272,7 @@ aggregate for many services, at the cost of coupling to that base's JVM version.
   correction; you never splice it in yourself.
 </div>
 
-{% demos 9 %}
+{% demos 10 %}
 
 ## A container build context
 
@@ -314,7 +314,7 @@ the base, so image environment belongs in a base image rather than in build conf
   <code>buildah bud</code> consume the same folder.
 </div>
 
-{% demos 7, 8 %}
+{% demos 8, 9 %}
 
 ## A single executable jar
 
@@ -335,7 +335,7 @@ verified and the build stays reproducible.
   troubleshooting.
 </div>
 
-{% demos 7, 8 %}
+{% demos 8, 9 %}
 
 ## Native images
 
@@ -371,7 +371,7 @@ directory to maintain.
   inside every jar - the way to vet exactly what reflection is baked into a published artifact.
 </div>
 
-{% demos 66 %}
+{% demos 68 %}
 
 ### native-image or jpackage?
 
@@ -417,4 +417,4 @@ takes the whole folder below it.
   adds nothing to <code>legal/</code>, so check its licence before shipping it.
 </div>
 
-{% demos 8, 19, 66 %}
+{% demos 9, 21, 68 %}

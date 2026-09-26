@@ -195,7 +195,7 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.project.boms` | the configuration folders | Path-separated list of folders searched for `pin-<name>.properties` files. |
 | `jenesis.project.artifacts` | `.jenesis/artifacts` | The project-local folder resolved artifacts are materialised into (hard-linked from `~/.m2` where possible), in every layout. It also holds a copy of each repository's `maven-metadata.xml`, so a `RELEASE` or range still resolves when the repository is unreachable. A project's own file names only a folder inside the project. |
 
-{% demos 5 %}
+{% demos 6 %}
 
 ### Building & testing
 

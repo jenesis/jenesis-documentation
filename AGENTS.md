@@ -15,8 +15,8 @@ repositories next to this one; the paths below are relative to such a checkout.
 | Section | Tool | Repository | Where to look | How to verify |
 |---|---|---|---|---|
 | `src/tool/` | Jenesis, the build tool | [jenesis/jenesis](https://github.com/jenesis/jenesis) | `sources/build/jenesis/**`, `demo/**` (one README per demo), `install.sh`, `jreleaser.yml`, `sdk/` | `grep -rn` over `sources/`; run a demo with `java build/jenesis/Project.java`; the tool's own `help` output |
-| `src/jpx/` | jpx, the module runner | [jenesis/jenesis](https://github.com/jenesis/jenesis) | `sources/build/jenesis/Jpx.java`, `sources/build/jenesis/docker/`, `sdk/jpx/`, `demo/demo-65-jpx` | `java build/jenesis/Jpx.java <target>` from a project that carries `build/jenesis/` |
-| `src/launcher/` | Jenesis Launcher | [jenesis/jenesis-launcher](https://github.com/jenesis/jenesis-launcher) | `sources/build/jenesis/launcher/**`; what the build writes into a jar is `sources/build/jenesis/step/Launcher.java` in jenesis/jenesis | `demo-05` and `demo-06` ship a `build/DemoLauncher.java` |
+| `src/jpx/` | jpx, the module runner | [jenesis/jenesis](https://github.com/jenesis/jenesis) | `sources/build/jenesis/Jpx.java`, `sources/build/jenesis/docker/`, `sdk/jpx/`, `demo/demo-69-jpx` | `java build/jenesis/Jpx.java <target>` from a project that carries `build/jenesis/` |
+| `src/launcher/` | Jenesis Launcher | [jenesis/jenesis-launcher](https://github.com/jenesis/jenesis-launcher) | `sources/build/jenesis/launcher/**`; what the build writes into a jar is `sources/build/jenesis/step/Launcher.java` in jenesis/jenesis | `demo-08` and `demo-09` ship a `build/DemoLauncher.java` |
 | `src/modules/` | the Jenesis Module Index | [jenesis/jenesis-modules](https://github.com/jenesis/jenesis-modules) | `worker/index.js` (the service), `sources/build/jenesis/crawler/**`, `data/**`, `.github/workflows/` (schedules) | `curl -sI https://repo.jenesis.build/...` - the live service answers |
 | `src/repository/` | Jenesis Repository | [jenesis/jenesis-repository](https://github.com/jenesis/jenesis-repository) | `source/**`, `test/**`, `Dockerfile`, `source/bundle/module-info.java`, each module's `application.properties`, `RepositoryProperties.java` | `docker run jenesisbuild/jenesis-repository` (or a local build of it), then the console and the clients against it |
 
@@ -94,7 +94,7 @@ reference pages may be longer.
 
 Front matter is `order`, `title`, `description`; the menu, the previous/next links and the section index
 derive from it. Callouts are `<div class="note|tip|warning">`. A section that a demo exercises ends with
-`{% demos 18, 20 %}`, which renders one "Demo 18: Module alias" link per line from `demos.js`; every demo is
+`{% demos 21, 22 %}`, which renders one "Demo 21: Module alias" link per line from `demos.js`; every demo is
 linked from at least one section. No diagrams, no screenshots.
 
 **Every heading is an anchor, and its words are its id.** The build gives each `##` and `###` an `id` taken
