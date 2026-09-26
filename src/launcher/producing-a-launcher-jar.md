@@ -40,7 +40,7 @@ place here:
    unnamed module that hosts your application.
 2. **Each dependency is exploded into its own subfolder of one `jars/` store.** The resolved jar file name
    becomes the folder name: `jars/org.slf4j-2.0.16.jar/`, and the application's own jar is named the same
-   way, `jars/demo.bundle.jar/`. Every jar is stored once, whatever it is for.
+   way, `jars/demo.bundle-0-SNAPSHOT.jar/`. Every jar is stored once, whatever it is for.
 3. **`application.properties` is written** with `mainClass`, `mainModule` (modular applications only), and
    the two path lists, `classpath` and `modulepath` - because a jar is read on the path that names it, never
    because of where it sits. Which list a jar lands in follows the same rule as the build's `Execute`
