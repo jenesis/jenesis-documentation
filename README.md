@@ -128,7 +128,9 @@ Use one where it earns its place - a chapter with a callout after every paragrap
 closing `tip` linking the relevant demos is the convention at the end of a chapter.
 
 **Code blocks** carry the language (` ```bash `, ` ```java `, ` ```properties `, ` ```xml `) and show the
-smallest complete thing that runs. **Tables** carry option sets: a key, its default, and what it does.
+smallest complete thing that runs. The language colours the block when the site is built; the ones that can be
+named are listed in `eleventy.config.js`, and any other name fails the build. Output, trees and paths name no
+language, or ` ```text `, and stay plain. **Tables** carry option sets: a key, its default, and what it does.
 
 ## Colour scheme
 
