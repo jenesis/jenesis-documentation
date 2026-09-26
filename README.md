@@ -17,12 +17,16 @@ what somebody needs to use a tool. Contributor and internal material stays in ea
 npm ci             # install exactly what package-lock.json pins, each package checked against its hash
 npm run serve      # local preview with live reload
 npm run build      # produce _site/
-npm run validate   # check every internal link, asset and #fragment on every page in _site/
+npm run validate   # check every internal link, asset and #fragment in _site/ (linkinator)
 npm run check      # build + validate (what CI runs)
 ```
 
 Deployment is automatic: pushing to `main` builds the site, validates every internal link, and - only if that
 passes - publishes to GitHub Pages. A broken link fails the deploy, so run `npm run check` before pushing.
+
+`validate` crawls `_site` from the landing page, which reaches every chapter through the menu. It skips links that
+leave the site with `--skip "^https?://(?!127\.0\.0\.1)"`: linkinator serves the folder from `127.0.0.1`, so a
+pattern that also matches that address skips the whole site and still reports success, with 0 links scanned.
 
 Dependencies are pinned twice: `package.json` names exact versions, and `package-lock.json` records a sha512
 hash for every package, which `npm ci` verifies. `.npmrc` keeps it that way for a later `npm install` - exact
