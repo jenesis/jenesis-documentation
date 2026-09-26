@@ -15,7 +15,7 @@
     </p>
     <h3>Maven 4 invents a second descriptor</h3>
     <p>
-      Maven 4 and its 4.x compiler plugin, both still pre-releases, compile same-package tests into the module
+      Maven 4 and its 4.x compiler plugin compile same-package tests into the module
       under test. What the tests need beyond the module's own descriptor goes into a new file,
       <code>module-info-patch.maven</code>, in a syntax only Maven reads, with Maven-only keywords such as
       <code>TEST-MODULE-PATH</code>. The compiler honours it; Surefire does not, so what the test run needs is
