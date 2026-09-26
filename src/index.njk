@@ -20,16 +20,17 @@ description: The Jenesis product family - a Java-native build tool, module runne
   <div class="project-grid">
     {% for s in sections %}
       {% set component = release.components[s.key] %}
-      <a class="project-card" href="{{ s.url }}">
+      <div class="project-card">
         <img src="/assets/logos/light/{{ s.logo }}.svg" alt="" data-logo="{{ s.logo }}">
         <span class="project-card__head">
-          <span class="project-card__name">{{ s.title }}</span>
+          <a class="project-card__name project-card__link" href="{{ s.url }}">{{ s.title }}</a>
           {% if component %}
             <span class="project-card__version" data-release-repo="{{ component.repo }}" hidden></span>
           {% endif %}
         </span>
         <p class="project-card__tagline">{{ s.tagline }}</p>
-      </a>
+        {% if s.why %}<a class="project-card__why" href="{{ s.why }}">Why {{ s.title }}? &rarr;</a>{% endif %}
+      </div>
     {% endfor %}
   </div>
 

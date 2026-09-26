@@ -147,6 +147,18 @@ than a heading and must match the id the repository server emits, not the wordin
 section's chapters verify. Logos and lockups under `src/assets/` are brand assets; the site renders the logos
 only.
 
+## The comparison page (/why/tool/)
+
+`src/why/tool/index.njk` sets the build tool beside Maven, Gradle and Bazel, one build need per section. It
+argues for Jenesis, so it may pick what it shows - but every rule on facts above holds, and it holds for the
+other tools too. Each tab shows files copied unchanged from a project built and run with that tool, kept under
+`src/_includes/build-comparison/<section>/<tool>/`; `src/_data/buildComparison.js` names them, gives every tool
+its verdict, and records the tool versions they were run with. A changed example is built and run again before
+its file is replaced. A tool's shortcoming is stated in its verdict and notes, Jenesis's included, and a
+Jenesis defect that is going to be fixed is raised with the maintainer rather than written on the page. It uses
+its own layout (`landing.njk`) and styles (`landing.css`, everything prefixed `lp-`); the voice and shape rules
+above are for chapters.
+
 ## Changing a tool from here
 
 Sometimes the right fix is in a tool: a README that diverges from its code, a link a tool emits to a page that

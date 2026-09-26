@@ -1,0 +1,31 @@
+load("@contrib_rules_jvm//java:defs.bzl", "JUNIT5_DEPS", "java_junit5_test")
+load("@rules_java//java:java_binary.bzl", "java_binary")
+load("@rules_java//java:java_library.bzl", "java_library")
+
+java_library(
+    name = "lib",
+    srcs = glob(["src/main/java/**/*.java"]),
+    deps = [
+        "@maven//:org_slf4j_slf4j_api",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:info_picocli_picocli",
+        "@maven//:org_jspecify_jspecify",
+    ],
+)
+
+java_binary(
+    name = "app",
+    main_class = "demo.app.Main",
+    runtime_deps = [":lib"],
+)
+
+java_junit5_test(
+    name = "GreeterTest",
+    srcs = ["src/test/java/demo/app/GreeterTest.java"],
+    test_class = "demo.app.GreeterTest",
+    deps = [
+        ":lib",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+    ],
+    runtime_deps = JUNIT5_DEPS,
+)

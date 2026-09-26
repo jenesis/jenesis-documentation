@@ -1,0 +1,36 @@
+load("@rules_java//java:java_library.bzl", "java_library")
+
+java_library(
+    name = "app",
+    srcs = glob(["src/main/java/**/*.java"]),
+    deps = [
+        "@maven//:org_slf4j_slf4j_api",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:info_picocli_picocli",
+        "@maven//:org_jspecify_jspecify",
+    ],
+)
+
+MODULE_PATH = [
+    ":app",
+    "@maven//:org_slf4j_slf4j_api",
+    "@maven//:com_fasterxml_jackson_core_jackson_databind",
+    "@maven//:com_fasterxml_jackson_core_jackson_core",
+    "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+    "@maven//:info_picocli_picocli",
+    "@maven//:org_jspecify_jspecify",
+]
+
+genrule(
+    name = "app_image",
+    srcs = MODULE_PATH,
+    outs = ["app-image.tar"],
+    cmd = """
+        mkdir -p $(@D)/modules
+        cp $(SRCS) $(@D)/modules/
+        $(JAVABASE)/bin/jpackage --type app-image --name app --dest $(@D)/image \
+            --module-path $(@D)/modules --module demo.app/demo.app.Main
+        tar -C $(@D)/image -cf $@ app
+    """,
+    toolchains = ["@rules_java//toolchains:current_java_runtime"],
+)
