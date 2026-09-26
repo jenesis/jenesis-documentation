@@ -1,12 +1,12 @@
 ---
 order: 14
 title: Migrating in and out
-description: Bringing an existing repository's contents into Jenesis Repository - the Import page, the Nexus, Artifactory, Maven, index and Jenesis connectors, archive uploads - and listing everything back out again.
+description: Bringing an existing repository's contents into Jenesis Repository - the Import page, the Nexus, Artifactory, Maven, index and Jenesis connectors, archive uploads - and moving everything out again, by listing it or by exporting it to another repository.
 ---
 
 Most teams adopting Jenesis Repository already have artifacts somewhere else. This chapter shows how to move
-them in, how to follow and resume the job, how to load an archive of files in one go, and how to list
-everything back out when you leave.
+them in, how to follow and resume the job, how to load an archive of files in one go, and how to take
+everything back out when you leave - as a listing, or by exporting it straight into another repository.
 
 ## Starting an import
 
@@ -216,11 +216,73 @@ plus `served`, the URL path a client downloads it from, and the format's reading
 The bytes themselves are addressed by the `served` paths the listing returns, so any HTTP client can copy a
 repository out - and another Jenesis Repository imports one directly with the `jenesis` connector above.
 
+## Moving to another repository
+
+An export publishes every version a repository holds into another repository - another Jenesis Repository, or any
+repository manager - through the protocol the format's own client publishes with, so the other side needs no
+importer and sees nothing it would not see from a client. It is a background job, like an import.
+
+Choose **Export** in the console. Name the repository to export, the **Target URL** - the URL the format's own
+client would be pointed at to publish into the other repository - and a credential for it: a **Username** with a
+**Password**, or a **Token**. **Start export** answers at once, and the list below shows each job's state, how many
+versions it published, how many the target already held and how many it withheld, refreshing while one runs.
+
+The same job starts from a script with a `POST` to `/api/repository/export`, naming the repository in `?repo=`:
+
+```bash
+curl -X POST 'https://repo.example.com/api/repository/export?repo=libraries' \
+  -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
+  -d '{"url": "https://other.example.com/repository/maven-releases/", "token": "…"}'
+# 202  {"job":"d4e5f6…","state":"running"}
+
+curl -H "Jenesis-Repository-Key: $KEY" \
+  'https://repo.example.com/api/repository/export/d4e5f6…?repo=libraries'
+# {"state":"completed","published":412,"present":0,"withheld":3,…}
+```
+
+and from the command line, where `--refresh` follows the job until it finishes:
+
+```bash
+jenesis-repo export libraries --url https://other.example.com/repository/maven-releases/ --token "$TOKEN"
+jenesis-repo export status libraries d4e5f6… --refresh
+```
+
+| Field | Required | Meaning |
+|---|---|---|
+| `url` | yes | Where the format's client would be pointed to publish into the target. It must be `https` and resolve to a public host, under the same setting as an import's URL. |
+| `username`, `password` | no | Sent as HTTP Basic. |
+| `token` | no | Sent as a bearer token, or in the header the format's client uses (`X-NuGet-ApiKey` for NuGet, a bare `Authorization` for Cargo and RubyGems). |
+| `resume` | no | The id of an earlier job, which continues from where it stopped. The credential is never stored, so it is named again. |
+
+What an export sends, per format, relative to the target URL:
+
+| Format | Sent as |
+|---|---|
+| Maven, Ivy, Jenesis, raw | Each file of a version `PUT` at its path, artifacts before signatures, checksums and metadata. |
+| npm | The version's `PUT` to the package, with its tarball attached, as `npm publish` sends it. |
+| PyPI | The legacy upload form `POST`ed to the URL, as `twine upload` sends it. |
+| NuGet | The `.nupkg` `PUT` to `v3/package`, as `dotnet nuget push` sends it. |
+| Cargo | The publish frame `PUT` to `api/v1/crates/new`, as `cargo publish` sends it. |
+| RubyGems | The `.gem` `POST`ed to `api/v1/gems`, as `gem push` sends it. |
+| OCI | Each blob, then the manifest by tag, through the registry API, as `docker push` sends them. |
+| Swift | The release `PUT` as a form, with its metadata, manifest and signature. |
+| Conan | Each recipe and package file of every revision, under the revision the client computed. |
+| Helm | The chart `PUT` under `charts/`, its provenance file after it. |
+| Go, conda, Debian, RPM, apk, Composer, CocoaPods, Terraform, Homebrew, Hugging Face, winget | Each file `PUT` at the path this format publishes it to; winget's manifest goes before its installers. |
+
+Before sending a file the export asks the target whether it already holds it, and a file the target serves with the
+same bytes is not sent again - so a job can be run twice, or resumed, and a repository already partly moved is
+completed rather than duplicated. A target that refuses a file it already holds with the same bytes - a release
+repository refusing a second deploy - is not a failure. A version the gate is holding is never sent. Finished
+export jobs are removed after seven days.
+
 ## Settings
 
 | Key | Default | Effect |
 |---|---|---|
-| `jenreg.block-private-import-hosts` | `true` | Refuse an import URL that is not `https` or that resolves to a private, loopback or link-local address. |
+| `jenreg.block-private-import-hosts` | `true` | Refuse an import or export URL that is not `https` or that resolves to a private, loopback or link-local address. |
+| `jenreg.import-job-ttl` | `P7D` | How long a finished import job stays before the scheduled cleanup removes it. |
+| `jenreg.export-job-ttl` | `P7D` | How long a finished export job stays before the scheduled cleanup removes it. |
 | `jenreg.batch-upload` | `false` | Honour the `Jenesis-Explode` header and publish an archive entry by entry. |
 | `jenreg.batch-upload-max-entries` | `10000` | The most entries one exploded archive may publish; the walk stops there and reports `capped`. |
 | `jenreg.maven-metadata-compute` | `false` | Derive `maven-metadata.xml` from the stored version folders instead of serving only what was published. |
