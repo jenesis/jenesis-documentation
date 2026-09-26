@@ -5,16 +5,15 @@ description: Serving what the repository does not hold yet from Maven Central, n
 ---
 
 A repository is most useful as a build's **single front door**: it serves your own packages and, on a miss,
-fetches the public ones from upstream, screens them, keeps them, and serves them from then on. For a format
-with one public registry this is on from the start: a miss is fetched from that registry unless you name another
-upstream, and `proxy-enabled=false` keeps the deployment from fetching anything at all.
+fetches the public ones from upstream, screens them, keeps them, and serves them from then on. Nothing is
+fetched from anywhere until you name an upstream, so a new deployment makes no outbound call on its own.
 
 ## A format upstream
 
-Each format fetches its misses from one upstream per deployment. A format with one public registry has it as its
-default:
+Each format fetches its misses from one upstream per deployment, named under **Settings → Settings → Format
+upstreams**. A format with one public registry lists it there with a **Use** button:
 
-| Format | Default upstream |
+| Format | Public registry |
 | --- | --- |
 | `maven` (and `java`) | `https://repo1.maven.org/maven2/` |
 | `npm` | `https://registry.npmjs.org/` |
@@ -26,12 +25,11 @@ default:
 | `composer` | `https://repo.packagist.org` |
 | `conan` | `https://center2.conan.io` |
 | `cocoapods` | `https://cdn.cocoapods.org` |
-| `debian` | `http://deb.debian.org/debian/` |
+| `debian` | `https://deb.debian.org/debian/` |
 | `huggingface` | `https://huggingface.co/` |
 
-The other formats - `oci`, `rpm`, `helm`, `conda`, `apk`, `swift`, `terraform` and the rest - fetch nothing until
-you name an upstream. Name one, or replace a default, under **Settings → Settings → Format upstreams**: enter a
-format and the URL it fetches its misses from, and save. Docker Hub, for instance, is
+For any other format - `oci`, `rpm`, `helm`, `conda`, `apk`, `swift`, `terraform` and the rest - or another
+registry, enter the format and the URL it fetches its misses from, and save. Docker Hub, for instance, is
 `https://registry-1.docker.io/` for the `oci` format.
 
 From then on every repository holding that format fetches its misses from the upstream: a Maven build pointed at
