@@ -98,6 +98,13 @@ An index that changes upstream - a `maven-metadata.xml`, an npm package document
 with a conditional request so an unchanged one costs no transfer. A definite `404` from upstream is remembered for
 a minute (`proxy-miss-ttl`), so a build probing for things that do not exist does not flood the upstream.
 
+Where an index names each artifact's download URL, the served copy points those URLs back at this repository, so
+a client installs through it rather than straight from the upstream. A Helm chart repository is one: the
+`index.yaml` is served with each version's `urls` rewritten to this repository's `charts/`, its `digest` unchanged,
+and a chart fetched through it is checked against that digest.
+An Ivy repository is proxied file by file, each file checked against the `.sha1` the upstream publishes beside it.
+A module's directory listing, which Ivy reads to resolve a revision such as `1.+`, is relayed as the upstream lists it.
+
 ## The cooldown on fresh versions
 
 A version the upstream published **within the last two days** is held for review rather than served. A brand-new
