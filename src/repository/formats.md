@@ -263,13 +263,17 @@ proxies them already answers for them.
 
 **In a `java` repository, every modular jar is a published module too.** When a jar published through Maven
 carries a `module-info` or an `Automatic-Module-Name`, a `java` repository also serves it by module name under
-`module/`, so a Jenesis build that `requires` that module resolves it from the same repository with no second
-upload. A `maven` repository serves the Maven layout alone; creating it again with the type `java` makes it a
+`module/`, and under `artifact/` beside the POM published with it. So a Jenesis build that `requires` that module
+resolves it from the same repository with no second upload: `artifact/` gives its POM, and the Maven coordinate
+that POM names gives its jar. A jar published under a classifier is served beside the module's own as
+`<module>-<classifier>.jar`. A `maven` repository serves the Maven layout alone; creating it again with the type `java` makes it a
 `java` repository, with every URL it answered still answering.
 
 A Jenesis build puts its own modules into a `jenesis` repository with `release`, once `jenesis.release.uri`
 names the repository's address and `jenesis.release.token` a key that may publish to it: one put of each
-module's jar under its version, below `module/`. A `java` repository refuses that put - Maven drives its
+module's jar under its version, below `module/`. The repository moves the module's version-less
+`<module>/<module>.jar` to the version released last, so that path is not an upload target, and neither is anything
+else. A `java` repository refuses that put - Maven drives its
 publication - so modules a build releases go to a `jenesis` repository, and modules published through Maven reach
 module consumers from a `java` one. Both settings have environment variables of their own,
 `JENESIS_RELEASE_URI` and `JENESIS_RELEASE_TOKEN`, so a CI job keeps the key it releases with apart from the key
