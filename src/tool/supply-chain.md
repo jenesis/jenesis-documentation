@@ -37,7 +37,11 @@ places, one per consumer:
   artifact. The jar's manifest records `Sbom-Format: CycloneDX` and an `Sbom-Location` header pointing at it.
   An executable [launcher jar](/launcher/producing-a-launcher-jar/) carries a document of its own at the same
   place, which describes the project as an `application` and adds the launcher it shades as a dependency - once
-  if the module already depends on the same version, beside it if on another.
+  if the module already depends on the same version, beside it if on another. A [native image](/tool/packaging/)
+  compiles its jars away, and their documents with them, so one of its own is staged beside the binary as
+  `<image>.cdx.json`. It describes the project as an `application` and adds the GraalVM that compiled the binary
+  as a `platform` it depends on, named after the vendor and version in that GraalVM's `release` file. That file
+  names no licence, so the component carries none unless `jenesis.graalvm.license` names one.
 - **As a report**, collected on `stage` into `target/stage/reports/output/sbom/<module>/` alongside the other
   build reports.
 - **As a Maven attachment**, when a Maven repository is staged: `stage` drops

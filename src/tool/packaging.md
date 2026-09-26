@@ -378,7 +378,7 @@ passes them on follows from how it holds the jars:
 | Container build context | The jars are copied intact into `jars/` beside the `Dockerfile`. |
 | Class-path application image | The jars stay intact in the image's application folder (`lib/app/` on Linux), and the runtime jpackage links carries the JDK's own notices in its `legal/` folder. |
 | Runtime image, modular application image | Linking takes the code out of the jars, so the notices are collected into the module's `.jmod` and laid into the runtime under `legal/<module>/`: the module's own at its root, and each runtime dependency's in a folder named after its jar. |
-| Native image | The jars are compiled away, so the same notices go into a `licenses/` folder beside the binary, staged in `stage/native/output/`. |
+| Native image | The jars are compiled away, so the same notices go into a `licenses/` folder beside the binary, staged in `stage/native/output/`. The binary also contains the GraalVM that compiled it, so that GraalVM's licence and notice files join them in `licenses/graalvm-<version>/`. |
 
 Linking always goes through the module's `.jmod`, so a runtime keeps the notices however it is configured:
 without `jmod=true`, `jlink` and a modular `jpackage` build the `.jmod` for linking alone and do not stage it.
