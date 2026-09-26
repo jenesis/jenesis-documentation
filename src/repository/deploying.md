@@ -1,7 +1,7 @@
 ---
 order: 13
 title: Running in production
-description: Taking Jenesis Repository from a laptop to a team - choosing where the store lives, running several servers, TLS and a reverse proxy, the Helm chart, a template per cloud, signing people in, and backups.
+description: Taking Jenesis Repository from a laptop to a team - choosing where the store lives, running several servers, TLS and a reverse proxy, the Helm chart, checking the image, a template per cloud, signing people in, and backups.
 ---
 
 The container from [Getting started](/repository/getting-started/) is already the production server - there is
@@ -109,6 +109,25 @@ helm install jenesis oci://registry-1.docker.io/jenesisbuild/jenesis --version 1
 
 The server listens on 8080, and the chart points its liveness and readiness probes at `/actuator/health/liveness`
 and `/actuator/health/readiness`.
+
+## Checking the image
+
+The published image and chart are signed by digest, keylessly, with the identity of the workflow that publishes
+them, and the image's CycloneDX SBOM is attested to the same digest. `cosign` checks both against Sigstore's public
+transparency log, with no key to fetch first:
+
+```bash
+cosign verify \
+  --certificate-identity-regexp '^https://github\.com/jenesis/jenesis-repository/\.github/workflows/publish-images\.yml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  docker.io/jenesisbuild/jenesis-repository:<version>
+cosign verify-attestation --type cyclonedx \
+  --certificate-identity-regexp '^https://github\.com/jenesis/jenesis-repository/\.github/workflows/publish-images\.yml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  docker.io/jenesisbuild/jenesis-repository:<version>
+```
+
+The chart verifies with the same two flags, as `docker.io/jenesisbuild/jenesis:<version>`.
 
 ## On a cloud
 
