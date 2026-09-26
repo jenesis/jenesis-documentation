@@ -194,14 +194,17 @@ java -Djenesis.test.tag='fast,io,!slow' build/jenesis/Make.java
 `jenesis.test.filter` takes a comma-separated list of `<classRegex>[#<method>]` entries and runs only what
 matches. `jenesis.test.tag` takes a comma-separated list of tag names, whatever the test framework: a test runs
 where it carries one of them, and a name preceded by `!` leaves out the tests carrying it, so the line above runs
-the tests tagged `fast` or `io` that are not tagged `slow`, and `!slow` alone runs every test but those. Jenesis
-translates the list for the framework - into a tag expression on the JUnit Platform, into groups and excluded
-groups for TestNG; JUnit 4 cannot select categories through its console runner and rejects the property.
+the tests tagged `fast` or `io` that are not tagged `slow`, and `!slow` alone runs every test but those. Names
+joined by `&` select the tests carrying all of them: `fast&io,db` runs the tests tagged both `fast` and `io`, and
+those tagged `db`. Jenesis translates the list for the framework - into a tag expression on the JUnit Platform,
+into groups and excluded groups for TestNG, which has no way to require several groups and so rejects `&`; JUnit 4
+cannot select categories through its console runner and rejects the property.
 
 A narrowed run is still the same step, so its result is remembered together with **what it covered**, and every
 later run adds to that memory until the tests or what they test change. A request runs only what no remembered
 run covered: after `fast`, asking for `fast,io` runs the tests tagged `io` that are not tagged `fast`, asking for
-`fast` again runs nothing, and a run of every test covers any request. A run that left tests out covers only a
+`fast` again runs nothing, a run of `fast` covers a request for `fast&io`, and a run of every test covers any
+request. A run that left tests out covers only a
 request that leaves them out too. The filter is compared as it is written, so a different filter runs the tests
 again and starts a new memory.
 
