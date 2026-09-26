@@ -48,8 +48,10 @@ places, one per consumer:
   `<artifact>-<version>-cyclonedx.json` next to the pom and jar, so `export` publishes it to Maven Central as
   the conventional CycloneDX attached artifact.
 
-Each component carries its `pkg:maven/…` package URL, its `SHA-256` hash, and its licence, with a `dependsOn`
-relationship back to the project. The document's `metadata.component` describes the project itself from the
+Each component carries its `pkg:maven/…` package URL, its `SHA-256` hash, its licence and its scope, with a
+`dependsOn` relationship back to the project. The scope is `required` for a dependency the application runs with
+and `excluded` for one on the compile path alone, which CycloneDX defines as used for other than the run: a
+`requires static` module or a Maven `provided` dependency, unless the runtime closure holds it as well. The document's `metadata.component` describes the project itself from the
 POM - its description, licence, developers (as CycloneDX `authors`), organization (as its `supplier`),
 homepage and source repository (as `website` and `vcs` references), and the `copyright`, `manufacturer` and
 `publisher` that `project.properties` declares - filling in only what is declared. The tag and the revision a release
