@@ -17,7 +17,7 @@ what somebody needs to use a tool. Contributor and internal material stays in ea
 npm ci             # install exactly what package-lock.json pins, each package checked against its hash
 npm run serve      # local preview with live reload
 npm run build      # produce _site/
-npm run validate   # check internal links, assets and fragments in _site/ (hyperlink)
+npm run validate   # check every internal link, asset and #fragment on every page in _site/
 npm run check      # build + validate (what CI runs)
 ```
 

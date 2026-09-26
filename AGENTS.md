@@ -41,9 +41,9 @@ tree, on its current default branch, before a chapter describes it.
    property documented in a chapter also appears in that section's reference table, `src/_data/demos.js`
    matches the `demo/` folder of jenesis/jenesis, and the landing page (`src/index.njk` and the taglines in
    `eleventy.config.js`) claims nothing a chapter contradicts.
-6. `npm run check` builds the site and crawls it, validating every internal link and every `#fragment` on
-   every page - not just the ones the landing page reaches. It must pass before a push; the deploy runs only
-   when it does.
+6. `npm run check` builds the site from scratch and reads every page, validating every internal link and
+   every `#fragment` - not just on the pages the landing page reaches. It must pass before a push; the deploy
+   runs only when it does.
 
 ## What the site says
 

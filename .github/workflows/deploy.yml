@@ -1,7 +1,7 @@
 name: Build, validate and deploy
 
-# Static site, but validated before it ships: the build produces _site, linkinator checks every internal
-# link, and only a clean build is published to GitHub Pages at jenesis.build.
+# Static site, but validated before it ships: the build produces _site, scripts/validate-links.js checks every
+# internal link and #fragment on every page, and only a clean build is published to GitHub Pages at jenesis.build.
 
 on:
   push:
