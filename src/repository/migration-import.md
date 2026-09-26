@@ -99,7 +99,7 @@ A job that stopped - a network fault, a restart - is continued by submitting the
 `"resume": "<job id>"`. The walk resumes under that same job id, from its recorded cursor, carrying
 `imported` and `skipped` forward; `held` and `rejected` restart at zero and count the resumed run alone.
 
-The content-addressed store makes any overlap free: re-importing bytes that are already stored needs no
+The content-addressed store makes any overlap cost nothing: re-importing bytes that are already stored needs no
 space and changes nothing, so a re-run after a partial migration is always safe.
 
 ## The connectors
