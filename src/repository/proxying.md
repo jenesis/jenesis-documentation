@@ -104,6 +104,9 @@ a client installs through it rather than straight from the upstream. A Helm char
 and a chart fetched through it is checked against that digest.
 An Ivy repository is proxied file by file, each file checked against the `.sha1` the upstream publishes beside it.
 A module's directory listing, which Ivy reads to resolve a revision such as `1.+`, is relayed as the upstream lists it.
+An Alpine repository's `APKINDEX.tar.gz` is relayed as the upstream signed it, so clients keep trusting the
+upstream's key. A package fetched through it is checked twice: its control member against the checksum the index
+declares, and its data against the hash that control member carries.
 
 ## The cooldown on fresh versions
 
