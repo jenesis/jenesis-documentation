@@ -29,6 +29,15 @@
   --docs-demo-bg: #ece5f7;
   --docs-demo-fg: #4b2a7a;
 
+  /* Code samples: five colours and nothing else - no bold, no italics, no backgrounds - each at least WCAG-AA
+     (4.5:1) against Pico's code background in its theme. The text is darker than Pico's grey code colour so a
+     comment still reads as the quieter of the two. */
+  --docs-code-text: #26221c;
+  --docs-code-comment: #5f6673;
+  --docs-code-keyword: #8a4f14;
+  --docs-code-string: #2f6b3a;
+  --docs-code-meta: #5b3591;
+
   --docs-sidebar-width: 16rem;
   --docs-header-height: 3.5rem;
 }
@@ -49,11 +58,21 @@ body { --pico-line-height: 1.6; }
 [data-theme="dark"] {
   --docs-demo-bg: #2a1f3d;
   --docs-demo-fg: #d0b8f5;
+  --docs-code-text: #e6e0d6;
+  --docs-code-comment: #99a1b0;
+  --docs-code-keyword: #e0a060;
+  --docs-code-string: #9fd4a6;
+  --docs-code-meta: #c9b3ef;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --docs-demo-bg: #2a1f3d;
     --docs-demo-fg: #d0b8f5;
+    --docs-code-text: #e6e0d6;
+    --docs-code-comment: #99a1b0;
+    --docs-code-keyword: #e0a060;
+    --docs-code-string: #9fd4a6;
+    --docs-code-meta: #c9b3ef;
   }
 }
 
@@ -201,6 +220,20 @@ body { --pico-line-height: 1.6; }
   background: var(--pico-code-background-color); border: 1px solid var(--pico-muted-border-color);
   border-radius: var(--app-radius-md); padding: var(--app-space-4); overflow-x: auto; font-size: var(--app-font-size-sm);
 }
+/* Syntax colours, set at build time as Prism's token classes. Names, calls, numbers, punctuation and command-line
+   flags keep the text colour, so a sample carries a handful of accents rather than a colour per word. */
+.docs-content pre code { color: var(--docs-code-text); }
+.docs-content .token.comment { color: var(--docs-code-comment); }
+.docs-content .token.keyword, .docs-content .token.builtin, .docs-content .token.boolean,
+.docs-content .token.tag, .docs-content .token.attr-name, .docs-content .token.atrule { color: var(--docs-code-keyword); }
+.docs-content .token.string, .docs-content .token.char, .docs-content .token.attr-value { color: var(--docs-code-string); }
+.docs-content .token.constant, .docs-content .token.annotation,
+.docs-content .token.variable:not(.parameter) { color: var(--docs-code-meta); }
+/* A shell sample is mostly a command's own arguments, which Prism would read as shell words: `export` as the
+   builtin, `1.0.0` as a number and a half. Only comments, strings and variables are coloured there. */
+.docs-content .language-bash .token.keyword, .docs-content .language-bash .token.builtin,
+.docs-content .language-bash .token.boolean { color: inherit; }
+
 /* A long URL or setting in running text breaks where it must rather than pushing the page sideways. */
 .docs-content :not(pre) > code { font-size: 0.9em; overflow-wrap: anywhere; }
 /* A table cell breaks inline code only at the seams the site marks with <wbr> (after `/`, `.`, `=`, `?`, `&` and

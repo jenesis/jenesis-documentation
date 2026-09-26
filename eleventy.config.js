@@ -6,7 +6,14 @@
 // file with that front matter - it appears in the menu automatically, so adding a chapter never
 // has to touch navigation.
 
+import Prism from "prismjs";
+import loadLanguages from "prismjs/components/index.js";
 import demos from "./src/_data/demos.js";
+
+// The languages a code fence may name. A fence with no language, or `text`, is output, a tree or a path and
+// stays plain; any other name fails the build, so a typo does not silently ship an uncoloured sample.
+const highlighted = ["bash", "java", "properties", "xml", "kotlin", "json", "dockerfile", "yaml", "gitignore"];
+loadLanguages(highlighted);
 
 export default function (eleventy) {
   // Static assets pass through untouched (CSS, JS, logos, fonts, the CNAME).
@@ -29,6 +36,19 @@ export default function (eleventy) {
         escape(character) + ("/.=?&_".includes(character) ? "<wbr>" : "")).join("");
       return `<code${self.renderAttrs(token)}>${content}</code>`;
     };
+  });
+
+  // Code samples are coloured when the site is built: Prism wraps each token in a <span class="token ...">, and
+  // docs.css gives the few token kinds a colour. The page ships no script for it. Returning "" leaves a plain
+  // block to markdown-it, which escapes it as before.
+  eleventy.amendLibrary("md", (markdown) => {
+    markdown.set({
+      highlight: (code, language) => {
+        if (!language || language === "text") return "";
+        if (!highlighted.includes(language)) throw new Error(`Code fence language "${language}" is not highlighted; add it to eleventy.config.js`);
+        return Prism.highlight(code, Prism.languages[language], language);
+      },
+    });
   });
 
   eleventy.amendLibrary("md", (markdown) => {
