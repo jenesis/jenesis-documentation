@@ -10,7 +10,8 @@ function read(dir, path) {
   return readFileSync(new URL(`${dir}/${path}`, ROOT), "utf8").replace(/\s+$/, "");
 }
 
-// The lines of `lines` that a longest common subsequence with `base` does not cover.
+// The lines of `lines` that a longest common subsequence with `base` does not cover. A blank line is never marked:
+// it separates what was added, and is no addition of its own.
 function additions(lines, base) {
   const table = Array.from({ length: lines.length + 1 }, () => new Array(base.length + 1).fill(0));
   for (let i = lines.length - 1; i >= 0; i--) {
@@ -30,7 +31,49 @@ function additions(lines, base) {
       j++;
     }
   }
-  return added;
+  // The same addition can often be drawn a few lines higher or lower, when the lines around it repeat - a
+  // </plugin> <plugin> pair, a closing brace. Of the positions an added run can slide to, take the one whose first
+  // and last non-blank lines are the least indented, so a block is marked from its opening line to its closing one.
+  const indent = (line) => (line.trim() === "" ? Infinity : line.length - line.trimStart().length);
+  for (let first = 0; first < lines.length; first++) {
+    if (!added[first] || (first > 0 && added[first - 1])) {
+      continue;
+    }
+    let last = first;
+    while (last + 1 < lines.length && added[last + 1]) {
+      last++;
+    }
+    let up = 0, down = 0;
+    while (first - up - 1 >= 0 && !added[first - up - 1] && lines[first - up - 1] === lines[last - up]) {
+      up++;
+    }
+    while (last + down + 1 < lines.length && !added[last + down + 1] && lines[last + down + 1] === lines[first + down]) {
+      down++;
+    }
+    let best = 0, score = Infinity;
+    for (let shift = -up; shift <= down; shift++) {
+      let top = first + shift, bottom = last + shift;
+      while (top < bottom && lines[top].trim() === "") {
+        top++;
+      }
+      while (bottom > top && lines[bottom].trim() === "") {
+        bottom--;
+      }
+      const candidate = indent(lines[top]) + indent(lines[bottom]);
+      if (candidate < score) {
+        best = shift;
+        score = candidate;
+      }
+    }
+    for (let index = first; index <= last; index++) {
+      added[index] = false;
+    }
+    for (let index = first + best; index <= last + best; index++) {
+      added[index] = true;
+    }
+    first = last + Math.max(best, 0);
+  }
+  return added.map((mark, index) => mark && lines[index].trim() !== "");
 }
 
 // A file shown with its content. `base` names the section whose copy of the same file it extends.
