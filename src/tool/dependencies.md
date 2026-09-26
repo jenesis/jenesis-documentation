@@ -438,8 +438,12 @@ Each of these is reported when it is declared, naming what to write instead:
 - two layers of one name, because a name is global - it is the dependency group the layer resolves in.
 
 <div class="note">
-  A layer is defined while the JVM runs, so a packaging that resolves its module graph ahead of time refuses
-  a project that declares one rather than flattening it.
+  A layer is defined while the JVM runs, from jars the application carries, and every run the build starts
+  defines it: the tests, <code>Execute</code>, a bundle, a launcher jar, and a <code>jpackage</code> image, which
+  ships the layers' jars in a <code>layers/</code> folder beside the application's own. A runtime image links the
+  platform modules the layers require but not the layers, because two versions of one module cannot share an
+  image. A native image resolves its module graph ahead of time, so it refuses a project that declares a layer
+  rather than flattening it.
 </div>
 
 <div class="warning">
