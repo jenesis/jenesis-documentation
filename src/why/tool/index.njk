@@ -157,7 +157,6 @@ module demo.app {
           <ul>{% for n in e.notes %}<li>{{ n | safe }}</li>{% endfor %}</ul>
         </div>
         {% endif %}
-        <p class="lp-verified">{{ bc.setup[t.key] | safe }} Built and run with {{ e.version or t.version }}.</p>
       </div>
       {% endfor %}
     </div>

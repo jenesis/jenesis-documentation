@@ -76,13 +76,31 @@ function additions(lines, base) {
   return added.map((mark, index) => mark && lines[index].trim() !== "");
 }
 
-// A file shown with its content. `base` names the section whose copy of the same file it extends.
+// The lines strictly between a line containing `open` and the next line containing `close`, blank ones excepted:
+// the entries of a block such as <dependencies> or deps = [...].
+function between(lines, [open, close]) {
+  let inside = false;
+  return lines.map((line) => {
+    if (inside && line.includes(close)) {
+      inside = false;
+    } else if (!inside && line.includes(open)) {
+      inside = true;
+      return false;
+    }
+    return inside && line.trim() !== "";
+  });
+}
+
+// A file shown with its content. `base` names the section whose copy of the same file it extends; `mark` names the
+// block whose entries are highlighted instead, such as the dependencies a build file declares a second time.
 function file(dir, path, options = {}) {
   const text = read(dir, path);
   const lines = text.split("\n");
   const marks = options.base
     ? additions(lines, read(options.base, options.basePath ?? path).split("\n"))
-    : lines.map(() => false);
+    : options.mark
+      ? between(lines, options.mark)
+      : lines.map(() => false);
   const marked = lines.map((line, index) => ({ text: line, added: marks[index] }));
   return {
     path,
@@ -115,20 +133,14 @@ function listed(path, count, generated, note) {
   return { path, count, generated, note, lines: null };
 }
 
-const JENESIS = { key: "jenesis", name: "Jenesis", release: "Jenesis 0.15.2", version: "Jenesis 0.15.2 on Java 25" };
-const MAVEN = { key: "maven", name: "Maven", release: "Maven 3.9.16", version: "Maven 3.9.16 on Java 25" };
-const GRADLE = { key: "gradle", name: "Gradle", release: "Gradle 9.8.0", version: "Gradle 9.8.0 on Java 25" };
-const BAZEL = { key: "bazel", name: "Bazel", release: "Bazel 9.2.0", version: "Bazel 9.2.0 on Java 25" };
+const JENESIS = { key: "jenesis", name: "Jenesis", release: "Jenesis 0.15.2" };
+const MAVEN = { key: "maven", name: "Maven", release: "Maven 3.9.16" };
+const GRADLE = { key: "gradle", name: "Gradle", release: "Gradle 9.8.0" };
+const BAZEL = { key: "bazel", name: "Bazel", release: "Bazel 9.2.0" };
 
 export default {
   tools: [JENESIS, MAVEN, GRADLE, BAZEL],
-  // What every project of a tool carries besides the files a section shows.
-  setup: {
-    jenesis: "Every project also carries <code>build/jenesis/</code>, the build's own sources, written by <code>jenesis-init</code> or the install script.",
-    maven: "Maven is installed on the machine; a project may add the Maven Wrapper.",
-    gradle: "Every project also carries the Gradle Wrapper - <code>gradlew</code>, <code>gradlew.bat</code> and <code>gradle/wrapper/</code> - written by <code>gradle wrapper</code>.",
-    bazel: "Every project also carries <code>.bazelversion</code>, the two-line <code>.bazelrc</code> from the first section, and <code>MODULE.bazel.lock</code>, which Bazel writes (800 lines or more here).",
-  },
+
   statuses: {
     built: "Built in",
     plugin: "Plugin",
@@ -137,14 +149,14 @@ export default {
   },
   sections: [
     {
-      id: "a-java-25-build",
-      title: "A Java 25 build with four dependencies",
-      lede: `<p>The first build of any project: a release to compile for, a handful of libraries, a jar. With Jenesis
-        the build file is <code>module-info.java</code>, the Java-native module descriptor, which
-        <code>javac</code> compiles and checks like any other source. Its <code>requires</code> are the
-        dependencies, and two Javadoc tags set the release and the main class.</p>
-        <p>The versions are optional. Without them a build takes the newest release; <code>pin</code> writes each
-        version with its SHA-256 checksum into the same file.</p>`,
+      id: "a-modular-build-in-java",
+      title: "A modular build in Java",
+      lede: `<p>A Java 25 application with four dependencies, written as a module. Its <code>module-info.java</code>
+        is the Java Module System's own descriptor: it names what the module reads, and <code>javac</code>
+        compiles and checks it. Jenesis takes it as the build. Its <code>requires</code> are the dependencies, two
+        Javadoc tags set the release and the main class, and versions are optional pins in the same file.</p>
+        <p>The other tools compile the same descriptor, but each dependency must be declared again in their own
+        format - highlighted in their tabs.</p>`,
       tools: {
         jenesis: {
           status: "built",
@@ -152,31 +164,39 @@ export default {
           files: [file("basic/jenesis", "sources/module-info.java")],
         },
         maven: {
-          status: "built",
-          verdict: "One <code>pom.xml</code>.",
-          files: [file("basic/maven", "pom.xml")],
-          notes: ["The compiler and jar plugins are pinned, so the build does not change with the Maven version."],
+          status: "manual",
+          badge: "Declared twice",
+          verdict: "Every <code>requires</code> again as a <code>&lt;dependency&gt;</code>.",
+          files: [
+            file("modular/maven", "src/main/java/module-info.java"),
+            file("modular/maven", "pom.xml", { mark: ["<dependencies>", "</dependencies>"] }),
+          ],
+          notes: ["A third-party extension derives them from <code>requires</code>, but the published POM then lists no dependencies."],
         },
         gradle: {
-          status: "built",
-          verdict: "A build script, a settings file and the wrapper.",
+          status: "manual",
+          badge: "Declared twice",
+          verdict: "Every <code>requires</code> again as <code>implementation(...)</code>.",
           files: [
-            file("basic/gradle", "build.gradle.kts"),
-            file("basic/gradle", "settings.gradle.kts", { note: "Optional; without it the jar is named after the folder." }),
-            file("basic/gradle", "gradle/wrapper/gradle-wrapper.properties", { generated: "gradle wrapper" }),
+            file("modular/gradle", "src/main/java/module-info.java"),
+            file("modular/gradle", "build.gradle.kts", { mark: ["dependencies {", "}"] }),
+            file("modular/gradle", "settings.gradle.kts"),
+            file("modular/gradle", "gradle/wrapper/gradle-wrapper.properties", { generated: "gradle wrapper" }),
           ],
+          notes: ["GradleX's third-party plugin derives them from <code>requires</code>; the versions then go into a version catalog."],
         },
         bazel: {
-          status: "built",
-          verdict: "<code>MODULE.bazel</code>, <code>BUILD.bazel</code>, and a <code>.bazelrc</code> for the Java version.",
+          status: "manual",
+          badge: "Declared three times",
+          verdict: "Every <code>requires</code> again as a coordinate and as a label. It runs on the class path.",
           files: [
-            file("basic/bazel", "MODULE.bazel"),
-            file("basic/bazel", "BUILD.bazel"),
+            file("modular/bazel", "src/main/java/module-info.java"),
+            file("basic/bazel", "MODULE.bazel", { mark: ["artifacts = [", "],"] }),
+            file("basic/bazel", "BUILD.bazel", { mark: ["deps = [", "],"] }),
             file("basic/bazel", ".bazelrc", { note: "Without it rules_java compiles for Java 11." }),
             file("basic/bazel", ".bazelversion"),
             listed("MODULE.bazel.lock", 814, "Bazel, on every build"),
           ],
-          notes: ["Each dependency is named twice: as a Maven coordinate in <code>MODULE.bazel</code> and as a label in <code>BUILD.bazel</code>."],
         },
       },
     },
@@ -411,7 +431,7 @@ export default {
         gradle: {
           status: "built",
           verdict: "Identical out of the box since Gradle 9. Nothing checks it.",
-          files: [file("basic/gradle", "build.gradle.kts", { note: "Section 1's build, unchanged." })],
+          files: [file("basic/gradle", "build.gradle.kts", { note: "A plain Java 25 build, unchanged." })],
           notes: [
             "Gradle 9.8's archive defaults already fix the entry dates and order: <code>preserveFileTimestamps=false</code>, <code>reproducibleFileOrder=true</code>.",
             "Gradle records no digest of what it builds; the reproducibility plugins only change the settings.",
@@ -519,7 +539,6 @@ export default {
         jenesis: {
           status: "built",
           verdict: "On by default, inside the jar and beside it. The metadata is one file.",
-          version: "Jenesis main (e8c62a9) on Java 25",
           files: [
             file("sbom/jenesis", "project.properties"),
             file("sbom/jenesis", "jenesis.properties"),
