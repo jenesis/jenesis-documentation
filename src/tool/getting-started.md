@@ -202,7 +202,10 @@ Hello from a module
 `requires org.apache.commons.lang3` is the entire dependency declaration - no `pom.xml`, no coordinate, no
 version. The module name resolves to a Maven artifact, and the version that arrives is the newest release
 unless you [pin](/tool/pinning/) it. A project with a `pom.xml` instead of a `module-info.java` builds the
-same way, from what the POM declares.
+same way, from what the POM declares. The POM may be written in model 4.0.0 or in model 4.1.0, which Maven 4
+introduces for the POMs kept in source control: its `<subprojects>`, a `<parent/>` that names no coordinate, a
+dependency on a subproject without a version and the source folders of `<build><sources>` are read, and the
+POM a module is published with stays 4.0.0, with every inferred version written out.
 
 ### Reading what it resolved
 
