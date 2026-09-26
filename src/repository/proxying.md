@@ -107,6 +107,9 @@ A module's directory listing, which Ivy reads to resolve a revision such as `1.+
 An Alpine repository's `APKINDEX.tar.gz` is relayed as the upstream signed it, so clients keep trusting the
 upstream's key. A package fetched through it is checked twice: its control member against the checksum the index
 declares, and its data against the hash that control member carries.
+A Swift registry proxies another organisation's registry, since there is no public one. Its release lists are
+served without the upstream's release URLs, so a client resolves each release through this repository, and a
+source archive is checked against the checksum in its release metadata.
 
 ## The cooldown on fresh versions
 
