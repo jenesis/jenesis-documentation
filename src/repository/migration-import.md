@@ -54,7 +54,7 @@ The request fields, which match the form:
 | `source` | yes | The connector to walk with: `nexus`, `artifactory`, `maven`, `index` or `jenesis`. |
 | `url` | yes | The base URL of the source. It must be `https` and resolve to a public host (see below). |
 | `repository` | yes | The source repository to read - a Nexus or Artifactory repository name, or the path under the base URL. |
-| `format` | Artifactory | The ecosystem of the source repository: `maven`, `docker` or `raw`. |
+| `format` | Artifactory | The ecosystem of the source repository, as Artifactory names its package type: `maven`, `npm`, `pypi`, `nuget`, `docker`, `alpine`, `swift`, `terraform`, `raw` and the others this product serves. |
 | `format` | index | The installed format whose own index is walked: `maven`, `oci` or `raw`. Only the OCI format can enumerate one today, so `oci` is the working choice. |
 | `username`, `password` | no | Credentials sent to the source. The `jenesis` connector takes its API key as the `password`. |
 | `resume` | no | The id of an earlier job. The walk continues under that same id, from its recorded position. |
@@ -122,6 +122,22 @@ a single package type, so the request must name its `format`. Against Artifactor
 listing, which is one response and carries no resume point; against an OSS instance, which refuses that
 API, it falls back to the per-folder listing and checkpoints after every top-level entry, folder or file,
 so an interrupted OSS migration resumes without re-walking.
+
+Each file is published through its format's own publish path, so it is read, screened and indexed as if a client
+had published it. Indexes and other documents the format derives are skipped, since the import rebuilds them. Three
+package types are read at the paths Artifactory documents for them:
+
+| Package type | Source path | Imported as |
+|---|---|---|
+| `alpine` | `<branch>/<repository>/<architecture>/<package>.apk` | the package, in the apk repository named by `<repository>`. |
+| `swift` | `<scope>/<name>/<name>-<version>.zip` | the release `<scope>.<name>` at `<version>`, published as a Swift client publishes it. |
+| `terraform` | `<namespace>/<provider>/<version>/terraform-provider-<provider>_<version>_<os>_<arch>.zip` | the provider's zip for that platform, unchanged. |
+| `terraform` | `<namespace>/<module>/<system>/<version>.zip` | the module version, repacked as the `.tar.gz` this registry serves every module as. The files are the same, and Terraform checks no checksum on a module. |
+
+Alpine branches have no level of their own here. Packages from two branches of one repository and architecture
+end up in one apk repository, and a version both branches hold with different bytes is refused as a republish.
+The incumbent's `APKINDEX.tar.gz` and a provider's `SHA256SUMS` are signed with the incumbent's key, so they are
+not carried over: this repository signs its own.
 
 ### Maven
 
