@@ -35,10 +35,6 @@ eleventyExcludeFromCollections: true
         <li>Only a JDK</li>
         <li>Reads a <code>pom.xml</code> too</li>
       </ul>
-      <div class="lp-actions">
-        <a class="lp-button" href="#examples">See twelve builds side by side</a>
-        <a class="lp-button lp-button--ghost" href="#start">Get started</a>
-      </div>
     </div>
 
     <figure class="lp-terminal" aria-label="A Jenesis project and its build command">
@@ -103,10 +99,10 @@ module demo.app {
       </ul>
     </div>
 
-    <div class="lp-tabs lp-tabs--code" data-tabs data-tabs-sync>
+    <div class="lp-tabs lp-tabs--code" data-tabs>
       <div class="lp-tabs__list" role="tablist" aria-label="{{ s.title }}, by tool">
         {% for t in bc.tools %}{% set e = s.tools[t.key] %}
-        <button role="tab" id="tab-{{ s.id }}-{{ t.key }}" data-key="{{ t.key }}" aria-controls="panel-{{ s.id }}-{{ t.key }}" aria-selected="{{ 'true' if loop.first else 'false' }}"{% if not loop.first %} tabindex="-1"{% endif %}>
+        <button role="tab" id="tab-{{ s.id }}-{{ t.key }}" aria-controls="panel-{{ s.id }}-{{ t.key }}" aria-selected="{{ 'true' if loop.first else 'false' }}"{% if not loop.first %} tabindex="-1"{% endif %}>
 {{ t.name }}</button>
         {% endfor %}
       </div>
@@ -161,7 +157,6 @@ module demo.app {
           <ul>{% for n in e.notes %}<li>{{ n | safe }}</li>{% endfor %}</ul>
         </div>
         {% endif %}
-        <p class="lp-verified">{{ bc.setup[t.key] | safe }} Built and run with {{ e.version or t.version }}.</p>
       </div>
       {% endfor %}
     </div>
