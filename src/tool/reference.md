@@ -424,7 +424,7 @@ already uses. This is the whole vocabulary:
 
 | Tag | Declares | Chapter |
 | --- | --- | --- |
-| `@jenesis.release <N>` | The Java release to compile against (`maven.compiler.release` in a POM); the running JDK's release when absent. | *[Building &amp; running](/tool/building-and-running/)* |
+| `@jenesis.release <N>` | The Java release to compile against (`maven.compiler.release` in a POM); the running JDK's release when absent. `<N>-preview` also enables the preview features of that release, to compile and to run (`maven.compiler.enablePreview` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
 | `@jenesis.main <class>` | The module's entry point (`<mainClass>` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
 | `@jenesis.test [<module>\|abstract]` | Marks this module as the test module of another, or as test infrastructure that declares no tests of its own (`abstract`). | *[Building &amp; running](/tool/building-and-running/)* |
 | `@jenesis.plugin [<compiler>] <token>` | An annotation processor, or a compiler plugin for a named compiler. | *[Other JVM languages](/tool/other-jvm-languages/)* |
