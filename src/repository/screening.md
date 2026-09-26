@@ -33,8 +33,8 @@ unless it says it needs a restart.
 
 ## Switching the feeds on
 
-The vulnerability and malware checks need something to check against, and **no feed is asked anything until you
-say so**. Three feeds ship with the image, each off by default:
+The vulnerability and malware checks need something to check against, and **nothing reaches a third party until
+you say so**. Three feeds ship with the image, each off by default:
 
 | Feed | Setting | What it answers |
 | --- | --- | --- |
