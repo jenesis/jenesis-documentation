@@ -48,6 +48,11 @@ POM - its description, licence, developers (as CycloneDX `authors`), and homepag
 was built from, when given, are recorded as well, including a `vcs` reference that locates the sources at that
 revision (see *[Publishing](/tool/publishing/#pointing-a-release-at-its-sources)*).
 
+A jar is listed once, under its Maven coordinate wherever it has one, even when the `modular_to_maven` layout
+resolved it by its module name as well. Under the `modular` layout, which publishes nothing to Maven, a
+dependency resolved only as a Java module is listed by its module name, and neither it nor the project's own
+component carries a package URL, since no Maven coordinate would find them.
+
 A dependency resolved through Maven takes its licence from its POM. One resolved as a Java module, under the
 `modular` layout, has no POM and takes it from its jar instead: from the component its embedded CycloneDX SBOM
 describes, so a jar built by Jenesis carries its licence to every build that uses it, or else from its OSGi
@@ -78,8 +83,8 @@ so a `release` profile can select the XML format while everyday builds keep JSON
 ### Identifying the sources
 
 With `swhid=true` in `sbom.properties`, the SBOM also identifies the sources the module was built from: its
-component carries a `jenesis:source:swhid` property whose value is a [SWHID](https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html), the
-identifier Software Heritage defines for a directory. It is one hash over every source root of the module
+component lists a [SWHID](https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html), the
+identifier Software Heritage defines for a directory, in the `swhid` field CycloneDX gives a component for it. It is one hash over every source root of the module
 together: the source folders and resource folders the project declares, but not what a generator writes during
 the build.
 

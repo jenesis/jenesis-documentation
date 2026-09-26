@@ -116,7 +116,7 @@ when a value is declared.
 
 The tag becomes the `<tag>` of the POM's `<scm>`; the POM has no element for a revision or a tree. The SBOM
 records the tag and the revision as the `jenesis:scm:tag` and `jenesis:scm:revision` properties of the project's
-component, and the tree as `jenesis:scm:swhid`, the [SWHID](https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html) `swh:1:dir:<tree>`; a tree
+component, and the tree in the component's `swhid` field, as the [SWHID](https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html) `swh:1:dir:<tree>`; a tree
 that is not a 40-character Git tree id fails the build. When
 `scm.connection` names a URL, such as `scm:git:https://github.com/jenesis/jenesis.git`, the SBOM also carries a
 `vcs` reference that locates the sources at the revision, or at the tag when no revision is given, in the
