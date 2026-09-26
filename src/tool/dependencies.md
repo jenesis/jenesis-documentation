@@ -99,9 +99,12 @@ the variable of the same name:
 
 <div class="warning">
   Fetches are refused over plaintext <code>http</code> - only <code>https</code> and <code>file</code> are
-  allowed. A build that must pull from an internal <code>http</code> mirror has to opt in explicitly with
-  <code>-Djenesis.repository.insecure=true</code>. A credential token is dropped before any redirect to a
-  different host, so it never leaks to a redirect target.
+  allowed - and over <code>https</code> only from a server whose certificate verifies. A build that must pull
+  from an internal <code>http</code> mirror, or from a repository deployed with a self-signed certificate, has
+  to opt in explicitly with <code>-Djenesis.repository.insecure=true</code>, which then accepts both; the
+  check is switched off for Jenesis's own connections, never for the JVM. Neither authenticates the server, so
+  a token sent there is no better protected than the network. A credential token is dropped before any
+  redirect to a different host, so it never leaks to a redirect target.
 </div>
 
 {% demos 64 %}
