@@ -5,20 +5,34 @@ description: Serving what the repository does not hold yet from Maven Central, n
 ---
 
 A repository is most useful as a build's **single front door**: it serves your own packages and, on a miss,
-fetches the public ones from upstream, screens them, keeps them, and serves them from then on. Nothing is
-fetched from anywhere until you name an upstream, so a new deployment makes no outbound call on its own.
+fetches the public ones from upstream, screens them, keeps them, and serves them from then on. For a format
+with one public registry this is on from the start: a miss is fetched from that registry unless you name another
+upstream, and `proxy-enabled=false` keeps the deployment from fetching anything at all.
 
 ## A format upstream
 
-The quickest way is one upstream per format, under **Settings → Settings → Format upstreams**: enter a format
-and the URL it fetches its misses from, and save.
+Each format fetches its misses from one upstream per deployment. A format with one public registry has it as its
+default:
 
-| Format | A common upstream |
+| Format | Default upstream |
 | --- | --- |
-| `maven` | `https://repo1.maven.org/maven2/` |
+| `maven` (and `java`) | `https://repo1.maven.org/maven2/` |
 | `npm` | `https://registry.npmjs.org/` |
 | `pypi` | `https://pypi.org/` |
-| `oci` | `https://registry-1.docker.io/` |
+| `go` | `https://proxy.golang.org/` |
+| `cargo` | `https://index.crates.io/` |
+| `nuget` | `https://api.nuget.org/` |
+| `rubygems` | `https://rubygems.org/` |
+| `composer` | `https://repo.packagist.org` |
+| `conan` | `https://center2.conan.io` |
+| `cocoapods` | `https://cdn.cocoapods.org` |
+| `debian` | `http://deb.debian.org/debian/` |
+| `huggingface` | `https://huggingface.co/` |
+
+The other formats - `oci`, `rpm`, `helm`, `conda`, `apk`, `swift`, `terraform` and the rest - fetch nothing until
+you name an upstream. Name one, or replace a default, under **Settings → Settings → Format upstreams**: enter a
+format and the URL it fetches its misses from, and save. Docker Hub, for instance, is
+`https://registry-1.docker.io/` for the `oci` format.
 
 From then on every repository holding that format fetches its misses from the upstream: a Maven build pointed at
 a Maven repository named `libraries` - `/repository/releases/libraries/maven/` - resolves everything on Maven Central
@@ -70,6 +84,9 @@ can carry options:
 | `unscreened` | Skip the gate for this upstream - flagged as a warning on the Repositories page. |
 | `match=<ecosystem>:<pattern>` | Only send matching coordinates to this fallback, such as `match=maven:com.example.*`. |
 
+A container-image upstream may carry a path, which names the namespace its images are looked up in: a repository
+`core` defined as `proxy https://ghcr.io/homebrew/core` serves ghcr.io's `homebrew/core/<name>` as `<name>`.
+
 A definition is checked when it is saved: one that could not work is refused with the reason, and one that works
 but is risky - a plaintext upstream, mixed screening - is saved and listed under **Definition warnings** on the
 **Repositories** page.
@@ -77,8 +94,9 @@ but is risky - a plaintext upstream, mixed screening - is saved and listed under
 ## Private upstreams
 
 An upstream that needs credentials gets them under **Settings → Settings → Upstream credentials**: the host name,
-and a user name and password, a bearer token, or a header name and value. The credential is sent to that host
-alone, whichever repository fetches from it.
+and a user name and password, a bearer token, or a header name and value - or, for Amazon ECR and CodeArtifact, a
+token issued to the deployment's own AWS identity. The credential is sent to that host alone, whichever repository
+fetches from it.
 
 An upstream must be `https` on a public address: a plaintext URL, or one that resolves to a private, loopback or
 cloud-metadata address, is refused unless `proxy-allow-internal` permits it - a fetch carries your credentials,
@@ -114,7 +132,12 @@ A Terraform registry's provider package documents are served naming this reposit
 signed `SHA256SUMS` and signing keys are passed on unchanged, so `terraform init` verifies the provider as it would
 against the upstream, and the zip is checked against its `shasum` before it is kept. A module whose source is a
 `.tar.gz` downloads through this repository. A module whose source is a git repository, as most public modules are,
-is fetched by the client from that repository.
+is fetched through this repository when its host is listed in `terraform.git-hosts` - `github.com`, `gitlab.com`,
+`bitbucket.org`, or another host written `host=kind` with its kind (`github`, `gitlab` or `bitbucket`), as in
+`git.example.com=gitlab`. The ref's archive is fetched, kept and served, its digest recorded on the first fetch, so
+a tag that later moves to other contents is refused. The list is empty by default; a git source on an unlisted
+host, or one that names no single ref, is handed to the client to clone, or refused when
+`terraform.git-refuse-unlisted` is `true`.
 
 ## The cooldown on fresh versions
 

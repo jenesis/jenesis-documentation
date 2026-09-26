@@ -22,7 +22,7 @@ A key travels in whichever form a client can send, and the server accepts all th
 | Form | Used by |
 | --- | --- |
 | `Authorization: Basic` with the key as the **password** | Maven, Gradle, pip, Docker, Helm, NuGet restore, apt, dnf and most others - the user name is not checked, so any value will do. |
-| `Authorization: Bearer <key>` | npm, Cargo, Hugging Face, a Jenesis build, and any client with a token setting. |
+| `Authorization: Bearer <key>`, or the key alone as `Authorization: <key>` | npm, Cargo, Hugging Face, a Jenesis build, and any client with a token setting. |
 | `Jenesis-Repository-Key: <key>` | `curl` and scripts. |
 
 A request without a key is answered `401` with a challenge, which is what Maven and Docker wait for before they
@@ -66,7 +66,7 @@ REPO=https://repo.example.com/repository/releases/<repo>
 | --- | --- | --- | --- |
 | Conan | `conan` | `$REPO/<name>` | `conan remote login`, the key as password |
 | Conda | `conda` | `$REPO/<channel>` | the key as password in the channel URL |
-| Hugging Face | `huggingface` | `HF_ENDPOINT=$REPO/hf` | `HF_TOKEN=$KEY` |
+| Hugging Face | `huggingface` | `HF_ENDPOINT=$REPO/<name>` | `HF_TOKEN=$KEY` |
 
 ### Operating-system packages
 
@@ -75,7 +75,7 @@ REPO=https://repo.example.com/repository/releases/<repo>
 | Debian | `debian` | `$REPO` | apt `auth.conf` |
 | RPM | `rpm` | `$REPO/<name>` | `password=` in the `.repo` file |
 | Alpine | `apk` | `$REPO/<name>` | in the repository URL |
-| Homebrew bottles | `homebrew` | `HOMEBREW_BOTTLE_DOMAIN=$REPO/<name>` | a bearer token |
+| Homebrew bottles | `homebrew` | `HOMEBREW_BOTTLE_DOMAIN=$REPO/<name>`; homebrew-core's bottles, see [Homebrew](#homebrew) | a bearer token |
 | winget | `winget` | `$REPO/<name>` as a `Microsoft.Rest` source | a bearer token |
 
 ### Containers and infrastructure
@@ -93,7 +93,7 @@ REPO=https://repo.example.com/repository/releases/<repo>
 | Raw files | `raw` | `$REPO/<path>` | any of the three forms |
 
 Where a URL carries `<name>`, the format keeps separate spaces inside the one repository - a Cargo registry, a
-Helm chart repository, a Conda channel, a Swift registry - and the name is yours to choose. Publishing under a new
+Helm chart repository, a Conda channel, a Swift registry, a Hugging Face hub - and the name is yours to choose. Publishing under a new
 name creates that space; the repository itself has to exist first. The Terraform discovery document at
 `/.well-known/terraform.json` names one registry path for the whole host, `terraform.prefix`, which is
 `/repository/releases/terraform/registry` - a `terraform` repository named `terraform` - unless you set it.
@@ -283,7 +283,7 @@ it resolves with. *[Publishing](/tool/publishing/)* describes the release.
 
 The registry answers at the host root, because the container protocol fixes it at `/v2/`. An image's name begins
 with the tenant and the `oci` repository it lives in, so an image `my-app` in a repository named `images` is
-`default/images/my-app`:
+`releases/images/my-app`:
 
 ```bash
 docker login repo.example.com -u jenesis -p "$KEY"
@@ -293,10 +293,26 @@ docker pull repo.example.com/releases/images/my-app:1.0
 ```
 
 The registry's catalog, `GET /v2/_catalog`, lists every image in the tenant's `oci` repositories by the name a
-client pulls it by - `default/images/my-app` - and pages with a `Link` header.
+client pulls it by - `releases/images/my-app` - and pages with a `Link` header.
 
 Image layers are stored by their digest, so a layer shared by many images - or identical to a file stored by
 another format - is kept once.
+
+## Homebrew
+
+A `homebrew` repository is a bottle domain for the bottles you build yourself. With
+`HOMEBREW_BOTTLE_DOMAIN=$REPO/<name>`, `brew install` asks for each bottle as one file under that address, named
+the way the formula names it, and a bottle the domain does not hold is fetched from Homebrew's default domain
+instead.
+
+homebrew-core's own bottles are container-image blobs on ghcr.io, and they pull through an `oci` repository rather
+than a `homebrew` one. `HOMEBREW_ARTIFACT_DOMAIN=https://repo.example.com` makes `brew` ask for them at
+`/v2/homebrew/core/<formula>/…`, which names the tenant `homebrew` and the repository `core`. So the mirror is an
+`oci` repository named `core`, defined as `proxy https://ghcr.io/homebrew/core`, in a deployment whose default
+tenant is `homebrew` (`JENREG_DEFAULT_TENANT=homebrew`): a request that carries no key is answered for the default
+tenant alone. An anonymous install also needs anonymous reads allowed (`JENREG_ANONYMOUS_RIGHTS=repository:read`);
+`HOMEBREW_DOCKER_REGISTRY_TOKEN=$KEY` presents a key instead. Each bottle is kept under its digest after the first
+install, and served from the store from then on.
 
 ## Raw files
 
