@@ -12,7 +12,7 @@
     "check": "npm run build && npm run validate"
   },
   "devDependencies": {
-    "@11ty/eleventy": "^3.0.0",
-    "hyperlink": "^5.0.4"
+    "@11ty/eleventy": "3.1.6",
+    "hyperlink": "5.0.4"
   }
 }
