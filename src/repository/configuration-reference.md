@@ -50,6 +50,7 @@ See [Access](/repository/access/).
 | `bootstrap-key` | *(empty)* | A key provisioned at startup with every right on its tenant, for automation that needs one before anyone signs in. |
 | `credential-default-lifetime` | *(90 days)* | How long a key issued without an expiry lives, as an ISO-8601 duration. |
 | `credential-max-lifetime` | *(no cap)* | The longest any key may live. |
+| `operator-tenant` | *(the default tenant)* | The tenant whose keys may administer the whole deployment - its settings, upstreams, logs and tenants. |
 | `ui.admin-key` | *(empty)* | The administrator key that key sign-in accepts. |
 | `ui.admins` | *(empty)* | Provider-qualified identifiers seeded as the deployment's administrators on every start. |
 | `ui.oidc.issuer-uri / .client-id / .client-secret` | *(empty - off)* | The OpenID Connect issuer and client. |
@@ -170,8 +171,9 @@ Explained in [Retention, pins and cleanup](/repository/retention/).
 | `cleanup-interval` | `PT1H` | at once | How often the scheduled reaps run. |
 | `collect` | `true` | at once | Reclaim the space of content nothing refers to any more, on the walks that carry the collector. |
 | `gc` | `mark-sweep` | on restart | The collector to use, by name. |
-| `gc.grace` | `PT0S` | at once | The least time between marking content unreferenced and deleting it, on top of the two-pass rule. |
+| `gc.grace` | `PT2H` | at once | The least time between marking content unreferenced and deleting it, on top of the two-pass rule. |
 | `gc.stride` | `20000` | at once | Items the collector handles between checkpoints. |
+| `export-job-ttl` | `P7D` | at once | How long a finished export job's status stays before the scheduled cleanup dismisses it; zero or blank keeps every job until it is dismissed by hand. |
 | `import-job-ttl` | `P7D` | at once | Auto-dismiss completed or failed migration jobs (and their remembered sources) this ISO-8601 duration after the sweep first sees them finished; |
 | `keep-last` | `0` | at once | Keep at most this many newest versions per coordinate; |
 | `max-age` | *(empty)* | at once | Evict versions older than this ISO-8601 duration; |
@@ -207,7 +209,9 @@ Explained in [Operations](/repository/operations/).
 | --- | --- | --- | --- |
 | `auth.cache-ttl` | `PT15M` | on restart | How long a node serves a credential's documents before asking the store again. |
 | `batch-upload` | `false` | at once | Explode a single PUT carrying the Jenesis-Explode: |
+| `batch-upload-max-bytes` | `4294967296` | at once | The most bytes one exploded archive's entries may inflate to in all; the entry that crosses it is refused whole and the walk stops. |
 | `batch-upload-max-entries` | `10000` | at once | The most members one exploded archive may publish; |
+| `batch-upload-max-ratio` | `100` | at once | How many times its compressed size an exploded archive may inflate to, once past a mebibyte; the entry that crosses it is refused whole and the walk stops. |
 | `cache.document-ttl` | `PT30S` | on restart | How long a node serves a listing it has already read - a packument, a Simple page, a maven-metadata.xml, a Packages file, a tag list - from memory before reading the store again, so a burst of builds starting at once costs the store one read per document rather than one per build. |
 | `cache.miss-ttl` | `PT10S` | on restart | How long a node remembers that a coordinate it looked for was not there, and answers the same probe from memory instead of reading the store again - a build tool asking for a version range, a missing snapshot or an optional classifier asks the same question of the same repositories many times in a row. |
 | `cache.ttl` | `PT5M` | on restart | How long a node serves a credential, a settings document, a ceiling or a tenant list it has already read before asking the store again. |
@@ -302,6 +306,8 @@ Explained in [Connecting your build tools](/repository/formats/).
 | Key | Default | Applies | Effect |
 | --- | --- | --- | --- |
 | `terraform.prefix` | `/repository/releases/terraform/registry` | on restart | The path this deployment serves its Terraform registry under, as the discovery document at /.well-known/terraform.json reports it. |
+| `terraform.git-hosts` | *(empty)* | on restart | The git hosts a proxied Terraform module's git source may be fetched from, so the module downloads through this repository: comma-separated hosts as a source writes them, a host other than github.com, gitlab.com or bitbucket.org naming its kind after `=` (`git.example.com=gitlab`). A ref's archive is held to the digest of its first fetch, so a moved tag is refused. |
+| `terraform.git-refuse-unlisted` | `false` | on restart | Refuse a proxied Terraform module whose git source cannot be fetched through this repository - its host is not listed, or it names no single ref - rather than handing it to the client to clone. |
 
 ### Maven
 

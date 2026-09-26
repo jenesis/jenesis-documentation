@@ -6,7 +6,9 @@ description: Watching and running a deployment - the Metrics and Security postur
 
 The **Operations** section is where a deployment's administrators see what the server is doing and change how
 it runs in the background. Its pages - **Metrics**, **Security posture** and **Walks** - are for the deployment's
-administrators, and **Deploy**, once switched on, for anyone with the admin role. Beside them this chapter covers
+administrators, and **Export** and **Deploy**, the second once switched on, for anyone with the admin role.
+**Export** takes a repository's contents out to another repository, as
+[Migrating in and out](/repository/migration-import/) describes. Beside them this chapter covers
 what a monitoring system reads over HTTP, webhooks, and the rate limit.
 
 ## Metrics
@@ -19,11 +21,12 @@ full the storage quota is, how often the proxy cache answered locally, when the 
 ## Security posture
 
 **Security posture** lists every configuration choice that makes the deployment less safe than it could be, most
-severe first - running without keys, a plaintext upstream, a feed that fails open. Each entry says why it matters
+severe first - running without keys, a gate that admits known malware, no rate limit. Each entry says why it matters
 and which setting changes it. A clean deployment lists nothing, which is the healthy state, and the count shown in
 the header is the length of this list.
 
-Observing the posture never changes it: the page is read-only, and it names the setting at fault, never its value.
+Observing the posture never changes it: the page is read-only, and it names the setting at fault and the value that
+fixes it, never a secret the deployment holds.
 Each entry links here, to its own line of this table:
 
 | Advisory | Severity | Raised when |
@@ -108,9 +111,9 @@ times the number of servers.
 | Endpoint | Answers | Who may read it |
 | --- | --- | --- |
 | `/actuator/health`, `/actuator/health/liveness`, `/actuator/health/readiness` | Up or down, for probes | Anyone; the detail only to an administrator |
-| `/actuator/metrics` | The server's meters, for a monitoring system | A key with a deployment-wide `*` grant |
-| `/api/logs` | The most recent log entries, filterable by level and text | A key with a deployment-wide `*` grant |
-| `/api/posture` | The security posture, as JSON | A key with a deployment-wide `*` grant |
+| `/actuator/metrics` | The server's meters, for a monitoring system | A key holding `manage:read` over `*`, such as the **admin** role, of the operator tenant |
+| `/api/logs` | The most recent log entries, filterable by level and text | A key holding `manage:read` over `*`, of the operator tenant |
+| `/api/posture` | The security posture, as JSON | A key holding `manage:read` over `*` |
 
 `/api/logs` keeps the last thousand entries in memory, with a sequence number on each, so a script can tail it:
 

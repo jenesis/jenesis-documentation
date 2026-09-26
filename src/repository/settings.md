@@ -63,7 +63,8 @@ saves or reverts an override. A single-tenant deployment has no reason to use it
 
 Every capability of the server - each format, each feed, each background job, each console page - is a module it
 discovered at startup. **Modules** lists them with whether each is switched on, and **Enable** or **Disable**
-changes that on the next restart, exactly as `JENREG_<MODULE>=false` would.
+changes that, exactly as `JENREG_<MODULE>=false` would - at once for a module marked **live**, and otherwise on the
+next restart.
 
 When a module has been removed from a deployment but its data is still in the store, the page shows that data as
 orphaned, with how many objects and bytes it holds, and **Purge orphaned data** removes it after asking you to
@@ -106,7 +107,7 @@ environment variable is the key upper-cased, with dots and dashes as underscores
 
 Environment variables are the natural form for a container. A startup setting the server does not recognise -
 usually one spelled wrong, or renamed by a release - is named in a warning in the log at startup, with the
-closest setting it does recognise.
+closest setting it does recognise where one is close.
 
 [The configuration reference](/repository/configuration-reference/) lists every setting, runtime and startup
 alike.
