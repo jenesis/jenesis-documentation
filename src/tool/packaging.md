@@ -119,10 +119,13 @@ the tools below. Some flags are derived for you, and a flag in the file takes pr
 
 - `--app-version` comes from `jenesis.project.version` with any non-numeric suffix stripped, because jpackage
   accepts only dotted numbers - `1.4.0-SNAPSHOT` becomes `1.4.0`.
-- `--description` is the module's description, on one line.
+- `--description` is the module's description, on one line, `--vendor` is the name of its organization, and
+  `--copyright` is the `copyright` that `project.properties` declares, so jpackage does not write the year of the
+  build into a package's copyright instead.
 - For an installer, `--about-url` is the project's URL, and `--license-file` is the module's own licence file,
   the one the build lays at the root of its legal notices (see *[Licences in each form](#licences-in-each-form)*).
-- For a `deb`, `--linux-deb-maintainer` is the e-mail of the first developer the POM names; for an `rpm`,
+- For a `deb`, `--linux-deb-maintainer` is the e-mail of the first developer the POM names, which jpackage
+  pairs with the vendor as the package's maintainer; for an `rpm`,
   `--linux-rpm-license-type` names the project's licences, joined by `OR`.
 
 Each is passed only where the project declares the value and the package type takes the flag: an application
