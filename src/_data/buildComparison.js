@@ -497,7 +497,7 @@ export default {
             listed(".gnupg/pubring.kbx", null, null, "A keyring assembled by hand for two signers whose keys the plugin cannot fetch."),
           ],
           notes: [
-            "Sigstore takes Sigmund 0.0.2, which calls itself early-stage; its generated configuration was wrong, so <code>sigmund.yaml</code> is written by hand.",
+            "Sigstore takes Sigmund 0.0.2; its generated configuration was wrong, so <code>sigmund.yaml</code> is written by hand.",
             "Sigmund needs a rule for every dependency, so adding Sigstore for one means OpenPGP entries for all.",
             "pgpverify-maven-plugin is the established choice for OpenPGP alone.",
           ],
@@ -590,7 +590,7 @@ export default {
           ],
           commands: "bazel build //:app_cyclonedx",
           notes: [
-            "bazel-contrib's supply-chain rules call themselves in early development; the releases with a CycloneDX rule are not in the Bazel Central Registry, and the generator is Go, built from source.",
+            "The releases of bazel-contrib's supply-chain rules with a CycloneDX rule are not in the Bazel Central Registry, and the generator is Go, built from source.",
             "Components carry a purl but no hash and no licence, and the application carries no metadata beyond its purl.",
             "The dependencies come out in a different order on every clean build, so no two SBOMs are the same file.",
           ],
