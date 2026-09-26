@@ -582,8 +582,8 @@ export default {
         },
         bazel: {
           status: "manual",
-          badge: "Pre-release ruleset",
-          verdict: "Nothing built in. A pre-release ruleset, pulled from Git, writes a thin SBOM.",
+          badge: "Ruleset from Git",
+          verdict: "Nothing built in. A ruleset pulled from Git writes a thin SBOM.",
           files: [
             file("sbom/bazel", "MODULE.bazel", { base: "basic/bazel" }),
             file("sbom/bazel", "BUILD.bazel", { base: "basic/bazel" }),
