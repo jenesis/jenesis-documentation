@@ -62,7 +62,26 @@ developer.raphw.name=Rafael Winterhalter
 developer.raphw.email=rafael.wth@gmail.com
 scm.connection=scm:git:https://github.com/jenesis/jenesis.git
 scm.url=https://github.com/jenesis/jenesis
+organization.name=Example Ltd
+organization.url=https://example.com
+copyright=Copyright 2026 Example Ltd
+manufacturer.name=Example Ltd
+manufacturer.url=https://example.com
+publisher=Example Ltd
 ```
+
+`organization.name` and `organization.url` become the POM's `<organization>`, and a source `pom.xml` supplies
+them from its own `<organization>`. `copyright` has no place in a POM; it is taken as written into the SBOM and
+an installer, and no year is added to it. `manufacturer.name`, `manufacturer.url` and `publisher` have no place
+in a POM either and are recorded in the SBOM alone. Every one of these keys is optional, and nothing is recorded
+for a key the project does not declare.
+
+The jar carries the POM it is published with as well, at `META-INF/maven/<groupId>/<artifactId>/pom.xml`, beside a
+`pom.properties` that holds its `groupId`, `artifactId` and `version` - where Maven places them in every jar it
+builds. Tools that find a jar inside an image or an archive identify it by these files: a scanner such as Syft,
+or GraalVM's own SBOM of a native image. The POM is generated before the jar is packed so that both carry the
+same one, and a module under the `modular` layout, which has no Maven coordinate, carries neither.
+`-Djenesis.maven.embed=false` leaves both out of the jar.
 
 <div class="tip">
   A staged bundle is <strong>reproducible</strong>: jar entries carry a fixed timestamp, the manifest
