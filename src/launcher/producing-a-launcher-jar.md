@@ -39,8 +39,8 @@ place here:
    copied; the launcher's own `module-info` and manifest are left out, so at run time those classes are the
    unnamed module that hosts your application.
 2. **Each dependency is exploded into its own subfolder of one `jars/` store.** The resolved jar file name
-   becomes the folder name: `jars/org.slf4j-2.0.16.jar/`, and `jars/classes.jar/` for the application's own
-   module. Every jar is stored once, whatever it is for.
+   becomes the folder name: `jars/org.slf4j-2.0.16.jar/`, and the application's own jar is named the same
+   way, `jars/demo.bundle-0-SNAPSHOT.jar/`. Every jar is stored once, whatever it is for.
 3. **`application.properties` is written** with `mainClass`, `mainModule` (modular applications only), and
    the two path lists, `classpath` and `modulepath` - because a jar is read on the path that names it, never
    because of where it sits. Which list a jar lands in follows the same rule as the build's `Execute`
@@ -55,7 +55,7 @@ place here:
    *[Supply-chain features](/tool/supply-chain/)*): a CycloneDX document at `META-INF/sbom/<artifact>.cdx.json`, which the
    manifest names with `Sbom-Format` and `Sbom-Location`. It lists what the module's document lists and adds the
    launcher as a dependency of the project, which it describes as an `application`. The module's own document
-   stays in `jars/classes.jar/`.
+   stays in the folder of the application's own jar.
 
 That is the complete set. The other descriptor keys and manifest attributes the launcher understands -
 bundled agents, module-access grants, signer reconstruction - are for a jar you assemble yourself; the

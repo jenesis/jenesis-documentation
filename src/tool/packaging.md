@@ -241,7 +241,7 @@ understands:
 
 ```
 "--module-path"
-"jars/classes.jar:jars/org.slf4j-2.0.16.jar"
+"jars/demo.bundle-0-SNAPSHOT.jar:jars/org.slf4j-2.0.16.jar"
 "--module"
 "demo.bundle/sample.Sample"
 ```
