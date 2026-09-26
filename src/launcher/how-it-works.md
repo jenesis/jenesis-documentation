@@ -20,7 +20,7 @@ app.jar
 ├── build/jenesis/launcher/…   # the launcher's own classes
 ├── application.properties   # the descriptor: mainClass, mainModule, classpath, modulepath
 └── jars/
-    ├── demo.app.jar/…   # the application's own module, exploded
+    ├── demo.app-0-SNAPSHOT.jar/…   # the application's own module, exploded
     ├── org.slf4j-2.0.16.jar/…   # a modular or automatic dependency, exploded
     └── <group>%2F<artifact>%2F<version>.jar/…   # a dependency that names no module, exploded
 ```
@@ -34,8 +34,8 @@ names a resolved jar after the module it carries, at the version the closure res
 (`org.slf4j-2.0.16.jar`), names an aliased jar `<alias>-<version>.jar` - or `<alias>.jar` when a module path
 could not derive that version from the file name - and falls back to the URL-encoded coordinate
 (`<group>%2F<artifact>%2F<version>.jar`) for a jar that declares no module at all. It names the application's
-own jar by the same rule, after its module and the project's version, or after its coordinate without a
-module. The name follows what the jar declares, not where it lands: a jar with an
+own jar by the same rule, after its module and the project's version - `0-SNAPSHOT` when a project published
+to Maven declares none - or after its coordinate without a module. The name follows what the jar declares, not where it lands: a jar with an
 `Automatic-Module-Name` is named for that module even when it goes on the class path.
 
 Every dependency sits in that one `jars/` store, and the descriptor decides how each is read: the
