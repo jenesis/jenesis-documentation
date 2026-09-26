@@ -60,16 +60,18 @@ releases it.
 
 ## Repository definitions
 
-A **definition** says what a repository is made of, and is where more than one upstream, or a mix of hosted and
+A **definition** says what a repository is made of, and is where more than one upstream, or a mix of uploaded and
 fetched content, is described. It describes a repository rather than creating one: the repository is created with
 its type as [Repositories](/repository/repositories/) describes, and the definition then routes what it serves.
-Definitions are edited under **Settings → Settings → Repository definitions**, a name and a definition each:
+Definitions are edited under **Settings → Settings → Repository definitions**, a name and a definition each. A
+definition is written in two clauses - `writable`, and `fallback` followed by an upstream URL or a repository name -
+and nothing else is accepted:
 
 | Definition | The repository |
 | --- | --- |
-| `hosted` | Accepts uploads and fetches nothing - what a repository is when it has no definition. |
-| `proxy https://repo1.maven.org/maven2/` | Only fetches from the upstream, and refuses uploads. |
-| `group internal,central` | Serves from each named repository in turn, and refuses uploads. |
+| `writable` | Accepts uploads and fetches nothing - what a repository is when it has no definition. |
+| `fallback https://repo1.maven.org/maven2/` | Only fetches from the upstream, and refuses uploads. |
+| `fallback internal fallback central` | Serves from each named repository in turn, and refuses uploads. |
 | `writable fallback https://repo1.maven.org/maven2/` | Accepts uploads *and* fetches misses from the upstream. |
 
 A fallback may be another repository by name instead of a URL, and several fallbacks are tried in order. Each
@@ -83,7 +85,7 @@ can carry options:
 | `match=<ecosystem>:<pattern>` | Only send matching coordinates to this fallback, such as `match=maven:com.example.*`. |
 
 A container-image upstream may carry a path, which names the namespace its images are looked up in: a repository
-`core` defined as `proxy https://ghcr.io/homebrew/core` serves ghcr.io's `homebrew/core/<name>` as `<name>`.
+`core` defined as `fallback https://ghcr.io/homebrew/core` serves ghcr.io's `homebrew/core/<name>` as `<name>`.
 
 A definition is checked when it is saved: one that could not work is refused with the reason, and one that works
 but is risky - a plaintext upstream, mixed screening - is saved and listed under **Definition warnings** on the

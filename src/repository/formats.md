@@ -308,7 +308,7 @@ instead.
 homebrew-core's own bottles are container-image blobs on ghcr.io, and they pull through an `oci` repository rather
 than a `homebrew` one. `HOMEBREW_ARTIFACT_DOMAIN=https://repo.example.com` makes `brew` ask for them at
 `/v2/homebrew/core/<formula>/…`, which names the tenant `homebrew` and the repository `core`. So the mirror is an
-`oci` repository named `core`, defined as `proxy https://ghcr.io/homebrew/core`, in a deployment whose default
+`oci` repository named `core`, defined as `fallback https://ghcr.io/homebrew/core`, in a deployment whose default
 tenant is `homebrew` (`JENREG_DEFAULT_TENANT=homebrew`): a request that carries no key is answered for the default
 tenant alone. An anonymous install also needs anonymous reads allowed (`JENREG_ANONYMOUS_RIGHTS=repository:read`);
 `HOMEBREW_DOCKER_REGISTRY_TOKEN=$KEY` presents a key instead. Each bottle is kept under its digest after the first
