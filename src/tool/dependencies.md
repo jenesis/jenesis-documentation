@@ -107,7 +107,7 @@ the variable of the same name:
   redirect to a different host, so it never leaks to a redirect target.
 </div>
 
-{% demos 64 %}
+{% demos 66 %}
 
 ### What the build tells the module index
 
@@ -285,7 +285,7 @@ build never fetched it.
   rather than ignored. Nothing is lost: a module only ever sees what it <code>requires</code>.
 </div>
 
-{% demos 17 %}
+{% demos 19 %}
 
 ## Naming a library that has no module name
 
@@ -314,7 +314,7 @@ reflection. Nothing is synthesised and no jar is rewritten.
 Aliases are a `modular_to_maven` feature: they reach an artifact by its Maven coordinate, which the strict
 `modular` layout does not use.
 
-{% demos 19 %}
+{% demos 21 %}
 
 ## Replacing a module another artifact already carries
 
@@ -343,7 +343,7 @@ Jenesis drops the replaced artifact from the closure and puts a module of that n
 the carrier's copy of the packages. `requires jakarta.servlet` keeps meaning what it says, in your code and in
 the libraries you depend on. Like aliases, overrides need the `modular_to_maven` layout.
 
-{% demos 21 %}
+{% demos 23 %}
 
 ## Keeping a dependency private
 
@@ -390,7 +390,7 @@ even resolve a different version of the same dependency for itself. The declarat
 build that resolves that jar reconstructs the layer from it. Discovery runs to a fixpoint, so a module
 inside a layer may isolate a dependency of its own, without limit.
 
-{% demos 22 %}
+{% demos 24 %}
 
 ### Libraries that name themselves nowhere
 
@@ -420,7 +420,7 @@ automatic module reads the unnamed module, which is why the alias matters - a ja
 an *automatic* module when you name it, and an automatic module can read a class path. A module with a
 descriptor of its own cannot, and `javac` will not let it try.
 
-{% demos 23 %}
+{% demos 25 %}
 
 ### What the build refuses
 
