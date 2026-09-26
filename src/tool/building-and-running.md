@@ -137,6 +137,40 @@ Without either, the module compiles for the release of the JDK running the build
 vendors of one JDK. Which JDK runs the build can be named as well, as described under
 [The JDK a build runs on](#the-jdk-a-build-runs-on).
 
+### Preview features
+
+A module that uses a preview feature of Java - a language feature or an API a JDK ships for trying out -
+declares its release with a `-preview` suffix:
+
+```java
+/**
+ * @jenesis.release 25-preview
+ */
+module demo.preview {
+    exports sample;
+}
+```
+
+A `pom.xml` project sets `maven.compiler.enablePreview` to `true` beside `maven.compiler.release`, the
+property the Maven compiler reads as well; without a release, it enables the preview features of the JDK
+running the build.
+
+The module compiles with `javac --release 25 --enable-preview`, and its jar records the release in its
+manifest as `Jenesis-Preview: 25`. Every run of it then enables the preview features without being asked:
+its tests, `Execute`, a bundle, a `jpackage` image, and a program `jpx` runs from the jar alone. A runtime
+image that `jlink` links is given the option for good, so its own `java` runs the module as it stands, and
+`javadoc` documents the sources with the same features enabled. An executable jar is the exception: `java -jar`
+opens the jar only after the JVM started, so it runs as `java --enable-preview -jar <jar>`.
+
+Preview features belong to one Java version, so a module that uses them compiles only on that JDK. A build on
+another fails and names the one to select, `-Djenesis.toolchain.version=25` (see
+[The JDK a build runs on](#the-jdk-a-build-runs-on)). A module compiled against one that uses preview features
+enables them itself, so its test module declares `25-preview` too; without it, the build stops before
+compiling and names the release to declare. A class that uses a preview feature runs only on the Java version
+it was compiled for, so a library built this way binds its users to that JDK until the feature is final.
+
+{% demos 69 %}
+
 ### One jar, several Java versions
 
 A jar can also carry different bytecode for different Java versions, and the JVM loads the copy that matches
