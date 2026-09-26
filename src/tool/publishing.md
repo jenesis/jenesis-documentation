@@ -49,9 +49,17 @@ java -Djenesis.project.version=1.0.0 \
 
 Central also requires the POM to carry `name`, `description`, `url`, `<licenses>`, `<developers>`, and
 `<scm>`. Jenesis folds two channels into each POM. Everything it can derive from the source comes first: the
-coordinate and description from the module name and its Javadoc, or from the source `pom.xml`. A
-`project.properties` file, pointed at with `-Djenesis.project.metadata=project.properties`, carries only what
-a module declaration cannot express:
+coordinate from the module name, and the name and description from its Javadoc, or all three from the source
+`pom.xml`. The first sentence of the module's documentation comment is its name, and the comment's second
+paragraph its description, each reduced to plain text: HTML, `<!-- -->` comments, `{@code}` and `{@link}`
+markup give way to the words they mark, and a third paragraph is left for the reader of the source.
+
+<div class="note">
+  A Markdown comment (<code>///</code>) keeps its inline markup: <code>`code`</code> and <code>**emphasis**</code>
+  reach the name and the description as written, and only a link is reduced to its label. The JDK renders Markdown
+  in its <code>javadoc</code> tool alone, so a build has no Markdown to plain text conversion to call.
+</div> A `project.properties` file, pointed at with `-Djenesis.project.metadata=project.properties`,
+carries only what a module declaration cannot express:
 
 ```properties
 # project.properties
