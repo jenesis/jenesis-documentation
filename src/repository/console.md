@@ -20,7 +20,7 @@ the middle.
 | --- | --- |
 | **Repositories** | All repositories, and each repository by name |
 | **Build cache** | Projects |
-| **Access** | Credentials, Members, Audit trail |
+| **Access** | Credentials, Members |
 | **Operations** | Metrics, Security posture, Walks, Export, and Deploy once it is switched on |
 | **Settings** | Setup, Settings, Tenant settings, Modules, Installed providers, Instances |
 
@@ -64,7 +64,7 @@ administrators:
 | --- | --- |
 | **Viewer** | Read every repository page and the build cache's projects. |
 | **Editor** | Everything a viewer can, and change things: create a repository, save a retention policy, pin a version, release or discard a held artifact, promote a staging upload. |
-| **Admin** | Everything an editor can, and manage access: **Credentials**, **Members**, the **Audit trail**, the tenant's storage quota and rate limit, taking a repository out through **Export**, and manual uploads through **Deploy**. |
+| **Admin** | Everything an editor can, and manage access: **Credentials**, **Members**, the tenant's storage quota and rate limit, taking a repository out through **Export**, and manual uploads through **Deploy**. |
 | **Super-administrator** | Everything, across the whole deployment: the **Operations** pages other than **Export** and **Deploy**, and all of **Settings**. |
 
 A page you may read but not change shows its data without the forms that would change it.

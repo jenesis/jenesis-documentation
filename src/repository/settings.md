@@ -91,8 +91,8 @@ curl -X DELETE -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/api/ad
 jenesis-repo tenants create acme
 ```
 
-Deleting a tenant removes everything it owns - its repositories and their artifacts, its credentials, its audit
-trail and its members - and cannot be undone.
+Deleting a tenant removes everything it owns - its repositories and their artifacts, its credentials and its
+members - and cannot be undone.
 
 ## How startup settings reach the server
 
