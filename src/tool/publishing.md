@@ -81,6 +81,7 @@ The jar carries the POM it is published with as well, at `META-INF/maven/<groupI
 builds. Tools that find a jar inside an image or an archive identify it by these files: a scanner such as Syft,
 or GraalVM's own SBOM of a native image. The POM is generated before the jar is packed so that both carry the
 same one, and a module under the `modular` layout, which has no Maven coordinate, carries neither.
+`-Djenesis.maven.embed=false` leaves both out of the jar.
 
 <div class="tip">
   A staged bundle is <strong>reproducible</strong>: jar entries carry a fixed timestamp, the manifest
