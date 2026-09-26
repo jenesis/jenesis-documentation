@@ -8,11 +8,12 @@
   "scripts": {
     "build": "node -e \"require('fs').rmSync('_site', { recursive: true, force: true })\" && eleventy",
     "serve": "eleventy --serve",
-    "validate": "node scripts/validate-links.js _site",
+    "validate": "linkinator _site --recurse --check-fragments --check-css --verbosity error --skip \"^https?://(?!127\\\\.0\\\\.0\\\\.1)\"",
     "check": "npm run build && npm run validate"
   },
   "devDependencies": {
     "@11ty/eleventy": "3.1.6",
+    "linkinator": "8.1.0",
     "prismjs": "1.30.0"
   }
 }
