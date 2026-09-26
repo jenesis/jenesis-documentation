@@ -6,14 +6,13 @@
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
-    "build": "eleventy",
+    "build": "node -e \"require('fs').rmSync('_site', { recursive: true, force: true })\" && eleventy",
     "serve": "eleventy --serve",
-    "validate": "hyperlink --root _site --internal --recursive _site/index.html",
+    "validate": "node scripts/validate-links.js _site",
     "check": "npm run build && npm run validate"
   },
   "devDependencies": {
     "@11ty/eleventy": "3.1.6",
-    "hyperlink": "5.0.4",
     "prismjs": "1.30.0"
   }
 }
