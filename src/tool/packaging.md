@@ -115,8 +115,23 @@ jpackage has flags of its own - an icon, a vendor, a description, a licence file
 ```
 
 `process-jlink.properties`, `process-jmod.properties` and `process-native-image.properties` do the same for
-the tools below. One flag is derived for you: `--app-version` comes from `jenesis.project.version` with any
-non-numeric suffix stripped, because jpackage accepts only dotted numbers - `1.4.0-SNAPSHOT` becomes `1.4.0`.
+the tools below. Some flags are derived for you, and a flag in the file takes precedence over a derived one:
+
+- `--app-version` comes from `jenesis.project.version` with any non-numeric suffix stripped, because jpackage
+  accepts only dotted numbers - `1.4.0-SNAPSHOT` becomes `1.4.0`.
+- `--description` is the module's description, on one line, `--vendor` is the name of its organization, and
+  `--copyright` is the `copyright` that `project.properties` declares, so jpackage does not write the year of the
+  build into a package's copyright instead.
+- For an installer, `--about-url` is the project's URL, and `--license-file` is the module's own licence file,
+  the one the build lays at the root of its legal notices (see *[Licences in each form](#licences-in-each-form)*).
+- For a `deb`, `--linux-deb-maintainer` is the e-mail of the first developer the POM names, which jpackage
+  pairs with the vendor as the package's maintainer; for an `rpm`,
+  `--linux-rpm-license-type` names the project's licences by their SPDX ids, joined by `OR`, and only when every
+  licence has one, as identified from `spdx.properties` and the built-in tables (see
+  *[Supply-chain features](/tool/supply-chain/#teaching-it-about-a-licence-optional)*).
+
+Each is passed only where the project declares the value and the package type takes the flag: an application
+image takes no licence file and no URL.
 
 {% demos 7, 8 %}
 
@@ -155,7 +170,9 @@ The folder under `output/` is the module's build identity rather than its name: 
 descriptor sits at the project root, `module-<folder>` otherwise - `module-sources` for a module under
 `sources/`. The `docker` context below uses the same naming.
 
-`jmod=true` packs the module into a **`.jmod`**, staged beside the modular jar. Its one advantage over a jar is
+`jmod=true` packs the module into a **`.jmod`**, staged beside the modular jar. It holds everything the jar holds -
+the classes, the resources and the embedded [SBOM](/tool/supply-chain/) - so a runtime linked from it serves the
+same resources. Its one advantage over a jar is
 that it can carry native libraries, commands, config files and legal notices, which `jlink` then lays into the
 runtime's `lib/`, `bin/`, `conf/` and `legal/`. The three steps chain - `jmod → jlink → jpackage` - so a config file packed this
 way reaches the shipped app, where the program reads it from `<java.home>/conf/`. Packed into a jar instead,
@@ -378,7 +395,7 @@ passes them on follows from how it holds the jars:
 | Container build context | The jars are copied intact into `jars/` beside the `Dockerfile`. |
 | Class-path application image | The jars stay intact in the image's application folder (`lib/app/` on Linux), and the runtime jpackage links carries the JDK's own notices in its `legal/` folder. |
 | Runtime image, modular application image | Linking takes the code out of the jars, so the notices are collected into the module's `.jmod` and laid into the runtime under `legal/<module>/`: the module's own at its root, and each runtime dependency's in a folder named after its jar. |
-| Native image | The jars are compiled away, so the same notices go into a `licenses/` folder beside the binary, staged in `stage/native/output/`. |
+| Native image | The jars are compiled away, so the same notices go into a `licenses/` folder beside the binary, staged in `stage/native/output/`. The binary also contains the GraalVM that compiled it, so that GraalVM's licence and notice files join them in `licenses/graalvm-<version>/`. |
 
 Linking always goes through the module's `.jmod`, so a runtime keeps the notices however it is configured:
 without `jmod=true`, `jlink` and a modular `jpackage` build the `.jmod` for linking alone and do not stage it.

@@ -35,6 +35,13 @@ places, one per consumer:
 
 - **Embedded in the jar**, at `META-INF/sbom/<artifact>.cdx.json`, so the bill of materials travels inside the
   artifact. The jar's manifest records `Sbom-Format: CycloneDX` and an `Sbom-Location` header pointing at it.
+  An executable [launcher jar](/launcher/producing-a-launcher-jar/) carries a document of its own at the same
+  place, which describes the project as an `application` and adds the launcher it shades as a dependency - once
+  if the module already depends on the same version, beside it if on another. A [native image](/tool/packaging/)
+  compiles its jars away, and their documents with them, so one of its own is staged beside the binary as
+  `<image>.cdx.json`. It describes the project as an `application` and adds the GraalVM that compiled the binary
+  as a `platform` it depends on, named after the vendor and version in that GraalVM's `release` file. That file
+  names no licence, so the component carries none unless `jenesis.graalvm.license` names one.
 - **As a report**, collected on `stage` into `target/stage/reports/output/sbom/<module>/` alongside the other
   build reports.
 - **As a Maven attachment**, when a Maven repository is staged: `stage` drops
@@ -43,8 +50,9 @@ places, one per consumer:
 
 Each component carries its `pkg:maven/…` package URL, its `SHA-256` hash, and its licence, with a `dependsOn`
 relationship back to the project. The document's `metadata.component` describes the project itself from the
-POM - its description, licence, developers (as CycloneDX `authors`), and homepage and source repository (as
-`website` and `vcs` references) - filling in only what the POM declares. The tag and the revision a release
+POM - its description, licence, developers (as CycloneDX `authors`), organization (as its `supplier`),
+homepage and source repository (as `website` and `vcs` references), and the `copyright`, `manufacturer` and
+`publisher` that `project.properties` declares - filling in only what is declared. The tag and the revision a release
 was built from, when given, are recorded as well, including a `vcs` reference that locates the sources at that
 revision (see *[Publishing](/tool/publishing/#pointing-a-release-at-its-sources)*).
 
@@ -171,16 +179,18 @@ drop an optional `spdx.properties` in the configuration folder. It uses one pref
 
 ```properties
 # build.jenesis/spdx.properties
-alias/A Company License=Apache-2.0
+alias/A\ Company\ License=Apache-2.0
 category/Apache-2.0=permissive
 ```
 
-`alias/<declared name>` normalises a licence name as written in a POM to its canonical SPDX id. A licence that
+`alias/<declared name>` normalises a licence name as written in a POM to its canonical SPDX id; a space in the
+name is written `\ `, since an unescaped one would end the key. A licence that
 names no identifier is matched by its URL as well, written without its scheme, a leading `www.`, a `.txt`,
 `.html`, `.htm`, `.php` or `.md` extension, or a trailing slash: `alias/example.com/licenses/widget=Apache-2.0` covers
 `https://www.example.com/licenses/widget.txt`. `category/<SPDX id>` classifies an identifier. Each entry
 **appends** to the built-in tables rather than replacing them, and the same classification feeds both the
-licence check and the SBOM's licence identifiers. It is distinct from `licensing.properties`, which is the
+licence check and the SBOM's licence identifiers. The project's own licences are identified the same way, so
+its SBOM names them by SPDX id as well. It is distinct from `licensing.properties`, which is the
 enforcement policy, not the classification.
 
 {% demos 30 %}
