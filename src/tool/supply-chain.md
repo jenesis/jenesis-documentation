@@ -51,8 +51,8 @@ places, one per consumer:
 Each component carries its `pkg:maven/…` package URL, its `SHA-256` hash, and its licence, with a `dependsOn`
 relationship back to the project. The document's `metadata.component` describes the project itself from the
 POM - its description, licence, developers (as CycloneDX `authors`), organization (as its `supplier`),
-homepage and source repository (as `website` and `vcs` references), and the `copyright` that `project.properties`
-declares - filling in only what is declared. The tag and the revision a release
+homepage and source repository (as `website` and `vcs` references), and the `copyright`, `manufacturer` and
+`publisher` that `project.properties` declares - filling in only what is declared. The tag and the revision a release
 was built from, when given, are recorded as well, including a `vcs` reference that locates the sources at that
 revision (see *[Publishing](/tool/publishing/#pointing-a-release-at-its-sources)*).
 
