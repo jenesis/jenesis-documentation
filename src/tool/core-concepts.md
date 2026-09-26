@@ -28,7 +28,8 @@ folders it was handed.
 
 Those folder names are conventions the built-in steps share, so steps compose without knowing how they were
 wired together. The compile step, for example, reads each predecessor's `sources/` and writes `classes/`; the
-jar step then reads `classes/` and writes `artifacts/classes.jar`. You will meet the individual steps in
+jar step then reads `classes/` and writes the module's jar into `artifacts/`, named as a dependency on it
+would be: `<module>-<version>.jar`, or the URL-encoded Maven coordinate for a jar without a module. You will meet the individual steps in
 later chapters. Here the point is only their shape: **folders in, a fresh folder out.**
 
 <div class="note">
