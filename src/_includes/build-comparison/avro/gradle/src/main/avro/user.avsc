@@ -1,0 +1,9 @@
+{
+  "type": "record",
+  "name": "User",
+  "namespace": "demo.user",
+  "fields": [
+    {"name": "name", "type": "string"},
+    {"name": "age", "type": "int"}
+  ]
+}

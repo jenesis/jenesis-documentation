@@ -1,0 +1,23 @@
+signers:
+  slf4j:
+    pgp4: "60200AC4AE761F1614D6C46766D68DAA073BE985"
+  jackson:
+    pgp4: "28118C070CB22A0175A2E8D43D12CA2AC19F3181"
+  picocli:
+    pgp4: "AA417737BD805456DB3CBDDE6601E5C08DCCBB96"
+  jspecify:
+    pgp4: "41CD49B4EF5876F9E9F691DABAC30622339994C4"
+  protobuf-specs:
+    sigstore:
+      issuer: "https://token.actions.githubusercontent.com"
+      source-repository-uri: "https://github.com/sigstore/protobuf-specs"
+
+trust:
+  org.slf4j:slf4j-api: slf4j
+  com.fasterxml.jackson.core: jackson
+  info.picocli:picocli: picocli
+  org.jspecify:jspecify: jspecify
+  dev.sigstore:protobuf-specs: protobuf-specs
+
+policy:
+  listed-evidence: any

@@ -1,0 +1,21 @@
+load("@bazel_jar_jar//:jar_jar.bzl", "jar_jar")
+load("@rules_java//java:java_library.bzl", "java_library")
+load("@rules_java//java:java_single_jar.bzl", "java_single_jar")
+
+java_library(
+    name = "library",
+    srcs = glob(["src/main/java/**/*.java"]),
+    deps = ["@maven_library//:com_fasterxml_jackson_core_jackson_core"],
+)
+
+java_single_jar(
+    name = "library_with_deps",
+    deps = [":library"],
+)
+
+jar_jar(
+    name = "shaded",
+    input_jar = ":library_with_deps",
+    inline_rules = ["rule com.fasterxml.jackson.** demo.library.shaded.jackson.@1"],
+    visibility = ["//app:__pkg__"],
+)
