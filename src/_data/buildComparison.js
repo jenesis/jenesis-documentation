@@ -100,7 +100,9 @@ function file(dir, path, options = {}) {
     ? additions(lines, read(options.base, options.basePath ?? path).split("\n"))
     : options.mark
       ? between(lines, options.mark)
-      : lines.map(() => false);
+      : options.match
+        ? lines.map((line) => line.includes(options.match))
+        : lines.map(() => false);
   const marked = lines.map((line, index) => ({ text: line, added: marks[index] }));
   return {
     path,
@@ -248,38 +250,54 @@ export default {
     {
       id: "several-modules-one-build",
       title: "Several modules, one build",
-      lede: `<p>A library and the application that uses it, built together. Each folder that holds a
-        <code>module-info.java</code> is a module, and <code>requires demo.greeter</code> is all the wiring there
-        is: the sibling is built first and resolved from the build itself. There is no root file.</p>`,
+      lede: `<p>A library and the application that uses it, built together. In Jenesis the Java module name is how
+        one module of the project refers to another: <code>requires demo.greeter</code> is all the wiring there
+        is, and the sibling is built first and resolved from the build itself. There is no root file.</p>
+        <p>The other tools know a module by a name of their own - an artifactId, a project path, a label - so each
+        sibling is named twice, and the two names are kept in step by hand. The second one is highlighted in their
+        tabs.</p>`,
       tools: {
         jenesis: {
           status: "built",
-          verdict: "One descriptor per module, no root file.",
+          verdict: "The module name is the reference. No root file.",
           files: [file("modules/jenesis", "greeter/module-info.java"), file("modules/jenesis", "app/module-info.java")],
         },
         maven: {
-          status: "built",
-          verdict: "A parent pom lists the modules; each module has its own pom.",
-          files: [file("modules/maven", "pom.xml"), file("modules/maven", "greeter/pom.xml"), file("modules/maven", "app/pom.xml")],
+          status: "manual",
+          badge: "Named twice",
+          verdict: "<code>requires demo.greeter</code>, and again as the artifactId <code>greeter</code>.",
+          files: [
+            file("modules/maven", "app/src/main/java/module-info.java"),
+            file("modules/maven", "app/pom.xml", { match: "<artifactId>greeter</artifactId>" }),
+            file("modules/maven", "greeter/src/main/java/module-info.java"),
+            file("modules/maven", "greeter/pom.xml"),
+            file("modules/maven", "pom.xml"),
+          ],
         },
         gradle: {
-          status: "built",
-          verdict: "A settings file includes the projects; each has its own build script.",
+          status: "manual",
+          badge: "Named twice",
+          verdict: "<code>requires demo.greeter</code>, and again as the project <code>:greeter</code>.",
           files: [
+            file("modules/gradle", "app/src/main/java/module-info.java"),
+            file("modules/gradle", "app/build.gradle.kts", { match: 'project(":greeter")' }),
+            file("modules/gradle", "greeter/src/main/java/module-info.java"),
+            file("modules/gradle", "greeter/build.gradle.kts"),
             file("modules/gradle", "settings.gradle.kts"),
             file("modules/gradle", "gradle.properties"),
-            file("modules/gradle", "greeter/build.gradle.kts"),
-            file("modules/gradle", "app/build.gradle.kts"),
           ],
-          notes: ["Where the projects are Java modules, the dependency is declared twice: <code>requires</code> in the descriptor and <code>project(\":greeter\")</code> in the script."],
+          notes: ["GradleX's third-party plugin, applied in the settings, finds the project from <code>requires demo.greeter</code> by reading its descriptor."],
         },
         bazel: {
-          status: "built",
-          verdict: "A <code>BUILD.bazel</code> per package, joined by labels and <code>visibility</code>.",
+          status: "manual",
+          badge: "Named twice",
+          verdict: "<code>requires demo.greeter</code>, and again as the label <code>//greeter</code>.",
           files: [
-            file("modules/bazel", "MODULE.bazel"),
+            file("modules/bazel", "app/src/main/java/module-info.java"),
+            file("modules/bazel", "app/BUILD.bazel", { match: '"//greeter"' }),
+            file("modules/bazel", "greeter/src/main/java/module-info.java"),
             file("modules/bazel", "greeter/BUILD.bazel"),
-            file("modules/bazel", "app/BUILD.bazel"),
+            file("modules/bazel", "MODULE.bazel"),
           ],
         },
       },
@@ -304,7 +322,7 @@ export default {
         },
         maven: {
           status: "built",
-          verdict: "A second compiler execution, and the manifest entry by hand.",
+          verdict: "Built in, but configured: a second compiler execution and the manifest entry.",
           files: [file("multi-release/maven", "pom.xml")],
           notes: ["The Java 25 sources sit in <code>src/main/java25</code>, a folder the second execution names."],
         },
