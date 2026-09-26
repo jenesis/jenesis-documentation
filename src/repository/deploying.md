@@ -107,7 +107,8 @@ helm install jenesis oci://registry-1.docker.io/jenesisbuild/jenesis --version 1
 | `repository.<key>` | Any other setting, as `JENREG_<KEY>` - for example `repository.rate-limit: "1200"` |
 | `ingress.*` | An ingress in front of the service |
 
-The server listens on 8080, and the chart points the liveness and readiness probes at `/actuator/health`.
+The server listens on 8080, and the chart points its liveness and readiness probes at `/actuator/health/liveness`
+and `/actuator/health/readiness`.
 
 ## On a cloud
 

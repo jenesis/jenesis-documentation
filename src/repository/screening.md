@@ -33,8 +33,8 @@ unless it says it needs a restart.
 
 ## Switching the feeds on
 
-The vulnerability and malware checks need something to check against, and **nothing reaches a third party until
-you say so**. Three feeds ship with the image, each off by default:
+The vulnerability and malware checks need something to check against, and **no feed is asked anything until you
+say so**. Three feeds ship with the image, each off by default:
 
 | Feed | Setting | What it answers |
 | --- | --- | --- |
@@ -88,15 +88,15 @@ and often the only one.
 ## Vulnerabilities
 
 **Vulnerabilities** lists the advisories that apply to what the repository holds, from the last scan, and says
-when that scan ran. **Rescan** starts a fresh one in the background; the page shows it running and refreshes
+when that scan ran. **Rescan against the advisory feeds** starts a fresh one in the background; the page shows it running and refreshes
 itself until it finishes. With no feed switched on, the page says so and links to the settings that change it.
 
 ## Findings
 
 **Findings** is the ledger every check writes into: one row per thing found about a package version - an
 advisory, a malicious-package record, a signature problem - filterable by coordinate, kind, source, category and
-severity. An editor can **confirm** a finding or **dismiss** it with a note, and the decision is kept beside the
-finding for the next person who reads it.
+severity. An editor can **Confirm** a finding or **Dismiss** it, and the decision is kept beside the finding for
+the next person who reads it.
 
 ## Signers
 

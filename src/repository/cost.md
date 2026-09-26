@@ -49,10 +49,10 @@ moves this line far more than any choice made here.
 
 ## Reclaiming space is the line that grows with the store
 
-One pass reads the store whole: the rebuild walk that regenerates every stored listing from the artifacts, so a
-listing a crash left stale is repaired (`jenreg.rebuild.interval`, weekly by default, `off` to disable). Where the
-[garbage collector](/repository/retention/) is enabled, its pass reads the store whole too, and for a reason worth
-understanding before you tune anything.
+One walk reads the store whole: the `rebuild` walk, which regenerates every stored listing from the artifacts so a
+listing a crash left stale is repaired, on Sundays at 03:00 UTC by default (the `walks` setting, edited under
+**Operations → Walks**). The [garbage collector](/repository/retention/) rides that walk, and needs the whole store
+for a reason worth understanding before you tune anything.
 
 Deciding that a stored blob is unreferenced means establishing that *nothing anywhere* points at it. That cannot be
 answered from the blob: it takes an enumeration of everything that could name it. So a collection's cost splits the
@@ -284,8 +284,8 @@ enough that the background passes are a standing charge you resent - tens of mil
 and it is worth doing *before* the store gets large, because migrating a repository is easier when there is less of
 it.
 
-Self-hosting is a supported deployment rather than a workaround: the S3-compatible backend is tested against MinIO
-on every build, so the same server binary and the same configuration work against your own store. The realistic
+Self-hosting is a supported deployment rather than a workaround: the S3-compatible backend is tested against MinIO,
+so the same server binary and the same configuration work against your own store. The realistic
 options differ in what they are built for.
 
 - **MinIO** is the usual choice. Distributed mode spreads erasure-coded data across nodes and drives, it handles

@@ -55,7 +55,7 @@ The request fields, which match the form:
 | `url` | yes | The base URL of the source. It must be `https` and resolve to a public host (see below). |
 | `repository` | yes | The source repository to read - a Nexus or Artifactory repository name, or the path under the base URL. |
 | `format` | Artifactory | The ecosystem of the source repository, as Artifactory names its package type: `maven`, `npm`, `pypi`, `nuget`, `docker`, `alpine`, `swift`, `terraform`, `raw` and the others this product serves. |
-| `format` | index | The installed format whose own index is walked: `maven`, `oci` or `raw`. Only the OCI format can enumerate one today, so `oci` is the working choice. |
+| `format` | index | The installed format whose own index is walked. The OCI format is the one that enumerates its index, so `oci` is the format to name; any other finds nothing to import. |
 | `username`, `password` | no | Credentials sent to the source. The `jenesis` connector takes its API key as the `password`. |
 | `resume` | no | The id of an earlier job. The walk continues under that same id, from its recorded position. |
 
@@ -161,7 +161,10 @@ nothing about the source's layout needs configuring.
 
 ## What the importers write
 
-A connector hands each asset to the importer for its format. Three ship with the server:
+A connector hands each asset to the importer for its format. Every format except Ivy and the Jenesis module layout
+carries one, and each accepts the names Nexus and Artifactory give that format as well as its own - `yum` for RPM,
+`apt` for Debian, `alpine` for apk, `golang`, `gems`, `crates`, `huggingfaceml` - and publishes each asset through
+the format's own publish path. Three are worth knowing in detail:
 
 | Importer | Accepts source formats | Writes |
 |---|---|---|
