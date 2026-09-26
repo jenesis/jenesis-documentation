@@ -62,7 +62,14 @@ developer.raphw.name=Rafael Winterhalter
 developer.raphw.email=rafael.wth@gmail.com
 scm.connection=scm:git:https://github.com/jenesis/jenesis.git
 scm.url=https://github.com/jenesis/jenesis
+organization.name=Example Ltd
+organization.url=https://example.com
+copyright=Copyright 2026 Example Ltd
 ```
+
+`organization.name` and `organization.url` become the POM's `<organization>`, and a source `pom.xml` supplies
+them from its own `<organization>`. `copyright` has no place in a POM; it is taken as written into the SBOM and
+an installer, and no year is added to it.
 
 <div class="tip">
   A staged bundle is <strong>reproducible</strong>: jar entries carry a fixed timestamp, the manifest
