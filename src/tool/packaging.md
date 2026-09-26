@@ -126,7 +126,9 @@ the tools below. Some flags are derived for you, and a flag in the file takes pr
   the one the build lays at the root of its legal notices (see *[Licences in each form](#licences-in-each-form)*).
 - For a `deb`, `--linux-deb-maintainer` is the e-mail of the first developer the POM names, which jpackage
   pairs with the vendor as the package's maintainer; for an `rpm`,
-  `--linux-rpm-license-type` names the project's licences, joined by `OR`.
+  `--linux-rpm-license-type` names the project's licences by their SPDX ids, joined by `OR`, and only when every
+  licence has one, as identified from `spdx.properties` and the built-in tables (see
+  *[Supply-chain features](/tool/supply-chain/#teaching-it-about-a-licence-optional)*).
 
 Each is passed only where the project declares the value and the package type takes the flag: an application
 image takes no licence file and no URL.
