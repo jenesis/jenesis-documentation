@@ -97,6 +97,7 @@ java -Djenesis.project.version=1.0.0 \
      build/jenesis/Make.java stage
 ```
 
+{% raw %}
 A GitHub Actions workflow has the first two at hand: `${{ github.sha }}` is the commit the run builds, and
 `${{ github.ref_name }}` is the tag when a pushed tag started the run. The tree comes from the checkout.
 
@@ -107,6 +108,7 @@ A GitHub Actions workflow has the first two at hand: `${{ github.sha }}` is the 
     -Djenesis.project.tree=$(git rev-parse HEAD^{tree})
     build/jenesis/Make.java stage
 ```
+{% endraw %}
 
 Neither value is derived: projects name their tags differently, so the tag is not guessed from the version.
 A value that does not change from release to release can also be declared in `project.properties`, as
