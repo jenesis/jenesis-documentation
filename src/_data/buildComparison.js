@@ -408,12 +408,17 @@ export default {
       tools: {
         jenesis: {
           status: "built",
-          verdict: "Identical out of the box. A check is a few lines of your own Java.",
-          files: [
-            file("basic/jenesis", "sources/module-info.java", { note: "Section 1's descriptor, unchanged." }),
-            file("reproducible/jenesis", "build/Reproducible.java", { note: "Optional: builds, hashes the jar and fails when it differs from the recorded digest." }),
+          verdict: "Identical out of the box: delete <code>target</code>, build again, same digest.",
+          files: [],
+          terminal: [
+            "$ java build/jenesis/Make.java stage",
+            "$ find target/stage -type f -exec sha256sum {} + | sort -k 2 | sha256sum",
+            "991d3151daab4f88b5f7be0f0589c1ce68913f63d862bdb16ba1e947fc801b61  -",
+            "$ rm -rf target",
+            "$ java build/jenesis/Make.java stage",
+            "$ find target/stage -type f -exec sha256sum {} + | sort -k 2 | sha256sum",
+            "991d3151daab4f88b5f7be0f0589c1ce68913f63d862bdb16ba1e947fc801b61  -",
           ],
-          commands: "java build/Reproducible.java",
           notes: ["<code>jenesis.archive.timestamp</code> sets another date, such as the last commit's."],
         },
         maven: {

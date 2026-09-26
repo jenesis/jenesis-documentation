@@ -145,6 +145,12 @@ module demo.app {
           <pre><code>{% for l in e.layout.split("\n") %}<span class="lp-line">{{ l }}</span>{% endfor %}</code></pre>
         </figure>
         {% endif %}
+        {% if e.terminal %}
+        <figure class="lp-file">
+          <figcaption class="lp-file__head"><code>Terminal</code></figcaption>
+          <pre><code>{% for l in e.terminal %}{% if l.startsWith("$ ") %}<span class="lp-line"><span class="lp-prompt">$</span> {{ l.slice(2) }}</span>{% else %}<span class="lp-line lp-line--out">{{ l }}</span>{% endif %}{% endfor %}</code></pre>
+        </figure>
+        {% endif %}
         {% if e.commands %}
         <figure class="lp-file">
           <figcaption class="lp-file__head"><code>Commands</code></figcaption>
