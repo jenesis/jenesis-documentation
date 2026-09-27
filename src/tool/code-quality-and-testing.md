@@ -179,6 +179,27 @@ line by line. JaCoCo, like every tool here, resolves in its own group (`jacoco`)
   Set <code>-Djenesis.observe.jacoco=false</code> to suppress it even when the file is present.
 </div>
 
+## Recording the tests with Java Flight Recorder
+
+A `jfr.properties` file in a configuration folder records the test JVM with Java Flight Recorder, which ships
+with the JDK, so nothing is resolved. Each line is an option of the recording, as `-XX:StartFlightRecording`
+takes it:
+
+```properties
+# jfr.properties
+settings=profile
+maxsize=100m
+```
+
+The build names the file itself and writes it into the test step's reports, so it is staged with the others
+under `target/stage/reports/output/jfr/<module>/tests.jfr`. Open it in JDK Mission Control or summarise it with
+`jfr summary`. A `filename` line is refused, and so is a value holding a comma, which would split the options.
+
+Because the file lives in a configuration folder, a profile switches the recording on for one build:
+`build.jenesis/profiling/jfr.properties` records only under `-Djenesis.make.profiles=profiling`. Changing the
+file runs the tests again. Set `-Djenesis.observe.jfr=false` to suppress the recording even when the file is
+present.
+
 {% demos 36 %}
 
 ## Narrowing a test run

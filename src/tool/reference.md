@@ -220,6 +220,7 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.format.rewrite` | `false` | Rewrite sources in place instead of verifying. |
 | `jenesis.observe.jacoco` | `true` | Run JaCoCo coverage when its file is present. |
 | `jenesis.observe.native` | `true` | Run the GraalVM tracing agent when its file is present. |
+| `jenesis.observe.jfr` | `true` | Record the test JVM with Java Flight Recorder when a `jfr.properties` is present. |
 | `jenesis.mutate.pitest` | `true` | Run PIT mutation testing when its file is present. |
 | `jenesis.artifact.japicmp` | `true` | Run the japicmp API comparison when its file is present. |
 | `jenesis.compile.errorprone` | `true` | Run Error Prone when an `errorprone.properties` is present; `javac` forks while it does, to grant the plugin the compiler internals it reads. |
