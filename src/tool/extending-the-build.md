@@ -609,8 +609,10 @@ itself. An `@<file>` argument works here as on a command line.
 
 A setting that would replace the process a build runs in cannot be honoured in-process, and is refused by
 name rather than ignored: `jenesis.toolchain.version` and `jenesis.project.docker` for all three, and
-`jenesis.execute.docker` for the program `jenesis-exec` runs. The refusal arrives on `err` with a non-zero
-code rather than as an exception. `jenesis-exec` forks the program it runs, as its command does, so that
+`jenesis.execute.docker` for the program `jenesis-exec` runs. A `-J` option is refused as well, as the JDK's own
+tools refuse one: a tool runs in its caller's JVM and is handed no options for one, so the `-J` of `Execute.java`
+and of `jpx` is the commands' alone. The refusal arrives on `err` with a non-zero code rather than as an
+exception. `jenesis-exec` forks the program it runs, as its command does, so that
 program writes to the JVM's own streams while the build's output goes to the writers.
 
 The tools are found by name when `build.jenesis` is a resolved module or a jar on the class path. Source

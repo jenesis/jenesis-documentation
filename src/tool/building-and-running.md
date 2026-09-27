@@ -329,6 +329,23 @@ any trailing arguments to your program:
 java build/jenesis/Execute.java ada lovelace
 ```
 
+### Options for the program's JVM
+
+A leading `-J` hands an option to the JVM that runs your program, as the JDK's own tools read it, written as
+`java` takes it:
+
+```bash
+java build/jenesis/Execute.java -J-Xmx512m -J-Xlog:gc ada lovelace
+```
+
+The program's JVM receives `-Xmx512m` and `-Xlog:gc`, and the program `ada lovelace`. The first argument not
+starting with `-J` begins the program's own arguments, so a later `-J…` reaches the program unchanged. A `-J`
+option follows what a `process-java.properties` gives the same JVM, so it wins where both set an option: the file
+is where a project keeps what every run needs, the command line what one run needs. Options on the `java` command
+before `build/jenesis/Execute.java` configure only the JVM that builds. `jpx` reads `-J` the same way, and
+the `jenesis-exec` tool refuses it, as the JDK's own tools do (see
+*[Running a build inside another program](/tool/extending-the-build/#running-a-build-inside-another-program)*).
+
 ### Implicit vs. explicit main
 
 If exactly one module declares a main class, `Execute` selects it **implicitly** - you pass nothing. If several
@@ -349,7 +366,7 @@ java -Djenesis.execute.module=tools \
   current project is the job of <a href="/jpx/">jpx</a>.
 </div>
 
-{% demos 8, 9 %}
+{% demos 8, 9, 52 %}
 
 ## Attaching a Java agent
 
