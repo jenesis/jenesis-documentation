@@ -13,7 +13,8 @@
       Maven asks each plugin whether there is work. The compiler plugin checks its sources and skips an unchanged
       module; Surefire has no such check, so the tests run on every build. There is no cache beside the build
       folder, so <code>mvn clean</code> discards everything built so far. Apache's build cache extension adds that
-      cache, with the module as its unit: a module is restored whole or rebuilt whole, its tests included.
+      cache, but only with the module as its unit: a module is restored whole or rebuilt whole. One changed line
+      in a large module costs that module's full compile and its full test suite, every time.
     </p>
   </div>
   <div class="lp-extra__side">
@@ -23,7 +24,7 @@
       <tbody>
         <tr><th scope="row">Jenesis</th><td>Nothing</td><td>Compile, no test</td><td>Nothing: cached</td><td>Nothing: cached</td></tr>
         <tr><th scope="row">Maven 3.9</th><td>All tests</td><td>Compile, all tests</td><td>Everything</td><td>Compile, all tests</td></tr>
-        <tr><th scope="row">Maven 3.9 with the extension</th><td>Nothing</td><td>Compile, all tests</td><td>Nothing: cached</td><td>Nothing: cached</td></tr>
+        <tr><th scope="row">Maven 3.9 with the extension</th><td>Nothing</td><td>The whole module, all tests</td><td>Nothing: cached</td><td>Nothing: cached</td></tr>
         <tr><th scope="row">Gradle 9.8</th><td>Nothing</td><td>Compile, all tests</td><td>Nothing: cached</td><td>Nothing: cached</td></tr>
         <tr><th scope="row">Bazel 9.2</th><td>Nothing</td><td>Compile, all tests</td><td>Nothing: cached</td><td>Nothing: cached</td></tr>
       </tbody>
