@@ -122,7 +122,7 @@ in one step.
 | `jenesis.project.tag` | *(unset)* | The source control tag recorded in the generated POM's `<scm>` and in the SBOM; empty records none, even over a declared `scm.tag` (see *[Publishing](/tool/publishing/#pointing-a-release-at-its-sources)*). |
 | `jenesis.project.revision` | *(unset)* | The source revision, for Git the commit id, recorded in the SBOM; empty records none, even over a declared `scm.revision`. |
 | `jenesis.project.tree` | *(unset)* | The Git tree id of the release, as `git rev-parse HEAD^{tree}` prints it, recorded in the SBOM as a SWHID; empty records none, even over a declared `scm.tree`. |
-| `jenesis.project.metadata` | *(unset)* | Path-separated list of project-level POM metadata files (conventionally one `project.properties`). |
+| `jenesis.project.metadata` | *(unset)* | Comma-separated project-level metadata files for the POM and the SBOM. Unset reads `project.properties` at the project root when it exists; an empty value reads none. |
 | `jenesis.project.sources` | `false` | Also assemble a per-module sources jar. |
 | `jenesis.project.documentation` | `false` | Also assemble a per-module javadoc jar. |
 | `jenesis.project.resources` | *(unset)* | Comma-separated `<path>:<target>` pairs of project files or folders placed among the resources of every module, as `LICENSE:META-INF/LICENSE,NOTICE:META-INF/NOTICE` (see *[Supply-chain features](/tool/supply-chain/#the-licence-text-in-the-jar)*). |
