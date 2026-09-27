@@ -58,8 +58,10 @@ markup give way to the words they mark, and a third paragraph is left for the re
   A Markdown comment (<code>///</code>) keeps its inline markup: <code>`code`</code> and <code>**emphasis**</code>
   reach the name and the description as written, and only a link is reduced to its label. The JDK renders Markdown
   in its <code>javadoc</code> tool alone, so a build has no Markdown to plain text conversion to call.
-</div> A `project.properties` file, pointed at with `-Djenesis.project.metadata=project.properties`,
-carries only what a module declaration cannot express:
+</div>
+
+A `project.properties` file at the project root carries only what a module declaration cannot express. Jenesis
+reads it when it is there; `-Djenesis.project.metadata` names other files instead, and an empty value reads none:
 
 ```properties
 # project.properties
