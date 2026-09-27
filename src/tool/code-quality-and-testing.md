@@ -188,24 +188,53 @@ test step executes:
 
 ```bash
 java -Djenesis.test.filter='calc.*Test#addsTwo' build/jenesis/Make.java
-java -Djenesis.test.tag='fast,io,!slow' build/jenesis/Make.java
+java -Djenesis.test.tag=fast+-slow,io+-slow build/jenesis/Make.java
 ```
 
 `jenesis.test.filter` takes a comma-separated list of `<classRegex>[#<method>]` entries and runs only what
-matches. `jenesis.test.tag` takes a comma-separated list of tag names, whatever the test framework: a test runs
-where it carries one of them, and a name preceded by `!` leaves out the tests carrying it, so the line above runs
-the tests tagged `fast` or `io` that are not tagged `slow`, and `!slow` alone runs every test but those. Names
-joined by `&` select the tests carrying all of them: `fast&io,db` runs the tests tagged both `fast` and `io`, and
-those tagged `db`. Jenesis translates the list for the framework - into a tag expression on the JUnit Platform,
-into groups and excluded groups for TestNG, which has no way to require several groups and so rejects `&`; JUnit 4
-cannot select categories through its console runner and rejects the property.
+matches. `jenesis.test.tag` selects by tag, in a syntax of its own described below.
+
+### Selecting tests by tag
+
+The tag selection is **framework neutral**: it is written the same way whatever the tests run on, and Jenesis
+translates it into the framework's own mechanism, so a selection keeps working when a project moves from one
+framework to another and nobody has to learn JUnit's tag expressions or TestNG's group lists. It is also **built
+for the command line**: it uses three characters that no shell interprets - no `!`, `&`, `|`, parentheses or
+spaces - so a selection is typed as it stands, never quoted, and reads the same in bash, zsh and a CI step.
+
+| Write | Means |
+|-------|-------|
+| `,` | or: separates alternatives, and a test runs where it matches any of them |
+| `+` | and: joins tags within an alternative, for the tests carrying all of them |
+| `-` before a tag | not: the tests that do not carry that tag |
+
+| Selection | Runs |
+|-----------|------|
+| `fast` | the tests tagged `fast` |
+| `fast,io` | the tests tagged `fast` or `io` |
+| `fast+io` | the tests tagged both `fast` and `io` |
+| `-slow` | every test that is not tagged `slow` |
+| `fast+-slow,io+-slow` | the tests tagged `fast` or `io` that are not tagged `slow` |
+| `-container+-soak` | the tests tagged neither `container` nor `soak` |
+| `-container,-soak` | every test that is not tagged both `container` and `soak` |
+| `release,-container` | the tests tagged `release`, and every test that is not tagged `container` |
+
+Every selection a tag expression can make can be written this way, as alternatives each joining tags and negated
+tags. A hyphen inside a tag, as in `slow-io`, is part of its name; `-` negates only at the start of one. A selection
+that uses anything else, or an alternative that asks for a tag and its negation at once, fails the build with the
+form spelt out.
+
+Jenesis translates the selection for the framework: into one tag expression on the JUnit Platform, and into groups
+and excluded groups for TestNG, which can run a selection only where each alternative names at most one group and
+every alternative leaves out the same groups. JUnit 4 cannot select categories through its console runner and
+refuses any selection. A framework plugged in through the `TestFramework` interface translates the selection in its
+own `tags` method, and one that does not implement it refuses any selection as well.
 
 A narrowed run is still the same step, so its result is remembered together with **what it covered**, and every
 later run adds to that memory until the tests or what they test change. A request runs only what no remembered
 run covered: after `fast`, asking for `fast,io` runs the tests tagged `io` that are not tagged `fast`, asking for
-`fast` again runs nothing, a run of `fast` covers a request for `fast&io`, and a run of every test covers any
-request. A run that left tests out covers only a
-request that leaves them out too. The filter is compared as it is written, so a different filter runs the tests
+`fast` again runs nothing, a run of `fast` covers a request for `fast+io`, and a run of every test covers any
+request. A run that left tests out covers only an alternative that leaves them out too. The filter is compared as it is written, so a different filter runs the tests
 again and starts a new memory.
 
 <div class="tip">
