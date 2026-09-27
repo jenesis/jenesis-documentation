@@ -408,17 +408,13 @@ JENREG_S3_REGION=eu-central-1</code></pre>
     </details>
     <details>
       <summary>Why is it written in Java?</summary>
-      <p>Repository managers have traditionally come from the Java world, with its large open source community, and
-        Java servers have run organisations' artifact repositories for two decades. The platform has proven itself at
-        exactly this task, at scale.</p>
-      <p>It also brings the integrations a repository needs, mature and widely used: each cloud provider's own SDK
-        for its object store, and libraries for single sign-on, directories and the protocols the server speaks. And
-        it is fast: the JIT compiler turns the code a server actually runs into native machine code, and keeps
-        adapting it to the workload.</p>
-      <p>Fast, and safe where it matters most. Every build trusts what the repository serves, so memory corruption
-        there would be catastrophic. Java checks every array access and manages memory itself, so a bug fails
-        loudly instead of silently overwriting what another request is reading. Jenesis Repository keeps that
-        tradition, on Java 25.</p>
+      <p>Because repository managers grew up there. Java's large open source community built the first ones, and Java
+        servers have run organisations' artifact repositories for two decades - the platform is proven at exactly this
+        job, at scale.</p>
+      <p>And it brings what the job needs: mature integrations for each cloud's object store, single sign-on and
+        directories; a JIT compiler that turns hot code into native machine code and keeps tuning it to the workload;
+        and memory safety, so a bug fails loudly instead of corrupting what every build downloads. Proven, fast and
+        safe - Jenesis Repository keeps that tradition, on Java 25.</p>
     </details>
     <details>
       <summary>Is it only for Java?</summary>
