@@ -286,7 +286,7 @@ export default {
           ],
         },
         maven: {
-          status: "manual",
+          status: "plugin",
           badge: "Whole modules",
           verdict: "Only whole modules. The tests run on every build; Apache's build cache extension restores a module whole or rebuilds it whole, all of its tests included.",
           files: [file("caching/maven", ".mvn/extensions.xml")],
@@ -298,7 +298,7 @@ export default {
           ],
         },
         gradle: {
-          status: "manual",
+          status: "plugin",
           badge: "Whole test tasks",
           verdict: "The whole test task: one changed class reruns every test of the module. Unchanged tasks are skipped, and one property adds a local build cache.",
           files: [file("caching/gradle", "gradle.properties")],
