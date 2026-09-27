@@ -135,7 +135,7 @@ function listed(path, count, generated, note) {
   return { path, count, generated, note, lines: null };
 }
 
-const JENESIS = { key: "jenesis", name: "Jenesis", release: "Jenesis 0.15.2" };
+const JENESIS = { key: "jenesis", name: "Jenesis", release: "Jenesis 0.15.3" };
 const MAVEN = { key: "maven", name: "Maven", release: "Maven 3.9.16" };
 const GRADLE = { key: "gradle", name: "Gradle", release: "Gradle 9.8.0" };
 const BAZEL = { key: "bazel", name: "Bazel", release: "Bazel 9.2.0" };
@@ -431,11 +431,11 @@ export default {
           terminal: [
             "$ java build/jenesis/Make.java stage",
             "$ find target/stage -type f -exec sha256sum {} + | sort -k 2 | sha256sum",
-            "991d3151daab4f88b5f7be0f0589c1ce68913f63d862bdb16ba1e947fc801b61  -",
+            "0a08c8e671a700bf8d8ad3f318df68566bbbc2378801df23133c9c1b071b8fc6  -",
             "$ rm -rf target",
             "$ java build/jenesis/Make.java stage",
             "$ find target/stage -type f -exec sha256sum {} + | sort -k 2 | sha256sum",
-            "991d3151daab4f88b5f7be0f0589c1ce68913f63d862bdb16ba1e947fc801b61  -",
+            "0a08c8e671a700bf8d8ad3f318df68566bbbc2378801df23133c9c1b071b8fc6  -",
           ],
           notes: ["<code>jenesis.archive.timestamp</code> sets another date, such as the last commit's."],
         },
@@ -570,7 +570,7 @@ export default {
           commands: "java build/jenesis/Make.java stage",
           notes: [
             "The organisation becomes the supplier, beside the manufacturer, the publisher, the copyright, the licence and the links to the website and the repository.",
-            "Each dependency is listed once, with its purl, the same SHA-256 <code>pin</code> records, and its licence.",
+            "Each dependency is listed once, with its purl, the same SHA-256 <code>pin</code> records, its licence, and whether the application runs with it: <code>requires static</code> marks one it only compiles against as excluded.",
           ],
         },
         maven: {
@@ -636,7 +636,7 @@ export default {
           ],
           notes: [
             "The layer needs an API module that crosses its boundary and a provider module that holds the private dependency; the library looks the provider up through the Jenesis Launcher.",
-            "It runs from the launcher jar, the bundle and the container image, and with plain <code>java</code> given <code>-Djlayer.modulepath.jackson</code>.",
+            "It runs from the launcher jar, the bundle, the container image and the jpackage image, under <code>Execute</code>, and with plain <code>java</code> given <code>-Djlayer.modulepath.jackson</code>.",
           ],
         },
         maven: {
