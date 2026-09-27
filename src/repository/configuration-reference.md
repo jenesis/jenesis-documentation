@@ -71,8 +71,8 @@ See [Repositories](/repository/repositories/).
 | Key | Default | Effect |
 | --- | --- | --- |
 | `tenancy` | `fixed` | How a request's tenant is decided, read once at startup. `fixed` serves the one tenant `default-tenant` names and answers `404` for a URL naming any other; a name no installed routing answers to refuses to start. |
-| `repositories.<name>` | *(empty)* | A repository definition, as on **Settings → Repository definitions**. It routes a repository that exists; it does not create one. |
-| `proxy.<format>` | *(empty)* | The upstream a format fetches a miss from, as on **Settings → Format upstreams**. |
+| `repositories.<name>` | *(empty)* | A repository definition, as on **Settings → Upstreams → Repository routing**. It routes a repository that exists; it does not create one. |
+| `proxy.<format>` | *(empty)* | The upstream a format fetches a miss from, as on **Settings → Upstreams → Format upstreams**. |
 | `proxy-miss-ttl` | `60s` | How long an upstream miss is remembered. |
 
 ### Several servers
@@ -152,6 +152,7 @@ Explained in [Proxying upstreams](/repository/proxying/).
 | `immaturity-hold-days` | `2` | at once | Quarantine proxied artifacts the upstream published within this many days; |
 | `proxy-allow-internal` | `false` | on restart | Permit proxy upstreams, and the download URLs an upstream document advertises, that are plain http or resolve to a loopback, private, link-local or cloud-metadata address. |
 | `proxy-enabled` | `true` | at once | Proxy reads that miss locally from the upstreams, caching and bridging them. |
+| `proxy-throughput-floor` | `16384` | at once | The least an upstream fetch must deliver over each minute spent waiting on it, in bytes, or it is abandoned; `0` lifts it. |
 
 ### Hardening proxy
 
@@ -212,6 +213,7 @@ Explained in [Operations](/repository/operations/).
 | `batch-upload-max-bytes` | `4294967296` | at once | The most bytes one exploded archive's entries may inflate to in all; the entry that crosses it is refused whole and the walk stops. |
 | `batch-upload-max-entries` | `10000` | at once | The most members one exploded archive may publish; |
 | `batch-upload-max-ratio` | `100` | at once | How many times its compressed size an exploded archive may inflate to, once past a mebibyte; the entry that crosses it is refused whole and the walk stops. |
+| `upload-max-bytes` | `10737418240` | at once | The most one request may send, in bytes: a larger publish is refused with `413` before any of it is kept - per chunk for a registry that uploads in chunks. `0` lifts the bound. |
 | `cache.document-ttl` | `PT30S` | on restart | How long a node serves a listing it has already read - a packument, a Simple page, a maven-metadata.xml, a Packages file, a tag list - from memory before reading the store again, so a burst of builds starting at once costs the store one read per document rather than one per build. |
 | `cache.miss-ttl` | `PT10S` | on restart | How long a node remembers that a coordinate it looked for was not there, and answers the same probe from memory instead of reading the store again - a build tool asking for a version range, a missing snapshot or an optional classifier asks the same question of the same repositories many times in a row. |
 | `cache.ttl` | `PT5M` | on restart | How long a node serves a credential, a settings document, a ceiling or a tenant list it has already read before asking the store again. |

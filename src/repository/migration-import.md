@@ -241,7 +241,7 @@ An export publishes every version a repository holds into another repository - a
 repository manager - through the protocol the format's own client publishes with, so the other side needs no
 importer and sees nothing it would not see from a client. It is a background job, like an import.
 
-Choose **Export** in the console. Name the repository to export, the **Target URL** - the URL the format's own
+Open the repository to export and choose its **Export** page. Enter the **Target URL** - the URL the format's own
 client would be pointed at to publish into the other repository - and a credential for it: a **Username** with a
 **Password**, or a **Token**. **Start export** answers at once, and the list below shows each job's state, how many
 versions it published, how many the target already held and how many it withheld, refreshing while one runs.

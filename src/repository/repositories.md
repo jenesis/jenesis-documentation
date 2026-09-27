@@ -12,7 +12,7 @@ It is the thing the **Repositories** section of the console is about. This chapt
 ## How a repository comes into being
 
 A repository is **created**, with its type, before anything is published into it or resolved from it - under
-**Repositories → New repository**, or with a `PUT` of its URL naming the type:
+**Repositories → All repositories → New repository**, or with a `PUT` of its URL naming the type:
 
 ```bash
 curl -X PUT -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
@@ -93,18 +93,25 @@ from the moment it is created. A repository that holds files but no type - one k
 types - is listed with a **no format** badge and answers nothing until an editor gives it one with **Give
 format**.
 
-Below them, under **Limits**, are two limits that apply to all repositories together:
+## Limits
 
-- **Storage quota** - the most the deployment may store, across every repository, in bytes; a publish that
-  would exceed it is refused. `0` means no limit, and the page shows how much is stored now.
-- **Rate limit** - how many requests a minute the deployment serves before answering `429`; `0` falls back to the
-  deployment default. [Operations](/repository/operations/) explains how requests are counted.
+**Repositories → Limits** holds the two limits that apply to all of a tenant's repositories together. Every member
+reads them; an admin changes them.
+
+- **Storage quota** - the most the tenant may store, across every repository, in bytes; a publish that would
+  exceed it is refused. `0` means no limit, and nothing is metered while there is none: setting one counts what is
+  already stored on the next cleanup pass, and the page then shows how much is stored against it.
+- **Rate limit** - how many requests a minute the tenant is served before answering `429`; `0` falls back to the
+  deployment's own limit, which the page names. [Operations](/repository/operations/) explains how requests are
+  counted.
 
 ## Overview
 
 Opening a repository lands on its **Overview**: what it is and what it published last.
 
-- **Shape** - the repository's definition as badges, with its warnings, when it has a definition.
+- **Routing** - the repository's definition as badges, with its warnings, and whether it is the tenant's own or
+  the deployment's. A repository with no definition accepts uploads, and fetches what it lacks through its
+  format's upstream where one is named - the page says which.
 - **Hardened proxy screening** - shown when the repository screens every upstream body in full before serving
   a byte of it.
 - **Absent formats** - an ecosystem the repository holds data for that no installed format can serve any more.
@@ -123,6 +130,8 @@ in a Maven repository, `npm/…` in an npm one - rather than how they are stored
 
 - A folder opens in place with the arrow beside it, one level at a time, so a large repository browses as
   quickly as a small one. A folder with a very large number of children is cut short with a notice that says so.
+- A format that keeps its packages outside a folder tree - npm, PyPI, NuGet and their kind - has no folders to
+  show, so its releases are listed by coordinate instead, each opening its package's page.
 - The columns sort by name, type and size.
 - **Search** finds packages by coordinate across every format, and opens a hit in the tree.
 - An artifact's page shows its size, checksum, the coordinate and version its format read from it, the gate's

@@ -61,7 +61,7 @@ The sign-in lands on **Setup**, a short guide through the decisions a new deploy
 is the one to take now: grant a real administrator and issue a real credential, because the one-time key is about
 to stop working. The rest - which advisory feeds to consult, what the gate does with a vulnerable or malicious
 package, retention - is optional, and every answer can be changed later. **Skip for now** takes you into the
-console, and the guide stays reachable as **Settings → Setup**.
+console, and the guide stays reachable as **Settings → First-run setup**.
 
 <div class="warning">
   Signing in with a key is on by default, because it is how a deployment is entered before anything else is set
