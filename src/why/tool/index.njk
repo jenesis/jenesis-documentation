@@ -2,7 +2,7 @@
 layout: landing.njk
 permalink: /why/tool/
 title: Jenesis - you already wrote the build script
-description: The Java build tool that reads your module-info.java as the build. Twelve common builds, side by side with Maven, Gradle and Bazel, each one built and run.
+description: The Java build tool that reads your module-info.java as the build. Thirteen common builds, side by side with Maven, Gradle and Bazel, each one built and run.
 contact: hello@jenesis.build
 contactSubject: Jenesis
 docs: /tool/
@@ -11,6 +11,7 @@ logo: jenesis-tool
 repo: https://github.com/jenesis/jenesis
 nav:
   - { href: "#examples", label: "Examples" }
+  - { href: "#only-what-changed-runs-again", label: "Caching" }
   - { href: "#verify-what-the-build-downloads", label: "Supply chain" }
   - { href: "#two-versions-of-one-library", label: "Layers" }
   - { href: "#start", label: "Get started" }
@@ -59,7 +60,7 @@ module demo.app {
 <section class="lp-band lp-band--ink" id="examples" aria-labelledby="examples-title">
   <div class="lp-wrap">
     <p class="lp-eyebrow">Side by side</p>
-    <h2 id="examples-title">Twelve common builds, in four tools.</h2>
+    <h2 id="examples-title">Thirteen common builds, in four tools.</h2>
     <p class="lp-section-lede">
       Each section below is one build need, written for Jenesis, Maven, Gradle and Bazel. Every file shown was
       built and run with that tool. Where a tool needs a plugin, code by

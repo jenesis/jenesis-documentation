@@ -94,6 +94,7 @@
 }
 .lp-nav { display: flex; gap: 1.25rem; margin-left: auto; }
 .lp-nav a, .lp-repo { color: var(--lp-muted); text-decoration: none; font-size: 0.95rem; }
+.lp-nav a { white-space: nowrap; }
 .lp-nav a:hover, .lp-repo:hover { color: var(--lp-text); }
 .lp-repo { display: inline-flex; }
 .lp .theme-toggle {
@@ -444,6 +445,7 @@
 
 /* Explanations that belong to one comparison section, below its grid. */
 .lp-extra { margin-top: 3rem; padding-top: 2.5rem; border-top: 1px dashed var(--lp-border); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 3rem; align-items: start; }
+.lp-extra--stacked { grid-template-columns: minmax(0, 1fr); }
 .lp-extra--wide { display: block; }
 .lp-extra h3 { font-size: 1.25rem; margin-top: 0; }
 .lp-extra h3 ~ h3 { margin-top: 2rem; }
@@ -467,13 +469,15 @@
   .lp-costs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lp-steps, .lp-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+@media (max-width: 1100px) {
+  .lp-nav { display: none; }
+  .lp-repo { margin-left: auto; }
+}
 @media (max-width: 860px) {
   .lp-need { padding: 2.75rem 0; }
   .lp-need__grid { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
   .lp-need__text { position: static; }
   .lp-extra { grid-template-columns: minmax(0, 1fr); gap: 2rem; margin-top: 2rem; padding-top: 2rem; }
-  .lp-nav { display: none; }
-  .lp-repo { margin-left: auto; }
   .lp-hero { padding: 3rem 0; }
   .lp-hero__grid, .lp-split, .lp-pillars { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
   .lp-band { padding: 3.5rem 0; }
