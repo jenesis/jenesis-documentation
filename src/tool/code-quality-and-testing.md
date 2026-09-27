@@ -224,11 +224,20 @@ tags. A hyphen inside a tag, as in `slow-io`, is part of its name; `-` negates o
 that uses anything else, or an alternative that asks for a tag and its negation at once, fails the build with the
 form spelt out.
 
-Jenesis translates the selection for the framework: into one tag expression on the JUnit Platform, and into groups
-and excluded groups for TestNG, which can run a selection only where each alternative names at most one group and
-every alternative leaves out the same groups. JUnit 4 cannot select categories through its console runner and
-refuses any selection. A framework plugged in through the `TestFramework` interface translates the selection in its
-own `tags` method, and one that does not implement it refuses any selection as well.
+Jenesis translates the selection for the framework that runs the tests:
+
+| Framework | A tag is | Translated into | Selections it can run |
+|-----------|----------|-----------------|-----------------------|
+| JUnit Platform | a `@Tag` value | one `--include-tag` expression | every selection |
+| TestNG | a group | `-groups` and `-excludegroups` | alternatives of at most one group each, all leaving out the same groups |
+| JUnit 4 | a `@Category` class, named in full as `com.example.Slow` | an `IncludeCategories` filter per tag and one `ExcludeCategories` filter | one alternative of any tags, or alternatives of at most one category each, all leaving out the same categories |
+
+The framework is found for each module from the tests' own dependencies, so a project whose modules test with
+different frameworks is selected with one expression: `-Djenesis.test.tag=slow` runs the tests tagged `slow` in a
+JUnit Platform module and the group `slow` in a TestNG module alike. Under JUnit 4 a tag is a class name, and JUnit
+fails the run when the class does not exist or when the selection matches no test of the module. A selection a framework cannot
+run fails the build with the form it would accept. A framework plugged in through the `TestFramework` interface
+translates the selection in its own `tags` method, and one that does not implement it refuses any selection.
 
 A narrowed run is still the same step, so its result is remembered together with **what it covered**, and every
 later run adds to that memory until the tests or what they test change. A request runs only what no remembered
@@ -244,6 +253,8 @@ again and starts a new memory.
   <a href="/tool/build-performance-and-isolation/">shared cache</a> should run the full suite, or a narrowed
   result can be served to someone asking for more.
 </div>
+
+{% demos 3, 35 %}
 
 ## Running only the tests a change affects
 
