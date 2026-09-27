@@ -230,7 +230,7 @@
 .lp-checks strong { color: var(--lp-text); }
 
 /* ---- Scale ------------------------------------------------------------------------------------------------- */
-.lp-steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.lp-steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
 .lp-step {
   margin: 0; padding: 1.5rem; border-radius: var(--app-radius-lg); position: relative;
   background: var(--lp-surface); border: 1px solid var(--lp-border);
