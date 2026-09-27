@@ -73,8 +73,7 @@ module demo.app {
     </ul>
     <p class="lp-versions">
       Built and run on Java 25 with
-      {% for t in bc.tools %}{{ t.release }}{% if loop.revindex == 2 %} and {% elif not loop.last %}, {% endif %}{% endfor %};
-      the bill of materials with Jenesis main at commit e8c62a9.
+      {% for t in bc.tools %}{{ t.release }}{% if loop.revindex == 2 %} and {% elif not loop.last %}, {% endif %}{% endfor %}.
     </p>
   </div>
 </section>
@@ -187,44 +186,36 @@ module demo.app {
         <button role="tab" id="tab-submodule" aria-controls="panel-submodule" aria-selected="false" tabindex="-1">Git submodule</button>
       </div>
       <div class="lp-tabs__panel" role="tabpanel" id="panel-curl" aria-labelledby="tab-curl">
-        <ol class="lp-howto">
-          <li>
-            <p>From the project root, write <code>build/jenesis/</code> and build.</p>
-            <div class="lp-command"><pre><code>curl -fsSL https://get.jenesis.build | bash
+        <div class="lp-howto">
+          <p>From the project root, write <code>build/jenesis/</code> and build.</p>
+          <div class="lp-command"><pre><code>curl -fsSL https://get.jenesis.build | bash
 java build/jenesis/Make.java</code></pre></div>
-          </li>
-        </ol>
+        </div>
       </div>
       <div class="lp-tabs__panel" role="tabpanel" id="panel-sdkman" aria-labelledby="tab-sdkman" hidden>
-        <ol class="lp-howto">
-          <li>
-            <p>Install once, then initialise each project from the installed copy.</p>
-            <div class="lp-command"><pre><code>sdk install jenesis
+        <div class="lp-howto">
+          <p>Install once, then initialise each project from the installed copy.</p>
+          <div class="lp-command"><pre><code>sdk install jenesis
 jenesis-init
 java build/jenesis/Make.java</code></pre></div>
-          </li>
-        </ol>
+        </div>
       </div>
       <div class="lp-tabs__panel" role="tabpanel" id="panel-brew" aria-labelledby="tab-brew" hidden>
-        <ol class="lp-howto">
-          <li>
-            <p>Install once, then initialise each project from the installed copy.</p>
-            <div class="lp-command"><pre><code>brew install jenesis/tap/jenesis
+        <div class="lp-howto">
+          <p>Install once, then initialise each project from the installed copy.</p>
+          <div class="lp-command"><pre><code>brew install jenesis/tap/jenesis
 jenesis-init
 java build/jenesis/Make.java</code></pre></div>
-          </li>
-        </ol>
+        </div>
       </div>
       <div class="lp-tabs__panel" role="tabpanel" id="panel-submodule" aria-labelledby="tab-submodule" hidden>
-        <ol class="lp-howto">
-          <li>
-            <p>Pin Jenesis as a git submodule at <code>build/.upstream</code>. A fresh clone plus
-              <code>git submodule update --init</code> is then the whole setup, and a new version is a commit you review.</p>
-            <div class="lp-command"><pre><code>curl -fsSL https://get.jenesis.build | JENESIS_MODE=submodule bash
+        <div class="lp-howto">
+          <p>Pin Jenesis as a git submodule at <code>build/.upstream</code>. A fresh clone plus
+            <code>git submodule update --init</code> is then the whole setup, and a new version is a commit you review.</p>
+          <div class="lp-command"><pre><code>curl -fsSL https://get.jenesis.build | JENESIS_MODE=submodule bash
 git commit -m "Build with Jenesis"
 java build/jenesis/Make.java</code></pre></div>
-          </li>
-        </ol>
+        </div>
       </div>
     </div>
     <p class="lp-after">

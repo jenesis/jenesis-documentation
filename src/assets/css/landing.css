@@ -288,9 +288,7 @@
 }
 .lp-tabs__list [role="tab"][aria-selected="true"] { color: var(--lp-text); border-bottom-color: var(--lp-accent); background: var(--lp-surface); }
 .lp-tabs__panel { padding: 1.75rem; }
-.lp-howto { margin: 0; padding-left: 1.25rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
-.lp-howto li { margin: 0; padding-left: 0.25rem; min-width: 0; }
-.lp-howto li::marker { font-weight: 800; color: var(--lp-accent); }
+.lp-howto { min-width: 0; }
 .lp-howto p { margin: 0 0 0.6rem; color: var(--lp-text); }
 .lp-command { background: var(--lp-code-bg); border-radius: var(--app-radius-md); }
 .lp-command pre { overflow-x: auto; }
@@ -486,6 +484,8 @@
   .lp-verdict { grid-template-columns: minmax(0, 1fr); gap: 0.4rem; }
   .lp-verdict__who { flex-direction: row; align-items: baseline; gap: 0.6rem; }
   .lp-wrap, .lp-header__inner, .lp-footer__inner { padding-inline: 1rem; }
+  .lp-tabs:not(.lp-tabs--code) .lp-tabs__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lp-tabs:not(.lp-tabs--code) .lp-tabs__list [role="tab"] { padding: 0.75rem 0.5rem; }
   .lp-brand span { display: none; }
   .lp-steps, .lp-features { grid-template-columns: minmax(0, 1fr); }
   .lp-cost__row { grid-template-columns: minmax(0, 1fr); gap: 0.25rem; }
