@@ -184,6 +184,7 @@ module demo.app {
         <button role="tab" id="tab-curl" aria-controls="panel-curl" aria-selected="true">Install script</button>
         <button role="tab" id="tab-sdkman" aria-controls="panel-sdkman" aria-selected="false" tabindex="-1">SDKMAN</button>
         <button role="tab" id="tab-brew" aria-controls="panel-brew" aria-selected="false" tabindex="-1">Homebrew</button>
+        <button role="tab" id="tab-submodule" aria-controls="panel-submodule" aria-selected="false" tabindex="-1">Git submodule</button>
       </div>
       <div class="lp-tabs__panel" role="tabpanel" id="panel-curl" aria-labelledby="tab-curl">
         <ol class="lp-howto">
@@ -210,6 +211,17 @@ java build/jenesis/Make.java</code></pre></div>
             <p>Install once, then initialise each project from the installed copy.</p>
             <div class="lp-command"><pre><code>brew install jenesis/tap/jenesis
 jenesis-init
+java build/jenesis/Make.java</code></pre></div>
+          </li>
+        </ol>
+      </div>
+      <div class="lp-tabs__panel" role="tabpanel" id="panel-submodule" aria-labelledby="tab-submodule" hidden>
+        <ol class="lp-howto">
+          <li>
+            <p>Pin Jenesis as a git submodule at <code>build/.upstream</code>. A fresh clone plus
+              <code>git submodule update --init</code> is then the whole setup, and a new version is a commit you review.</p>
+            <div class="lp-command"><pre><code>curl -fsSL https://get.jenesis.build | JENESIS_MODE=submodule bash
+git commit -m "Build with Jenesis"
 java build/jenesis/Make.java</code></pre></div>
           </li>
         </ol>
