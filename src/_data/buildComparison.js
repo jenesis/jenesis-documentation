@@ -248,6 +248,77 @@ export default {
       },
     },
     {
+      id: "only-what-changed-runs-again",
+      title: "Only what changed runs again",
+      lede: `<p>A build runs after every edit - in watch mode, in continuous integration, and in the loop of a coding
+        agent, which changes a file, builds, reads the result and goes again. That loop is only as fast as the
+        build's answer. Jenesis hashes what each step reads and skips a step whose inputs did not change, the test
+        step included.</p>
+        <p>One line in <code>jenesis.properties</code> keeps every step's result in a cache on the file system,
+        outside <code>target/</code>, so a wiped build folder or an edit that is undone costs nothing. One more runs
+        only the tests that reach a changed class. Below is the project of the section before, with the same edits
+        made in every tool.</p>`,
+      extra: "caching",
+      tools: {
+        jenesis: {
+          status: "built",
+          verdict: "A step with unchanged inputs is skipped. A cache on disk is one line, test selection another.",
+          files: [file("caching/jenesis", "jenesis.properties")],
+          terminal: [
+            `$ alias build="java -Djenesis.print.tests=true build/jenesis/Make.java | grep -E 'greets|Finished'"`,
+            "$ build",
+            "tests >>>>       └─ greets() ✔",
+            "[COMPLETED] Finished in 4.75 seconds",
+            "$ build    # nothing changed",
+            "[COMPLETED] Finished in 0.66 seconds",
+            "$ build    # Main.java edited, which no test reaches",
+            "[COMPLETED] Finished in 2.51 seconds",
+            "$ build    # Greeter.java edited",
+            "tests >>>>       └─ greets() ✔",
+            "[COMPLETED] Finished in 3.28 seconds",
+            "$ rm -rf target && build",
+            "[COMPLETED] Finished in 0.80 seconds",
+          ],
+          notes: [
+            "An empty <code>jenesis.project.cache</code> keeps the cache in <code>.jenesis/cache</code>. <code>jenesis.cache.uri=file:///...</code> shares one folder between checkouts, and an <code>https://</code> address a cache server.",
+            "Test selection reads the compiled classes: a test runs when a class it reaches changed. It cannot see reflection, so continuous integration runs the whole suite.",
+          ],
+        },
+        maven: {
+          status: "plugin",
+          badge: "Official extension",
+          verdict: "The tests run on every build. Apache's build cache extension restores a module whole, or rebuilds it whole.",
+          files: [file("caching/maven", ".mvn/extensions.xml")],
+          commands: "mvn verify",
+          notes: [
+            "Without the extension, a build with nothing changed skips the compiler but runs the tests again; one edited class recompiles the main and the test sources; <code>mvn clean</code> starts from nothing.",
+            "With it, an unchanged module is restored from its cache, after <code>clean</code> too. An edit anywhere in the module rebuilds all of it and runs all of its tests.",
+            "Running only the tests a change reaches is Predictive Test Selection, part of the commercial Develocity.",
+          ],
+        },
+        gradle: {
+          status: "built",
+          verdict: "A task with unchanged inputs is skipped, and one property adds a local build cache. A changed test task runs all of its tests.",
+          files: [file("caching/gradle", "gradle.properties")],
+          commands: "./gradlew build",
+          notes: [
+            "After editing <code>Main.java</code>, <code>compileJava</code> and <code>test</code> ran again; after <code>clean</code>, both came <code>FROM-CACHE</code> out of <code>~/.gradle/caches/build-cache-1</code>.",
+            "Running only the tests a change reaches is Predictive Test Selection, part of the commercial Develocity.",
+          ],
+        },
+        bazel: {
+          status: "built",
+          verdict: "Every action is cached by its inputs, test results included. A disk cache is one line.",
+          files: [file("caching/bazel", ".bazelrc", { base: "basic/bazel" })],
+          commands: "bazel test //...",
+          notes: [
+            "After <code>bazel clean</code>, 72 of 92 actions came from the disk cache and the test was reported <code>(cached)</code>.",
+            "A test runs again when any target it depends on changes. Here <code>Main.java</code> shares a target with <code>Greeter.java</code>, so editing it reran <code>GreeterTest</code>; finer targets are split by hand.",
+          ],
+        },
+      },
+    },
+    {
       id: "several-modules-one-build",
       title: "Several modules, one build",
       lede: `<p>A library and the application that uses it, built together. In Jenesis the Java module name is how
