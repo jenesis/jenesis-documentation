@@ -407,6 +407,16 @@ JENREG_S3_REGION=eu-central-1</code></pre>
         ecosystem\'s standard protocol. Throughout, your artifacts stay in your own bucket or on your own disk.</p>
     </details>
     <details>
+      <summary>Why is it written in Java?</summary>
+      <p>Repository managers began in Java. When Maven 2 put remote repositories at the centre of a Java build in 2005,
+        the first repository managers followed within a year, written in Java: to keep Maven Central within reach
+        behind a slow connection or an unreliable host, and to publish a company's own artifacts. Jenesis Repository
+        comes from the same place, and serves every other ecosystem as well.</p>
+      <p>Java today suits a server that mostly waits on the network and on storage. It runs on Java 25 with virtual
+        threads, so a request waiting on the store holds no operating system thread, and it reaches Amazon S3, Google
+        Cloud Storage and Azure through each provider's own Java SDK.</p>
+    </details>
+    <details>
       <summary>Is it only for Java?</summary>
       <p>No. It began in the Java world, but every ecosystem it serves is treated the same way, from container
         images to Python packages to machine-learning models.</p>
