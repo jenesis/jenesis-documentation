@@ -1,0 +1,415 @@
+---
+layout: landing.njk
+permalink: /why/repository/
+title: Jenesis Repository - the artifact repository with no database
+description: A self-hosted artifact repository that keeps no database. Zero ops and self-healing by design, on the object store or disk you already have, from one container to several regions.
+contact: hello@jenesis.build
+contactSubject: Jenesis Repository
+docs: /repository/
+product: Jenesis Repository
+logo: jenesis-repository
+repo: https://github.com/jenesis/jenesis-repository
+nav:
+  - { href: "#zero-ops", label: "Zero ops" }
+  - { href: "#scale", label: "Scale" }
+  - { href: "#cost", label: "Cost" }
+  - { href: "#quality", label: "Quality" }
+  - { href: "#run", label: "Run it" }
+eleventyExcludeFromCollections: true
+---
+<div id="top"></div>
+
+<section class="lp-hero">
+  <div class="lp-wrap lp-hero__grid">
+    <div class="lp-hero__copy">
+      <p class="lp-eyebrow">A modern artifact repository</p>
+      <h1>The artifact repository <span class="lp-accent">with no database.</span></h1>
+      <p class="lp-lede">
+        Jenesis Repository keeps everything it knows in the storage you already trust - a bucket or a disk - and
+        nothing anywhere else. There is no database to run, back up or migrate, and what it derives it repairs on
+        its own. It is a repository that runs itself.
+      </p>
+      <ul class="lp-pills" aria-label="At a glance">
+        <li><strong>Zero ops</strong></li>
+        <li><strong>Self-healing</strong></li>
+        <li>An object store or a disk</li>
+        <li>More than twenty ecosystems</li>
+      </ul>
+    </div>
+
+    <figure class="lp-terminal" aria-label="Starting Jenesis Repository with Docker">
+      <div class="lp-terminal__bar" aria-hidden="true"><span></span><span></span><span></span></div>
+      <pre><code><span class="lp-prompt">$</span> docker run -d --name jenesis -p 8080:8080 \
+    -v jenesis-data:/data -e JENREG_FILESYSTEM_ROOT=/data \
+    jenesisbuild/jenesis-repository
+<span class="lp-prompt">$</span> docker logs jenesis
+<span class="lp-dim">────────────────────────────────────────────</span>
+<span class="lp-strong">   WELCOME TO JENESIS REPOSITORY</span>
+
+   Nobody can sign in yet, so here is
+   a one-time key to get started:
+
+       <span class="lp-key">jfr_Qm9vdHN0cmFwIHRoZSByZXBvc2l0b3J5</span>
+
+   Open http://localhost:8080, choose
+   "Sign in with a key" and paste it.
+<span class="lp-dim">────────────────────────────────────────────</span></code></pre>
+    </figure>
+  </div>
+</section>
+
+<section class="lp-band lp-band--ink" id="zero-ops" aria-labelledby="zero-ops-title">
+  <div class="lp-wrap">
+    <p class="lp-eyebrow">The idea</p>
+    <h2 id="zero-ops-title">Zero ops is the design, not a feature.</h2>
+    <p class="lp-section-lede">
+      Most of the work of running a repository is keeping its state consistent: a database beside the bytes, an
+      index beside the database, a cache beside both. Jenesis Repository has one place for state, and it is yours.
+    </p>
+    <div class="lp-pillars">
+      <article class="lp-pillar">
+        <div class="lp-pillar__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/><path d="M3 21 21 3"/></svg>
+        </div>
+        <h3>No database. The store is the state.</h3>
+        <p>
+          Every artifact, index and setting is an object in your store. There is nothing to provision beside it and
+          no schema to migrate, and a backup is a copy of a bucket.
+        </p>
+      </article>
+      <article class="lp-pillar">
+        <div class="lp-pillar__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><path d="m8.5 12.5 2.5 2.5 5-5"/></svg>
+        </div>
+        <h3>Self-healing.</h3>
+        <p>
+          Listings, indexes and what each repository holds are rebuilt from the artifacts themselves. Lose a view
+          or stop a server half way through a write, and the repository converges back on its own.
+        </p>
+      </article>
+      <article class="lp-pillar">
+        <div class="lp-pillar__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="15" width="7" height="5" rx="1.5"/><rect x="14" y="15" width="7" height="5" rx="1.5"/><path d="M6.5 11v4M17.5 11v4"/></svg>
+        </div>
+        <h3>Servers you can throw away.</h3>
+        <p>
+          A server holds nothing of its own. Replace it, scale it out or stop it mid-request - the next one carries
+          on from the store, and several servers coordinate through the store alone.
+        </p>
+      </article>
+    </div>
+    <div class="lp-without">
+      <p class="lp-without__title">What you do not run beside it</p>
+      <ul>
+        <li>a database</li>
+        <li>a search cluster</li>
+        <li>a cache tier</li>
+        <li>a lock service</li>
+        <li>a migration on upgrade</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="lp-band" id="storage" aria-labelledby="storage-title">
+  <div class="lp-wrap lp-split">
+    <div>
+      <p class="lp-eyebrow">Storage</p>
+      <h2 id="storage-title">Mount it on the storage you already have.</h2>
+      <p class="lp-section-lede">
+        Point it at a bucket and it is running on that cloud's own object store, with that cloud's durability,
+        encryption and replication. Moving from one object store to another is a copy of the bucket and one setting.
+      </p>
+      <ul class="lp-stores">
+        <li><strong>Amazon S3</strong><span>role-based, no key in the config</span></li>
+        <li><strong>Google Cloud Storage</strong><span>keyless under workload identity</span></li>
+        <li><strong>Azure Blob Storage</strong><span>one connection string</span></li>
+        <li><strong>S3-compatible</strong><span>MinIO, Ceph, the European cloud Scaleway and others</span></li>
+        <li><strong>A filesystem</strong><span>a volume, a disk, a network share</span></li>
+      </ul>
+    </div>
+    <div class="lp-stack">
+      <figure class="lp-code">
+        <figcaption>From a volume to a bucket</figcaption>
+        <pre><code>JENREG_STORE=s3
+JENREG_S3_BUCKET=my-artifacts
+JENREG_S3_REGION=eu-central-1</code></pre>
+      </figure>
+      <div class="lp-card">
+        <h3>Templates to start from</h3>
+        <p>Each one is written to provision the store, select it and start the server, so the first start already
+          lives on the cloud's own storage. Adapt it to your account's network and access rules.</p>
+        <ul class="lp-checks">
+          <li><strong>AWS</strong> - ECS Fargate over S3, as CloudFormation</li>
+          <li><strong>Google Cloud</strong> - Cloud Run over Cloud Storage, as Terraform</li>
+          <li><strong>Azure</strong> - Container Apps over Blob Storage, as Bicep</li>
+          <li><strong>Scaleway</strong>, the European cloud - Serverless Containers over Object Storage, as Terraform</li>
+          <li><strong>Kubernetes</strong> - a Helm chart, on a volume or an object store</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="lp-band lp-band--tint" id="scale" aria-labelledby="scale-title">
+  <div class="lp-wrap">
+    <p class="lp-eyebrow">Scale</p>
+    <h2 id="scale-title">From one container to several regions.</h2>
+    <p class="lp-section-lede">
+      Because the store is the only state, growing is a question of how many servers read it and where the store
+      is replicated - never of how to keep a database in step.
+    </p>
+    <ol class="lp-steps">
+      <li class="lp-step">
+        <span class="lp-step__tag">Start</span>
+        <h3>One server</h3>
+        <p>A container and a volume. It is a real deployment, not a trial: the same server, the same store layout,
+          the same screens.</p>
+      </li>
+      <li class="lp-step">
+        <span class="lp-step__tag">Grow</span>
+        <h3>Many servers, one store</h3>
+        <p>Put several behind a load balancer. They coordinate through the store, share the background work, and
+          can compare notes on what each has seen.</p>
+      </li>
+      <li class="lp-step lp-step--em">
+        <span class="lp-step__tag">Trivial</span>
+        <h3>Multi-region, active-passive</h3>
+        <p>Replicate the bucket with your provider's own replication and run a read-only server in the second
+          region. It serves downloads right away; promoting it is one setting and a restart. There is no database to fail over beside
+          it, so there is nothing to fall out of step.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="lp-band" id="cost" aria-labelledby="cost-title">
+  <div class="lp-wrap lp-split">
+    <div>
+      <p class="lp-eyebrow">Cost of ownership</p>
+      <h2 id="cost-title">The bill is your store's bill.</h2>
+      <p class="lp-section-lede">
+        With no database, no search cluster and no cache tier, what a deployment costs is what its storage costs:
+        gigabytes held, gigabytes downloaded, and the requests the server makes. Nothing else is on the invoice.
+      </p>
+      <p>
+        The larger saving is people: no backups to rehearse, no schema migrations, no failover drills.
+      </p>
+      <a class="lp-link" href="{{ docs }}cost/">Read the cost model in detail &rarr;</a>
+    </div>
+    <div class="lp-cost">
+      <div class="lp-cost__row">
+        <span class="lp-cost__label">Storage</span>
+        <span class="lp-cost__what">grows with what you keep</span>
+      </div>
+      <div class="lp-cost__row">
+        <span class="lp-cost__label">Transfer out</span>
+        <span class="lp-cost__what">grows with what people download</span>
+      </div>
+      <div class="lp-cost__row">
+        <span class="lp-cost__label">Requests</span>
+        <span class="lp-cost__what">bounded per request, and dialled by you for the background passes</span>
+      </div>
+      <div class="lp-cost__row lp-cost__row--none">
+        <span class="lp-cost__label">Database</span>
+        <span class="lp-cost__what">none - no instance, no standby, no upgrade to plan</span>
+      </div>
+      <div class="lp-cost__row lp-cost__row--none">
+        <span class="lp-cost__label">Operations staff</span>
+        <span class="lp-cost__what">nothing to migrate, rebalance or reindex</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="lp-band lp-band--tint" id="ecosystems" aria-labelledby="ecosystems-title">
+  <div class="lp-wrap">
+    <p class="lp-eyebrow">One repository for everything you build</p>
+    <h2 id="ecosystems-title">Every package your teams publish, in one place.</h2>
+    <p class="lp-section-lede">
+      Each client speaks its own protocol at its own URL and presents the same kind of key. Host your own
+      packages, proxy and cache the public registries, and group the two behind one address.
+    </p>
+    <ul class="lp-chips">
+      <li>Maven</li><li>Gradle</li><li>npm</li><li>PyPI</li><li>Container images</li><li>Go</li><li>Cargo</li>
+      <li>NuGet</li><li>RubyGems</li><li>Helm</li><li>Composer</li><li>Conan</li><li>Conda</li><li>Debian</li>
+      <li>RPM</li><li>Alpine</li><li>CocoaPods</li><li>Swift</li><li>Terraform and OpenTofu</li>
+      <li>Hugging Face</li><li>Homebrew</li><li>winget</li><li>Raw files</li><li>Jenesis build cache</li>
+    </ul>
+    <div class="lp-features">
+      <div>
+        <h3>Screened on the way in</h3>
+        <p>Maven artifacts and container images that match a known vulnerability, a malware report or a rule of
+          your own are held before anyone can download them, with a review queue to release or discard.</p>
+      </div>
+      <div>
+        <h3>Signatures checked</h3>
+        <p>OpenPGP signatures verified against the signers you trust, and a change of signer noticed.</p>
+      </div>
+      <div>
+        <h3>Access by key and by sign-in</h3>
+        <p>Keys scoped to a repository and a path for builds, and sign-in through OpenID Connect, GitHub or LDAP
+          for people.</p>
+      </div>
+      <div>
+        <h3>Three ways to operate it</h3>
+        <p>A console, an HTTP API and a command-line tool, all reaching the same code, so nothing is only
+          possible by clicking.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="lp-band" id="quality" aria-labelledby="quality-title">
+  <div class="lp-wrap lp-split lp-split--quality">
+    <div>
+      <p class="lp-eyebrow">Built for reliability</p>
+      <h2 id="quality-title">From open source veterans.</h2>
+      <p class="lp-section-lede">
+        Jenesis Repository is built by one of the maintainers of Mockito and Byte Buddy, and it is tested against
+        real infrastructure - real clients, real object stores, real fleets of servers - not mocks of it.
+      </p>
+    </div>
+    <ul class="lp-harness">
+      <li><strong>Real clients.</strong> Maven, npm, pip, Docker, Cargo and more publish and
+        resolve through a running server.</li>
+      <li><strong>Real object stores.</strong> Every backend is exercised against its own emulator, and the
+        results compared across them.</li>
+      <li><strong>Multi-node fleets.</strong> Servers killed, paused and restarted mid-work over one store, to prove
+        nothing is lost or done twice.</li>
+      <li><strong>Self-healing by restart.</strong> The store is damaged between two starts, and every derived view
+        must come back.</li>
+      <li><strong>Soak and memory tests.</strong> Sustained mixed load from many writers and readers, and requests over a million entries under
+        a small memory bound.</li>
+      <li><strong>Accessibility.</strong> Every console screen checked against WCAG 2.1 AA in a real browser.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="lp-band lp-band--tint" id="run" aria-labelledby="run-title">
+  <div class="lp-wrap">
+    <p class="lp-eyebrow">Get started</p>
+    <h2 id="run-title">Running in a few minutes.</h2>
+    <p class="lp-section-lede">
+      A fresh start prints a one-time key, and signing in with it opens the setup guide. Pick where to run it:
+    </p>
+    <div class="lp-tabs" data-tabs>
+      <div class="lp-tabs__list" role="tablist" aria-label="Where to run it">
+        <button role="tab" id="tab-docker" aria-controls="panel-docker" aria-selected="true">Docker</button>
+        <button role="tab" id="tab-helm" aria-controls="panel-helm" aria-selected="false" tabindex="-1">Kubernetes</button>
+        <button role="tab" id="tab-cloud" aria-controls="panel-cloud" aria-selected="false" tabindex="-1">A cloud</button>
+      </div>
+      <div class="lp-tabs__panel" role="tabpanel" id="panel-docker" aria-labelledby="tab-docker">
+        <ol class="lp-howto">
+          <li>
+            <p>Start the server with a volume for its store.</p>
+            <div class="lp-command"><pre><code>docker run -d --name jenesis -p 8080:8080 \
+  -v jenesis-data:/data -e JENREG_FILESYSTEM_ROOT=/data \
+  jenesisbuild/jenesis-repository</code></pre></div>
+          </li>
+          <li>
+            <p>Read the one-time key from its log.</p>
+            <div class="lp-command"><pre><code>docker logs jenesis</code></pre></div>
+          </li>
+          <li>
+            <p>Open <code>http://localhost:8080</code>, choose <em>Sign in with a key</em>, and follow the setup
+              guide.</p>
+          </li>
+        </ol>
+      </div>
+      <div class="lp-tabs__panel" role="tabpanel" id="panel-helm" aria-labelledby="tab-helm" hidden>
+        <ol class="lp-howto">
+          <li>
+            <p>Install the chart - on a volume, or on any object store with its values beside it.</p>
+            <div class="lp-command"><pre><code>helm install jenesis \
+  oci://registry-1.docker.io/jenesisbuild/jenesis \
+  --set store.backend=s3 \
+  --set store.s3.bucket=my-artifacts</code></pre></div>
+          </li>
+          <li>
+            <p>Probes, a service and an optional ingress come with it; any other setting is a value.</p>
+          </li>
+        </ol>
+      </div>
+      <div class="lp-tabs__panel" role="tabpanel" id="panel-cloud" aria-labelledby="tab-cloud" hidden>
+        <ol class="lp-howto">
+          <li>
+            <p>Take the template for your cloud - CloudFormation for AWS, Terraform for Google Cloud and the European Scaleway,
+              Bicep for Azure - from the repository's <code>deploy</code> folder.</p>
+          </li>
+          <li>
+            <p>Deploy it: the store is provisioned and selected, and the server starts on it.</p>
+            <div class="lp-command"><pre><code>terraform -chdir=deploy/gcp apply \
+  -var project=my-project</code></pre></div>
+          </li>
+        </ol>
+      </div>
+    </div>
+    <p class="lp-after">
+      <a class="lp-link" href="{{ docs }}getting-started/">Getting started, step by step &rarr;</a>
+    </p>
+  </div>
+</section>
+
+<section class="lp-band" id="open" aria-labelledby="open-title">
+  <div class="lp-wrap lp-split">
+    <div>
+      <p class="lp-eyebrow">Open source</p>
+      <h2 id="open-title">Apache 2.0, and modular all the way down.</h2>
+      <p class="lp-section-lede">
+        Every capability is a module behind a small service interface. Leave out what you do not need, and add
+        what you do by implementing one interface and putting the jar on the module path.
+      </p>
+      <p class="lp-aside">
+        <strong>Its roots are in Java,</strong> but every ecosystem above is served as a first-class citizen.
+      </p>
+    </div>
+    <div class="lp-card lp-card--contact">
+      <p class="lp-eyebrow">Commercial help</p>
+      <h3>Working with Jenesis Repository?</h3>
+      <p>
+        Planning a rollout, migrating an existing repository, running it at scale, or building on Jenesis and its
+        related tools - we can help, from a first conversation to ongoing support.
+      </p>
+      <a class="lp-button" href="mailto:{{ contact }}?subject={{ contactSubject | urlencode }}">Get in touch</a>
+      <p class="lp-small">{{ contact }}</p>
+    </div>
+  </div>
+</section>
+
+<section class="lp-band lp-band--tint" id="faq" aria-labelledby="faq-title">
+  <div class="lp-wrap lp-faq">
+    <h2 id="faq-title">Questions</h2>
+    <details>
+      <summary>Is a repository without a database really fit for production?</summary>
+      <p>That is the point of it. The store is the system of record, and on start the server checks that the store
+        offers the conditional writes it relies on, and refuses one that does not.</p>
+    </details>
+    <details>
+      <summary>How do I back it up?</summary>
+      <p>Copy the store. On an object store that is the provider's versioning or replication; on a filesystem, any
+        incremental file backup or snapshot will do. There is nothing else to capture.</p>
+    </details>
+    <details>
+      <summary>What happens if part of the store is lost or damaged?</summary>
+      <p>The artifacts are the truth. Scheduled walks rebuild every listing and index from them, and the operations
+        screen shows when each one ran.</p>
+    </details>
+    <details>
+      <summary>Can I move my existing repository over?</summary>
+      <p>Yes. It imports from a running repository through that repository's own protocols, and can proxy an
+        existing one while you move, so builds keep working throughout.</p>
+    </details>
+    <details>
+      <summary>What if Jenesis Repository stops being maintained, or is not right for you?</summary>
+      <p>Then it helps you leave. It publishes every artifact of a repository to another repository of your choice,
+        its API lists every artifact with its checksum, the settings export as one bundle, and every client speaks its
+        ecosystem\'s standard protocol. Throughout, your artifacts stay in your own bucket or on your own disk.</p>
+    </details>
+    <details>
+      <summary>Is it only for Java?</summary>
+      <p>No. It began in the Java world, but every ecosystem it serves is treated the same way, from container
+        images to Python packages to machine-learning models.</p>
+    </details>
+  </div>
+</section>
