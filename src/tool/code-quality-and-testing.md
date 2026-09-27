@@ -192,17 +192,43 @@ java -Djenesis.test.tag=fast+-slow,io+-slow build/jenesis/Make.java
 ```
 
 `jenesis.test.filter` takes a comma-separated list of `<classRegex>[#<method>]` entries and runs only what
-matches. `jenesis.test.tag` takes a comma-separated list of alternatives, whatever the test framework, and a test
-runs where it matches any of them. An alternative is a tag, or several joined by `+` for the tests carrying all of
-them, and a tag preceded by `-` stands for the tests not carrying it. So the line above runs the tests tagged
-`fast` or `io` that are not tagged `slow`, `-slow` alone runs every test but those, `fast+io,db` runs the tests
-tagged both `fast` and `io` beside those tagged `db`, and `-fast,-slow` runs every test that is not tagged both.
-`,`, `+` and `-` need no quoting on a command line, and a hyphen inside a tag, as in `slow-io`, is part of its name.
-Jenesis translates the list for the framework - into a tag expression on the JUnit Platform, into groups and
-excluded groups for TestNG, which runs a selection only where each alternative names at most one group and every
-alternative leaves out the same groups; JUnit 4 cannot select categories through its console runner and rejects the
-property. A framework plugged in through the `TestFramework` interface translates the selection in its own `tags`
-method, and one that does not implement it refuses any selection.
+matches. `jenesis.test.tag` selects by tag, in a syntax of its own described below.
+
+### Selecting tests by tag
+
+The tag selection is **framework neutral**: it is written the same way whatever the tests run on, and Jenesis
+translates it into the framework's own mechanism, so a selection keeps working when a project moves from one
+framework to another and nobody has to learn JUnit's tag expressions or TestNG's group lists. It is also **built
+for the command line**: it uses three characters that no shell interprets - no `!`, `&`, `|`, parentheses or
+spaces - so a selection is typed as it stands, never quoted, and reads the same in bash, zsh and a CI step.
+
+| Write | Means |
+|-------|-------|
+| `,` | or: separates alternatives, and a test runs where it matches any of them |
+| `+` | and: joins tags within an alternative, for the tests carrying all of them |
+| `-` before a tag | not: the tests that do not carry that tag |
+
+| Selection | Runs |
+|-----------|------|
+| `fast` | the tests tagged `fast` |
+| `fast,io` | the tests tagged `fast` or `io` |
+| `fast+io` | the tests tagged both `fast` and `io` |
+| `-slow` | every test that is not tagged `slow` |
+| `fast+-slow,io+-slow` | the tests tagged `fast` or `io` that are not tagged `slow` |
+| `-container+-soak` | the tests tagged neither `container` nor `soak` |
+| `-container,-soak` | every test that is not tagged both `container` and `soak` |
+| `release,-container` | the tests tagged `release`, and every test that is not tagged `container` |
+
+Every selection a tag expression can make can be written this way, as alternatives each joining tags and negated
+tags. A hyphen inside a tag, as in `slow-io`, is part of its name; `-` negates only at the start of one. A selection
+that uses anything else, or an alternative that asks for a tag and its negation at once, fails the build with the
+form spelt out.
+
+Jenesis translates the selection for the framework: into one tag expression on the JUnit Platform, and into groups
+and excluded groups for TestNG, which can run a selection only where each alternative names at most one group and
+every alternative leaves out the same groups. JUnit 4 cannot select categories through its console runner and
+refuses any selection. A framework plugged in through the `TestFramework` interface translates the selection in its
+own `tags` method, and one that does not implement it refuses any selection as well.
 
 A narrowed run is still the same step, so its result is remembered together with **what it covered**, and every
 later run adds to that memory until the tests or what they test change. A request runs only what no remembered
