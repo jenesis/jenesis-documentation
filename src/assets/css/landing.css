@@ -470,9 +470,10 @@
   .lp-steps, .lp-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 860px) {
+  .lp-need { padding: 2.75rem 0; }
   .lp-need__grid { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
   .lp-need__text { position: static; }
-  .lp-extra { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+  .lp-extra { grid-template-columns: minmax(0, 1fr); gap: 2rem; margin-top: 2rem; padding-top: 2rem; }
   .lp-nav { display: none; }
   .lp-repo { margin-left: auto; }
   .lp-hero { padding: 3rem 0; }
