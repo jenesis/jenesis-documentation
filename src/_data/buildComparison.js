@@ -248,6 +248,80 @@ export default {
       },
     },
     {
+      id: "only-what-changed-runs-again",
+      title: "Only what changed runs again",
+      lede: `<p>A build runs after every edit - in watch mode, in continuous integration, and in the loop of a coding
+        agent, which changes a file, builds, reads the result and goes again. That loop is only as fast as the
+        build's answer. Jenesis hashes what each step reads and skips a step whose inputs did not change, the test
+        step included.</p>
+        <p>One line in <code>jenesis.properties</code> keeps every step's result in a cache on the file system,
+        outside <code>target/</code>, so a wiped build folder or an edit that is undone costs nothing. One more runs
+        only the tests that reach a changed class. Below is the project of the section before, with the same edits
+        made in every tool.</p>`,
+      extra: "caching",
+      tools: {
+        jenesis: {
+          status: "built",
+          verdict: "A step with unchanged inputs is skipped. A cache on disk is one line, test selection another.",
+          files: [file("caching/jenesis", "jenesis.properties")],
+          terminal: [
+            "$ java build/jenesis/Make.java",
+            "tests >>>>       └─ greets() ✔",
+            "[COMPLETED] Finished in 3.01 seconds",
+            "$ java build/jenesis/Make.java    # nothing changed",
+            "[COMPLETED] Finished in 0.53 seconds",
+            "$ java build/jenesis/Make.java    # Main.java edited",
+            "[COMPLETED] Finished in 1.96 seconds",
+            "$ java build/jenesis/Make.java    # Greeter.java edited",
+            "tests >>>>       └─ greets() ✔",
+            "[COMPLETED] Finished in 2.76 seconds",
+            "$ rm -rf target",
+            "$ java build/jenesis/Make.java",
+            "[COMPLETED] Finished in 0.58 seconds",
+          ],
+          notes: [
+            "<code>GreeterTest</code> reaches <code>Greeter</code> but not <code>Main</code>. The terminal shows the test each build ran and its last line; <code>-Djenesis.print.tests=true</code> prints the tests.",
+            "Named without a value, <code>jenesis.project.cache</code> keeps the cache in <code>.jenesis/cache</code>. <code>jenesis.cache.uri=file:///...</code> shares one folder between checkouts, and an <code>https://</code> address a cache server.",
+            "Test selection reads the compiled classes: a test runs when a class it reaches changed. It cannot see reflection, so continuous integration runs the whole suite.",
+          ],
+        },
+        maven: {
+          status: "plugin",
+          badge: "Whole modules",
+          verdict: "Only whole modules. The tests run on every build; Apache's build cache extension restores a module whole or rebuilds it whole, all of its tests included.",
+          files: [file("caching/maven", ".mvn/extensions.xml")],
+          commands: "mvn verify",
+          notes: [
+            "One changed class rebuilds its entire module with the extension and reruns every test in it, whether or not a test reaches the change.",
+            "Without the extension, a build with nothing changed skips the compiler but runs the tests again; one edited class recompiles the main and the test sources; <code>mvn clean</code> starts from nothing.",
+            "Running only the tests a change reaches is Predictive Test Selection, part of the commercial Develocity.",
+          ],
+        },
+        gradle: {
+          status: "plugin",
+          badge: "Whole test tasks",
+          verdict: "The whole test task: one changed class reruns every test of the module. Unchanged tasks are skipped, and one property adds a local build cache.",
+          files: [file("caching/gradle", "gradle.properties")],
+          commands: "./gradlew build",
+          notes: [
+            "After editing <code>Main.java</code>, <code>compileJava</code> and <code>test</code> ran again, <code>GreeterTest</code> included; after <code>clean</code>, both came <code>FROM-CACHE</code> out of <code>~/.gradle/caches/build-cache-1</code>.",
+            "Running only the tests a change reaches is Predictive Test Selection, part of the commercial Develocity.",
+          ],
+        },
+        bazel: {
+          status: "manual",
+          badge: "Whole test targets",
+          verdict: "Whole test targets: a changed dependency reruns every test in each target that declares it. Actions are cached by their inputs, and a disk cache is one line.",
+          files: [file("caching/bazel", ".bazelrc", { base: "basic/bazel" })],
+          commands: "bazel test //...",
+          notes: [
+            "<code>Main.java</code> shares a target with <code>Greeter.java</code>, so editing it reran <code>GreeterTest</code>, which never reaches <code>Main</code>. Finer selection means one test target per class and small production targets, split by hand.",
+            "After <code>bazel clean</code>, 72 of 92 actions came from the disk cache and the test was reported <code>(cached)</code>.",
+          ],
+        },
+      },
+    },
+    {
       id: "several-modules-one-build",
       title: "Several modules, one build",
       lede: `<p>A library and the application that uses it, built together. In Jenesis the Java module name is how
