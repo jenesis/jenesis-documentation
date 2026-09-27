@@ -266,8 +266,9 @@ can reach and leaves the rest cached. Turn it on with `-Djenesis.test.incrementa
 java -Djenesis.project.watch=true -Djenesis.test.incremental build/jenesis/Make.java
 ```
 
-The value names the digest algorithm used to detect changes; passing the flag bare picks `MD5`, and leaving
-it unset disables selection. On each run the test step builds a class-to-test dependency graph from the
+`true`, or the setting named with no value, detects changes with `MD5`; the name of another message digest
+the JDK provides detects them with that one, and `false` or leaving it unset disables selection. Any other value
+fails the build with the valid ones listed. On each run the test step builds a class-to-test dependency graph from the
 compiled bytecode and records a per-class content hash. On the next run it diffs the hashes, takes the classes
 whose bytecode changed, walks the graph to the tests that reach them, and passes only those to the runner. A
 change that reaches no test runs nothing; any non-class change (a resource, a dependency) falls back to the
