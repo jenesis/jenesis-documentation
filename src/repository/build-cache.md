@@ -65,7 +65,17 @@ The cache enforces them as it runs. Under **Eviction**, three buttons act at onc
 size cap now**, **Expire stale (ttl) now**, and **Clear all entries**, which empties the project. **Count entries
 now** refreshes the figures at the top of the page.
 
+**Delete project**, at the bottom of a project's page, removes every cached entry and the project's cache settings,
+in the background, after asking you to type the project's name; it is an admin's to press. A key's grant naming the
+project stays, and reaches a project created again under that name - so revoke the grants first, or a build still
+writing to it brings it back. A script does the same with `DELETE /api/cache/projects/<name>`.
+
+Below the projects, a super-administrator sees the **Cache volume**: the free space of the disk the cache lives on
+against the target it keeps free, and a reclaim that sweeps the least recently used entries across every tenant's
+projects until the target is met.
+
 <div class="note">
   A cached result is only ever a shortcut: a build that finds nothing, or finds an entry evicted a moment ago,
-  runs the step itself. Evicting or clearing a project never breaks a build - it only makes the next one slower.
+  runs the step itself. Evicting, clearing or deleting a project never breaks a build - it only makes the next one
+  slower.
 </div>

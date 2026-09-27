@@ -104,6 +104,15 @@ how long any key may live.
 A revoked or narrowed key stops working at once on the server that made the change, and on the other servers of a
 multi-node deployment within the credential cache's lifetime - fifteen minutes by default (`auth.cache-ttl`).
 
+A key belongs to the tenant it was issued in, and reaches that tenant's repositories alone. A deployment serving one
+tenant refuses a key of any other with `403`, except a key of the operator tenant, which still manages the
+deployment.
+
+A key sent as the password of HTTP Basic is one a browser remembers for the host and attaches to anything it sends
+there, including a form another site submits. So a write a browser marks as coming from another site - its
+`Sec-Fetch-Site` header, or an `Origin` naming another host - is refused with `403` before anything else is decided.
+Build tools send neither header, so nothing they do changes.
+
 ## Keyless CI
 
 A CI platform that issues its jobs an identity token - GitHub Actions, GitLab and most others - can exchange it

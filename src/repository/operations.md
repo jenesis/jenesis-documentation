@@ -1,15 +1,22 @@
 ---
 order: 11
 title: Operations
-description: Watching and running a deployment - the Metrics and Security posture pages, scheduled walks of the store, manual uploads through Deploy, webhooks, rate limits, and the health, metrics and log endpoints.
+description: Watching and running a deployment - the Metrics, Security posture and Caches pages, scheduled walks of the store, manual uploads through Deploy, webhooks, rate limits, and the health, metrics and log endpoints.
 ---
 
 The **Operations** section is where a deployment's administrators see what the server is doing and change how
-it runs in the background. Its pages - **Metrics**, **Security posture** and **Walks** - are for the deployment's
-administrators, and **Export** and **Deploy**, the second once switched on, for anyone with the admin role.
-**Export** takes a repository's contents out to another repository, as
-[Migrating in and out](/repository/migration-import/) describes. Beside them this chapter covers
-what a monitoring system reads over HTTP, webhooks, and the rate limit.
+it runs in the background. Its pages - **Metrics**, **Security posture**, **Caches** and **Walks** - are for the
+deployment's administrators. Two pages of each repository belong here too, for anyone with the admin role there:
+**Deploy**, once switched on, and **Export**, which takes a repository's contents out to another repository, as
+[Migrating in and out](/repository/migration-import/) describes. Beside them this chapter covers what a monitoring
+system reads over HTTP, webhooks, and the rate limit.
+
+## Caches
+
+**Caches** lists the read caches of the server that renders the page - each one's time to live, how often it
+answered and how much it holds - and **Clear caches on this node** empties them. The clear also tells every other
+server of the deployment to read credentials afresh, so a revoked key another server still remembers stops working
+there too; the other caches on those servers expire on their own time to live.
 
 ## Metrics
 
@@ -72,10 +79,10 @@ another. **Walk the store now** starts a walk at once.
 
 ## Deploy
 
-**Deploy** publishes a single file from the browser - a one-off artifact that has no build to publish it. Choose
-the repository, enter the path the artifact is published under, such as
-`maven/com/example/tool/1.0/tool-1.0.jar`, pick the file, and press **Publish**. It passes the same gate a client's
-upload does.
+**Deploy**, a page of each repository, publishes a single file from the browser - a one-off artifact that has no
+build to publish it. Enter the path the artifact is published under, such as
+`/maven/com/example/tool/1.0/tool-1.0.jar`, pick the file, and press **Publish**. It passes the same gate a client's
+upload does, and it is an admin's to use.
 
 The page is switched off by default; switch it on with `JENREG_DEPLOY=true` or under **Settings → Modules**.
 

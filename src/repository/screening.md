@@ -26,7 +26,7 @@ console.
 | **Signatures** - an untrusted signer, a signature that does not match its bytes, a coordinate whose signer changed | Quarantine an untrusted or changed signer, reject a broken signature | `signature-untrusted`, `signature-invalid`, `signature-signer-changed` |
 | **Provenance** - build attestations that name the wrong builder or source | Quarantine, once you name what to expect | `provenance-admission-*` |
 | **Your own rules** - expressions over what the gate knows | None | `policy-rules` |
-| **Release immutability** - republishing a release version with different bytes | Refused with `409` | `allow-redeploy` |
+| **Release immutability** - republishing a release version with different bytes, in every format but Hugging Face, whose revisions move by design | Refused with `409`, or npm's own `403` | `allow-redeploy` |
 
 Every setting here is under **Settings → Settings**, in the **Compliance** group, and takes effect at once
 unless it says it needs a restart.
@@ -100,9 +100,9 @@ the next person who reads it.
 
 ## Signers
 
-**Signers** lists who signed the versions the gate accepted - each signer's key or identity and, for a keyless
-signature, the issuer that certified it. Opening a signer lists everything it signed in this repository: the
-reach of a key you are about to stop trusting.
+**Signers** lists who signed the versions the gate accepted - each signer's OpenPGP key or certificate identity.
+Opening a signer lists everything it signed in this repository: the reach of a key you are about to stop
+trusting.
 Which signers are trusted is set in **Settings**: `signature-trusted-keys` for OpenPGP keys,
 `signature-trusted-certificates` for certificate chains, and `signature-trusted-signers` to pin a namespace to one
 signer.

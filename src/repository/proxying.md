@@ -10,7 +10,7 @@ fetched from anywhere until you name an upstream, so a new deployment makes no o
 
 ## A format upstream
 
-Each format fetches its misses from one upstream per deployment, named under **Settings → Settings → Format
+Each format fetches its misses from one upstream per deployment, named under **Settings → Upstreams → Format
 upstreams**. A format with one public registry lists it there with a **Use** button:
 
 | Format | Public registry |
@@ -40,6 +40,9 @@ and the repository lead the image's name, and the rest is its name upstream. The
 request to one that was never created is answered `404`, upstream or not. The same setting can be given in the
 environment, as `JENREG_PROXY_MAVEN=https://repo1.maven.org/maven2/`.
 
+A tenant can name its own upstream for a format under the same page's section for that tenant; its repositories
+then fetch from it instead of the deployment's, and a repository's **Overview** says which one it fetches through.
+
 ## Signed packages from upstream
 
 Maven Central signs what it serves, and the gate checks every signature it finds. A new deployment trusts no
@@ -63,7 +66,9 @@ releases it.
 A **definition** says what a repository is made of, and is where more than one upstream, or a mix of uploaded and
 fetched content, is described. It describes a repository rather than creating one: the repository is created with
 its type as [Repositories](/repository/repositories/) describes, and the definition then routes what it serves.
-Definitions are edited under **Settings → Settings → Repository definitions**, a name and a definition each. A
+Definitions are edited under **Settings → Upstreams → Repository routing**, a name and a definition each, for the
+deployment - which every tenant inherits - or for one tenant over it; a repository's **Overview** routes it for its
+tenant too. A
 definition is written in two clauses - `writable`, and `fallback` followed by an upstream URL or a repository name -
 and nothing else is accepted:
 
@@ -93,7 +98,7 @@ but is risky - a plaintext upstream, mixed screening - is saved and listed under
 
 ## Private upstreams
 
-An upstream that needs credentials gets them under **Settings → Settings → Upstream credentials**: the host name,
+An upstream that needs credentials gets them under **Settings → Upstreams → Upstream credentials**: the host name,
 and a user name and password, a bearer token, or a header name and value - or, for Amazon ECR and CodeArtifact, a
 token issued to the deployment's own AWS identity. The credential is sent to that host alone, whichever repository
 fetches from it.
@@ -115,6 +120,10 @@ A request is always answered locally first. On a miss, the repository fetches fr
 An index that changes upstream - a `maven-metadata.xml`, an npm package document - is fetched fresh each time,
 with a conditional request so an unchanged one costs no transfer. A definite `404` from upstream is remembered for
 a minute (`proxy-miss-ttl`), so a build probing for things that do not exist does not flood the upstream.
+
+A fetch that stalls is given up rather than held open: an upstream that delivers less than 16 KiB over any minute
+spent waiting on it is abandoned, as one that goes silent is, while a large file on a slow but steady link still
+lands. `proxy-throughput-floor` changes the floor, and `0` removes it.
 
 Where an index names each artifact's download URL, the served copy points those URLs back at this repository, so
 a client installs through it rather than straight from the upstream. A Helm chart repository is one: the
@@ -143,7 +152,8 @@ host, or one that names no single ref, is handed to the client to clone, or refu
 
 A version the upstream published **within the last two days** is held for review rather than served. A brand-new
 release is the most likely moment for a compromised or malicious package, before anyone has noticed; two days lets
-the feeds catch up. The hold is a quarantine, not a refusal: an editor can release it from **Quarantine**
+the feeds catch up. When it was published is what the upstream says in `Last-Modified`, so a file an upstream
+serves without that header is not held. The hold is a quarantine, not a refusal: an editor can release it from **Quarantine**
 at once. `immaturity-hold-days` changes the window, and `0` removes it.
 
 <div class="note">
