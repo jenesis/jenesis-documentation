@@ -125,13 +125,9 @@ Explained in [Screening what comes in](/repository/screening/).
 | `signature-key-discovery-url` | `https://keys.openpgp.org` | at once | Where keys.openpgp.org is reached - the public instance by default, or an internal mirror of it that speaks the same lookup by key id. |
 | `signature-missing` | `ALLOW` | at once | Verdict for an artifact carrying no signature where its format expects one. |
 | `signature-missing-proxy` | `ALLOW` | at once | Verdict for a proxied artifact carrying no signature where its format expects one. |
-| `signature-provenance-accept` | *(empty)* | at once | The OIDC issuers whose keyless identities are trusted by provenance, comma- or newline-separated - GitHub Actions' https://token.actions.githubusercontent.com being the one to name first. |
 | `signature-quality-action` | `ALLOW` | at once | What a signature below the quality floor does. |
 | `signature-quality-floor` | `none` | at once | The grade below which a signature raises a finding - none (the default, quality is reported and never gated), unusable, weak, acceptable or strong. |
 | `signature-signer-changed` | `QUARANTINE` | at once | Verdict for a coordinate signed by a different signer than its earlier versions carried. |
-| `signature-sigstore-trusted-root` | *(empty)* | at once | The Sigstore trusted root this deployment verifies bundles against - the JSON a `cosign trusted-root` or the public-good TUF repository serves, naming the Fulcio certificate authorities and the Rekor transparency logs to believe. |
-| `signature-sigstore-trusted-root-interval` | `P1D` | at once | How often the trusted root is fetched again, as a duration. |
-| `signature-sigstore-trusted-root-url` | *(empty)* | at once | Where the Sigstore trusted root is fetched from when none is pasted above. |
 | `signature-sweep` | `false` | at once | Apply the signature dials below to what is already published: |
 | `signature-sweep-interval` | `P1D` | at once | How often the signature sweep runs while switched on, as a duration; |
 | `signature-trusted-certificates` | *(empty)* | at once | The PEM certificates a PKCS#7 (CMS) publisher signature must chain to - one or more concatenated -----BEGIN CERTIFICATE----- blocks: |
