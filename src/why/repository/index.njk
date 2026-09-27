@@ -414,7 +414,11 @@ JENREG_S3_REGION=eu-central-1</code></pre>
       <p>It also brings the integrations a repository needs, mature and widely used: each cloud provider's own SDK
         for its object store, and libraries for single sign-on, directories and the protocols the server speaks. And
         it is fast: the JIT compiler turns the code a server actually runs into native machine code, and keeps
-        adapting it to the workload. Jenesis Repository keeps that tradition, on Java 25.</p>
+        adapting it to the workload.</p>
+      <p>Fast, and safe where it matters most. Every build trusts what the repository serves, so memory corruption
+        there would be catastrophic. Java checks every array access and manages memory itself, so a bug fails
+        loudly instead of silently overwriting what another request is reading. Jenesis Repository keeps that
+        tradition, on Java 25.</p>
     </details>
     <details>
       <summary>Is it only for Java?</summary>
