@@ -342,7 +342,9 @@ The program's JVM receives `-Xmx512m` and `-Xlog:gc`, and the program `ada lovel
 starting with `-J` begins the program's own arguments, so a later `-J…` reaches the program unchanged. A `-J`
 option follows what a `process-java.properties` gives the same JVM, so it wins where both set an option: the file
 is where a project keeps what every run needs, the command line what one run needs. Options on the `java` command
-before `build/jenesis/Execute.java` configure only the JVM that builds.
+before `build/jenesis/Execute.java` configure only the JVM that builds. `jpx` reads `-J` the same way, and
+the `jenesis-exec` tool refuses it, as the JDK's own tools do (see
+*[Running a build inside another program](/tool/extending-the-build/#running-a-build-inside-another-program)*).
 
 ### Implicit vs. explicit main
 

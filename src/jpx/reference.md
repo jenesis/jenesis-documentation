@@ -7,7 +7,7 @@ description: Every jpx flag, the exit codes, and the API surface in one table.
 The whole surface of jpx is one target and a handful of flags:
 
 ```
-jpx [--modular] [--java=<version>] [--docker[=<image>]] [--hash=<checksum>] [--pin] <target> [argument...]
+jpx [--modular] [--java=<version>] [--docker[=<image>]] [--hash=<checksum>] [--pin] [-J<option>...] <target> [argument...]
 ```
 
 Flags come **before** the target; everything after the target is passed to the launched program. The target
@@ -20,6 +20,7 @@ grammar, `<name>[@<version>][/<main-class>]`, is covered in [Choosing a target](
 | `--docker[=<image>]` | Run the launched process in a container while resolution and installation stay on the host. Without an image, a minimal hardened image is built once and reused; a named image runs as is. An empty value is the same as naming no image. |
 | `--hash=<prefix>` | Verify the installed jars against a known digest before launching. At least 32 hex characters, with or without a leading `SHA-256/`. |
 | `--pin` | Print two commands instead of launching: the jpx command that repeats this run reproducibly - the resolved version spelled out, `--hash` always present at full length, `--pin` itself dropped - and the `java` command it expands to. The jars are verified before anything is printed, against `--hash` where one is given and against the installation's own digest otherwise. |
+| `-J<option>` | Pass the option to the JVM that runs the program, written as `java` takes it: `-J-Xmx512m`, `-J-Xlog:gc`. `--pin` keeps it in both commands it prints. |
 | `--help` | Print the usage screen and exit. |
 
 A whole invocation can live in a file: `jpx @run.args` stands for the arguments that file holds, one or more
