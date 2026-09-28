@@ -9,9 +9,9 @@ environment the server starts in and change with a restart. **Runtime settings**
 **Settings → Settings**, where each shows whether it applies at once or on the next restart; they can be given in
 the environment too, which then pins them.
 
-Every setting is a key under `jenreg.`, and its environment variable is the key upper-cased with dots and dashes
-as underscores: `filesystem.root` is `JENREG_FILESYSTEM_ROOT`. A format, feed or other module is switched off with
-`JENREG_<MODULE>=false`, as described in [Settings](/repository/settings/#modules).
+Every setting is a key under `jenrepo.`, and its environment variable is the key upper-cased with dots and dashes
+as underscores: `filesystem.root` is `JENREPO_FILESYSTEM_ROOT`. A format, feed or other module is switched off with
+`JENREPO_<MODULE>=false`, as described in [Settings](/repository/settings/#modules).
 
 ## Startup settings
 
@@ -99,7 +99,7 @@ Explained in [Screening what comes in](/repository/screening/).
 | `deny-list-action` | `REJECT` | at once | Verdict for a coordinate the deny list names. |
 | `github` | `false` | on restart | Consult the GitHub Advisory Database. |
 | `github-endpoint` | `https://api.github.com` | on restart | The GitHub REST API base URL, for a self-hosted GitHub or a proxy. |
-| `inspection.oversized` | `STREAM` | at once | What to do with an artifact larger than the inspection prefix - jenreg.inspection.prefix-bytes, 32 MiB by default - which is the most of one artifact an inspector is ever handed in memory. |
+| `inspection.oversized` | `STREAM` | at once | What to do with an artifact larger than the inspection prefix - jenrepo.inspection.prefix-bytes, 32 MiB by default - which is the most of one artifact an inspector is ever handed in memory. |
 | `malware-action` | `REJECT` | at once | Verdict for a package the feed marks malicious. |
 | `openssf` | `false` | on restart | Consult the curated OpenSSF malicious-packages feed (MAL- records, served by OSV.dev). |
 | `openssf-endpoint` | `https://api.osv.dev` | on restart | The OSV API base URL serving the dataset, for a mirror or a proxy. |
@@ -190,7 +190,7 @@ Explained in [Operations](/repository/operations/).
 | --- | --- | --- | --- |
 | `counters.flush` | `PT1M` | on restart | How long a node holds the quota and folder-size deltas its publishes produce before folding them into one compare-and-set per counter; |
 | `inventory-backfill` | `true` | on restart | Let the shared rebuild pass restore the published/ inventory row of a blobs-namespace release whose row is missing, reading the coordinate back out of the release's own stored pointer. |
-| `listing-rebuild` | `true` | at once | Regenerate, at the end of a walk of the store, the stored listings - the packuments, Simple pages, Packages files, repodata, sparse-index files, tag lists and search documents a client fetches, each maintained incrementally by the write that changes it and materialised on first read - so any drift an interrupted write could have left is corrected by the walk (jenreg.walks) and never by a read. |
+| `listing-rebuild` | `true` | at once | Regenerate, at the end of a walk of the store, the stored listings - the packuments, Simple pages, Packages files, repodata, sparse-index files, tag lists and search documents a client fetches, each maintained incrementally by the write that changes it and materialised on first read - so any drift an interrupted write could have left is corrected by the walk (jenrepo.walks) and never by a read. |
 | `rebuild` | `true` | at once | Drive every discovered walk consumer (a derived-metadata rebuilder's back-fill, refresh and self-heal route) from one shared enumeration of the pointer roots. |
 | `reconcile` | `true` | at once | Rebuild the publish-time inventory facts from the live pointer tree, in both directions, whenever a walk of the store runs: |
 | `torn-write` | `true` | at once | Judge crash-torn intermediate states whenever a walk of the store runs - a pointer whose blob is missing (flagged loudly; |
@@ -217,7 +217,7 @@ Explained in [Operations](/repository/operations/).
 | `demo` | `false` | on restart | Seed a fresh, completely empty repository with real artifacts (including old, benign-but-vulnerable coordinates like log4j-core 2.14.1 and lodash 4.17.11) so an evaluator has data to look at - pulled through the formats' own upstreams, screened by the compliance gate, with a small demo gate config applied. |
 | `logs-buffer` | `1000` | on restart | How many recent log entries `/api/logs` keeps. |
 | `download-flush-interval` | `PT6H` | on restart | How long download hits are held in memory before one compare-and-set adds them to the version's document and refreshes its last-download instant - at most one write per coordinate version per interval, and a count that lags by at most that. |
-| `store-families` | `false` | on restart | Count every store operation by the key family it touched as well as by its name, reported as jenreg.store.family.<operation>.<family> beside jenreg.store.ops.<operation>. |
+| `store-families` | `false` | on restart | Count every store operation by the key family it touched as well as by its name, reported as jenrepo.store.family.<operation>.<family> beside jenrepo.store.ops.<operation>. |
 | `track-downloads` | `true` | on restart | Run the download-tracking worker; needed for the not-downloaded-for criterion. |
 | `track-key-usage` | `true` | on restart | Stamp each credential's last use, at most once a day. |
 
@@ -265,7 +265,7 @@ Explained in [Repositories](/repository/repositories/).
 | `index` | `false` | on restart | Publish an incremental, resumable repository index (Zstandard seekable chunks + descriptor) on the background sweep. |
 | `index-interval` | `P1D` | on restart | How often an incremental index chunk is published. |
 | `index-max-chunk` | `8388608` | on restart | Maximum compressed size in bytes of one published index chunk before it rotates. |
-| `index-rebase` | `true` | at once | Rebase the published index onto a fresh chunk chain from every served pointer at the end of a walk of the store that carries this consumer (jenreg.walks). |
+| `index-rebase` | `true` | at once | Rebase the published index onto a fresh chunk chain from every served pointer at the end of a walk of the store that carries this consumer (jenrepo.walks). |
 
 ### Build cache
 

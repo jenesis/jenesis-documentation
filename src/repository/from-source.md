@@ -16,7 +16,7 @@ it - and start the server:
 ```bash
 git clone --recurse-submodules https://github.com/jenesis/jenesis-repository.git
 cd jenesis-repository
-JENREG_FILESYSTEM_ROOT=/tmp/jenesis-repository \
+JENREPO_FILESYSTEM_ROOT=/tmp/jenesis-repository \
   java -Djenesis.execute.module=source+bundle build/jenesis/Execute.java
 ```
 
@@ -38,7 +38,7 @@ docker build -t my-repository 'target/stage/docker/output/module-source+bundle'
 
 Every capability is a Java module, and the image carries whatever `source/bundle` requires. A module of your own
 that requires only the formats and stores you want is a server with nothing else in it - a smaller image, and a
-smaller surface. To shape a deployment without rebuilding, switch modules off instead: `JENREG_<MODULE>=false`
+smaller surface. To shape a deployment without rebuilding, switch modules off instead: `JENREPO_<MODULE>=false`
 does exactly what leaving the module out would.
 
 <div class="tip">

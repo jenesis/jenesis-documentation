@@ -205,15 +205,15 @@ the system namespace four times: a create that must land, the same create again 
 the token the create left that must land, and the same replace under that now-stale token that must be refused. Any
 other answer names the endpoint and stops the node. The key is deleted afterwards whatever happened.
 
-It can be switched off per backend - `jenreg.s3.conditional-write-probe`, `jenreg.azure-blob.conditional-write-probe`,
-`jenreg.gcs.conditional-write-probe`, all `false` - for an endpoint you have satisfied yourself about by other means,
+It can be switched off per backend - `jenrepo.s3.conditional-write-probe`, `jenrepo.azure-blob.conditional-write-probe`,
+`jenrepo.gcs.conditional-write-probe`, all `false` - for an endpoint you have satisfied yourself about by other means,
 or one that refuses writes under the system namespace. The node then boots with a warning saying what you have given
 up. A single-node deployment is the case where that is defensible.
 
-Two related switches exist for the same reason. `jenreg.<backend>.streaming-writes=false` buffers a conditional
+Two related switches exist for the same reason. `jenrepo.<backend>.streaming-writes=false` buffers a conditional
 write's body instead of streaming it, for an implementation that mishandles a streamed conditional PUT; it restores a
 heap cost and does nothing else, so use it to work around a store and expect the memory ceiling to fall.
-`jenreg.<backend>.allow-insecure-endpoint=true` permits a plain-HTTP endpoint, which is for an emulator on a
+`jenrepo.<backend>.allow-insecure-endpoint=true` permits a plain-HTTP endpoint, which is for an emulator on a
 developer's machine and not for a deployment.
 
 Beyond the preconditions, each backend needs only what any object store offers: ranged reads, prefix listing with

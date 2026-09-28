@@ -85,7 +85,7 @@
   // continues from the section the reader landed on rather than from the top of the page.
   function focusTarget() {
     if (!location.hash) return;
-    // By id rather than by selector: an advisory anchor such as #jenreg.auth.open is a valid id but not a
+    // By id rather than by selector: an advisory anchor such as #jenrepo.auth.open is a valid id but not a
     // valid id selector.
     var target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
     if (!target) return;

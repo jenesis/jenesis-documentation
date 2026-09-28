@@ -309,8 +309,8 @@ homebrew-core's own bottles are container-image blobs on ghcr.io, and they pull 
 than a `homebrew` one. `HOMEBREW_ARTIFACT_DOMAIN=https://repo.example.com` makes `brew` ask for them at
 `/v2/homebrew/core/<formula>/…`, which names the tenant `homebrew` and the repository `core`. So the mirror is an
 `oci` repository named `core`, defined as `fallback https://ghcr.io/homebrew/core`, in a deployment whose default
-tenant is `homebrew` (`JENREG_DEFAULT_TENANT=homebrew`): a request that carries no key is answered for the default
-tenant alone. An anonymous install also needs anonymous reads allowed (`JENREG_ANONYMOUS_RIGHTS=repository:read`);
+tenant is `homebrew` (`JENREPO_DEFAULT_TENANT=homebrew`): a request that carries no key is answered for the default
+tenant alone. An anonymous install also needs anonymous reads allowed (`JENREPO_ANONYMOUS_RIGHTS=repository:read`);
 `HOMEBREW_DOCKER_REGISTRY_TOKEN=$KEY` presents a key instead. Each bottle is kept under its digest after the first
 install, and served from the store from then on.
 
@@ -328,7 +328,7 @@ curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/relea
 
 ## Switching a format off
 
-Every format is on until you switch it off. `JENREG_<FORMAT>=false` keeps one from starting, exactly as if it
+Every format is on until you switch it off. `JENREPO_<FORMAT>=false` keeps one from starting, exactly as if it
 were not installed: no repository can be created with its type, a repository that holds it answers `404`, and
 nothing is imported for it. The names are the types in the table above - `maven`, `npm`, `pypi`, `oci`, `go`,
 `cargo`, `nuget`, `rubygems`, `helm`, and so on - and **Settings → Modules** switches them from the console,

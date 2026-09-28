@@ -38,21 +38,21 @@ Each entry links here, to its own line of this table:
 
 | Advisory | Severity | Raised when |
 | --- | --- | --- |
-| <span id="jenreg.auth.open">`jenreg.auth.open`</span> | critical | `JENREG_AUTH=false` - every request is served without a key, writes included. |
-| <span id="jenreg.profile.dev">`jenreg.profile.dev`</span> | critical | The `dev` profile is active, so the console runs its local-only sign-in. |
-| <span id="jenreg.anonymous.write">`jenreg.anonymous.write`</span> | critical | `anonymous-rights` lets a caller without a key write or administer. |
-| <span id="jenreg.gate.malware">`jenreg.gate.malware`</span> | critical | `malware-action` is `ALLOW` for a tenant, so a package known to be malicious is admitted. |
-| <span id="jenreg.consistency.config">`jenreg.consistency.config`</span> | critical | One server of several runs with different settings or tenants from the others. |
-| <span id="jenreg.consistency.pointer">`jenreg.consistency.pointer`</span> | critical | Two servers answer the same path with different content. |
-| <span id="jenreg.anonymous.enabled">`jenreg.anonymous.enabled`</span> | warning | `anonymous-rights` lets a caller without a key read - right for a public mirror, and worth knowing otherwise. |
-| <span id="jenreg.gate.vulnerability.action">`jenreg.gate.vulnerability.action`</span> | warning | `vulnerability-action` is `ALLOW` for a tenant, so an artifact over the threshold is served. |
-| <span id="jenreg.gate.vulnerability">`jenreg.gate.vulnerability`</span> | warning | `vulnerability-threshold` is `NONE` for a tenant, which switches the vulnerability check off. |
-| <span id="jenreg.gate.denylist.action">`jenreg.gate.denylist.action`</span> | warning | `deny-list-action` is `ALLOW` for a tenant, so the deny list is ignored. |
-| <span id="jenreg.importer.ssrf">`jenreg.importer.ssrf`</span> | warning | `block-private-import-hosts=false` - an import may reach internal addresses, or travel unencrypted. |
-| <span id="jenreg.ratelimit.unset">`jenreg.ratelimit.unset`</span> | warning | `rate-limit` is `0`, so nothing throttles a client. |
-| <span id="jenreg.demo.writable">`jenreg.demo.writable`</span> | warning | A demo deployment that is not read-only, so anyone can write to it. |
-| <span id="jenreg.consistency.stuck">`jenreg.consistency.stuck`</span> | warning | One server of several has stopped catching up with what the others have seen. |
-| <span id="jenreg.posture.collision">`jenreg.posture.collision`</span> | warning | Two installed modules report under the same advisory name - a packaging fault, shown rather than hidden. |
+| <span id="jenrepo.auth.open">`jenrepo.auth.open`</span> | critical | `JENREPO_AUTH=false` - every request is served without a key, writes included. |
+| <span id="jenrepo.profile.dev">`jenrepo.profile.dev`</span> | critical | The `dev` profile is active, so the console runs its local-only sign-in. |
+| <span id="jenrepo.anonymous.write">`jenrepo.anonymous.write`</span> | critical | `anonymous-rights` lets a caller without a key write or administer. |
+| <span id="jenrepo.gate.malware">`jenrepo.gate.malware`</span> | critical | `malware-action` is `ALLOW` for a tenant, so a package known to be malicious is admitted. |
+| <span id="jenrepo.consistency.config">`jenrepo.consistency.config`</span> | critical | One server of several runs with different settings or tenants from the others. |
+| <span id="jenrepo.consistency.pointer">`jenrepo.consistency.pointer`</span> | critical | Two servers answer the same path with different content. |
+| <span id="jenrepo.anonymous.enabled">`jenrepo.anonymous.enabled`</span> | warning | `anonymous-rights` lets a caller without a key read - right for a public mirror, and worth knowing otherwise. |
+| <span id="jenrepo.gate.vulnerability.action">`jenrepo.gate.vulnerability.action`</span> | warning | `vulnerability-action` is `ALLOW` for a tenant, so an artifact over the threshold is served. |
+| <span id="jenrepo.gate.vulnerability">`jenrepo.gate.vulnerability`</span> | warning | `vulnerability-threshold` is `NONE` for a tenant, which switches the vulnerability check off. |
+| <span id="jenrepo.gate.denylist.action">`jenrepo.gate.denylist.action`</span> | warning | `deny-list-action` is `ALLOW` for a tenant, so the deny list is ignored. |
+| <span id="jenrepo.importer.ssrf">`jenrepo.importer.ssrf`</span> | warning | `block-private-import-hosts=false` - an import may reach internal addresses, or travel unencrypted. |
+| <span id="jenrepo.ratelimit.unset">`jenrepo.ratelimit.unset`</span> | warning | `rate-limit` is `0`, so nothing throttles a client. |
+| <span id="jenrepo.demo.writable">`jenrepo.demo.writable`</span> | warning | A demo deployment that is not read-only, so anyone can write to it. |
+| <span id="jenrepo.consistency.stuck">`jenrepo.consistency.stuck`</span> | warning | One server of several has stopped catching up with what the others have seen. |
+| <span id="jenrepo.posture.collision">`jenrepo.posture.collision`</span> | warning | Two installed modules report under the same advisory name - a packaging fault, shown rather than hidden. |
 
 ## Walks
 
@@ -84,7 +84,7 @@ build to publish it. Enter the path the artifact is published under, such as
 `/maven/com/example/tool/1.0/tool-1.0.jar`, pick the file, and press **Publish**. It passes the same gate a client's
 upload does, and it is an admin's to use.
 
-The page is switched off by default; switch it on with `JENREG_DEPLOY=true` or under **Settings → Modules**.
+The page is switched off by default; switch it on with `JENREPO_DEPLOY=true` or under **Settings → Modules**.
 
 ## Webhooks
 
@@ -105,7 +105,7 @@ Deliveries go out from a background queue, so a slow receiver never slows a publ
 
 Every request is metered against a per-tenant ceiling - **6 000 requests a minute** by default, a hundred a
 second - and a request over it is answered `429` with `Retry-After: 60`. The ceiling is set on the
-**Repositories** page, or deployment-wide with `JENREG_RATE_LIMIT`; `0` removes it.
+**Repositories** page, or deployment-wide with `JENREPO_RATE_LIMIT`; `0` removes it.
 
 A request is charged to its key's tenant, and every request without a key shares one bucket of its own. A
 bucket holds a minute's worth of burst, so a build resolving a large dependency graph in a quick burst gets

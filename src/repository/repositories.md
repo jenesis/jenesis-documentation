@@ -51,13 +51,13 @@ The repository stops answering at once; what it held is removed in the backgroun
 large it is, and the list shows it as **being deleted** until it is gone - after which the name can be created
 again. A deletion that a restart interrupted is finished by deleting again. Like creating one, deleting a
 repository takes `manage:write`; a key that may only publish into it is refused. From the command line,
-`jenesis-repo repos delete <name>` asks for the same typed confirmation, or takes `--yes` in a script.
+`jenrepo repos delete <name>` asks for the same typed confirmation, or takes `--yes` in a script.
 
 ## The URL a client reaches
 
 Every URL names the tenant first and the repository second: `/repository/<tenant>/<repository>/…`, or
 `/v2/<tenant>/<repository>/<image>` for container images. A deployment serves one tenant - `releases`, unless
-`JENREG_DEFAULT_TENANT` names another - and answers `404` for a URL that names any other.
+`JENREPO_DEFAULT_TENANT` names another - and answers `404` for a URL that names any other.
 
 A repository of one format leaves that format's name out of its URLs: an `npm` repository named `npm` is the
 registry `/repository/releases/npm/`, and a `pypi` one named `python` is installed from

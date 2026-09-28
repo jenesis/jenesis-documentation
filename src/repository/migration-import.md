@@ -67,9 +67,9 @@ deployment in read-only mode refuses imports with `403`.
   The import URL is screened before anything is fetched: it must be <code>https</code>, and it must not resolve
   to a private, loopback or link-local address. A migration carries your upstream credentials and is walked
   from inside the server, so an unscreened URL would hand those credentials to a plaintext hop, or turn the
-  importer into a proxy for your own network. Set <code>jenreg.block-private-import-hosts=false</code> only for a
+  importer into a proxy for your own network. Set <code>jenrepo.block-private-import-hosts=false</code> only for a
   controlled migration from an internal or plaintext mirror, and switch it back on afterwards. Running with it
-  off raises the <code>jenreg.importer.ssrf</code> advisory.
+  off raises the <code>jenrepo.importer.ssrf</code> advisory.
 </div>
 
 ## Following and resuming a job
@@ -176,7 +176,7 @@ Two Maven details matter before you cut clients over. The source's `maven-metada
 left behind - their checksums describe bytes the source served, not the copy you now hold. Jenesis Repository
 serves a stored `maven-metadata.xml` verbatim, so an imported coordinate has no version listing until one is
 published, and a client asking "which versions exist?" gets a `404`. Switch on
-`jenreg.maven-metadata-compute=true` and the server derives the listing from the version folders it holds
+`jenrepo.maven-metadata-compute=true` and the server derives the listing from the version folders it holds
 instead. The `maven` connector also skips checksum sidecars (`.sha1`, `.md5`), and the server does not derive
 them, so a client that verifies checksums warns until one is published beside the artifact. The Nexus and
 Artifactory connectors import the sidecars they list.
@@ -190,7 +190,7 @@ listing that cannot be built is a slow first read, never a failed migration.
 
 For a one-off load without a source to walk - a backup, a hand-built tree - upload a zip and let the server
 publish each entry as if it had been deployed on its own. The feature is off by default; switch it on with
-`jenreg.batch-upload=true`, then `PUT` or `POST` the archive to the repository path the entries are relative
+`jenrepo.batch-upload=true`, then `PUT` or `POST` the archive to the repository path the entries are relative
 to, with the `Jenesis-Explode: zip` header:
 
 ```bash
@@ -202,7 +202,7 @@ curl -X PUT -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repositor
 Every entry is published through the same path a single deploy takes, so a Maven jar is laid out and
 cross-published, and an entry no format claims is reported rather than stored. The response is a per-entry
 manifest (`path` and `status` - `stored`, `quarantined`, `rejected` or `unclaimed`), with `"capped": true`
-when the walk stopped at `jenreg.batch-upload-max-entries` (default 10 000). An entry whose name tries to
+when the walk stopped at `jenrepo.batch-upload-max-entries` (default 10 000). An entry whose name tries to
 escape its folder is rejected before it reaches the store, and a malformed archive answers `400`. Only `zip`
 is understood; another encoding answers `415`.
 
@@ -262,8 +262,8 @@ curl -H "Jenesis-Repository-Key: $KEY" \
 and from the command line, where `--refresh` follows the job until it finishes:
 
 ```bash
-jenesis-repo export libraries --url https://other.example.com/repository/maven-releases/ --token "$TOKEN"
-jenesis-repo export status libraries d4e5f6… --refresh
+jenrepo export libraries --url https://other.example.com/repository/maven-releases/ --token "$TOKEN"
+jenrepo export status libraries d4e5f6… --refresh
 ```
 
 | Field | Required | Meaning |
@@ -299,11 +299,11 @@ export jobs are removed after seven days.
 
 | Key | Default | Effect |
 |---|---|---|
-| `jenreg.block-private-import-hosts` | `true` | Refuse an import or export URL that is not `https` or that resolves to a private, loopback or link-local address. |
-| `jenreg.import-job-ttl` | `P7D` | How long a finished import job stays before the scheduled cleanup removes it. |
-| `jenreg.export-job-ttl` | `P7D` | How long a finished export job stays before the scheduled cleanup removes it. |
-| `jenreg.batch-upload` | `false` | Honour the `Jenesis-Explode` header and publish an archive entry by entry. |
-| `jenreg.batch-upload-max-entries` | `10000` | The most entries one exploded archive may publish; the walk stops there and reports `capped`. |
-| `jenreg.maven-metadata-compute` | `false` | Derive `maven-metadata.xml` from the stored version folders instead of serving only what was published. |
+| `jenrepo.block-private-import-hosts` | `true` | Refuse an import or export URL that is not `https` or that resolves to a private, loopback or link-local address. |
+| `jenrepo.import-job-ttl` | `P7D` | How long a finished import job stays before the scheduled cleanup removes it. |
+| `jenrepo.export-job-ttl` | `P7D` | How long a finished export job stays before the scheduled cleanup removes it. |
+| `jenrepo.batch-upload` | `false` | Honour the `Jenesis-Explode` header and publish an archive entry by entry. |
+| `jenrepo.batch-upload-max-entries` | `10000` | The most entries one exploded archive may publish; the walk stops there and reports `capped`. |
+| `jenrepo.maven-metadata-compute` | `false` | Derive `maven-metadata.xml` from the stored version folders instead of serving only what was published. |
 
-Every key is also an environment variable (`JENREG_BATCH_UPLOAD=true`) or a `-D` system property.
+Every key is also an environment variable (`JENREPO_BATCH_UPLOAD=true`) or a `-D` system property.

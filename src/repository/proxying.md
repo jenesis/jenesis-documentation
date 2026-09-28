@@ -38,7 +38,7 @@ as well as what you published, and with an `oci` repository named `images`,
 `docker pull repo.example.com/releases/images/library/debian` fetches the image through your server - the tenant
 and the repository lead the image's name, and the rest is its name upstream. The repository has to exist first; a
 request to one that was never created is answered `404`, upstream or not. The same setting can be given in the
-environment, as `JENREG_PROXY_MAVEN=https://repo1.maven.org/maven2/`.
+environment, as `JENREPO_PROXY_MAVEN=https://repo1.maven.org/maven2/`.
 
 A tenant can name its own upstream for a format under the same page's section for that tenant; its repositories
 then fetch from it instead of the deployment's, and a repository's **Overview** says which one it fetches through.

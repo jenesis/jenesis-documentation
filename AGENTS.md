@@ -131,9 +131,9 @@ than a heading and must match the id the repository server emits, not the wordin
   (`jenesisbuild/jenesis-repository`) and follows the console: a chapter is organised by the console's sections
   and pages, and names them as the console does (**Access → Credentials**). Running from source gets one short
   chapter. The image is the launchable module `source/bundle`: repository, console and build cache in one process
-  on port 8080. Settings are Spring Boot settings bound from `jenreg.*` (`JENREG_*`, `-D`, `bundle.properties`).
+  on port 8080. Settings are Spring Boot settings bound from `jenrepo.*` (`JENREPO_*`, `-D`, `bundle.properties`).
   Nothing is proxied until an upstream is named; keys are enforced by default, and the first console sign-in is
-  the administrator key (`JENREG_KEY_LOGIN=true`, `JENREG_UI_ADMIN_KEY`). Verify a chapter by running the image
+  the administrator key (`JENREPO_KEY_LOGIN=true`, `JENREPO_UI_ADMIN_KEY`). Verify a chapter by running the image
   and doing what it says, through the console and the clients. **The server links to the docs**: every security
   and consistency advisory carries `https://jenesis.build/repository/operations/#<advisory id>`, so each id in
   `SecurityPosture.java`, `TenantPosture.java` and `NodeDivergenceAdvisor.java` needs a matching

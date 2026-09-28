@@ -71,7 +71,7 @@ saves or reverts an override. A single-tenant deployment has no reason to use it
 
 Every capability of the server - each format, each feed, each background job, each console page - is a module it
 discovered at startup. **Modules** lists them with whether each is switched on, and **Enable** or **Disable**
-changes that, exactly as `JENREG_<MODULE>=false` would - at once for a module marked **live**, and otherwise on the
+changes that, exactly as `JENREPO_<MODULE>=false` would - at once for a module marked **live**, and otherwise on the
 next restart.
 
 When a module has been removed from a deployment but its data is still in the store, a section of its own below
@@ -86,7 +86,7 @@ that feature in this deployment, and is it on?" without reading a log.
 ## Tenants
 
 **Tenants** lists the tenants of the deployment and opens one to work in. A deployment serves one tenant,
-`releases`, unless `JENREG_DEFAULT_TENANT` names another.
+`releases`, unless `JENREPO_DEFAULT_TENANT` names another.
 
 A script manages tenants the same way, with a key of the operator tenant that holds the manage rights:
 
@@ -94,7 +94,7 @@ A script manages tenants the same way, with a key of the operator tenant that ho
 curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/api/admin/tenants              # list
 curl -X PUT -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/api/admin/tenants/acme  # create
 curl -X DELETE -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/api/admin/tenants/acme
-jenesis-repo tenants create acme
+jenrepo tenants create acme
 ```
 
 Deleting a tenant removes everything it owns - its repositories and their artifacts, its credentials and its
@@ -102,14 +102,14 @@ members - and cannot be undone.
 
 ## How startup settings reach the server
 
-The server is configured the way any Spring Boot application is. Every setting has a key under `jenreg.`, and the
+The server is configured the way any Spring Boot application is. Every setting has a key under `jenrepo.`, and the
 environment variable is the key upper-cased, with dots and dashes as underscores:
 
 | Key | Environment variable |
 | --- | --- |
-| `jenreg.filesystem.root` | `JENREG_FILESYSTEM_ROOT` |
-| `jenreg.ui.oidc.issuer-uri` | `JENREG_UI_OIDC_ISSUER_URI` |
-| `jenreg.key-login` | `JENREG_KEY_LOGIN` |
+| `jenrepo.filesystem.root` | `JENREPO_FILESYSTEM_ROOT` |
+| `jenrepo.ui.oidc.issuer-uri` | `JENREPO_UI_OIDC_ISSUER_URI` |
+| `jenrepo.key-login` | `JENREPO_KEY_LOGIN` |
 
 Environment variables are the natural form for a container. A startup setting the server does not recognise -
 usually one spelled wrong, or renamed by a release - is named in a warning in the log at startup, with the

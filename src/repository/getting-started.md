@@ -16,11 +16,11 @@ in one folder, so give that folder a volume of its own and tell the server where
 
 ```bash
 docker run -d --name jenesis -p 8080:8080 \
-  -v jenesis-data:/data -e JENREG_FILESYSTEM_ROOT=/data \
+  -v jenesis-data:/data -e JENREPO_FILESYSTEM_ROOT=/data \
   jenesisbuild/jenesis-repository
 ```
 
-`JENREG_FILESYSTEM_ROOT` is the one setting a start needs. Without it the server refuses to start and names the
+`JENREPO_FILESYSTEM_ROOT` is the one setting a start needs. Without it the server refuses to start and names the
 setting, rather than inventing a folder that disappears with the container - or, worse, one a deployment meant for
 an object store would quietly fill.
 
@@ -65,7 +65,7 @@ console, and the guide stays reachable as **Settings → First-run setup**.
 
 <div class="warning">
   Signing in with a key is on by default, because it is how a deployment is entered before anything else is set
-  up. Once your identity provider signs people in, switch it off with <code>JENREG_KEY_LOGIN=false</code>. The
+  up. Once your identity provider signs people in, switch it off with <code>JENREPO_KEY_LOGIN=false</code>. The
   <a href="/repository/access/">Access</a> chapter shows how.
 </div>
 

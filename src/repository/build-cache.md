@@ -7,7 +7,7 @@ description: The optional remote build cache the repository can keep for the Jen
 If you build with the [Jenesis build tool](/tool/), the server can keep a **remote build cache** for it beside its
 repositories. A build that finds a step's result in the cache downloads it instead of running the step, so work
 done once - on a colleague's machine, in an earlier CI job - is not done again. A deployment that does not need
-it switches it off with `JENREG_BUILD_CACHE=false`. The cache answers on the same port, authorises with
+it switches it off with `JENREPO_BUILD_CACHE=false`. The cache answers on the same port, authorises with
 the same keys, and is looked after in the console under **Build cache**.
 
 Each tenant has a cache of its own, at `/build/<tenant>/` - `/build/releases/` on a deployment that serves the

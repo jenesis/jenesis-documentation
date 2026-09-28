@@ -16,31 +16,31 @@ on:
 
 | Mechanism | Switched on by |
 | --- | --- |
-| **A key** | on by default; `JENREG_KEY_LOGIN=false` switches it off |
-| **OpenID Connect** - Keycloak, Okta, Entra ID, Google, Auth0 and any other issuer | `JENREG_UI_OIDC_ISSUER_URI`, `JENREG_UI_OIDC_CLIENT_ID`, `JENREG_UI_OIDC_CLIENT_SECRET`, and `JENREG_UI_OIDC_NAME` to label the button |
-| **GitHub** | `JENREG_UI_GITHUB_CLIENT_ID` and `JENREG_UI_GITHUB_CLIENT_SECRET`, from a GitHub OAuth app |
-| **LDAP or Active Directory** | `JENREG_UI_LDAP_URL`, with the settings below |
+| **A key** | on by default; `JENREPO_KEY_LOGIN=false` switches it off |
+| **OpenID Connect** - Keycloak, Okta, Entra ID, Google, Auth0 and any other issuer | `JENREPO_UI_OIDC_ISSUER_URI`, `JENREPO_UI_OIDC_CLIENT_ID`, `JENREPO_UI_OIDC_CLIENT_SECRET`, and `JENREPO_UI_OIDC_NAME` to label the button |
+| **GitHub** | `JENREPO_UI_GITHUB_CLIENT_ID` and `JENREPO_UI_GITHUB_CLIENT_SECRET`, from a GitHub OAuth app |
+| **LDAP or Active Directory** | `JENREPO_UI_LDAP_URL`, with the settings below |
 
 **Key sign-in** is the way into a new deployment. A start that finds nobody able to sign in prints a one-time key
 in its log, as [Getting started](/repository/getting-started/) shows: it signs in as the deployment's
 administrator for an hour, or until an administrator exists. A deployment provisioned from configuration can name
-its own key instead, `JENREG_UI_ADMIN_KEY`, which is re-provisioned on every start for as long as it is set; the
+its own key instead, `JENREPO_UI_ADMIN_KEY`, which is re-provisioned on every start for as long as it is set; the
 server then prints no key. Either is meant to get you started, not to stay - once people sign in through your
-identity provider, remove `JENREG_UI_ADMIN_KEY`, set `JENREG_KEY_LOGIN=false` and restart.
+identity provider, remove `JENREPO_UI_ADMIN_KEY`, set `JENREPO_KEY_LOGIN=false` and restart.
 
 **LDAP** binds as the person signing in, either directly from a pattern or by searching for them first:
 
 ```bash
-JENREG_UI_LDAP_URL=ldaps://ldap.example.com
-JENREG_UI_LDAP_USER_DN_PATTERN="uid={0},ou=people,dc=example,dc=com"
-# or, to search: JENREG_UI_LDAP_USER_SEARCH_BASE, _USER_SEARCH_FILTER (default "(uid={0})"), _BIND_DN, _BIND_PASSWORD
-JENREG_UI_LDAP_GROUP_SEARCH_BASE="ou=groups,dc=example,dc=com"
-JENREG_UI_LDAP_ADMIN_GROUP=repository-admins
+JENREPO_UI_LDAP_URL=ldaps://ldap.example.com
+JENREPO_UI_LDAP_USER_DN_PATTERN="uid={0},ou=people,dc=example,dc=com"
+# or, to search: JENREPO_UI_LDAP_USER_SEARCH_BASE, _USER_SEARCH_FILTER (default "(uid={0})"), _BIND_DN, _BIND_PASSWORD
+JENREPO_UI_LDAP_GROUP_SEARCH_BASE="ou=groups,dc=example,dc=com"
+JENREPO_UI_LDAP_ADMIN_GROUP=repository-admins
 ```
 
 A person's directory groups become their groups here, and members of the administrator group administer the
-deployment. A plain `ldap://` URL is refused unless `JENREG_UI_LDAP_START_TLS=true` upgrades it, or
-`JENREG_UI_LDAP_ALLOW_PLAINTEXT=true` says the connection is private.
+deployment. A plain `ldap://` URL is refused unless `JENREPO_UI_LDAP_START_TLS=true` upgrades it, or
+`JENREPO_UI_LDAP_ALLOW_PLAINTEXT=true` says the connection is private.
 
 <div class="note">
   Signing in and holding access are separate. Anyone your identity provider signs in reaches the console, but
@@ -50,7 +50,7 @@ deployment. A plain `ldap://` URL is refused unless `JENREG_UI_LDAP_START_TLS=tr
 
 ## Administrators
 
-The deployment's administrators hold every right in every part of it. `JENREG_UI_ADMINS` names them by
+The deployment's administrators hold every right in every part of it. `JENREPO_UI_ADMINS` names them by
 provider-qualified identifier, comma-separated: `github/<id>`, `oidc/<subject>`, `ldap/<user>`. The setting
 **seeds** them on every start rather than mirroring them - removing an identifier from it does not take that
 person's rights away, which is done in the console like any other change. A `*` entry is refused at startup:
@@ -95,7 +95,7 @@ The repository rights publish and resolve, and run the operations on one reposit
 pins, imports and staged releases. Everything else the API does - settings, keys, groups, tenants, walks - takes
 `manage:read` or `manage:write` over `*`, and the parts that
 concern the whole deployment rather than one tenant (its settings, upstreams, logs and tenants) also a key of the
-operator tenant: the default tenant, unless `JENREG_OPERATOR_TENANT` names another. So a **deploy** key in a CI
+operator tenant: the default tenant, unless `JENREPO_OPERATOR_TENANT` names another. So a **deploy** key in a CI
 job can publish into every repository and still cannot change how the deployment is run.
 
 A key issued without an expiry lives for 90 days. **Credential-lifetime policy** changes that default and can cap
@@ -139,16 +139,16 @@ A token no trust matches is answered `401`.
 
 Two shapes skip keys, each on purpose:
 
-- **Open, on a trusted network.** `JENREG_AUTH=false` serves every request without a key - anyone who can reach
+- **Open, on a trusted network.** `JENREPO_AUTH=false` serves every request without a key - anyone who can reach
   the port can read and publish. The server says so in its log and in **Operations → Security posture** for as
   long as it runs that way.
 - **A public, read-only mirror.** Keep keys on, let callers without one read, and refuse every write:
 
   ```bash
-  JENREG_ANONYMOUS_RIGHTS=repository:read
-  JENREG_READ_ONLY=true
+  JENREPO_ANONYMOUS_RIGHTS=repository:read
+  JENREPO_READ_ONLY=true
   ```
 
-  `JENREG_READ_ONLY` refuses every write at the store itself - a publish, an import, a proxy fetch - so nothing
+  `JENREPO_READ_ONLY` refuses every write at the store itself - a publish, an import, a proxy fetch - so nothing
   gets around it. A common arrangement pairs one private read-write server with public read-only ones over the
   same bucket.

@@ -10,14 +10,14 @@ serve it, how it is reached over TLS, and how people sign in.
 
 ## Where the store lives
 
-Everything the server holds is in one store, chosen at startup with `JENREG_STORE`:
+Everything the server holds is in one store, chosen at startup with `JENREPO_STORE`:
 
-| `JENREG_STORE` | Store | Required setting |
+| `JENREPO_STORE` | Store | Required setting |
 | --- | --- | --- |
-| *(unset)* or `filesystem` | A directory - a Docker volume, a disk, a network share | `JENREG_FILESYSTEM_ROOT` |
-| `s3` | AWS S3, or any S3-compatible store such as MinIO or Ceph | `JENREG_S3_BUCKET` |
-| `gcs` | Google Cloud Storage | `JENREG_GCS_BUCKET` |
-| `azure-blob` | Azure Blob Storage | `JENREG_AZURE_BLOB_CONNECTION_STRING` |
+| *(unset)* or `filesystem` | A directory - a Docker volume, a disk, a network share | `JENREPO_FILESYSTEM_ROOT` |
+| `s3` | AWS S3, or any S3-compatible store such as MinIO or Ceph | `JENREPO_S3_BUCKET` |
+| `gcs` | Google Cloud Storage | `JENREPO_GCS_BUCKET` |
+| `azure-blob` | Azure Blob Storage | `JENREPO_AZURE_BLOB_CONNECTION_STRING` |
 
 A store that is named but missing a required setting stops the server at startup with a message naming what is
 missing - and so does a second store that is fully configured beside the selected one, because a deployment
@@ -27,19 +27,19 @@ writing to a store nobody reads is the one mistake that loses data quietly.
 so a server on AWS usually needs none in its configuration:
 
 ```bash
-JENREG_STORE=s3
-JENREG_S3_BUCKET=my-artifacts
-JENREG_S3_REGION=eu-central-1                    # us-east-1 by default
-JENREG_S3_ENDPOINT=https://minio.internal:9000   # only for an S3-compatible store
+JENREPO_STORE=s3
+JENREPO_S3_BUCKET=my-artifacts
+JENREPO_S3_REGION=eu-central-1                    # us-east-1 by default
+JENREPO_S3_ENDPOINT=https://minio.internal:9000   # only for an S3-compatible store
 ```
 
-`JENREG_S3_ACCESS_KEY_ID` and `JENREG_S3_SECRET_ACCESS_KEY` supply keys explicitly, and
-`JENREG_S3_SSE_KMS_KEY_ID` encrypts with a KMS key instead of the default server-side encryption.
+`JENREPO_S3_ACCESS_KEY_ID` and `JENREPO_S3_SECRET_ACCESS_KEY` supply keys explicitly, and
+`JENREPO_S3_SSE_KMS_KEY_ID` encrypts with a KMS key instead of the default server-side encryption.
 
 **Google Cloud Storage** authenticates with Application Default Credentials - Workload Identity on GKE and Cloud
-Run - or with a service-account key file named in `JENREG_GCS_CREDENTIALS`.
+Run - or with a service-account key file named in `JENREPO_GCS_CREDENTIALS`.
 
-**Azure Blob** takes the storage account's connection string, and `JENREG_AZURE_BLOB_CONTAINER` names the
+**Azure Blob** takes the storage account's connection string, and `JENREPO_AZURE_BLOB_CONTAINER` names the
 container (`jenesis-repository` by default).
 
 Every object store must be reached over `https`, and at startup the server checks that the store honours the
@@ -52,10 +52,10 @@ balancer: they coordinate through the store alone, with no lock service and no d
 works the same way, provided it honours file locks - NFS without its lock daemon does not, and must not be shared.
 Background work, such as the scheduled walks, is shared out between the servers rather than repeated by each.
 
-Set `JENREG_CONSISTENCY_ENABLED=true` on every server to have them compare notes: each then records a small
+Set `JENREPO_CONSISTENCY_ENABLED=true` on every server to have them compare notes: each then records a small
 fingerprint of what it has seen, and a server that has fallen behind, runs with different settings, or answers a
 path differently from its peers is reported on the **Security posture** page. Give each server a stable name with
-`JENREG_CONSISTENCY_NODE_ID` - the host name is used otherwise - so a restarted server is recognised as itself.
+`JENREPO_CONSISTENCY_NODE_ID` - the host name is used otherwise - so a restarted server is recognised as itself.
 
 ## TLS and a reverse proxy
 
@@ -64,8 +64,8 @@ otherwise. Put the server behind the load balancer or reverse proxy you already 
 the server about it:
 
 ```bash
-JENREG_PUBLIC_URL=https://repo.example.com         # the address clients use, for the links the server generates
-JENREG_TRUSTED_PROXIES=10.0.0.0/8                  # whose X-Forwarded-* headers to believe
+JENREPO_PUBLIC_URL=https://repo.example.com         # the address clients use, for the links the server generates
+JENREPO_TRUSTED_PROXIES=10.0.0.0/8                  # whose X-Forwarded-* headers to believe
 ```
 
 The console's session cookie is only ever sent over `https`, so the console, too, is used through the proxy.
@@ -76,13 +76,13 @@ Replace the administrator key from Getting started with your identity provider -
 as [Access](/repository/access/) describes - and name your administrators:
 
 ```bash
-JENREG_UI_OIDC_ISSUER_URI=https://login.example.com/realms/main
-JENREG_UI_OIDC_CLIENT_ID=jenesis
-JENREG_UI_OIDC_CLIENT_SECRET=…
-JENREG_UI_ADMINS=oidc/8f3c1a…
+JENREPO_UI_OIDC_ISSUER_URI=https://login.example.com/realms/main
+JENREPO_UI_OIDC_CLIENT_ID=jenesis
+JENREPO_UI_OIDC_CLIENT_SECRET=…
+JENREPO_UI_ADMINS=oidc/8f3c1a…
 ```
 
-Then remove `JENREG_UI_ADMIN_KEY` if you set one, set `JENREG_KEY_LOGIN=false` and restart: every person now
+Then remove `JENREPO_UI_ADMIN_KEY` if you set one, set `JENREPO_KEY_LOGIN=false` and restart: every person now
 signs in as themselves, and every change they make is attributed to them.
 
 ## The Helm chart
@@ -104,7 +104,7 @@ helm install jenesis oci://registry-1.docker.io/jenesisbuild/jenesis --version 1
 | `store.backend` | `filesystem` (a 20 GiB volume by default), `s3`, `gcs` or `azure-blob`, with the backend's own values beside it |
 | `ui.admins`, `ui.oidc.*`, `ui.github.*` | Sign-in, as above |
 | `secrets.*` | Credentials - store keys, client secrets - rendered into a Secret, or `secrets.existingSecret` to use your own |
-| `repository.<key>` | Any other setting, as `JENREG_<KEY>` - for example `repository.rate-limit: "1200"` |
+| `repository.<key>` | Any other setting, as `JENREPO_<KEY>` - for example `repository.rate-limit: "1200"` |
 | `ingress.*` | An ingress in front of the service |
 
 The server listens on 8080, and the chart points its liveness and readiness probes at `/actuator/health/liveness`
@@ -147,12 +147,12 @@ first deployment is one command:
 cd deploy/gcp
 terraform init
 terraform apply -var project_id=my-project -var bucket_name=my-artifacts \
-  -var 'secrets={JENREG_BOOTSTRAP_KEY="jenk_…", JENREG_UI_ADMIN_KEY="…"}'
+  -var 'secrets={JENREPO_BOOTSTRAP_KEY="jenk_…", JENREPO_UI_ADMIN_KEY="…"}'
 ```
 
 Every template takes the image as a parameter that defaults to `latest`; pin a release for a deployment that should
 not move on its own. Because authentication is on, each takes the two starter credentials as secrets - the API's
-bootstrap key and the console's starter key - and any other setting as an environment variable by its `JENREG_*`
+bootstrap key and the console's starter key - and any other setting as an environment variable by its `JENREPO_*`
 name. The Google Cloud, Azure and Scaleway services start private, reachable only through the cloud's own access
 control, until a parameter publishes them; the AWS load balancer is public from the start and answers on plain
 HTTP until you give it a certificate. The folder's README says what every template takes.
@@ -161,7 +161,7 @@ HTTP until you give it a certificate. The folder's README says what every templa
 
 The store is the only state, so a backup is a copy of it: the volume or directory, or the bucket, with the
 snapshot or replication tooling you already use. A copy restores to any backend - copy the objects with their
-names unchanged, point `JENREG_STORE` at the new place, and start the server. **Settings → Settings** also exports
+names unchanged, point `JENREPO_STORE` at the new place, and start the server. **Settings → Settings** also exports
 the runtime settings alone, as one file, which is worth keeping beside a large configuration change.
 
 <div class="warning">
