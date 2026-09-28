@@ -242,7 +242,7 @@ JENREG_S3_REGION=eu-central-1</code></pre>
       <li>Maven</li><li>Ivy</li><li>npm</li><li>PyPI</li><li>Container images</li><li>Go</li><li>Cargo</li>
       <li>NuGet</li><li>RubyGems</li><li>Helm</li><li>Composer</li><li>Conan</li><li>Conda</li><li>Debian</li>
       <li>RPM</li><li>Alpine</li><li>CocoaPods</li><li>Swift</li><li>Terraform and OpenTofu</li>
-      <li>Hugging Face</li><li>Homebrew</li><li>winget</li><li>Jenesis modules</li><li>Raw files</li><li>Jenesis build cache</li>
+      <li>Hugging Face</li><li>Homebrew</li><li>winget</li><li>Jenesis modules</li><li>Raw files</li>
     </ul>
     <div class="lp-features">
       <div>
@@ -270,7 +270,21 @@ JENREG_S3_REGION=eu-central-1</code></pre>
   </div>
 </section>
 
-<section class="lp-band" id="security" aria-labelledby="security-title">
+<section class="lp-band" id="build-cache" aria-labelledby="build-cache-title">
+  <div class="lp-wrap">
+    <p class="lp-eyebrow">Build cache</p>
+    <h2 id="build-cache-title">Work done once is not done again.</h2>
+    <p class="lp-section-lede">
+      The same server keeps a remote build cache for the <a href="/why/tool/">Jenesis build tool</a>. A build that
+      finds a step's result there downloads it instead of running the step, whether a colleague's machine or an
+      earlier CI job did the work. It answers on the same port with the same keys, and is divided into projects,
+      so a trusted main branch and untrusted pull requests need not share results.
+    </p>
+    <a class="lp-link" href="{{ docs }}build-cache/">Set up the build cache &rarr;</a>
+  </div>
+</section>
+
+<section class="lp-band lp-band--tint" id="security" aria-labelledby="security-title">
   <div class="lp-wrap">
     <p class="lp-eyebrow">Security</p>
     <h2 id="security-title">A gate for what comes in.</h2>
