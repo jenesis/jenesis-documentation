@@ -1,7 +1,7 @@
 ---
 order: 4
 title: Repositories
-description: What a repository is, the Repositories page, and the pages inside one - its overview, browsing and searching what it holds, staging a release, and importing from elsewhere.
+description: What a repository is, creating one with its settings, the Repositories page, and the pages inside one - its overview, browsing and searching what it holds, staging a release, importing from elsewhere, and its settings.
 ---
 
 A repository is a named space of artifacts of one **type**: a format such as `maven`, `npm`, `pypi` or `oci`, or
@@ -11,12 +11,13 @@ It is the thing the **Repositories** section of the console is about. This chapt
 
 ## How a repository comes into being
 
-A repository is **created**, with its type, before anything is published into it or resolved from it - under
-**Repositories → All repositories → New repository**, or with a `PUT` of its URL naming the type:
+A repository is **created**, with its type, before anything is published into it or resolved from it - in the
+console, with a `PUT` of its URL naming the type, or from the command line:
 
 ```bash
 curl -X PUT -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
   -d '{"value":"npm"}' https://repo.example.com/repository/releases/npm
+jenrepo repos create npm npm
 ```
 
 The answer is `201` when the repository is created and `200` when it already holds that type. A repository that
@@ -30,6 +31,37 @@ A repository may carry a **description** - one line of up to 280 characters, sho
 given at creation beside the type, `{"value":"npm","description":"Internal packages"}`, or later on its own,
 `{"description":"…"}`, which changes the description of a repository that exists and leaves its type alone. An empty
 description clears it.
+
+## Creating one with its settings
+
+A repository can be given its own settings as it is created - how long it keeps what it holds, and where it fetches
+what it lacks - so it answers its first request as configured. The console asks them in a wizard: **New
+repository** on **Repositories → All repositories** opens it.
+
+1. **Repository** - the name, the format, and optionally a description.
+2. **Retention** - the four retention rules, each left blank to inherit the tenant's and the deployment's value.
+3. **Routing** - whether it accepts uploads and where it fetches from, written as
+   [Proxying upstreams](/repository/proxying/) describes. Routing is the deployment administrators' decision, so
+   anyone else sees it fixed rather than asked.
+4. **Review** - every choice, the defaults left alone included.
+
+**Next** checks a step before moving on, and **Back** loses nothing. **Create repository** on the review creates the
+repository and its settings together, and **Create now** does so from any later step with the rest left to inherit.
+Nothing is written before then, so a closed tab leaves nothing half made.
+
+The API and the command line take the same settings beside the type:
+
+```bash
+curl -X PUT -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
+  -d '{"value":"maven","settings":{"keep-last":"20","max-age":"P365D"}}' \
+  https://repo.example.com/repository/releases/libraries
+jenrepo repos create libraries maven "Internal libraries" --set keep-last=20 --set max-age=P365D
+```
+
+Every value is checked before anything is written: one the setting refuses answers `400`, naming each refused
+value, and nothing is created. A creation that carries settings only creates - for a repository that exists already
+it answers `409` and changes nothing - and a repository's settings are changed afterwards on its **Settings** page,
+as [Settings](/repository/settings/#a-repository-s-settings) describes.
 
 Nothing else creates a repository. A request to one that was never created is answered `404`, and a publish into
 one is refused with `404` and a sentence saying so - so a misspelled name in a build's configuration fails rather
@@ -66,14 +98,13 @@ registry `/repository/releases/npm/`, and a `pypi` one named `python` is install
 `…/module/` - which is what lets the two share one repository. [Connecting your build
 tools](/repository/formats/) gives the URL for every client.
 
-A repository can also be **defined** to fetch what it does not hold from an upstream registry, or to group
-several others behind one name - which is how a single client URL serves both your own packages and Maven
-Central. A definition describes a repository; it does not create one. [Proxying upstreams](/repository/proxying/)
-shows how.
+A repository can also be **routed** to fetch what it does not hold from an upstream registry, or to group several
+others behind one name - which is how a single client URL serves both your own packages and Maven Central. Routing
+describes a repository; it does not create one. [Proxying upstreams](/repository/proxying/) shows how.
 
 ## The Repositories page
 
-**Repositories → All repositories** lists the tenant's repositories beside the form that creates one. Each is shown
+**Repositories → All repositories** lists the tenant's repositories, with **New repository** below them. Each is shown
 with the mark of the type it holds, its description, the type's name, when it was created, and badges that describe
 its shape:
 
@@ -87,31 +118,41 @@ its shape:
 A definition that is valid but risky - an upstream over plain HTTP, a fallback that skips screening - is listed
 under **Definition warnings** at the top, so it is seen rather than discovered.
 
-**New repository** creates one: a name - letters, digits, hyphens and underscores - a type from those the
-deployment offers, and optionally a description. It answers at `/repository/<tenant>/<name>/`, or `/v2/<tenant>/<name>/` for container images,
-from the moment it is created. A repository that holds files but no type - one kept from before repositories had
+A repository's name is letters, digits, hyphens and underscores. It answers at `/repository/<tenant>/<name>/`, or
+`/v2/<tenant>/<name>/` for container images, from the moment it is created. A repository that holds files but no type - one kept from before repositories had
 types - is listed with a **no format** badge and answers nothing until an editor gives it one with **Give
 format**.
 
 ## Limits
 
-**Repositories → Limits** holds the two limits that apply to all of a tenant's repositories together. Every member
-reads them; an admin changes them.
+**Repositories → Limits** holds the two limits that apply to all of a tenant's repositories together. Both are
+tenant settings: the deployment's value applies until the tenant sets its own, and **Revert** returns to it. Every
+member reads them; an admin changes them.
 
-- **Storage quota** - the most the tenant may store, across every repository, in bytes; a publish that would
-  exceed it is refused. `0` means no limit, and nothing is metered while there is none: setting one counts what is
-  already stored on the next cleanup pass, and the page then shows how much is stored against it.
-- **Rate limit** - how many requests a minute the tenant is served before answering `429`; `0` falls back to the
-  deployment's own limit, which the page names. [Operations](/repository/operations/) explains how requests are
-  counted.
+- **Tenant storage quota** (`tenant-quota`) - the most the tenant may store, across every repository, in bytes; a
+  publish that would exceed it is refused with `507`. `0` means no limit, and nothing is metered while there is
+  none: setting one counts what is already stored on the next cleanup pass, and the page then shows how much is
+  stored against it.
+- **Rate limit** (`rate-limit`) - how many requests a minute the tenant is served before answering `429`, 6 000 by
+  default. [Operations](/repository/operations/) explains how requests are counted.
+
+`jenrepo limits` shows both, and `jenrepo limits set quota <bytes>` or `jenrepo limits set rate <per-minute>` sets
+the tenant's own; `0` there returns to the deployment's value.
 
 ## Overview
 
-Opening a repository lands on its **Overview**: what it is and what it published last.
+Opening a repository lands on its **Overview**: what it is, what it holds, and how it is routed.
 
-- **Routing** - the repository's definition as badges, with its warnings, and whether it is the tenant's own or
-  the deployment's. A repository with no definition accepts uploads, and fetches what it lacks through its
-  format's upstream where one is named - the page says which.
+- **Holdings** - the versions it holds, newest first: the releases published into it, and the copies it cached
+  from an upstream, each marked **published** or **cached from** its upstream. Each opens that package's page,
+  which lists its versions with when each was published, whether it is pinned, its download count where downloads are
+  counted, and the paths it is served at. When there are more than the page shows, it says so and links to
+  **Browse & search**.
+- **Routing** - how the repository is routed, as badges with any warnings, and where that comes from: its own
+  routing, the deployment's definition of its name, or none. A repository with no routing accepts uploads, and
+  fetches what it lacks through its format's upstream where one is named - the page says which. A deployment
+  administrator routes the repository here, or hands it back to the deployment's definition with **Use the
+  deployment routing**.
 - **Hardened proxy screening** - shown when the repository screens every upstream body in full before serving
   a byte of it.
 - **Absent formats** - an ecosystem the repository holds data for that no installed format can serve any more.
@@ -119,9 +160,10 @@ Opening a repository lands on its **Overview**: what it is and what it published
   **Forget ecosystem**, which retires those records so the space can be reclaimed.
 - **Published index** - the state of the repository's content index, an incremental catalogue an external tool
   can sync against.
-- **Releases** - the 200 most recent releases, newest first. Each opens that package's page, which lists its
-  versions with when each was published, whether it is pinned, its download count where downloads are counted,
-  and the paths it is served at.
+
+A copy cached from an upstream is a holding of its own, apart from the releases: the scheduled advisory and
+maintainer-health scans check it as they check a release, and it is listed wherever the repository's contents are,
+while retention keeps to what was published.
 
 ## Browse & search
 
@@ -140,6 +182,11 @@ in a Maven repository, `npm/…` in an npm one - rather than how they are stored
 
 An artifact the gate is holding for review is not listed; it is on the **Quarantine** page instead, described
 in [Screening what comes in](/repository/screening/).
+
+A script walks the same tree one folder at a time. `GET /api/browse/children?repo=<name>&prefix=<path>` answers a
+folder's children - each with its path, whether it is a folder, and its size - up to 200 at once (`limit`, at most
+1 000), and a `next` value to pass back as `after` while the folder holds more; the command line pages it with
+`jenrepo browse children <repo> [prefix]`.
 
 ## Staging
 

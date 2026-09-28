@@ -1,7 +1,7 @@
 ---
 order: 9
 title: The build cache
-description: The optional remote build cache the repository can keep for the Jenesis build tool - creating a project, granting a key access to it, pointing a build at it, and keeping its size in check.
+description: The optional remote build cache the repository can keep for the Jenesis build tool - creating a project with its settings, granting a key access to it, pointing a build at it, and keeping its size in check.
 ---
 
 If you build with the [Jenesis build tool](/tool/), the server can keep a **remote build cache** for it beside its
@@ -21,12 +21,23 @@ and a key reaches only the projects it is granted - so two teams, or a trusted m
 requests, need not share results.
 
 **Build cache → Projects** lists the projects with how many entries each holds, how much space they take and when
-they were last counted. Under **New project**, give it a name and press **Create project**.
+they were last counted. **New project** opens a wizard: the project's name - letters, digits and underscores - then
+its size cap and how long an unused entry is kept, then a review. **Create project** creates it with those settings
+at once; a value left blank inherits the tenant's and the deployment's.
+
+A script creates one the same way, with its settings beside it:
+
+```bash
+curl -X POST -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
+  -d '{"settings":{"project-size":"10737418240","project-ttl":"P30D"}}' \
+  'https://repo.example.com/api/cache/projects?name=my_project'
+jenrepo projects create my_project --set project-size=10737418240 --set project-ttl=P30D
+```
 
 ## Granting a key access
 
-A build presents a key, like any other client. Open the key under **Access → Credentials**, and under **Project
-grants** enter the project's name - or `*` for every project - with the role:
+A build presents a key, like any other client. Open the key under **Access → Credentials**, and under **Grants**
+enter the project's name as the scope - or `*` for every project - with the role:
 
 | Role | Lets a build |
 | --- | --- |
@@ -53,19 +64,24 @@ remote cache behind the local one, and timeouts.
 
 ## Keeping its size in check
 
-Each project's page carries its **Cache settings**:
+Each project's page carries its settings, the three a project has of its own:
 
 | Setting | Effect |
 | --- | --- |
-| **Size cap** | The most the project may hold, in bytes; blank is no cap. |
-| **Eviction order** | Which entries go first when the cap is reached - least recently used, or most recently used. |
-| **TTL** | Entries not used for this long are removed, as an ISO-8601 duration (`P30D`, `PT12H`); blank keeps them. |
+| **Size cap** (`project-size`) | The most the project's entries may take together, in bytes; past it the least recently used are evicted. `0` is no cap. |
+| **Unused-entry lifetime** (`project-ttl`) | Entries nobody has read or written for this long are removed, as a duration (`P30D`, `30d`); `none` keeps them for ever. |
+| **Evict least recently used first** (`project-lru`) | Which entries go first when the cap is reached; switched off, the most recently used go first. Folded under **Advanced**. |
 
-The cache enforces them as it runs. Under **Eviction**, three buttons act at once, in the background: **Enforce
-size cap now**, **Expire stale (ttl) now**, and **Clear all entries**, which empties the project. **Count entries
-now** refreshes the figures at the top of the page.
+Like any setting, each is inherited until the project sets its own: the deployment and a tenant can set a default
+for every project, and **Revert** returns a project to it. The cache enforces them as it runs. A script changes them
+with `jenrepo projects settings <project> set <key> <value>`, or under
+`/api/cache/projects/<name>/settings/<key>`.
 
-**Delete project**, at the bottom of a project's page, removes every cached entry and the project's cache settings,
+Under **Eviction**, three buttons act at once, in the background: **Enforce size cap now**, **Expire stale entries
+now**, and **Clear all entries**, which empties the project; each asks first. **Count entries now** refreshes the
+figures at the top of the page.
+
+**Delete project**, at the bottom of a project's page, removes every cached entry and the project's settings,
 in the background, after asking you to type the project's name; it is an admin's to press. A key's grant naming the
 project stays, and reaches a project created again under that name - so revoke the grants first, or a build still
 writing to it brings it back. A script does the same with `DELETE /api/cache/projects/<name>`.

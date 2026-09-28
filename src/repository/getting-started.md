@@ -57,11 +57,13 @@ an administrator, whichever comes first; a restart of a deployment that still ha
 Open `http://localhost:8080` in a browser. The sign-in page offers **Sign in with a key**; choose it and paste the
 key from the log.
 
-The sign-in lands on **Setup**, a short guide through the decisions a new deployment should make. Its first step
-is the one to take now: grant a real administrator and issue a real credential, because the one-time key is about
-to stop working. The rest - which advisory feeds to consult, what the gate does with a vulnerable or malicious
-package, retention - is optional, and every answer can be changed later. **Skip for now** takes you into the
-console, and the guide stays reachable as **Settings → First-run setup**.
+The sign-in lands on **First-run setup**, a wizard through the decisions a new deployment should make. Its first
+step is the one to take now: grant a real administrator and issue a real credential, because the one-time key is
+about to stop working. The steps after it - which advisory feeds to consult, what the gate does with a vulnerable or
+malicious package, the tenant's limits, webhooks - each show the current value, and **Next** keeps it unless you
+change it. The last step reviews every choice, and **Apply setup** saves them together; nothing is saved before
+that, and every answer can be changed later. **Skip for now** takes you into the console, and the wizard stays
+reachable as **Settings → First-run setup**.
 
 <div class="warning">
   Signing in with a key is on by default, because it is how a deployment is entered before anything else is set
@@ -78,14 +80,16 @@ The console is laid out in two levels. Across the top are its sections - **Repos
 A repository holds one type of artifact, and it is created before anything is published into it - a publish
 into a repository that does not exist is refused with `404`. Create two:
 
-1. Open **Repositories → All repositories**.
-2. Under **New repository**, enter the name `libraries`, choose the format **maven**, and press **Create
-   repository**.
+1. Open **Repositories → All repositories** and press **New repository**.
+2. Enter the name `libraries`, choose the format **maven**, and press **Next**. The steps that follow ask how long
+   the repository keeps what it holds and where it fetches from; leave them empty for now, and on the review press
+   **Create repository**.
 3. Do the same with the name `npm` and the format **npm**.
 
 Every URL names the tenant and then the repository: a new deployment serves the tenant `releases`, so these two
 answer at `/repository/releases/libraries/` and `/repository/releases/npm/`. A script creates a repository with a
-`PUT` of that URL naming the type - [Repositories](/repository/repositories/) shows how - and
+`PUT` of that URL naming the type, or with `jenrepo repos create libraries maven` from the
+[command line](/repository/command-line/) - [Repositories](/repository/repositories/) shows how - and
 [Connecting your build tools](/repository/formats/) lists the other types.
 
 ## Issue a key for your build tools
@@ -96,7 +100,7 @@ Build tools do not sign in; they present a key. Issue one in the console:
 2. Under **New credential**, give it a label such as `laptop` and press **Generate credential**.
 3. The credential's page opens with the key shown **once** - copy it now. Only a hash of it is stored, so a key
    that is lost is re-issued, never recovered.
-4. Under **Project grants**, enter `*` as the project, choose the role **deploy**, and press **Grant**.
+4. Under **Grants**, enter `*` as the scope, choose the role **deploy**, and press **Grant**.
 
 A new key holds no rights until you grant some. `*` with **deploy** lets it read and publish everywhere; the
 [Access](/repository/access/) chapter covers narrower grants, expiry and rotation.

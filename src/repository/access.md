@@ -1,7 +1,7 @@
 ---
 order: 10
 title: Access
-description: Who may use the repository - signing people in with a key, OpenID Connect, GitHub or LDAP; members, groups and roles; keys for build tools and their grants, expiry and rotation; keyless CI; and running open or as a public mirror.
+description: Who may use the repository - signing people in with a key, OpenID Connect, GitHub or LDAP; login keys; members, groups and roles; keys for build tools and their grants, expiry and rotation; keyless CI; and running open or as a public mirror.
 ---
 
 Two kinds of caller use a repository. **People** sign in to the console, through an identity provider or with a
@@ -42,6 +42,25 @@ A person's directory groups become their groups here, and members of the adminis
 deployment. A plain `ldap://` URL is refused unless `JENREPO_UI_LDAP_START_TLS=true` upgrades it, or
 `JENREPO_UI_LDAP_ALLOW_PLAINTEXT=true` says the connection is private.
 
+## Login keys
+
+A person can also sign in with a **login key** of their own - for a small deployment with no identity provider, or
+for someone the provider does not know. **Settings → Login keys** issues one: a **principal**, which becomes the
+identifier `keylogin/<principal>`, an optional name to show for it, the tenant it joins, and the role it holds
+there. **Issue key** shows the key once, beginning `jkl_`; only a hash of it is stored. The person chooses **Sign in
+with a key** and pastes it. **Revoke** stops the key at once and removes the membership it was issued with.
+
+Issuing a login key is the deployment administrators' decision, since a key can join a person to any tenant. A
+script does it with a key of the operator tenant that holds the manage rights:
+
+```bash
+jenrepo keylogin issue ada --tenant releases --login "Ada Lovelace" --role editor
+jenrepo keylogin list
+jenrepo keylogin revoke <id>
+```
+
+The same operations answer at `/api/keylogin`. Login keys work only while key sign-in is switched on.
+
 <div class="note">
   Signing in and holding access are separate. Anyone your identity provider signs in reaches the console, but
   someone who holds no role sees a page saying so, showing the identifier an administrator needs to grant them one
@@ -62,10 +81,12 @@ administration belongs to people you can name.
 provider-qualified identifier, optionally a login name to show beside it, choose **viewer**, **editor** or
 **admin**, and press **Add / update user**. **Remove** takes the role away.
 
-**Groups** grant rights to many people at once. A group is created by granting it something: give it a name,
-a scope - a repository name, or `*` for all of them - and rights such as `repository:read,repository:write`, and
-press **Grant to the group**. **Add to the group** puts a person in it. People signed in through LDAP arrive
-with their directory groups already.
+**Groups** grant rights to many people at once. **New group**, below the groups, creates one with its first grant:
+a name, a scope - a repository, a build-cache project, or `*` for all of them - and rights such as
+`repository:read,repository:write`. Each group is listed with what it grants and who is in it, and **Open** leads to
+the group's own page, where grants are added and revoked, people are added and removed, and the group is deleted.
+Everyone in a group holds what it grants, and loses it as they leave the group or the group loses the grant. People
+signed in through LDAP arrive with their directory groups already.
 
 ## Credentials
 
@@ -77,11 +98,11 @@ with their directory groups already.
 
 | Section | What it does |
 | --- | --- |
-| **Project grants** | Grants the key a role on a repository - or on a build-cache project - by name, or `*` for all. An optional path prefix narrows it to part of the repository, such as `maven/com/example`. |
+| **Grants** | Grants the key a role on a scope: a repository or a build-cache project by name, or `*` for all. An optional path prefix narrows it to part of the repository, such as `maven/com/example`. |
 | **Key expiry** | Changes when the key stops working, as a duration from now (`P30D`) or a date. |
-| **Rotate** | Issues a successor with the same grants and keeps the old key working for an overlap (`P7D` by default), so a pipeline can switch over without a gap. |
+| **Rotate key** | Issues a successor with the same grants and keeps the old key working for an overlap (`P7D` by default), so a pipeline can switch over without a gap. |
 | **Source-IP allowlist** | Restricts the key to the addresses and ranges listed. |
-| **Delete** | Revokes the key at once. |
+| **Delete credential** | Revokes the key at once. |
 
 Three roles are built in, and the **Roles** section adds your own as a name and a list of rights:
 
@@ -104,7 +125,9 @@ how long any key may live.
 A revoked or narrowed key stops working at once on the server that made the change, and on the other servers of a
 multi-node deployment within the credential cache's lifetime - fifteen minutes by default (`auth.cache-ttl`).
 
-A key belongs to the tenant it was issued in, and reaches that tenant's repositories alone. A deployment serving one
+A key belongs to the tenant it was issued in, and reaches that tenant's repositories alone. Every `/api` call acts
+on the tenant the deployment serves the request for, as a download does - on a deployment serving one tenant, that
+tenant. A deployment serving one
 tenant refuses a key of any other with `403`, except a key of the operator tenant, which still manages the
 deployment.
 
@@ -116,7 +139,7 @@ Build tools send neither header, so nothing they do changes.
 ## Keyless CI
 
 A CI platform that issues its jobs an identity token - GitHub Actions, GitLab and most others - can exchange it
-for a short-lived key instead of storing one. **OIDC trust (keyless CI)** on the Credentials page names which
+for a short-lived key instead of storing one. **Keyless CI (OIDC trust)** on the Credentials page names which
 tokens to accept:
 
 | Field | Example |

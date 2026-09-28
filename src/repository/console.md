@@ -22,7 +22,7 @@ the middle.
 | **Build cache** | Projects |
 | **Access** | Credentials, Members |
 | **Operations** | Metrics, Security posture, Caches, Walks |
-| **Settings** | Settings, Upstreams, Tenant settings, Modules, Tenants, Backup & restore, First-run setup |
+| **Settings** | Settings, Upstreams, Tenant settings, Modules, Tenants, Backup & restore, First-run setup, Login keys |
 
 **Tenants** is listed for whoever can choose between several: a super-administrator, and a member of more than one
 tenant.
@@ -41,7 +41,7 @@ go back, and lists that repository's own pages under five headings.
 | **Review** | Quarantine, Refused |
 | **Risk** | Vulnerabilities, Findings, Maintainer health |
 | **Provenance** | Signers |
-| **Lifecycle** | Retention & cleanup, Pins, Export |
+| **Lifecycle** | Retention & cleanup, Pins, Settings, Export |
 
 Every repository has the same pages, so moving between two of them keeps you on the page you were reading. A
 page whose feature a deployment does not carry - staging, or the vulnerability feeds - is simply not listed.
@@ -49,6 +49,28 @@ page whose feature a deployment does not carry - staging, or the vulnerability f
 Each of these pages opens the same way: the trail back through **Repositories** to the repository, the page's
 title, and what the repository is - the format it holds and the address a client reaches it at. A coordinate on
 any of them links to that coordinate's own page, which lists its versions.
+
+## Wizards
+
+Three things are created through a wizard rather than a single form: the deployment itself on its first boot
+(**Settings → First-run setup**), a repository (**New repository**) and a build-cache project (**New project**).
+Each asks what the thing is, then the settings it should have from the start, one group per step, and ends on a
+review of every choice. **Next** and **Back** move between the steps without losing anything, and nothing is
+written until the last button - so a wizard left half-way leaves nothing behind. [Settings](/repository/settings/)
+says which settings each one asks.
+
+## Buttons
+
+A button's look says what kind of thing it does before you press it; its label says what:
+
+| Look | Means |
+| --- | --- |
+| **Filled** | The page's main action, such as **Create repository** or **Save**. |
+| **Plain outline** | An everyday action that changes little, such as **Preview cleanup** or **Revert**. |
+| **Amber outline** | An action with a consequence that can be undone, such as releasing a held artifact, promoting a staged upload or running a cleanup now. It asks before it acts. |
+| **Red outline** | An action that loses something, such as deleting a repository or discarding a held artifact. It asks before it acts, and a deletion asks you to type the name of what is deleted. |
+
+Where a row of a list has several actions, they sit together at its end, with the red one last and set apart.
 
 ## The header
 
@@ -73,7 +95,7 @@ administrators:
 | --- | --- |
 | **Viewer** | Read every repository page and the build cache's projects. |
 | **Editor** | Everything a viewer can, and change things: create a repository, save a retention policy, pin a version, release or discard a held artifact, promote a staging upload. |
-| **Admin** | Everything an editor can, and manage access: **Credentials**, **Members**, the tenant's storage quota and rate limit on **Limits**, taking a repository out through **Export**, and manual uploads through **Deploy**. |
+| **Admin** | Everything an editor can, and manage access: **Credentials**, **Members** and groups, the tenant's storage quota and rate limit on **Limits**, taking a repository out through **Export**, and manual uploads through **Deploy**. |
 | **Super-administrator** | Everything, across the whole deployment: the **Operations** pages and all of **Settings**. |
 
 A page you may read but not change shows its data without the forms that would change it.

@@ -53,7 +53,9 @@ setting beside it (`osv-endpoint`, `github-endpoint`, `openssf-endpoint`) for a 
 
 Beyond checking each publish, the repository **re-scans everything it already holds** against the feeds on a
 schedule - hourly by default (`scheduled-scan`, `scan-interval-millis`) - so an advisory published after an
-artifact was accepted still reaches it.
+artifact was accepted still reaches it. What it holds is both what was published into it and every copy it cached
+from an upstream: a cached copy is re-checked as a release is, and what a scan finds about it lands on
+**Vulnerabilities** and **Findings** beside the rest. The maintainer-health scan covers both the same way.
 
 ## Rules of your own
 
@@ -87,8 +89,8 @@ and often the only one.
 
 ## Vulnerabilities
 
-**Vulnerabilities** lists the advisories that apply to what the repository holds, from the last scan, and says
-when that scan ran. **Rescan against the advisory feeds** starts a fresh one in the background; the page shows it running and refreshes
+**Vulnerabilities** lists the advisories that apply to what the repository holds - its releases and its cached
+copies - from the last scan, and says when that scan ran. **Rescan against the advisory feeds** starts a fresh one in the background; the page shows it running and refreshes
 itself until it finishes. With no feed switched on, the page says so and links to the settings that change it.
 
 ## Findings

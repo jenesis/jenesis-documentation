@@ -104,8 +104,9 @@ Deliveries go out from a background queue, so a slow receiver never slows a publ
 ## Rate limits
 
 Every request is metered against a per-tenant ceiling - **6 000 requests a minute** by default, a hundred a
-second - and a request over it is answered `429` with `Retry-After: 60`. The ceiling is set on the
-**Repositories** page, or deployment-wide with `JENREPO_RATE_LIMIT`; `0` removes it.
+second - and a request over it is answered `429` with `Retry-After: 60`. The ceiling is the `rate-limit` setting:
+for every tenant under **Settings → Settings**, or with `JENREPO_RATE_LIMIT`, and for one tenant on **Repositories →
+Limits**. `0` for the deployment removes it.
 
 A request is charged to its key's tenant, and every request without a key shares one bucket of its own. A
 bucket holds a minute's worth of burst, so a build resolving a large dependency graph in a quick burst gets

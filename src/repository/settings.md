@@ -1,40 +1,72 @@
 ---
 order: 12
 title: Settings
-description: Configuring a running deployment from the console - the first-run guide, the settings catalogue, upstreams, per-tenant overrides, modules, tenants and backing settings up - and how configuration reaches the server.
+description: Configuring a running deployment - the levels a setting is stored at, the first-boot wizard, the settings catalogue, a repository's and a project's own settings, upstreams, modules, tenants and backing settings up - and how configuration reaches the server.
 ---
 
-A deployment is configured in two ways. **Runtime settings** live in the store and are changed in the console
-under **Settings**; most take effect at once. **Startup settings** - where the store is, how people sign in,
-whether keys are required - come from the environment the server starts in, and change only with a restart. The
-**Settings** section is for the deployment's administrators.
+A deployment is configured in two ways. **Runtime settings** live in the store and are changed in the console,
+through the API or with the command line; most take effect at once. **Startup settings** - where the store is, how
+people sign in, whether keys are required - come from the environment the server starts in, and change only with a
+restart. The **Settings** section is for the deployment's administrators.
+
+## Four levels
+
+A runtime setting can be stored at up to four levels, and the narrowest one that holds a value wins:
+
+| Level | Holds | Changed on |
+| --- | --- | --- |
+| **Deployment** | The value every tenant inherits. | **Settings → Settings** |
+| **Tenant** | One tenant's own value, over the deployment's. | **Settings → Tenant settings**, and **Repositories → Limits** for the tenant's limits |
+| **Repository** | One repository's own value - its routing and its retention rules. | The repository's **Settings** page |
+| **Project** | One build-cache project's own value - its size cap, its entry lifetime and its eviction order. | The project's page |
+
+Each setting declares the narrowest level it may be set at. The storage quota and the rate limit are tenant
+settings, so the deployment sets a value for every tenant and one tenant may set its own. The retention rules are
+repository settings, so the deployment and a tenant each hold the default their repositories inherit, and a
+repository may set its own. A repository's routing has no wider default: it is the repository's own, or it is not
+set.
+
+Unsetting a value makes the level inherit again. A duration rule such as `max-age` also takes `none`, which
+switches the rule off at that level even where a wider level sets one.
+
+Every setting also has a **tier**. An **essential** setting is asked by the wizard that creates what it configures;
+a **standard** one is shown on the settings pages; an **advanced** one tunes what was already decided - a cadence, a
+cap, a timeout - and is folded away. Nothing else differs: every tier is as editable as the others.
 
 ## First-run setup
 
-**First-run setup** is the guide for a new deployment: a short list of the decisions it should make, each showing
-the settings it concerns with their current values, so they can be answered in place.
+**First-run setup** is the wizard of a new deployment, at `/ui/setup`. Its first step is about no setting: it says
+whether the starter key is still in use and links to where a real administrator is granted and a real credential is
+issued. After it comes one step per group of the essential settings of the deployment and of a tenant, each row
+with what it does and its current value:
 
-1. **Stop using the starter credential** - whether the administrator key is still set, with links to grant a
-   real administrator and to issue a real key.
-2. **Create a repository** - a deployment serves nothing until it has one, with a link to create it.
-3. **Name an upstream** - nothing is fetched from a public registry until an upstream is named for its format.
-4. **Advisory feeds** - which vulnerability and malware feeds to consult.
-5. **Vulnerability handling** - the severity threshold, and what happens to an artifact that reaches it.
-6. **Malware handling** - what happens to a package known to be malicious.
-7. **Being told** - where to send webhook notifications.
-8. **Withholding new releases** - how many days a version fresh from upstream is held for review.
-9. **Retention and collection cadence** - what is kept, and how often the store is walked.
-10. **This guide** - whether the guide opens on sign-in at all.
+| Step | Asks |
+| --- | --- |
+| **Collection** | Whether unreferenced content is reclaimed, and by which collector. |
+| **Compliance** | Which advisory and malware feeds to consult, the vulnerability threshold, and what happens to a vulnerable or malicious package. |
+| **Console** | Whether a person may sign in with a key. |
+| **First run** | Whether this wizard opens on sign-in. |
+| **Limits** | Every tenant's storage quota and rate limit. |
+| **Maintenance** | When the store is walked. |
+| **Proxy** | How many days a version fresh from upstream is held for review. |
+| **Tenancy** | The tenant the deployment serves. |
+| **Webhooks** | Whether events are delivered, and where to. |
 
-Someone signing in with the administrator key is sent here first, once per session, until `setup-wizard` is
-switched off. **Skip for now** leaves it, and it is always one click away as **Settings → First-run setup**.
+**Next** checks a step and moves on; **Back** returns without losing anything, since the values travel with the
+page. The last step is a review of every choice, the defaults left alone included, and **Apply setup** saves every
+changed value at once - a refused value saves none, and the wizard returns to the step that asked it. **Apply now**,
+on any step, finishes with the defaults for the steps not yet seen. Nothing is written before then.
+
+Someone signing in with the starter key is sent here first, once per session, until `setup-wizard` is switched
+off. **Skip for now** leaves it, and it is always one click away as **Settings → First-run setup**. The command
+line shows the same steps with `jenrepo setup`, and decides one with `jenrepo setup set <key> <value>`.
 
 ## The settings catalogue
 
-**Settings → Settings** lists every runtime setting the deployment carries, grouped by what it concerns -
-Compliance, Serving, Retention, Uploads, Webhooks, Network, Caches and more. Each group shows its decisions first; the
-settings that tune how something runs, and are rarely changed, are folded under **Advanced**, which says how many of
-them differ from their defaults. Each row shows:
+**Settings → Settings** lists every deployment-level setting, grouped by what it concerns - Compliance, Proxy,
+Retention, Limits, Webhooks, Network, Caches and more. Each group shows its essential and standard settings first;
+the advanced ones are folded under **Advanced**, which says how many of them differ from their defaults. Each row
+shows:
 
 - the setting's name, its key and the module it comes from;
 - what it does, and its current value against its default;
@@ -47,13 +79,45 @@ match sits in. A value saved here is stored with the repository and shared by ev
 deployment.
 
 A setting also given in the environment is shown **pinned** and cannot be edited here, because the environment
-wins - the page names what pinned it.
+wins - the page names what pinned it. Every change, on every page and at every level, is checked the same way before
+it is stored, whether it comes from the console, the API or the command line, and is recorded in the audit trail.
+
+A script reads and changes the same catalogue:
+
+```bash
+curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/api/settings
+curl -X PUT -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
+  -d '{"value":"HIGH"}' https://repo.example.com/api/settings/vulnerability-threshold
+jenrepo settings set vulnerability-threshold HIGH
+```
+
+`?tenant=<name>` on the same calls, or `--tenant <name>` on the command line, reads or changes a tenant's value.
+
+## A repository's settings
+
+A repository's own settings are on its **Settings** page, under **Lifecycle** among its pages. Each row shows the
+value in force - the repository's own, else its tenant's, else the deployment's - and **Revert** makes the
+repository inherit again. The retention rules are also on its **Retention & cleanup** page, and its routing on its
+**Overview**.
+
+A repository can be given its settings as it is created, as [Repositories](/repository/repositories/) shows, and
+changed later:
+
+```bash
+curl -X PUT -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
+  -d '{"value":"20"}' 'https://repo.example.com/api/repository/settings/keep-last?repo=libraries'
+jenrepo repos settings libraries set keep-last 20
+jenrepo repos settings libraries clear keep-last
+```
+
+A build-cache project's settings work the same way, on the project's page, under
+`/api/cache/projects/<name>/settings/<key>`, and with `jenrepo projects settings`.
 
 ## Upstreams
 
 **Upstreams** holds where the deployment fetches from: the **format upstreams** each format fetches a miss from,
-the **upstream credentials** to send a private upstream, and the **repository routing** that makes a repository
-fetch from an upstream or group others - for the deployment, and for one tenant over it.
+for the deployment and for one tenant over it, the **upstream credentials** to send a private upstream, and the
+deployment's **repository routing**, which routes the repository of a name in every tenant.
 [Proxying upstreams](/repository/proxying/) covers them.
 
 ## Backup & restore
@@ -65,7 +129,9 @@ change: a restore replaces every stored deployment setting.
 
 Some settings may differ per tenant - a stricter gate for one, a longer retention for another. **Tenant settings**
 lists the ones that may, for the tenant you are working in, with the deployment's value beside any override, and
-saves or reverts an override. A single-tenant deployment has no reason to use it.
+saves or reverts an override; a repository setting set here is the default for the tenant's repositories.
+**Restore** replaces the tenant's overrides with a bundle exported earlier. A single-tenant deployment has little
+reason to use the page.
 
 ## Modules
 

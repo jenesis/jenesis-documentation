@@ -1,7 +1,7 @@
 ---
 order: 6
 title: Proxying upstreams
-description: Serving what the repository does not hold yet from Maven Central, npm, Docker Hub or a private registry - format upstreams, repository definitions with fallbacks and groups, upstream credentials, and how a fetched artifact is checked and kept.
+description: Serving what the repository does not hold yet from Maven Central, npm, Docker Hub or a private registry - format upstreams, a repository's routing with fallbacks and groups, upstream credentials, and how a fetched artifact is checked and kept.
 ---
 
 A repository is most useful as a build's **single front door**: it serves your own packages and, on a miss,
@@ -61,20 +61,30 @@ Quarantine** with the reason *No trusted signer*, and the build that asked gets 
 A setting changes what happens from then on; an artifact already held stays in **Quarantine** until an editor
 releases it.
 
-## Repository definitions
+## A repository's routing
 
-A **definition** says what a repository is made of, and is where more than one upstream, or a mix of uploaded and
-fetched content, is described. It describes a repository rather than creating one: the repository is created with
-its type as [Repositories](/repository/repositories/) describes, and the definition then routes what it serves.
-Definitions are edited under **Settings → Upstreams → Repository routing**, a name and a definition each, for the
-deployment - which every tenant inherits - or for one tenant over it; a repository's **Overview** routes it for its
-tenant too. A
-definition is written in two clauses - `writable`, and `fallback` followed by an upstream URL or a repository name -
+A repository's **routing** says what it is made of, and is where more than one upstream, or a mix of uploaded and
+fetched content, is described. It is a setting of the repository, `routing`, and it describes the repository
+rather than creating one: the repository is created with its type as [Repositories](/repository/repositories/)
+describes, and its routing then decides what it serves.
+
+Routing is the deployment administrators' decision, since it names where the server fetches from. They set it on the
+wizard's **Routing** step when a repository is created, and later on the repository's **Overview** or its
+**Settings** page. A script sets it with a key of the operator tenant:
+
+```bash
+curl -X PUT -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
+  -d '{"value":"writable fallback https://repo1.maven.org/maven2/"}' \
+  'https://repo.example.com/api/repository/settings/routing?repo=libraries'
+jenrepo repos settings libraries set routing "writable fallback https://repo1.maven.org/maven2/"
+```
+
+Routing is written in two clauses - `writable`, and `fallback` followed by an upstream URL or a repository name -
 and nothing else is accepted:
 
-| Definition | The repository |
+| Routing | The repository |
 | --- | --- |
-| `writable` | Accepts uploads and fetches nothing - what a repository is when it has no definition. |
+| `writable` | Accepts uploads and fetches nothing - what a repository is when it has no routing and its format no upstream. |
 | `fallback https://repo1.maven.org/maven2/` | Only fetches from the upstream, and refuses uploads. |
 | `fallback internal fallback central` | Serves from each named repository in turn, and refuses uploads. |
 | `writable fallback https://repo1.maven.org/maven2/` | Accepts uploads *and* fetches misses from the upstream. |
@@ -92,9 +102,14 @@ can carry options:
 A container-image upstream may carry a path, which names the namespace its images are looked up in: a repository
 `core` defined as `fallback https://ghcr.io/homebrew/core` serves ghcr.io's `homebrew/core/<name>` as `<name>`.
 
-A definition is checked when it is saved: one that could not work is refused with the reason, and one that works
+Routing is checked when it is saved: routing that could not work is refused with the reason, and routing that works
 but is risky - a plaintext upstream, mixed screening - is saved and listed under **Definition warnings** on the
 **Repositories** page.
+
+Routing has no deployment-wide or tenant-wide default, since one would point every repository at the same upstream.
+What the deployment can hold instead is a **definition** of a repository name, under **Settings → Upstreams →
+Repository routing**, written the same way: it routes the repository of that name in every tenant, and a
+repository's own routing wins over it. A definition can also be a startup setting, `repositories.<name>`.
 
 ## Private upstreams
 

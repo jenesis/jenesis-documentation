@@ -1,40 +1,50 @@
 ---
 order: 8
 title: Retention, pins and cleanup
-description: How long a repository keeps what it holds - the retention policy, previewing and running a cleanup, pinning the versions that must stay, and how the space is reclaimed.
+description: How long a repository keeps what it holds - the retention rules and where they are set, previewing and running a cleanup, pinning the versions that must stay, and how the space is reclaimed.
 ---
 
 A repository keeps every version it is given until you tell it otherwise. The **Lifecycle** pages of a repository
-are where you do: **Retention & cleanup** sets a policy for which versions stay and applies it, and **Pins**
-names the versions no policy may touch. Space is given back in a second step, by a collector that removes what
+are where you do: **Retention & cleanup** sets the rules for which versions stay and applies them, and **Pins**
+names the versions no rule may touch. Space is given back in a second step, by a collector that removes what
 nothing refers to any more.
 
 ## Retention & cleanup
 
-**Retention & cleanup** shows the repository's retention policy as four dials. A version is **kept only if it
-satisfies every dial that is set**; a dial left empty imposes nothing, so an empty policy keeps everything.
+**Retention & cleanup** shows the rules in force for the repository and lets you change them. A version is **kept
+only if it satisfies every rule that is set**; a rule left empty imposes nothing, so a repository with no rules
+keeps everything, and a pinned version is kept whatever the rules say.
 
-| Dial | Keeps | Example |
+| Rule | Keeps | Example |
 | --- | --- | --- |
-| **keep-last** | At most this many newest versions of each package; `0` imposes no cap. | `20` |
-| **max-age** | Versions younger than this. | `P365D` |
-| **prerelease-expiry** | Prereleases - `1.0-beta`, `2.0.0-rc.1` - younger than this. | `P14D` |
-| **not-downloaded-for** | Versions downloaded within this window. | `P90D` |
+| **Keep last** (`keep-last`) | At most this many newest versions of each package; `0` imposes no cap. | `20` |
+| **Maximum age** (`max-age`) | Versions younger than this. | `P365D` |
+| **Prerelease expiry** (`prerelease-expiry`) | Prereleases - `1.0-beta`, `2.0.0-rc.1` - younger than this. | `P14D` |
+| **Not downloaded for** (`not-downloaded-for`) | Versions downloaded within this window. | `P90D` |
 
-Durations are ISO-8601: `P30D` is thirty days, `PT12H` twelve hours. **Save retention** stores the policy for
-this repository; saving needs the editor role.
+Each rule is a repository setting, so it is set at three levels: for the whole deployment under **Settings →
+Settings**, for a tenant's repositories under **Settings → Tenant settings**, and for one repository here or on its
+**Settings** page. The repository's own value wins, then the tenant's, then the deployment's. **Revert** makes the
+repository inherit again, and `none` switches a duration rule off for this repository even where a wider level sets
+one. Durations are written `P30D` or `30d`. Changing a rule needs the editor role.
 
-Below the policy, two buttons act on it:
+A new repository is given its rules as it is created, on the wizard's **Retention** step, and a script sets them
+with `jenrepo retention set <repo> --keep-last 20 --max-age P365D` or through the repository settings API.
 
-- **Preview cleanup** works out which versions the policy would remove, without removing anything, and lists
+Below the rules, two buttons act on them:
+
+- **Preview cleanup** works out which versions the rules would remove, without removing anything, and lists
   them - how many, and the first of them with the reason for each.
-- **Run cleanup now** removes them.
+- **Run cleanup now** removes them, after asking you to confirm and saying what the last preview found.
 
 Both run in the background, however large the repository is. The page shows what is running and refreshes itself,
 and afterwards shows the outcome of the last preview and the last cleanup, with when each finished.
 
 A cleanup also runs on its own: the deployment walks every repository's store daily at 03:00 UTC and applies each
-repository's policy. **Operations → Walks** changes when.
+repository's rules. **Operations → Walks** changes when.
+
+A cleanup removes only what was published into the repository. A copy it cached from an upstream is not a release,
+and the retention rules never remove it.
 
 <div class="note">
   <strong>not-downloaded-for</strong> needs downloads to be counted, which they are by default
@@ -44,9 +54,9 @@ repository's policy. **Operations → Walks** changes when.
 
 ## Pins
 
-A **pin** keeps a version whatever the retention policy says - the release in production, the version a customer
+A **pin** keeps a version whatever the retention rules say - the release in production, the version a customer
 depends on. **Pins** lists the pinned versions of the repository and adds new ones: enter the ecosystem, the
-coordinate and the version, and press **Pin a version**. **unpin** lifts a pin, after confirming; the version is
+coordinate and the version, and press **Pin a version**. **Unpin** lifts a pin, after confirming; the version is
 then treated like any other on the next cleanup.
 
 The package page lists, for each version, whether it is pinned.
@@ -74,6 +84,6 @@ A few other things are kept for a limited time, each with its own setting under 
 | The gate's decision log - the rows behind **Refused** | 180 days | `quarantine-log-retention` |
 
 <div class="tip">
-  <strong>Preview cleanup</strong> before a first run on a large repository: the preview shows exactly what a
-  policy would remove, and nothing changes until you press <strong>Run cleanup now</strong>.
+  <strong>Preview cleanup</strong> before a first run on a large repository: the preview shows exactly what the
+  rules would remove, and nothing changes until you press <strong>Run cleanup now</strong>.
 </div>
