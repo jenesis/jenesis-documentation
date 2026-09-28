@@ -147,7 +147,11 @@ than a heading and must match the id the repository server emits, not the wordin
 section's chapters verify. Logos and lockups under `src/assets/` are brand assets; the site renders the logos
 only.
 
-## The comparison page (/why/tool/)
+## The why pages (/why/)
+
+`src/why/repository/index.njk` presents Jenesis Repository; like a chapter of its section, every claim on it is
+checked by running the published image and doing what it says. The rest of this section is about the build tool's
+comparison page.
 
 `src/why/tool/index.njk` sets the build tool beside Maven, Gradle and Bazel, one build need per section. It
 argues for Jenesis, so it may pick what it shows - but every rule on facts above holds, and it holds for the

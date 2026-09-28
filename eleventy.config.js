@@ -113,7 +113,7 @@ export default function (eleventy) {
     { key: "jpx", url: "/jpx/", logo: "jenesis-jpx", repo: "https://github.com/jenesis/jenesis", title: "Jenesis jpx", tagline: "Runs any published module or Maven artifact with one command - npx for Java." },
     { key: "launcher", url: "/launcher/", logo: "jenesis-launcher", repo: "https://github.com/jenesis/jenesis-launcher", title: "Jenesis Launcher", tagline: "Executable jars that keep real Java modularity - no fat-jar merge." },
     { key: "modules", url: "/modules/", logo: "jenesis-modules", repo: "https://github.com/jenesis/jenesis-modules", title: "Jenesis Module Index", tagline: "Every module name declared on Maven Central, resolved to the artifact behind it - one owner per name." },
-    { key: "repository", url: "/repository/", logo: "jenesis-repository", repo: "https://github.com/jenesis/jenesis-repository", title: "Jenesis Repository", tagline: "A module-aware, database-free artifact repository for Maven, npm, PyPI, containers and twenty more ecosystems, with a gate for what comes in." },
+    { key: "repository", url: "/repository/", why: "/why/repository/", logo: "jenesis-repository", repo: "https://github.com/jenesis/jenesis-repository", title: "Jenesis Repository", tagline: "A module-aware, database-free artifact repository for more than twenty ecosystems - Maven, npm, PyPI, containers and the rest - with a gate for what comes in." },
   ]);
 
   return {
