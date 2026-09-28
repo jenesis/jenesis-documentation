@@ -11,7 +11,7 @@
     <h3>Maven keeps nothing outside <code>target/</code></h3>
     <p>
       Maven asks each plugin whether there is work. The compiler plugin checks its sources and skips an unchanged
-      module; Surefire has no such check, so the tests run on every build. There is no cache beside the build
+      module; Maven's test plugin has no such check, so the tests run on every build. There is no cache beside the build
       folder, so <code>mvn clean</code> discards everything built so far. Apache's build cache extension adds that
       cache, but only with the module as its unit: a module is restored whole or rebuilt whole. One changed line
       in a large module costs that module's full compile and its full test suite, every time.
