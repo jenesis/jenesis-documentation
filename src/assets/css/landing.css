@@ -295,6 +295,25 @@
 .lp-command pre { overflow-x: auto; }
 .lp-after { margin: 1.5rem 0 0; }
 
+/* ---- Console screenshots ----------------------------------------------------------------------------------- */
+/* Each screen is captured twice, in the console's light and dark theme, and the one matching the page's theme is
+   shown - by the same data-theme switch, and the same prefers-color-scheme fallback, as the brand marks in app.css.
+   A hidden image is not rendered, so a lazy one is never fetched. */
+.lp-tabs--shots .lp-tabs__list { flex-wrap: wrap; }
+.lp-shot figure { margin: 0; }
+.lp-shot__img {
+  display: block; width: 100%; height: auto; border: 1px solid var(--lp-border); border-radius: var(--app-radius-md);
+}
+.lp-shot__img--dark { display: none; }
+[data-theme="dark"] .lp-shot__img--light { display: none; }
+[data-theme="dark"] .lp-shot__img--dark { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .lp-shot__img--light { display: none; }
+  :root:not([data-theme="light"]) .lp-shot__img--dark { display: block; }
+}
+.lp-shot figcaption { margin-top: 1rem; color: var(--lp-muted); }
+.lp-shot figcaption strong { color: var(--lp-text); }
+
 /* ---- Open source and contact ------------------------------------------------------------------------------- */
 .lp-aside {
   margin-top: 1.5rem; padding: 1rem 1.25rem; border-left: 3px solid var(--lp-accent);
@@ -473,6 +492,8 @@
   .lp-band { padding: 3.5rem 0; }
 }
 @media (max-width: 560px) {
+  .lp-tabs--shots .lp-tabs__panel { padding: 1rem; }
+  .lp-tabs--shots .lp-tabs__list [role="tab"] { padding: 0.7rem 0.9rem; }
   .lp-costs { grid-template-columns: minmax(0, 1fr); }
   .lp-matrix { display: block; overflow-x: auto; }
   .lp-verdict { grid-template-columns: minmax(0, 1fr); gap: 0.4rem; }

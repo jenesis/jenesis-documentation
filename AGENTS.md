@@ -95,7 +95,8 @@ reference pages may be longer.
 Front matter is `order`, `title`, `description`; the menu, the previous/next links and the section index
 derive from it. Callouts are `<div class="note|tip|warning">`. A section that a demo exercises ends with
 `{% demos 21, 22 %}`, which renders one "Demo 21: Module alias" link per line from `demos.js`; every demo is
-linked from at least one section. No diagrams, no screenshots.
+linked from at least one section. No diagrams, no screenshots - with one exception, the console screens on the
+Jenesis Repository why page (see *The why pages* below).
 
 **Every heading is an anchor, and its words are its id.** The build gives each `##` and `###` an `id` taken
 from the heading's own text, lower case with one hyphen per run of anything else, so *Keeping a dependency
@@ -150,8 +151,18 @@ only.
 ## The why pages (/why/)
 
 `src/why/repository/index.njk` presents Jenesis Repository; like a chapter of its section, every claim on it is
-checked by running the published image and doing what it says. The rest of this section is about the build tool's
-comparison page.
+checked by running the published image and doing what it says.
+
+**Its console section is the site's one set of screenshots, and the owner asked for it** - do not remove it under
+the no-screenshots rule. The screens are of the open-source image's console, never another edition's, seeded with
+plausible content and showing no key. Each is captured twice, in the console's light and its dark theme (set the
+way the console sets it: `jenesis-theme` in `localStorage`, `data-theme` on `<html>`), and kept as WebP under
+`src/assets/screenshots/repository/light/` and `.../dark/` with the same name. The page shows the one matching its
+own theme with the brand marks' mechanism - the `data-theme` switch, with `prefers-color-scheme` as the fallback -
+so the theme toggle swaps them too. Screenshots go stale, so a change to a screen the page shows is followed by a
+new capture of both themes; every image carries alt text saying what the screen shows.
+
+The rest of this section is about the build tool's comparison page.
 
 `src/why/tool/index.njk` sets the build tool beside Maven, Gradle and Bazel, one build need per section. It
 argues for Jenesis, so it may pick what it shows - but every rule on facts above holds, and it holds for the

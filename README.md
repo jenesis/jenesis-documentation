@@ -118,7 +118,9 @@ modules.
 
 The site is deliberately plain: prose, code, tables, and three callouts. There are **no diagrams** - a reader
 who wants the mechanism is better served by an example than by a picture of one - and no screenshots, which go
-stale.
+stale. The one exception, which the owner asked for, is the console section of the Jenesis Repository why page
+(`/why/repository/`): its screens are kept in a light and a dark capture each, under
+`src/assets/screenshots/repository/`, and `AGENTS.md` says how they are made and kept current.
 
 **Callouts** are a `<div>` with one of three classes, and each has a job:
 

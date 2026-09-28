@@ -45,7 +45,8 @@ eleventyExcludeFromCollections: true
     <figure class="lp-terminal" aria-label="Starting Jenesis Repository with Docker">
       <div class="lp-terminal__bar" aria-hidden="true"><span></span><span></span><span></span></div>
       <pre><code><span class="lp-prompt">$</span> docker run -d --name jenesis -p 8080:8080 \
-    -v jenesis-data:/data -e JENREG_FILESYSTEM_ROOT=/data \
+    -v jenesis-data:/data \
+    -e JENREPO_FILESYSTEM_ROOT=/data \
     jenesisbuild/jenesis-repository
 <span class="lp-prompt">$</span> docker logs jenesis
 <span class="lp-dim">============================================================</span>
@@ -138,9 +139,9 @@ eleventyExcludeFromCollections: true
     <div class="lp-stack">
       <figure class="lp-code">
         <figcaption>From a volume to a bucket</figcaption>
-        <pre><code>JENREG_STORE=s3
-JENREG_S3_BUCKET=my-artifacts
-JENREG_S3_REGION=eu-central-1</code></pre>
+        <pre><code>JENREPO_STORE=s3
+JENREPO_S3_BUCKET=my-artifacts
+JENREPO_S3_REGION=eu-central-1</code></pre>
       </figure>
       <div class="lp-card">
         <h3>Templates to start from</h3>
@@ -250,14 +251,15 @@ JENREG_S3_REGION=eu-central-1</code></pre>
     <div class="lp-features">
       <div>
         <h3>Keys and sign-in</h3>
-        <p>Sign-in through OpenID Connect, GitHub, LDAP or Active Directory. Keys scoped to a repository and a
-          path, expiring after 90 days by default and rotated with an overlap - and keyless CI, which trades a
-          job's identity token for a short-lived key.</p>
+        <p>Sign-in through OpenID Connect, GitHub, LDAP or Active Directory, or with a login key. Keys scoped to a
+          repository and a path, expiring after 90 days by default and rotated with an overlap - and keyless CI,
+          which trades a job's identity token for a short-lived key.</p>
       </div>
       <div>
         <h3>Releases and cleanup</h3>
-        <p>Stage a release, then promote or drop it. Retention rules with a preview and pins, and each distinct
-          file stored once, however many versions and formats refer to it.</p>
+        <p>Stage a release, then promote or drop it. Retention rules set for the deployment, a tenant or one
+          repository, with a preview and pins, and each distinct file stored once, however many versions and formats
+          refer to it.</p>
       </div>
       <div>
         <h3>Moving in</h3>
@@ -265,9 +267,11 @@ JENREG_S3_REGION=eu-central-1</code></pre>
           resumable jobs - or upload a zip.</p>
       </div>
       <div>
-        <h3>A console and an HTTP API</h3>
-        <p>A console for people and an API for scripts, with health, metrics and log endpoints, signed webhooks
-          and a rate limit per tenant.</p>
+        <h3>A console, an API and a command line</h3>
+        <p>A console for people, with wizards that create a repository together with its settings, and an API for
+          scripts. The <code>jenrepo</code> command, from Homebrew, Scoop or mise, drives all of it from a terminal,
+          with JSON output for programs. Health, metrics and log endpoints, signed webhooks and a rate limit per
+          tenant come with it.</p>
       </div>
     </div>
   </div>
@@ -287,13 +291,90 @@ JENREG_S3_REGION=eu-central-1</code></pre>
   </div>
 </section>
 
-<section class="lp-band lp-band--tint" id="security" aria-labelledby="security-title">
+<section class="lp-band lp-band--tint" id="console" aria-labelledby="console-title">
+  <div class="lp-wrap">
+    <p class="lp-eyebrow">The console</p>
+    <h2 id="console-title">See what every repository holds, and why.</h2>
+    <p class="lp-section-lede">
+      A web console comes with the server, on the same port. It shows what each repository holds and where it came
+      from, what the gate held back, and every setting at the level it is set - and a wizard creates a repository
+      with its settings in one step.
+    </p>
+    <div class="lp-tabs lp-tabs--shots" data-tabs>
+      <div class="lp-tabs__list" role="tablist" aria-label="Screens of the console">
+        <button role="tab" id="tab-shot-repositories" aria-controls="panel-shot-repositories" aria-selected="true">Repositories</button>
+        <button role="tab" id="tab-shot-overview" aria-controls="panel-shot-overview" aria-selected="false" tabindex="-1">A pull-through</button>
+        <button role="tab" id="tab-shot-package" aria-controls="panel-shot-package" aria-selected="false" tabindex="-1">A package</button>
+        <button role="tab" id="tab-shot-quarantine" aria-controls="panel-shot-quarantine" aria-selected="false" tabindex="-1">Quarantine</button>
+        <button role="tab" id="tab-shot-wizard" aria-controls="panel-shot-wizard" aria-selected="false" tabindex="-1">New repository</button>
+        <button role="tab" id="tab-shot-settings" aria-controls="panel-shot-settings" aria-selected="false" tabindex="-1">Settings</button>
+      </div>
+      <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-repositories" aria-labelledby="tab-shot-repositories">
+        <figure>
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/repositories.webp" width="1440" height="738" loading="lazy" decoding="async"
+            alt="The console's list of repositories: five of them - a Maven repository for the platform team's libraries, an npm, a PyPI and a container-image repository, and a read-only Maven repository that pulls through Maven Central - each with its format, description and creation date, beside the button that creates a new one.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/repositories.webp" width="1440" height="738" loading="lazy" decoding="async"
+            alt="The console's list of repositories: five of them - a Maven repository for the platform team's libraries, an npm, a PyPI and a container-image repository, and a read-only Maven repository that pulls through Maven Central - each with its format, description and creation date, beside the button that creates a new one.">
+          <figcaption><strong>The repositories.</strong> Every repository of a tenant in one list, each with its format, what it is for and how it is routed.</figcaption>
+        </figure>
+      </div>
+      <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-overview" aria-labelledby="tab-shot-overview" hidden>
+        <figure>
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/overview.webp" width="1440" height="900" loading="lazy" decoding="async"
+            alt="The overview of the repository maven-central, a Maven pull-through served at /repository/releases/maven-central/. Its holdings list Guava, SLF4J, Jackson and Commons Lang versions, each marked as cached from https://repo1.maven.org/maven2/. The sidebar lists the repository's pages under Contents, Review, Risk, Provenance and Lifecycle.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/overview.webp" width="1440" height="900" loading="lazy" decoding="async"
+            alt="The overview of the repository maven-central, a Maven pull-through served at /repository/releases/maven-central/. Its holdings list Guava, SLF4J, Jackson and Commons Lang versions, each marked as cached from https://repo1.maven.org/maven2/. The sidebar lists the repository's pages under Contents, Review, Risk, Provenance and Lifecycle.">
+          <figcaption><strong>The overview of a proxy.</strong> A pull-through of Maven Central: what it has cached, and from where. Everything it caches is screened and re-scanned like a release.</figcaption>
+        </figure>
+      </div>
+      <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-package" aria-labelledby="tab-shot-package" hidden>
+        <figure>
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/package.webp" width="1440" height="900" loading="lazy" decoding="async"
+            alt="The page of the package com.fasterxml.jackson.core:jackson-databind in maven-central: a table of its versions with whether each was published or cached, whether it is pinned, its downloads and the paths it is served at - the jar, the POM and their signatures.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/package.webp" width="1440" height="900" loading="lazy" decoding="async"
+            alt="The page of the package com.fasterxml.jackson.core:jackson-databind in maven-central: a table of its versions with whether each was published or cached, whether it is pinned, its downloads and the paths it is served at - the jar, the POM and their signatures.">
+          <figcaption><strong>The versions of a package.</strong> One package and its versions: where each came from, whether it is pinned, and every path it is served at.</figcaption>
+        </figure>
+      </div>
+      <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-quarantine" aria-labelledby="tab-shot-quarantine" hidden>
+        <figure>
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/quarantine.webp" width="1440" height="767" loading="lazy" decoding="async"
+            alt="The quarantine of the repository libraries: the jar and the POM of com.acme.reports:pdf-renderer 3.1.0, both held by the gate on arrival because a policy rule matched their AGPL licence and they carry no publisher signature, each with a Release and a Discard button.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/quarantine.webp" width="1440" height="767" loading="lazy" decoding="async"
+            alt="The quarantine of the repository libraries: the jar and the POM of com.acme.reports:pdf-renderer 3.1.0, both held by the gate on arrival because a policy rule matched their AGPL licence and they carry no publisher signature, each with a Release and a Discard button.">
+          <figcaption><strong>The review queue.</strong> What the gate held back, and why. A person releases or discards each; until then no client can download it.</figcaption>
+        </figure>
+      </div>
+      <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-wizard" aria-labelledby="tab-shot-wizard" hidden>
+        <figure>
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/wizard.webp" width="1440" height="704" loading="lazy" decoding="async"
+            alt="The last step of the New repository wizard, Review, after the steps Repository, Retention and Routing: it lists the name gradle-plugins, the format maven, a description, the retention rules with the defaults marked, and the routing fallback https://plugins.gradle.org/m2/, above the buttons Create repository, Back and Cancel.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/wizard.webp" width="1440" height="704" loading="lazy" decoding="async"
+            alt="The last step of the New repository wizard, Review, after the steps Repository, Retention and Routing: it lists the name gradle-plugins, the format maven, a description, the retention rules with the defaults marked, and the routing fallback https://plugins.gradle.org/m2/, above the buttons Create repository, Back and Cancel.">
+          <figcaption><strong>The new-repository wizard.</strong> A repository is created with its retention and routing in one step, after a review - nothing is written before it.</figcaption>
+        </figure>
+      </div>
+      <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-settings" aria-labelledby="tab-shot-settings" hidden>
+        <figure>
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/settings.webp" width="1440" height="900" loading="lazy" decoding="async"
+            alt="The Settings page of the repository libraries: its retention rules, Keep last set to 10 for this repository with a Revert button, and Maximum age and Not downloaded for left to inherit, each with what it does and its effective and inherited values.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/settings.webp" width="1440" height="900" loading="lazy" decoding="async"
+            alt="The Settings page of the repository libraries: its retention rules, Keep last set to 10 for this repository with a Revert button, and Maximum age and Not downloaded for left to inherit, each with what it does and its effective and inherited values.">
+          <figcaption><strong>A repository's settings.</strong> Each setting is set for the deployment, a tenant or one repository, and a repository shows where each value comes from.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="lp-band" id="security" aria-labelledby="security-title">
   <div class="lp-wrap">
     <p class="lp-eyebrow">Security</p>
     <h2 id="security-title">A gate for what comes in.</h2>
     <p class="lp-section-lede">
       Every upload and every package fetched from a public registry passes the same gate before anyone can
-      download it. What fails is refused or held for review - and what is held is checked again every hour.
+      download it. What fails is refused or held for review - and everything it holds, the copies cached from
+      upstream included, is checked again every hour.
     </p>
     <div class="lp-features">
       <div>
@@ -321,7 +402,7 @@ JENREG_S3_REGION=eu-central-1</code></pre>
   </div>
 </section>
 
-<section class="lp-band" id="quality" aria-labelledby="quality-title">
+<section class="lp-band lp-band--tint" id="quality" aria-labelledby="quality-title">
   <div class="lp-wrap lp-split lp-split--quality">
     <div>
       <p class="lp-eyebrow">Built for reliability</p>
@@ -347,12 +428,12 @@ JENREG_S3_REGION=eu-central-1</code></pre>
   </div>
 </section>
 
-<section class="lp-band lp-band--tint" id="run" aria-labelledby="run-title">
+<section class="lp-band" id="run" aria-labelledby="run-title">
   <div class="lp-wrap">
     <p class="lp-eyebrow">Get started</p>
     <h2 id="run-title">Running in a few minutes.</h2>
     <p class="lp-section-lede">
-      A fresh start prints a one-time key, and signing in with it opens the setup guide. Pick where to run it:
+      A fresh start prints a one-time key, and signing in with it opens the setup wizard. Pick where to run it:
     </p>
     <div class="lp-tabs" data-tabs>
       <div class="lp-tabs__list" role="tablist" aria-label="Where to run it">
@@ -365,7 +446,7 @@ JENREG_S3_REGION=eu-central-1</code></pre>
           <li>
             <p>Start the server with a volume for its store.</p>
             <div class="lp-command"><pre><code>docker run -d --name jenesis -p 8080:8080 \
-  -v jenesis-data:/data -e JENREG_FILESYSTEM_ROOT=/data \
+  -v jenesis-data:/data -e JENREPO_FILESYSTEM_ROOT=/data \
   jenesisbuild/jenesis-repository</code></pre></div>
           </li>
           <li>
@@ -374,7 +455,7 @@ JENREG_S3_REGION=eu-central-1</code></pre>
           </li>
           <li>
             <p>Open <code>http://localhost:8080</code>, choose <em>Sign in with a key</em>, and follow the setup
-              guide.</p>
+              wizard.</p>
           </li>
         </ol>
       </div>
@@ -403,7 +484,7 @@ JENREG_S3_REGION=eu-central-1</code></pre>
               provisioned and selected, and the server starts on it.</p>
             <div class="lp-command"><pre><code>terraform -chdir=deploy/gcp apply \
   -var project_id=my-project -var bucket_name=my-artifacts \
-  -var 'secrets={JENREG_BOOTSTRAP_KEY="jenk_...", JENREG_UI_ADMIN_KEY="..."}'</code></pre></div>
+  -var 'secrets={JENREPO_BOOTSTRAP_KEY="jenk_...", JENREPO_UI_ADMIN_KEY="..."}'</code></pre></div>
           </li>
         </ol>
       </div>
@@ -414,7 +495,7 @@ JENREG_S3_REGION=eu-central-1</code></pre>
   </div>
 </section>
 
-<section class="lp-band" id="open" aria-labelledby="open-title">
+<section class="lp-band lp-band--tint" id="open" aria-labelledby="open-title">
   <div class="lp-wrap lp-split">
     <div>
       <p class="lp-eyebrow">Open source</p>
@@ -440,7 +521,7 @@ JENREG_S3_REGION=eu-central-1</code></pre>
   </div>
 </section>
 
-<section class="lp-band lp-band--tint" id="faq" aria-labelledby="faq-title">
+<section class="lp-band" id="faq" aria-labelledby="faq-title">
   <div class="lp-wrap lp-faq">
     <h2 id="faq-title">Questions</h2>
     <details>
