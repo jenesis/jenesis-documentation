@@ -21,7 +21,7 @@ that declares a main class.
 | `jmod=true` | a `.jmod` module file (modular only) |
 | `bundle=true` | a `bundle.zip` to drop onto a stock JRE |
 | `launcher=true` | a single executable jar |
-| `docker=<base image>` | a container build context - a `Dockerfile` and the jars it copies |
+| `docker=<base image>` | a container build context - a `Dockerfile` and the jars it copies, labelled by `docker.label.<name>=<value>` lines |
 | `native=true` | a GraalVM native binary |
 
 <div class="note">
@@ -294,6 +294,10 @@ file its `ENTRYPOINT` names:
 
 ```dockerfile
 FROM eclipse-temurin:25-jre
+LABEL "org.opencontainers.image.base.name"="eclipse-temurin:25-jre" \
+      "org.opencontainers.image.title"="sample" \
+      "org.opencontainers.image.version"="1.0.0" \
+      ...
 WORKDIR /app
 COPY jars/ /app/jars/
 COPY application.args /app/
@@ -305,8 +309,48 @@ the app image or the launcher jar starts, and it stays this size however many ja
 When the module graph is not self-contained, the argument file carries the same
 `--add-modules=ALL-MODULE-PATH,ALL-DEFAULT` correction.
 
-The base image is the only knob, and deliberately so: `ENV`, `USER`, `EXPOSE` and the rest are inherited from
-the base, so image environment belongs in a base image rather than in build configuration.
+The base image and the labels are the only knobs, and deliberately so: `ENV`, `USER`, `EXPOSE` and the rest
+are inherited from the base, so image environment belongs in a base image rather than in build configuration.
+
+### Labels
+
+The `LABEL` instruction carries the standard `org.opencontainers.image.*` keys, filled from what the project
+declares - its name, description, version and URL, source repository and revision, organisation, developers
+and licences, as its SBOM names them. Licences are written as an SPDX expression when every one is
+identified. Every standard key is written, empty where the project declares nothing, so no label of the base
+image carries over. `created` holds `jenesis.archive.timestamp` when that is set explicitly - to the time of
+the commit that is built, for example - and is empty otherwise.
+
+A `docker.label.<name>=<value>` line adds a label of your own or replaces a standard one; an empty value
+writes it empty:
+
+```properties
+# build.jenesis/packaging.properties
+docker=eclipse-temurin:25-jre
+docker.label.org.opencontainers.image.documentation=https://jenesis.build
+```
+
+### Extending the image
+
+The launch ends both paths with a folder the build leaves out, so an image built `FROM` this one can add
+jars without replacing the entry point: `/app/extensions/modulepath` on the module path and
+`/app/extensions/classpath/*` on the class path. `java` skips a folder that does not exist, so an image that
+adds nothing runs as before.
+
+```dockerfile
+FROM sample
+COPY my-extension.jar /app/extensions/modulepath/
+```
+
+A module there is resolved when it provides a service the application uses, and a jar on the class path is
+found through its `META-INF/services` entries. The application's own jars come first on both paths, so an
+extension adds to the application but never replaces one of its modules. Options for `java` - a system
+property, a module to resolve by name - go into `JDK_JAVA_OPTIONS`, which an image extends rather than
+replaces:
+
+```dockerfile
+ENV JDK_JAVA_OPTIONS="${JDK_JAVA_OPTIONS} --add-modules com.example.extension"
+```
 
 <div class="note">
   The build never invokes a container tool - it writes files - so producing the context needs no Docker
