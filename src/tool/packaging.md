@@ -319,7 +319,8 @@ declares - its name, description, version and URL, source repository and revisio
 and licences, as its SBOM names them. Licences are written as an SPDX expression when every one is
 identified. Every standard key is written, empty where the project declares nothing, so no label of the base
 image carries over. `created` holds `jenesis.archive.timestamp` when that is set explicitly - to the time of
-the commit that is built, for example - and is empty otherwise.
+the commit that is built with `-Djenesis.archive.timestamp=$(git log -1 --format=%cI)`, for example (see
+*[Building &amp; running](/tool/building-and-running/#reproducible-archives)*) - and is empty otherwise.
 
 A `docker.label.<name>=<value>` line adds a label of your own or replaces a standard one; an empty value
 writes it empty:
