@@ -294,7 +294,6 @@ export default {
           notes: [
             "One changed class rebuilds its entire module with the extension and reruns every test in it, whether or not a test reaches the change.",
             "Without the extension, a build with nothing changed skips the compiler but runs the tests again; one edited class recompiles the main and the test sources; <code>mvn clean</code> starts from nothing.",
-            "Running only the tests a change reaches is Predictive Test Selection, part of the commercial Develocity.",
           ],
         },
         gradle: {
@@ -305,7 +304,7 @@ export default {
           commands: "./gradlew build",
           notes: [
             "After editing <code>Main.java</code>, <code>compileJava</code> and <code>test</code> ran again, <code>GreeterTest</code> included; after <code>clean</code>, both came <code>FROM-CACHE</code> out of <code>~/.gradle/caches/build-cache-1</code>.",
-            "Running only the tests a change reaches is Predictive Test Selection, part of the commercial Develocity.",
+            "Running only the tests a change reaches is part of a commercial offering.",
           ],
         },
         bazel: {
