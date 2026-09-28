@@ -31,12 +31,13 @@ a directory on a volume, or a bucket on S3, Google Cloud Storage or Azure Blob.
 ## How this section is organised
 
 The chapters follow the console. After the first two, each covers one of its sections, in the order they appear
-across the top of the page:
+across the top of the page, and the command line follows them:
 
 1. **Getting started** - run the image, sign in, issue a key, and publish with Maven and npm.
 2. **Finding your way around** - the console's two navigation levels, the pages of a repository, and who sees
    what.
-3. **Repositories** - what a repository is here, and its overview, browse, staging and import pages.
+3. **Repositories** - what a repository is here, creating one with its settings, and its overview, browse,
+   staging and import pages.
 4. **Connecting your build tools** - the URL and credential form for every client.
 5. **Proxying upstreams** - serving Maven Central, Docker Hub and other registries through your repository.
 6. **Screening what comes in** - the gate, the review queue, and the vulnerability, findings and signer
@@ -45,12 +46,14 @@ across the top of the page:
 8. **The build cache** - projects, and pointing the Jenesis build tool at them.
 9. **Access** - signing people in, members and roles, credentials for build tools, and keyless CI.
 10. **Operations** - metrics, the security posture, scheduled walks, manual uploads, webhooks and rate limits.
-11. **Settings** - the first-run guide, the settings catalogue, modules, and backing settings up.
-12. **Running in production** - object storage, the Helm chart, TLS and backups.
-13. **Migrating in and out** - importing from Nexus, Artifactory and others, and taking everything out again.
-14. **What it costs to run** - where an object store's bill comes from, and how to keep it small.
-15. **Running from source** - for those who want to change the server itself.
-16. **Configuration reference** - every setting in one place.
+11. **Settings** - the levels a setting is stored at, the first-run wizard, the settings catalogue, modules, and
+    backing settings up.
+12. **The command line** - the `jenrepo` command, for a terminal, a script or a program.
+13. **Running in production** - object storage, the Helm chart, TLS and backups.
+14. **Migrating in and out** - importing from Nexus, Artifactory and others, and taking everything out again.
+15. **What it costs to run** - where an object store's bill comes from, and how to keep it small.
+16. **Running from source** - for those who want to change the server itself.
+17. **Configuration reference** - every setting in one place.
 
 <div class="tip">
   Start with <strong>Getting started</strong>: it takes you from <code>docker run</code> to a published artifact

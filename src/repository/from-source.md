@@ -1,5 +1,5 @@
 ---
-order: 16
+order: 17
 title: Running from source
 description: For changing the server itself - running it from a clone, building your own image, and composing a server with only the modules you want.
 ---

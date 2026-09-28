@@ -1,5 +1,5 @@
 ---
-order: 15
+order: 16
 title: What it costs to run
 description: Where the bill of a Jenesis Repository deployment comes from - the store's storage, transfer and operations - which lines grow with your traffic and which grow with your repository, where the traps are on each provider, and when a store that does not charge per request is the cheaper choice.
 ---
