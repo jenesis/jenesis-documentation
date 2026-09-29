@@ -449,8 +449,10 @@ JENREG_S3_REGION=eu-central-1</code></pre>
         upload them, and read the metadata that goes with them. The established repository managers keep those
         artifacts in a blob store or on a file system as well; their database mainly serves the features built on
         top. Jenesis Repository aligns its architecture with that primary need and meets the rest without adding a
-        constraint of its own: the store is the system of record, and on start the server checks that the store
-        offers the conditional writes it relies on, and refuses one that does not.</p>
+        constraint of its own: the store is the system of record. That has only recently become feasible. It
+        takes compare-and-swap writes, which Google Cloud Storage and Azure Blob Storage have offered for years and
+        Amazon S3 added in 2024, so that every major cloud's object store now provides them. On start, the server
+        checks that the store offers these conditional writes, and refuses one that does not.</p>
     </details>
     <details>
       <summary>How do I back it up?</summary>
