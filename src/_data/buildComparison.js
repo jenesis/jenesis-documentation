@@ -162,7 +162,7 @@ export default {
         jenesis: {
           status: "built",
           badge: "Source",
-          verdict: "Embedded in the repository as source: <code>build/jenesis/</code>, 189 Java files of 2.3 MB. A clean build downloads nothing more.",
+          verdict: "Embedded in the repository as source: <code>build/jenesis/</code>, 2.3 MB. A clean build downloads nothing more: 189 files in total.",
           files: [
             file("hello/jenesis", "sources/module-info.java"),
             file("hello/jenesis", "sources/demo/hello/Main.java"),
@@ -177,7 +177,7 @@ export default {
         maven: {
           status: "manual",
           badge: "Download",
-          verdict: "The Maven Wrapper downloads a 9.4 MB binary release of 96 files. A clean build then downloads 161 files of plugins, 20 MB.",
+          verdict: "The Maven Wrapper downloads a 9.4 MB binary release, and a clean build then 20 MB of plugins: about 13,400 files in total, counting those inside jars.",
           files: [
             file("hello/maven", "pom.xml"),
             file("hello/maven", ".mvn/wrapper/maven-wrapper.properties", { generated: "mvn wrapper:wrapper" }),
@@ -193,7 +193,7 @@ export default {
         gradle: {
           status: "manual",
           badge: "Download",
-          verdict: "The Gradle Wrapper, a 47 KB jar in the repository, downloads a 152 MB binary release of 717 files. This build needs no plugin beyond it.",
+          verdict: "The Gradle Wrapper, a 47 KB jar in the repository, downloads a 152 MB binary release, and this build needs no plugin beyond it: about 102,800 files in total, counting those inside jars.",
           files: [
             file("hello/gradle", "build.gradle.kts"),
             file("hello/gradle", "settings.gradle.kts"),
@@ -209,7 +209,7 @@ export default {
         },
         bazel: {
           status: "none",
-          verdict: "The repository cannot bootstrap Bazel: every machine installs Bazelisk first, 7 MB, which downloads the 66 MB Bazel binary <code>.bazelversion</code> names. A clean build then downloads 563 MB in 215 files.",
+          verdict: "The repository cannot bootstrap Bazel: every machine installs Bazelisk first, 7 MB, which downloads the 66 MB Bazel binary <code>.bazelversion</code> names. A clean build then downloads 563 MB: about 79,200 files in total, counting those inside jars.",
           files: [
             file("hello/bazel", "MODULE.bazel"),
             file("hello/bazel", "BUILD.bazel"),
@@ -223,7 +223,7 @@ export default {
             "INFO: Build completed successfully, 9 total actions",
             "Hello, world!",
           ],
-          notes: ["The sizes are for Linux. On first use the Bazel binary unpacks a further 195 MB, and the clean build's 563 MB hold two JDKs, 25 and 11, a Python interpreter and the rulesets."],
+          notes: ["The sizes are for Linux. On first use the Bazel binary unpacks a further 195 MB, and the clean build's 563 MB hold two JDKs, 25 and 11, a Python interpreter and the rulesets. The file count includes both."],
         },
       },
     },
