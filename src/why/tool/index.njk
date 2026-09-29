@@ -26,12 +26,13 @@ eleventyExcludeFromCollections: true
       <p class="lp-eyebrow">Why Java needs a new build system</p>
       <h1>You already wrote <span class="lp-accent">the build script.</span></h1>
       <p class="lp-lede">
-        Maven and Gradle predate the Java Module System. Each brings a build language of its own, in which every
-        dependency is declared once more, and a release to download before anything builds. Since Java 9, a
-        <code>module-info.java</code> names the module, what it requires and what it exports, and <code>javac</code>
-        checks it. Jenesis reads it as the build: <code>java build/jenesis/Make.java</code> compiles, tests and
-        packages the project with the JDK you already have, from source kept in the repository - nothing else to
-        write and no build tool to download.
+        Java builds have grown verbose. A <code>pom.xml</code>, a <code>build.gradle.kts</code> or a
+        <code>BUILD.bazel</code> restates what the code already says - its name, its dependencies, its main class -
+        and grows a block of configuration for every step beyond the defaults, until the build is a second program
+        to maintain beside the first. Jenesis reads the build from the code instead: <code>module-info.java</code>
+        names what the project requires, two Javadoc tags set the release and the main class, and
+        <code>java build/jenesis/Make.java</code> compiles, tests and packages it with the JDK you already have -
+        nothing else to write and no build tool to download.
       </p>
       <ul class="lp-pills" aria-label="At a glance">
         <li><strong>Nothing else to write</strong></li>
