@@ -209,11 +209,11 @@ export default {
         },
         bazel: {
           status: "none",
-          verdict: "The repository cannot bootstrap Bazel: every machine installs Bazelisk first, 7 MB, which downloads the 66 MB Bazel binary <code>.bazelversion</code> names. A clean build then downloads 563 MB: about 79,200 files in total, counting those inside jars.",
+          verdict: "The repository cannot bootstrap Bazel: every machine installs Bazelisk first, 7 MB, which downloads the 66 MB Bazel binary <code>.bazelversion</code> names. A clean build then downloads 131 MB: about 76,300 files in total, counting those inside jars.",
           files: [
             file("hello/bazel", "MODULE.bazel"),
-            file("hello/bazel", "BUILD.bazel"),
-            file("hello/bazel", ".bazelrc", { note: "Without it rules_java compiles for Java 11." }),
+            file("hello/bazel", "BUILD.bazel", { note: "Without the toolchain, rules_java downloads a JDK 25 of its own to compile with." }),
+            file("hello/bazel", ".bazelrc", { note: "Without it rules_java compiles for Java 11 and downloads its own JDKs." }),
             file("hello/bazel", ".bazelversion"),
             listed("MODULE.bazel.lock", 456, "Bazel, on every build"),
             file("hello/bazel", "src/main/java/demo/hello/Main.java"),
@@ -223,7 +223,7 @@ export default {
             "INFO: Build completed successfully, 9 total actions",
             "Hello, world!",
           ],
-          notes: ["The sizes are for Linux. On first use the Bazel binary unpacks a further 195 MB, and the clean build's 563 MB hold two JDKs, 25 and 11, a Python interpreter and the rulesets. The file count includes both."],
+          notes: ["The sizes are for Linux. On first use the Bazel binary unpacks a further 195 MB, and the clean build's 131 MB hold a Python interpreter and the rulesets. The file count includes both."],
         },
       },
     },
