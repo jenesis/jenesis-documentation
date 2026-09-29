@@ -32,8 +32,9 @@
     </p>
     <ul class="lp-marks">
       <li class="lp-mark lp-mark--ok"><strong>Jenesis</strong> - the verifier is part of the project: <code>build/jenesis/</code>
-        is source committed with it, or a submodule pinned to one commit, so it changes only through a diff you
-        review, and nothing is downloaded before the checks run. OpenPGP runs the system's <code>gpgv</code>, which
+        is source committed with it, or a submodule pinned to one commit, whose hash git checks against every
+        source file it fetches. It changes only through a diff you review, and nothing is downloaded before the
+        checks run. OpenPGP runs the system's <code>gpgv</code>, which
         reads only a keyring built from the fingerprints you declared. Sigstore bundles are checked with the JDK's
         own cryptography, against a trust root written into that source.</li>
       <li class="lp-mark lp-mark--bad"><strong>Maven</strong> - pgpverify and Sigmund, with Bouncy Castle and sigstore-java, are resolved from
