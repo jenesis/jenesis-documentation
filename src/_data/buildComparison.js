@@ -281,7 +281,7 @@ export default {
           ],
           notes: [
             "<code>GreeterTest</code> reaches <code>Greeter</code> but not <code>Main</code>. The terminal shows the test each build ran and its last line; <code>-Djenesis.print.tests=true</code> prints the tests.",
-            "Named without a value, <code>jenesis.project.cache</code> keeps the cache in <code>.jenesis/cache</code>. <code>jenesis.cache.uri=file:///...</code> shares one folder between checkouts, and an <code>https://</code> address a cache server.",
+            "Named without a value, <code>jenesis.project.cache</code> keeps the cache in <code>.jenesis/cache</code>. <code>jenesis.cache.uri=file:///...</code> shares one folder between checkouts, and an <code>https://</code> address a cache server, such as <a href=\"/why/repository/\">Jenesis Repository</a>.",
             "Test selection reads the compiled classes: a test runs when a class it reaches changed. It cannot see reflection, so continuous integration runs the whole suite.",
           ],
         },
