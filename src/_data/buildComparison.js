@@ -171,7 +171,10 @@ export default {
             "[COMPLETED] Finished in 2.65 seconds",
             "Hello, world!",
           ],
-          notes: ["The build tool itself is the <code>build/jenesis/</code> folder, kept as source in the project; the last section installs it. The terminal shows the build's last line."],
+          notes: [
+            "The build tool is embedded in the project as source: the <code>build/jenesis/</code> folder, 189 Java files of about 2.3 MB, which the JDK compiles on first use. Nothing is downloaded to build; the last section installs it.",
+            "The terminal shows the build's last line.",
+          ],
         },
         maven: {
           status: "built",
@@ -186,7 +189,10 @@ export default {
             "$ java -cp target/hello-1.0.0.jar demo.hello.Main",
             "Hello, world!",
           ],
-          notes: ["Maven has no command that runs the program; a plugin such as the Exec plugin adds one."],
+          notes: [
+            "Maven is installed on the machine, or embedded by the Maven Wrapper: <code>mvn wrapper:wrapper</code> adds the <code>mvnw</code> scripts and <code>.mvn/wrapper/maven-wrapper.properties</code>, and <code>./mvnw</code> downloads the 9.4 MB Maven release they name on first use.",
+            "Maven has no command that runs the program; a plugin such as the Exec plugin adds one.",
+          ],
         },
         gradle: {
           status: "built",
@@ -203,7 +209,7 @@ export default {
             "Hello, world!",
             "BUILD SUCCESSFUL in 5s",
           ],
-          notes: ["<code>gradlew</code> downloads the Gradle release its properties name on first use."],
+          notes: ["Gradle is embedded by its wrapper: <code>gradle wrapper</code> adds the <code>gradlew</code> scripts and a 47 KB <code>gradle-wrapper.jar</code>, which download the 152 MB Gradle release the properties name on first use."],
         },
         bazel: {
           status: "plugin",
@@ -222,6 +228,7 @@ export default {
             "INFO: Build completed successfully, 9 total actions",
             "Hello, world!",
           ],
+          notes: ["Bazel has no wrapper that is kept in the project. Bazelisk, installed on the machine as <code>bazel</code>, reads <code>.bazelversion</code> and downloads that release, a native binary of about 60 MB per operating system, on first use."],
         },
       },
     },
