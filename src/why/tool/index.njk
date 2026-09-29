@@ -30,9 +30,8 @@ eleventyExcludeFromCollections: true
         <code>BUILD.bazel</code> restates what the code already says - its name, its dependencies, its main class -
         and grows a block of configuration for every step beyond the defaults, until the build is a second program
         to maintain beside the first. Jenesis reads the build from the code instead: <code>module-info.java</code>
-        names what the project requires, two Javadoc tags set the release and the main class, and
-        <code>java build/jenesis/Make.java</code> compiles, tests and packages it with the JDK you already have -
-        nothing else to write and no build tool to download.
+        names what the project requires, and its Javadoc carries any metadata. There is nothing else to write,
+        and no build tool to download.
       </p>
       <ul class="lp-pills" aria-label="At a glance">
         <li><strong>Nothing else to write</strong></li>
