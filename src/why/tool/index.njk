@@ -66,12 +66,6 @@ module demo.app {
       built and run with that tool. Where a tool needs a plugin, code by
       hand, or cannot do it at all, the section says so - Jenesis included.
     </p>
-    <ul class="lp-legend" aria-label="What the badges mean">
-      <li><span class="lp-badge lp-badge--built">{{ bc.statuses.built }}</span> the tool does it</li>
-      <li><span class="lp-badge lp-badge--plugin">{{ bc.statuses.plugin }}</span> a plugin or ruleset does it</li>
-      <li><span class="lp-badge lp-badge--manual">{{ bc.statuses.manual }}</span> build code you write and keep</li>
-      <li><span class="lp-badge lp-badge--none">{{ bc.statuses["none"] }}</span> no way found</li>
-    </ul>
     <p class="lp-versions">
       Built and run on Java 25 with
       {% for t in bc.tools %}{{ t.release }}{% if loop.revindex == 2 %} and {% elif not loop.last %}, {% endif %}{% endfor %}.

@@ -436,8 +436,6 @@
 .lp-notes ul { margin: 0; padding-left: 1.1rem; }
 .lp .lp-notes li { list-style: disc; margin: 0.2rem 0; color: var(--lp-muted); font-size: 0.9rem; line-height: 1.5; }
 
-.lp-legend { list-style: none; padding: 0; margin: 1.5rem 0 0; display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; align-items: center; }
-.lp .lp-legend > li { list-style: none; margin: 0; display: inline-flex; gap: 0.5rem; align-items: center; font-size: 0.9rem; color: var(--lp-muted); }
 .lp-versions { font-size: 0.85rem; margin-top: 1rem; }
 
 .lp-file__note { margin: 0; padding: 0.5rem 0.85rem; font-size: 0.8rem; color: var(--lp-ink-muted) !important; border-top: 1px solid #2e2921; }
