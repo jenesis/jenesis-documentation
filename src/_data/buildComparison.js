@@ -209,7 +209,7 @@ export default {
         },
         bazel: {
           status: "none",
-          verdict: "The repository cannot bootstrap Bazel: every machine installs Bazel or Bazelisk first, which then downloads the binary of about 60 MB that <code>.bazelversion</code> names.",
+          verdict: "The repository cannot bootstrap Bazel: every machine installs Bazelisk first, 7 MB, which downloads the 66 MB Bazel binary <code>.bazelversion</code> names. A clean build then downloads 563 MB in 215 files.",
           files: [
             file("hello/bazel", "MODULE.bazel"),
             file("hello/bazel", "BUILD.bazel"),
@@ -223,6 +223,7 @@ export default {
             "INFO: Build completed successfully, 9 total actions",
             "Hello, world!",
           ],
+          notes: ["The sizes are for Linux. On first use the Bazel binary unpacks a further 195 MB, and the clean build's 563 MB hold two JDKs, 25 and 11, a Python interpreter and the rulesets."],
         },
       },
     },
