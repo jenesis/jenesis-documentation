@@ -151,6 +151,81 @@ export default {
   },
   sections: [
     {
+      id: "hello-world",
+      title: "Hello, world",
+      lede: `<p>One class that prints a line, and nothing else. Before any feature comes into play, it shows what
+        each tool asks for: the files you write, where the source goes, and the command that builds and runs the
+        program.</p>
+        <p>Jenesis reads the Java Module System's own descriptor, <code>module-info.java</code>, where two Javadoc
+        tags name the Java release and the main class. The other tools each bring a build file of their own.</p>`,
+      tools: {
+        jenesis: {
+          status: "built",
+          verdict: "A <code>module-info.java</code> names the release and the main class; <code>Execute.java</code> builds and runs it.",
+          files: [
+            file("hello/jenesis", "sources/module-info.java"),
+            file("hello/jenesis", "sources/demo/hello/Main.java"),
+          ],
+          terminal: [
+            "$ java build/jenesis/Execute.java",
+            "[COMPLETED] Finished in 2.65 seconds",
+            "Hello, world!",
+          ],
+          notes: ["The build tool itself is the <code>build/jenesis/</code> folder, kept as source in the project; the last section installs it. The terminal shows the build's last line."],
+        },
+        maven: {
+          status: "built",
+          verdict: "A <code>pom.xml</code> names the project and the Java release; <code>java</code> runs the jar it packages.",
+          files: [
+            file("hello/maven", "pom.xml"),
+            file("hello/maven", "src/main/java/demo/hello/Main.java"),
+          ],
+          terminal: [
+            "$ mvn package",
+            "[INFO] BUILD SUCCESS",
+            "$ java -cp target/hello-1.0.0.jar demo.hello.Main",
+            "Hello, world!",
+          ],
+          notes: ["Maven has no command that runs the program; a plugin such as the Exec plugin adds one."],
+        },
+        gradle: {
+          status: "built",
+          verdict: "The bundled <code>application</code> plugin names the main class; <code>./gradlew run</code> builds and runs it.",
+          files: [
+            file("hello/gradle", "build.gradle.kts"),
+            file("hello/gradle", "settings.gradle.kts"),
+            file("hello/gradle", "gradle/wrapper/gradle-wrapper.properties", { generated: "gradle wrapper" }),
+            file("hello/gradle", "src/main/java/demo/hello/Main.java"),
+          ],
+          terminal: [
+            "$ ./gradlew run",
+            "> Task :run",
+            "Hello, world!",
+            "BUILD SUCCESSFUL in 5s",
+          ],
+          notes: ["<code>gradlew</code> downloads the Gradle release its properties name on first use."],
+        },
+        bazel: {
+          status: "plugin",
+          badge: "Ruleset",
+          verdict: "Java comes from the <code>rules_java</code> ruleset; <code>bazel run</code> builds and runs a <code>java_binary</code> target.",
+          files: [
+            file("hello/bazel", "MODULE.bazel"),
+            file("hello/bazel", "BUILD.bazel"),
+            file("hello/bazel", ".bazelrc", { note: "Without it rules_java compiles for Java 11." }),
+            file("hello/bazel", ".bazelversion"),
+            listed("MODULE.bazel.lock", 456, "Bazel, on every build"),
+            file("hello/bazel", "src/main/java/demo/hello/Main.java"),
+          ],
+          terminal: [
+            "$ bazel run //:hello",
+            "INFO: Build completed successfully, 9 total actions",
+            "Hello, world!",
+          ],
+        },
+      },
+    },
+    {
       id: "a-modular-build-in-java",
       title: "A modular build in Java",
       lede: `<p>A Java 25 application with four dependencies, written as a module. Its <code>module-info.java</code>
