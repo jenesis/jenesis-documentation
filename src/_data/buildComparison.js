@@ -154,14 +154,15 @@ export default {
       id: "hello-world",
       title: "Hello, world",
       lede: `<p>One class that prints a line, and nothing else. Before any feature comes into play, it shows what
-        each tool asks for: the files you write, where the source goes, and the command that builds and runs the
-        program.</p>
+        each tool asks for: the files you write, where the source goes, and how the build tool itself ships with
+        the repository.</p>
         <p>Jenesis reads the Java Module System's own descriptor, <code>module-info.java</code>, where two Javadoc
         tags name the Java release and the main class. The other tools each bring a build file of their own.</p>`,
       tools: {
         jenesis: {
           status: "built",
-          verdict: "A <code>module-info.java</code> names the release and the main class; <code>Execute.java</code> builds and runs it.",
+          badge: "Source",
+          verdict: "Embedded in the repository as source: <code>build/jenesis/</code>, 189 Java files of 2.3 MB. A clean build downloads nothing more.",
           files: [
             file("hello/jenesis", "sources/module-info.java"),
             file("hello/jenesis", "sources/demo/hello/Main.java"),
@@ -171,32 +172,28 @@ export default {
             "[COMPLETED] Finished in 2.65 seconds",
             "Hello, world!",
           ],
-          notes: [
-            "The build tool is embedded in the project as source: the <code>build/jenesis/</code> folder, 189 Java files of about 2.3 MB, which the JDK compiles on first use. Nothing is downloaded to build; the last section installs it.",
-            "The terminal shows the build's last line.",
-          ],
+          notes: ["The last section installs <code>build/jenesis/</code>. The terminal shows the build's last line."],
         },
         maven: {
-          status: "built",
-          verdict: "A <code>pom.xml</code> names the project and the Java release; <code>java</code> runs the jar it packages.",
+          status: "manual",
+          badge: "Download",
+          verdict: "The Maven Wrapper downloads a 9.4 MB binary release of 96 files. A clean build then downloads 161 files of plugins, 20 MB.",
           files: [
             file("hello/maven", "pom.xml"),
+            file("hello/maven", ".mvn/wrapper/maven-wrapper.properties", { generated: "mvn wrapper:wrapper" }),
             file("hello/maven", "src/main/java/demo/hello/Main.java"),
           ],
           terminal: [
-            "$ mvn package",
+            "$ ./mvnw package",
             "[INFO] BUILD SUCCESS",
             "$ java -cp target/hello-1.0.0.jar demo.hello.Main",
             "Hello, world!",
           ],
-          notes: [
-            "Maven is installed on the machine, or embedded by the Maven Wrapper: <code>mvn wrapper:wrapper</code> adds the <code>mvnw</code> scripts and <code>.mvn/wrapper/maven-wrapper.properties</code>, and <code>./mvnw</code> downloads the 9.4 MB Maven release they name on first use.",
-            "Maven has no command that runs the program; a plugin such as the Exec plugin adds one.",
-          ],
         },
         gradle: {
-          status: "built",
-          verdict: "The bundled <code>application</code> plugin names the main class; <code>./gradlew run</code> builds and runs it.",
+          status: "manual",
+          badge: "Download",
+          verdict: "The Gradle Wrapper, a 47 KB jar in the repository, downloads a 152 MB binary release of 717 files. This build needs no plugin beyond it.",
           files: [
             file("hello/gradle", "build.gradle.kts"),
             file("hello/gradle", "settings.gradle.kts"),
@@ -209,12 +206,10 @@ export default {
             "Hello, world!",
             "BUILD SUCCESSFUL in 5s",
           ],
-          notes: ["Gradle is embedded by its wrapper: <code>gradle wrapper</code> adds the <code>gradlew</code> scripts and a 47 KB <code>gradle-wrapper.jar</code>, which download the 152 MB Gradle release the properties name on first use."],
         },
         bazel: {
-          status: "plugin",
-          badge: "Ruleset",
-          verdict: "Java comes from the <code>rules_java</code> ruleset; <code>bazel run</code> builds and runs a <code>java_binary</code> target.",
+          status: "none",
+          verdict: "The repository cannot bootstrap Bazel: every machine installs Bazel or Bazelisk first, which then downloads the binary of about 60 MB that <code>.bazelversion</code> names.",
           files: [
             file("hello/bazel", "MODULE.bazel"),
             file("hello/bazel", "BUILD.bazel"),
@@ -228,7 +223,6 @@ export default {
             "INFO: Build completed successfully, 9 total actions",
             "Hello, world!",
           ],
-          notes: ["Bazel has no wrapper that is kept in the project. Bazelisk, installed on the machine as <code>bazel</code>, reads <code>.bazelversion</code> and downloads that release, a native binary of about 60 MB per operating system, on first use."],
         },
       },
     },
