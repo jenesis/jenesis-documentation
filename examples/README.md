@@ -23,3 +23,16 @@ It needs a JDK 25 on the `PATH` and, for the examples of each tool:
 - Gradle 9.8.0 as `gradle` (Hello, world uses its wrapper);
 - Bazelisk as `bazel`, which reads each project's `.bazelversion`;
 - a Docker daemon for the container images.
+
+On a restricted network, the Bazel examples need GitHub source archives (`github.com/.../archive/...`,
+`codeload.github.com`): the Maven ruleset pulls in a toolchain for the bats test runner that none of these builds
+uses. Where those are blocked, pointing that repository at an empty folder in `~/.bazelrc` lets the builds pass:
+
+```
+common --override_repository=bazel_lib++toolchains+bats_toolchains=/path/to/empty
+common --override_repository=aspect_bazel_lib++toolchains+bats_toolchains=/path/to/empty
+```
+
+The empty folder holds an empty `REPO.bazel` and an empty `BUILD.bazel`. Maven Central also answers a burst of
+requests with HTTP 429; the Bazel examples resolve through Coursier, which asks it directly, so they may take a
+retry or two.
