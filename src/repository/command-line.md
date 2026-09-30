@@ -109,11 +109,16 @@ Under `--json`, a watching command still prints one value - the last state.
 | `0` | It worked. |
 | `1` | The server refused, or could not be reached - the message says which. |
 | `2` | The command line was wrong: an unknown command or a missing argument. |
-| `3` | This deployment does not offer what was asked: the module behind it is not installed, or is switched off. |
+| `3` | This deployment does not serve what was asked: the server has no route for it. |
 
-Code `3` is worth handling on its own. The server answers `404` both for a feature it does not carry and for a
-thing that does not exist, so on a `404` the client asks the deployment which of the two happened and says so -
-naming the setting that switches a feature back on where it is only switched off. Retrying does not change it.
+Code `3` is worth handling on its own. A `404` means either a feature this deployment does not carry or a thing
+that does not exist, and only the server knows which: a request it has no route for is answered with the header
+`Jenesis-Installed: false`, and `jenrepo` turns that into code `3`. Retrying does not change it; `jenrepo
+capabilities` shows what the deployment does carry.
+
+A setting the server reads only when it starts - a storage backend, turning a vulnerability feed on - is saved at
+once but takes effect on the next restart. `jenrepo settings set` says so when the server does, and the settings
+screens mark such a setting **↻ restart**.
 
 <div class="warning">
   Two commands remove data that cannot be recovered: <code>quarantine discard</code>, which drops a held artifact,
