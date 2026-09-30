@@ -6,8 +6,8 @@
 #   examples/verify.sh                   # every example
 #   examples/verify.sh basic tests/maven # the examples of one section, or one example
 #
-# Needs a JDK 25 on the PATH and, for the examples of each tool, Maven 3.9.16 (mvn), Gradle 9.8.0 (gradle),
-# and Bazelisk or Bazel 9.2.0 (bazel). A Jenesis example uses build/jenesis/ when it is there; otherwise it links
+# Needs a JDK 25 on the PATH and, for the examples of each tool, Maven 3.9.16 (mvn), a download of Gradle 9.8.0 by
+# each project's wrapper, and Bazelisk or Bazel 9.2.0 (bazel). A Jenesis example uses build/jenesis/ when it is there; otherwise it links
 # JENESIS_HOME, a checkout's sources/build/jenesis folder, or installs the release that JENESIS_REF names (the
 # latest by default) with https://get.jenesis.build.
 

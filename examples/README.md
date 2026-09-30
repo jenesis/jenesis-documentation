@@ -20,7 +20,7 @@ It needs a JDK 25 on the `PATH` and, for the examples of each tool:
 - Jenesis: `build/jenesis/` in the project, linked from `JENESIS_HOME` (a checkout's `sources/build/jenesis`)
   or installed from https://get.jenesis.build, which takes the release `JENESIS_REF` names;
 - Maven 3.9.16 as `mvn` (Hello, world uses its wrapper);
-- Gradle 9.8.0 as `gradle` (Hello, world uses its wrapper);
+- nothing for Gradle: each project's wrapper downloads Gradle 9.8.0;
 - Bazelisk as `bazel`, which reads each project's `.bazelversion`;
 - a Docker daemon for the container images.
 
