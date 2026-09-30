@@ -1,0 +1,2 @@
+gradle --no-daemon clean jibDockerBuild && docker run --rm demo/app:1.0.0
+{"greeting":"Hello, world!"}

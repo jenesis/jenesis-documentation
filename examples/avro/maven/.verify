@@ -1,0 +1,2 @@
+mvn -B clean package org.codehaus.mojo:exec-maven-plugin:3.6.4:java -Dexec.mainClass=demo.app.Main
+{"name": "Ada", "score": 42}

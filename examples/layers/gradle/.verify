@@ -1,0 +1,2 @@
+gradle --no-daemon clean :app:shadowJar && java -jar app/build/libs/app-1.0.0-all.jar
+app 2.22.3, library 2.15.4

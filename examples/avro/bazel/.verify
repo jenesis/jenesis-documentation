@@ -1,0 +1,2 @@
+bazel run //:app
+{"name": "Ada", "score": 42}

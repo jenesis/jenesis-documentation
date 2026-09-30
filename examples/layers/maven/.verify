@@ -1,0 +1,2 @@
+mvn -B clean package org.apache.maven.plugins:maven-dependency-plugin:3.11.0:build-classpath -Dmdep.outputFile=target/classpath.txt && java -cp "app/target/app-1.0.0.jar:$(cat app/target/classpath.txt)" demo.app.Main
+app 2.22.3, library 2.15.4

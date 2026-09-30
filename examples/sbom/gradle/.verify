@@ -1,0 +1,2 @@
+./verify-sbom.sh
+The SBOM is published beside the jar and differs on every build

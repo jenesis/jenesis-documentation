@@ -1,0 +1,2 @@
+bazel test //... && bazel run //:app
+{"greeting":"Hello, world!"}

@@ -1,0 +1,2 @@
+gradle --no-daemon clean build && java -p app/build/libs/app-1.0.0.jar:greeter/build/libs/greeter-1.0.0.jar:"$(find "${GRADLE_USER_HOME:-$HOME/.gradle}/caches" -name slf4j-api-2.0.20.jar | head -1)" -m demo.app/demo.app.Main
+Hello, world!

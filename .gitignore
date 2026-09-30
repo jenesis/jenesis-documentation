@@ -2,8 +2,10 @@ node_modules
 _site/
 .DS_Store
 examples/*/*/target/
+examples/*/*/*/target/
 examples/*/*/build/
 examples/*/*/*/build/
 examples/*/*/.gradle/
 examples/*/*/.jenesis/
 examples/*/*/bazel-*
+examples/*/*/*/dependency-reduced-pom.xml

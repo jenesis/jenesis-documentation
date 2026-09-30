@@ -270,10 +270,10 @@ export default {
           verdict: "Every <code>requires</code> again as a coordinate and as a label. It runs on the class path.",
           files: [
             file("modular/bazel", "src/main/java/module-info.java"),
-            file("basic/bazel", "MODULE.bazel", { mark: ["artifacts = [", "],"] }),
-            file("basic/bazel", "BUILD.bazel", { mark: ["deps = [", "],"] }),
-            file("basic/bazel", ".bazelrc", { note: "Without it rules_java compiles for Java 11." }),
-            file("basic/bazel", ".bazelversion"),
+            file("modular/bazel", "MODULE.bazel", { mark: ["artifacts = [", "],"] }),
+            file("modular/bazel", "BUILD.bazel", { mark: ["deps = [", "],"] }),
+            file("modular/bazel", ".bazelrc", { note: "Without it rules_java compiles for Java 11." }),
+            file("modular/bazel", ".bazelversion"),
             listed("MODULE.bazel.lock", 814, "Bazel, on every build"),
           ],
         },
@@ -436,7 +436,7 @@ export default {
             file("modules/gradle", "settings.gradle.kts"),
             file("modules/gradle", "gradle.properties"),
           ],
-          notes: ["GradleX's third-party plugin, applied in the settings, finds the project from <code>requires demo.greeter</code> by reading its descriptor."],
+          notes: ["Applied in the settings instead, GradleX's third-party plugin finds the project from <code>requires demo.greeter</code> by reading its descriptor."],
         },
         bazel: {
           status: "manual",
@@ -581,11 +581,11 @@ export default {
           terminal: [
             "$ java build/jenesis/Make.java stage",
             "$ find target/stage -type f -exec sha256sum {} + | sort -k 2 | sha256sum",
-            "0a08c8e671a700bf8d8ad3f318df68566bbbc2378801df23133c9c1b071b8fc6  -",
+            "e4c3ec9fbe45ebfda664de841e667dd517233c2990558333e596c5f76ccdc3cd  -",
             "$ rm -rf target",
             "$ java build/jenesis/Make.java stage",
             "$ find target/stage -type f -exec sha256sum {} + | sort -k 2 | sha256sum",
-            "0a08c8e671a700bf8d8ad3f318df68566bbbc2378801df23133c9c1b071b8fc6  -",
+            "e4c3ec9fbe45ebfda664de841e667dd517233c2990558333e596c5f76ccdc3cd  -",
           ],
           notes: ["<code>jenesis.archive.timestamp</code> sets another date, such as the last commit's."],
         },
@@ -604,7 +604,7 @@ export default {
         gradle: {
           status: "built",
           verdict: "Identical out of the box since Gradle 9. Nothing checks it.",
-          files: [file("basic/gradle", "build.gradle.kts", { note: "A plain Java 25 build, unchanged." })],
+          files: [file("reproducible/gradle", "build.gradle.kts", { note: "A plain Java 25 build, unchanged." })],
           notes: [
             "Gradle 9.8's archive defaults already fix the entry dates and order: <code>preserveFileTimestamps=false</code>, <code>reproducibleFileOrder=true</code>.",
             "Gradle records no digest of what it builds; the reproducibility plugins only change the settings.",
@@ -614,7 +614,7 @@ export default {
           status: "built",
           verdict: "Identical out of the box. Comparing two builds is up to you.",
           files: [
-            file("basic/bazel", "BUILD.bazel", { note: "Section 1's build, unchanged." }),
+            file("reproducible/bazel", "BUILD.bazel", { note: "The modular build's, unchanged." }),
             file("reproducible/bazel", "compare_execlogs.py", { note: "Hand-written: compares the output hashes in two execution logs." }),
           ],
           commands: "bazel build //:app_deploy.jar --execution_log_json_file=a.json\npython3 compare_execlogs.py a.json b.json",
@@ -661,7 +661,7 @@ export default {
             file("supply-chain/maven", "pom.xml", { base: "basic/maven" }),
             file("supply-chain/maven", ".mvn/maven.config"),
             file("supply-chain/maven", "sigmund.yaml"),
-            file("supply-chain/maven", ".mvn/checksums/checksums.sha256", { generated: "mvn -Daether.artifactResolver.postProcessor.trustedChecksums.record=true" }),
+            file("supply-chain/maven", ".mvn/checksums/checksums.sha256", { generated: "mvn install -Daether.artifactResolver.postProcessor.trustedChecksums.record=true" }),
             listed(".gnupg/pubring.kbx", null, null, "A keyring assembled by hand for two signers whose keys the plugin cannot fetch."),
           ],
           notes: [
@@ -715,7 +715,7 @@ export default {
           files: [
             file("sbom/jenesis", "project.properties"),
             file("sbom/jenesis", "jenesis.properties"),
-            file("basic/jenesis", "sources/module-info.java", { note: "Section 1's descriptor, unchanged." }),
+            file("sbom/jenesis", "sources/module-info.java", { note: "The modular build's descriptor, unchanged." }),
           ],
           commands: "java build/jenesis/Make.java stage",
           notes: [
@@ -730,7 +730,7 @@ export default {
           files: [file("sbom/maven", "pom.xml", { base: "basic/maven" })],
           commands: "mvn install",
           notes: [
-            "The organisation only becomes the publisher; the developers and the display name are dropped.",
+            "The organisation only becomes the publisher, and the developers are dropped.",
             "The SBOM is attached and installed beside the jar.",
             "It is reproducible once <code>project.build.outputTimestamp</code> is set; without it, every build writes its own timestamp.",
           ],
@@ -796,6 +796,7 @@ export default {
           files: [file("layers/maven", "pom.xml"), file("layers/maven", "library/pom.xml"), file("layers/maven", "app/pom.xml")],
           notes: [
             "Before <code>package</code> - a multi-module <code>mvn compile</code>, a test run, the IDE - the library runs on the application's 2.22.3.",
+            "The shaded jar keeps a service file that names the original jackson class; relocating it takes a <code>ServicesResourceTransformer</code>.",
           ],
         },
         gradle: {
@@ -841,7 +842,7 @@ export default {
           verdict: "One line. The runtime is linked from the module graph.",
           files: [
             file("app-image/jenesis", "build.jenesis/packaging.properties"),
-            file("basic/jenesis", "sources/module-info.java", { note: "Section 1's descriptor, unchanged." }),
+            file("app-image/jenesis", "sources/module-info.java", { note: "The modular build's descriptor, unchanged." }),
           ],
           commands: "java build/jenesis/Make.java stage",
           notes: [
@@ -902,15 +903,18 @@ export default {
         maven: {
           status: "plugin",
           badge: "Official plugin",
-          verdict: "Google's Jib builds the image without a Docker daemon.",
+          verdict: "Google's Jib builds the image itself, without a Dockerfile.",
           files: [file("docker/maven", "pom.xml")],
           commands: "mvn compile jib:dockerBuild",
-          notes: ["Jib is not bound to the lifecycle, so it runs as a goal of its own."],
+          notes: [
+            "Jib is not bound to the lifecycle, so it runs as a goal of its own.",
+            "The image runs the application on the class path, whatever its <code>module-info.java</code> says.",
+          ],
         },
         gradle: {
           status: "plugin",
           badge: "Official plugin",
-          verdict: "Google's Jib builds the image without a Docker daemon.",
+          verdict: "Google's Jib builds the image itself, without a Dockerfile.",
           files: [file("docker/gradle", "build.gradle.kts", { base: "basic/gradle" })],
           commands: "./gradlew jibDockerBuild",
           notes: [
@@ -921,7 +925,7 @@ export default {
         bazel: {
           status: "plugin",
           badge: "Community ruleset",
-          verdict: "rules_oci and rules_pkg build the image without a Docker daemon.",
+          verdict: "rules_oci and rules_pkg build the image without a Dockerfile.",
           files: [file("docker/bazel", "MODULE.bazel", { base: "basic/bazel" }), file("docker/bazel", "BUILD.bazel", { base: "basic/bazel" })],
           commands: "bazel run //:load",
           notes: ["rules_oci warns on a tag, so the base image is pulled by digest."],

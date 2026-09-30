@@ -1,0 +1,2 @@
+mvn -B clean package dependency:copy-dependencies && java -p app/target/app-1.0.0.jar:app/target/dependency -m demo.app/demo.app.Main
+Hello, world!

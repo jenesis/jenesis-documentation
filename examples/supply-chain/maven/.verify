@@ -1,0 +1,2 @@
+mvn -B clean package && ./verify-tampering.sh
+4 of 4 tampered builds failed

@@ -1,0 +1,2 @@
+mvn -B clean package && target/dist/app/bin/app
+{"greeting":"Hello, world!"}

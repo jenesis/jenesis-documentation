@@ -1,0 +1,2 @@
+./verify-multi-release.sh
+Running on Java 25: Hello from the Java 25 variant.

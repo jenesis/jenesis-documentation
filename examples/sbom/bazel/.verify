@@ -1,0 +1,2 @@
+./verify-sbom.sh
+The SBOM lists its components by purl, without hashes or licences

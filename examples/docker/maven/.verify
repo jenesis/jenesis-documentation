@@ -1,0 +1,2 @@
+mvn -B clean compile jib:dockerBuild && docker run --rm demo/app:1.0.0
+Hello, world!

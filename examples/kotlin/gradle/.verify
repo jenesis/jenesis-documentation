@@ -1,0 +1,2 @@
+gradle --no-daemon --init-script verify.init.gradle clean build run
+{"name":"Ada","score":42}

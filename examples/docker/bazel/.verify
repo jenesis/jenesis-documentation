@@ -1,0 +1,2 @@
+bazel run //:load && docker run --rm demo/app:1.0.0
+{"greeting":"Hello, world!"}

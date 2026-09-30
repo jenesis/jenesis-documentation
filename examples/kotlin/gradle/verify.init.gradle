@@ -1,0 +1,4 @@
+rootProject {
+    apply plugin: 'application'
+    application.mainClass = 'demo.app.MainKt'
+}

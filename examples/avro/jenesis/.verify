@@ -1,0 +1,2 @@
+java build/jenesis/Execute.java && ! find target -path "*/output/artifacts/*.jar" -exec unzip -l {} \; | grep -e user.avsc -e avro.properties
+{"name": "Ada", "score": 42}

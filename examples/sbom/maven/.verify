@@ -1,0 +1,2 @@
+./verify-sbom.sh
+The SBOM is installed beside the jar and the same on two clean builds

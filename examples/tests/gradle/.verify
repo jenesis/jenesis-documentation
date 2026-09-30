@@ -1,0 +1,2 @@
+gradle --no-daemon clean build && cat build/test-results/test/TEST-demo.app.GreeterTest.xml
+<testcase name="greets()" classname="demo.app.GreeterTest"

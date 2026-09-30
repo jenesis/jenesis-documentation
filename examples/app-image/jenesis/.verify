@@ -1,0 +1,2 @@
+java build/jenesis/Make.java stage && target/stage/packages/output/demo.app/bin/demo.app
+{"greeting":"Hello, world!"}

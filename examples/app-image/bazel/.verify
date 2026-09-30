@@ -1,0 +1,2 @@
+bazel build //:app_image && image="$(mktemp -d)" && tar -xf bazel-bin/app-image.tar -C "$image" && "$image/app/bin/app"
+{"greeting":"Hello, world!"}

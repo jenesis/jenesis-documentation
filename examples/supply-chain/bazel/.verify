@@ -1,0 +1,2 @@
+bazel build //:app && ./verify-tampering.sh
+4 of 4 tampered builds failed

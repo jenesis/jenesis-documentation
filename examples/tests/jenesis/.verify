@@ -1,0 +1,2 @@
+java -Djenesis.print.tests=true -Djenesis.test.force=true build/jenesis/Make.java | grep -F "greets() ✔" && java build/jenesis/Execute.java
+{"greeting":"Hello, world!"}

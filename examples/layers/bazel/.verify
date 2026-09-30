@@ -1,0 +1,2 @@
+bazel run //app
+app 2.22.3, library 2.15.4
