@@ -370,10 +370,10 @@
 .lp-line { display: block; padding: 0 0.85rem; min-height: 1.55em; }
 .lp-line--out { color: var(--app-brand-amber); }
 .lp-line--add { background: rgba(201, 126, 44, 0.16); box-shadow: inset 3px 0 0 var(--app-brand-amber); }
-/* A list whose markers say how an item fares - a cross, a half-filled circle, a tick - in the theme's accent, told
-   apart by shape. Each marker is an empty inline box one capital letter high, standing on the text's baseline, so it
-   is exactly as tall as the capital beside it in whatever font the system draws; the glyphs inside are gradients,
-   since a character there would move the baseline. Wrapped lines hang under the text, not under the marker. */
+/* A list whose markers say how an item fares, as a traffic light: a round dot in the theme's red, amber or green.
+   Each marker is an empty inline box one capital letter high, standing on the text's baseline, so it is exactly as
+   tall as the capital beside it in whatever font the system draws. Wrapped lines hang under the text, not under the
+   marker. */
 .lp-marks { list-style: none; padding: 0; margin: 0; }
 .lp .lp-marks > li {
   list-style: none; margin: 0; padding: 0.4rem 0 0.4rem 1.6em; text-indent: -1.6em; line-height: 1.6;
@@ -387,16 +387,8 @@
   margin: 0 calc((1.6em - 0.7em) / 2); margin: 0 calc((1.6em - 1cap) / 2); /* centred in the 1.6em the text hangs from */
   text-indent: 0;
 }
-.lp-mark--bad::before {
-  background:
-    linear-gradient(45deg, transparent calc(50% - 0.07em), var(--lp-surface) calc(50% - 0.07em) calc(50% + 0.07em), transparent calc(50% + 0.07em)) center / 55% 55% no-repeat,
-    linear-gradient(-45deg, transparent calc(50% - 0.07em), var(--lp-surface) calc(50% - 0.07em) calc(50% + 0.07em), transparent calc(50% + 0.07em)) center / 55% 55% no-repeat,
-    var(--lp-accent);
-}
-.lp-mark--partial::before {
-  border: 0.1em solid var(--lp-accent);
-  background: linear-gradient(90deg, var(--lp-accent) 50%, transparent 50%);
-}
+.lp-mark--bad::before { background: var(--lp-bad); }
+.lp-mark--partial::before { background: var(--lp-warn); }
 .lp-mark--ok::before { background: var(--lp-ok); }
 
 /* A run of lines a command wrote, folded inside a file a person edits. */
