@@ -1,7 +1,7 @@
 ---
 order: 11
 title: Operations
-description: Watching and running a deployment - the Metrics, Security posture and Caches pages, scheduled walks of the store, manual uploads through Deploy, webhooks, rate limits, and the health, metrics and log endpoints.
+description: Watching and running a deployment - the Metrics, Security posture and Caches pages, scheduled walks of the store, manual uploads through Deploy, webhooks, rate limits, what a failure answers and how its reference finds it in the log, and the health, metrics and log endpoints.
 ---
 
 The **Operations** section is where a deployment's administrators see what the server is doing and change how
@@ -113,6 +113,32 @@ bucket holds a minute's worth of burst, so a build resolving a large dependency 
 through while a sustained flood is shed. Health probes and metric scrapes are never limited. Each server of a
 multi-node deployment keeps its own buckets, so behind a load balancer the effective ceiling is the setting
 times the number of servers.
+
+## When something fails
+
+A failure the server did not mean - a store that cannot be read, a bug - is never answered with its insides. No
+surface shows an exception, a stack trace, a path on disk or a store key. Each one says that something went wrong
+and gives a **reference**, twelve letters and digits, such as `8vjbm05qakwk`:
+
+| Surface | What it shows |
+| --- | --- |
+| API | A `500` problem document (`application/problem+json`) with `title` and `reference` |
+| Console | The error page, with the reference to quote |
+| `jenrepo` | The refusal, ending `Reference: 8vjbm05qakwk` |
+| A package client | Its own error format, with the same sentence and reference: an OCI error for `docker`, an npm or Cargo error document, plain text for the rest |
+
+The server logs the whole failure under that reference, stack trace included, at `ERROR`:
+
+```text
+ERROR ... Unexpected failure 8vjbm05qakwk while GET /repository/default/releases/...
+```
+
+So a user who reports the reference has told you where to look. `/api/logs?q=8vjbm05qakwk` finds the line and the
+request that failed, and the server's own output - `docker logs`, `kubectl logs` - holds the stack trace beneath it.
+A reference is minted per failure, so two reports with one reference are one failure.
+
+A refusal the server did mean - a `404`, a `403`, a policy verdict - is not a failure. It carries no reference and
+says why, as it always has.
 
 ## Endpoints for monitoring
 
