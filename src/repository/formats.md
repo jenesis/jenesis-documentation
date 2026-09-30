@@ -326,6 +326,33 @@ curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/relea
 curl -H "Jenesis-Repository-Key: $KEY" https://repo.example.com/repository/releases/files/tools/     # lists the folder
 ```
 
+## Deprecating and withdrawing a version
+
+A published version can be marked **deprecated** - still served, with a warning - or **yanked** - withdrawn from what
+a resolver picks, while a build that already pins it keeps working. Each client sees the mark in its own terms: npm
+prints the deprecation, Cargo's index says `yanked`, a yanked gem leaves the RubyGems index, NuGet lists the version as
+unlisted, and PyPI marks it yanked.
+
+Where a client has its own command for it, that command sets the same mark:
+
+```bash
+npm deprecate acme-demo@1.2.0 "use 1.3 or later"     # and an empty message to undo it
+cargo yank --registry jenesis --version 1.2.0 acme-demo  # cargo yank --undo to take it back
+gem yank acme-demo -v 1.2.0 --host https://repo.example.com/repository/releases/gems
+dotnet nuget delete Acme.Demo 1.2.0 -s jenesis          # unlists the version, as nuget.org does
+```
+
+Each needs the key's write right on the repository, and each is recorded on the audit trail. For every other format,
+and to see or clear what is marked, `jenrepo lifecycle` does the same through the API:
+
+```bash
+jenrepo lifecycle mark libraries com.acme:widget 2.0.1 deprecated --message "use 2.0.2"
+jenrepo lifecycle libraries
+jenrepo lifecycle clear libraries com.acme:widget 2.0.1
+```
+
+A format with nowhere to show a mark to its client refuses one rather than storing a mark nobody would see.
+
 ## Switching a format off
 
 Every format is on until you switch it off. `JENREPO_<FORMAT>=false` keeps one from starting, exactly as if it
