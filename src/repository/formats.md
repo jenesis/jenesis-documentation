@@ -156,6 +156,19 @@ or groups a proxy with your own releases - name it as a mirror in `settings.xml`
 </mirrors>
 ```
 
+A folder URL - one ending in `/`, such as `.../maven/com/acme/lib/` - answers `404` unless the repository's
+**Folder listings** setting is on. Maven and Gradle never need it: they read `maven-metadata.xml`. Coursier and sbt
+list a folder where that file is missing - an imported repository, say - to find the versions a range like `1.+`
+can pick, and a person may want to browse. With the setting on, a folder answers a plain HTML index of what a
+download would serve, a thousand names at a time with a link to the next page, or JSON when asked for with
+`Accept: application/json`. A withheld version is left out, so a listing never offers what then fails to download.
+It is off by default because every page reads the store once per name it shows; set it for the repositories whose
+clients need it, or for a tenant or the whole deployment:
+
+```bash
+jenrepo repos settings <repo> set folder-listing true
+```
+
 ### Gradle
 
 A repository named `jenesis` with `PasswordCredentials` reads its user name and key from `jenesisUsername` and
