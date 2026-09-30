@@ -7,5 +7,6 @@ examples/*/*/build/
 examples/*/*/*/build/
 examples/*/*/.gradle/
 examples/*/*/.jenesis/
+examples/.jenesis-install/
 examples/*/*/bazel-*
 examples/*/*/*/dependency-reduced-pom.xml

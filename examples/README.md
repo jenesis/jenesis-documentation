@@ -17,12 +17,16 @@ identity and a jar and expect each build to fail, and the reproducible examples 
 
 It needs a JDK 25 on the `PATH` and, for the examples of each tool:
 
-- Jenesis: `build/jenesis/` in the project, linked from `JENESIS_HOME` (a checkout's `sources/build/jenesis`)
-  or installed from https://get.jenesis.build, which takes the release `JENESIS_REF` names;
+- Jenesis: nothing - `verify.sh` installs it once per run from the main branch of `jenesis/jenesis` with
+  https://get.jenesis.build and links it into every Jenesis project as `build/jenesis/`. `JENESIS_REF` names
+  another git ref (a tag such as `v0.15.2`, or a commit), and `JENESIS_SOURCES` a local folder holding `Make.java`,
+  such as a checkout's `sources/build/jenesis`. `JENESIS_HOME`, which SDKMAN sets, is not read;
 - Maven 3.9.16 as `mvn` (Hello, world uses its wrapper);
 - nothing for Gradle: each project's wrapper downloads Gradle 9.8.0;
 - Bazelisk as `bazel`, which reads each project's `.bazelversion`;
 - a Docker daemon for the container images.
+
+The tools the selected examples need are checked before the first one runs.
 
 On a restricted network, the Bazel examples need GitHub source archives (`github.com/.../archive/...`,
 `codeload.github.com`): the Maven ruleset pulls in a toolchain for the bats test runner that none of these builds
@@ -34,5 +38,5 @@ common --override_repository=aspect_bazel_lib++toolchains+bats_toolchains=/path/
 ```
 
 The empty folder holds an empty `REPO.bazel` and an empty `BUILD.bazel`. Maven Central also answers a burst of
-requests with HTTP 429; the Bazel examples resolve through Coursier, which asks it directly, so they may take a
-retry or two.
+requests with HTTP 429, and the Bazel examples resolve through Coursier, which asks it directly; `verify.sh` runs an
+example once more when it failed on a download.
