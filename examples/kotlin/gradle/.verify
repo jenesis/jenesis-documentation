@@ -1,2 +1,2 @@
-gradle --no-daemon --init-script verify.init.gradle clean build run
+./gradlew --no-daemon --init-script verify.init.gradle clean build run
 {"name":"Ada","score":42}

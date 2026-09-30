@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-gradle --no-daemon clean build
+./gradlew --no-daemon clean build
 jar=build/libs/app-1.0.0.jar
 major() {
     unzip -p "$jar" "$1" | od -An -j6 -N2 -tu1 | awk '{ print $1 * 256 + $2 }'

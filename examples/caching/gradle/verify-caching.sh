@@ -7,8 +7,8 @@ cp "$main" "$saved"
 trap 'cp "$saved"/Main.java "$main"; rm -rf "$saved"' EXIT
 
 build() {
-    echo "\$ gradle build    # $1"
-    gradle --no-daemon --console=plain build > "$saved/log" 2>&1 || { cat "$saved/log"; exit 1; }
+    echo "\$ ./gradlew build    # $1"
+    ./gradlew --no-daemon --console=plain build > "$saved/log" 2>&1 || { cat "$saved/log"; exit 1; }
     grep -E '^> Task :(compileJava|compileTestJava|test)( |$)' "$saved/log" || true
 }
 

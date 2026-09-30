@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 bom=build/repo/demo/app/1.0.0/app-1.0.0-cyclonedx.json
-gradle --no-daemon clean cyclonedxDirectBom publish
+./gradlew --no-daemon clean cyclonedxDirectBom publish
 cmp build/reports/cyclonedx-direct/bom.json "$bom"
 first="$(cat "$bom")"
 sleep 2
-gradle --no-daemon clean cyclonedxDirectBom publish
+./gradlew --no-daemon clean cyclonedxDirectBom publish
 FIRST="$first" python3 - "$bom" <<'PY'
 import json, os, sys
 bom, first = json.load(open(sys.argv[1])), json.loads(os.environ["FIRST"])

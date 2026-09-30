@@ -17,15 +17,15 @@
   </licenses>
 
   <organization>
-    <name>Demo Org</name>
+    <name>Example Org</name>
     <url>https://example.org</url>
   </organization>
 
   <developers>
     <developer>
-      <name>Jane Developer</name>
-      <email>jane@example.org</email>
-      <organization>Demo Org</organization>
+      <name>Jane Doe</name>
+      <email>jane.doe@example.org</email>
+      <organization>Example Org</organization>
     </developer>
   </developers>
 

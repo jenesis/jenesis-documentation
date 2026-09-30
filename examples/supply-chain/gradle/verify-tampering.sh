@@ -7,9 +7,9 @@ blocked=0
 tamper() {
     local name="$1" file="$2" edit="$3" project="$work/$1"
     mkdir -p "$project"
-    cp -r "$root/build.gradle.kts" "$root/settings.gradle.kts" "$root/gradle" "$root/src" "$project/"
+    cp -r "$root/build.gradle.kts" "$root/settings.gradle.kts" "$root/gradlew" "$root/gradle" "$root/src" "$project/"
     sed -i "$edit" "$project/$file"
-    if (cd "$project" && gradle --no-daemon build) > "$project.log" 2>&1; then
+    if (cd "$project" && ./gradlew --no-daemon build) > "$project.log" 2>&1; then
         echo "[built]   $name"
     else
         blocked=$((blocked + 1))

@@ -1,2 +1,2 @@
-gradle clean run
+./gradlew clean run
 {"greeting":"Hello, world!"}

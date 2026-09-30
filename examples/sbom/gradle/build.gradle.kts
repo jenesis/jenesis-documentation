@@ -12,7 +12,7 @@ plugins {
 
 group = "demo"
 version = "1.0.0"
-description = "Demo application for the build-tool comparison"
+description = "A small command-line application used to compare build tools."
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(25)
@@ -29,7 +29,7 @@ dependencies {
     implementation("org.jspecify:jspecify:1.0.1")
 }
 
-val projectUrl = "https://example.org/demo/app"
+val projectUrl = "https://example.org/demo-app"
 val scmUrl = "https://github.com/example/demo-app"
 
 tasks.cyclonedxDirectBom {
@@ -58,7 +58,7 @@ publishing {
                 extension = "json"
             }
             pom {
-                name = "app"
+                name = "Demo App"
                 description = project.description
                 url = projectUrl
                 inceptionYear = "2026"
@@ -76,7 +76,7 @@ publishing {
                     developer {
                         id = "jdoe"
                         name = "Jane Doe"
-                        email = "jane@example.org"
+                        email = "jane.doe@example.org"
                     }
                 }
                 scm {

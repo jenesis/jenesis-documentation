@@ -172,7 +172,10 @@ export default {
             "[COMPLETED] Finished in 2.65 seconds",
             "Hello, world!",
           ],
-          notes: ["The last section installs <code>build/jenesis/</code>. The terminal shows the build's last line."],
+          notes: [
+            "The first run compiles <code>build/jenesis/</code> into <code>.jenesis/</code> once, as Maven and Gradle download their release on first use; later runs start from those classes.",
+            "The last section installs <code>build/jenesis/</code>. The terminal shows the build's last line.",
+          ],
         },
         maven: {
           status: "manual",
@@ -897,14 +900,17 @@ export default {
         jenesis: {
           status: "built",
           verdict: "One line; the build writes the Dockerfile and its context.",
-          files: [file("docker/jenesis", "build.jenesis/packaging.properties"), file("docker/jenesis", "sources/module-info.java")],
+          files: [
+            file("docker/jenesis", "build.jenesis/packaging.properties"),
+            file("docker/jenesis", "sources/module-info.java", { note: "The modular build's descriptor, unchanged." }),
+          ],
           commands: "java build/jenesis/Make.java stage\ndocker build -t demo/app target/stage/docker/output/module-sources",
         },
         maven: {
           status: "plugin",
           badge: "Official plugin",
           verdict: "Google's Jib builds the image itself, without a Dockerfile.",
-          files: [file("docker/maven", "pom.xml")],
+          files: [file("docker/maven", "pom.xml", { base: "basic/maven" })],
           commands: "mvn compile jib:dockerBuild",
           notes: [
             "Jib is not bound to the lifecycle, so it runs as a goal of its own.",

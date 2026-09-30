@@ -1,2 +1,2 @@
 ./verify-docker.sh
-Hello, world!
+{"greeting":"Hello, world!"}
