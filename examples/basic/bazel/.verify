@@ -1,0 +1,2 @@
+bazel run //:app
+{"greeting":"Hello, world!"}

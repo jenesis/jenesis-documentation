@@ -1,10 +1,10 @@
 // The build-tool landing page compares one build need at a time across four tools. Every file shown is read
-// verbatim from src/_includes/build-comparison/<section>/<tool>/, where it was copied from a project that was built
-// and run with that tool; nothing here is typed from memory. A section that extends the first build marks the
+// verbatim from examples/<section>/<tool>/, a complete project that examples/verify.sh builds and runs with that tool;
+// nothing here is typed from memory. A section that extends the first build marks the
 // lines it adds, and a file a command writes is shown collapsed, with its line count and the command.
 import { readFileSync } from "node:fs";
 
-const ROOT = new URL("../_includes/build-comparison/", import.meta.url);
+const ROOT = new URL("../../examples/", import.meta.url);
 
 function read(dir, path) {
   return readFileSync(new URL(`${dir}/${path}`, ROOT), "utf8").replace(/\s+$/, "");

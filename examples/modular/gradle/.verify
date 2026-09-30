@@ -1,0 +1,2 @@
+gradle clean run
+{"greeting":"Hello, world!"}

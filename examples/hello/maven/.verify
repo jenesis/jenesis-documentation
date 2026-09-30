@@ -1,0 +1,2 @@
+./mvnw -B clean package && java -cp target/hello-1.0.0.jar demo.hello.Main
+Hello, world!
