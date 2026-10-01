@@ -44,7 +44,7 @@ under four headings.
 | --- | --- |
 | *(the repository's name)* | Overview, Browse & search, Staging, Import, and Deploy once it is switched on |
 | **Review** | Quarantine, Refused |
-| **Risk** | Vulnerabilities, Findings, Maintainer health |
+| **Risk** | Vulnerabilities, Findings, Licenses, Maintainer health |
 | **Provenance** | Signers |
 | **Lifecycle** | Retention & cleanup, Pins, Deprecations & yanks, Settings, Export |
 

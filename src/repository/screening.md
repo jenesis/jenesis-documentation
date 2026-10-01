@@ -100,6 +100,20 @@ advisory, a malicious-package record, a signature problem - filterable by coordi
 severity. An editor can **Confirm** a finding or **Dismiss** it, and the decision is kept beside the finding for
 the next person who reads it.
 
+## Licenses
+
+**Licenses** counts the licences declared by every version the repository holds, by category - the broad class a
+licence belongs to, such as permissive or copyleft - and by SPDX identifier, each with how many versions carry it. A
+version that declares nothing readable counts as `unknown`. The count is made on request rather than on every visit:
+**Count now** starts it in the background, the page shows it running and refreshes itself, and the result stays with
+the time it was counted until the next count. Where the repository's full-text search is on, each row leads to the
+versions behind it; where it is off, the counts are all the page shows.
+
+A script asks the same of `GET /api/licenses?repo=<name>`, which answers the stored count - its `state`
+(`not-counted`, `running`, `done` or `failed`), when it started and finished, and the counts - and starts a new one
+with `refresh=true`, saying in its `Jenesis-Refresh` header whether this request started it or one was already
+running. `jenrepo licenses <repo> --count --refresh` starts a count and prints its progress until it lands.
+
 ## Signers
 
 **Signers** lists who signed the versions the gate accepted - each signer's OpenPGP key or certificate identity.

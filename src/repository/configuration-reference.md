@@ -93,6 +93,14 @@ default. *Tier* says whether the wizard of that level asks it (*essential*), the
 (*standard*), or fold it away as tuning (*advanced*). *Applies* says whether a change takes effect at once or on the
 next restart.
 
+### Access
+
+Explained in [Access](/repository/access/#what-a-refused-caller-is-told).
+
+| Key | Default | Level | Tier | Applies | Effect |
+| --- | --- | --- | --- | --- | --- |
+| `access-denied-status` | `not-found` | deployment | standard | at once | What a request for a tenant, a repository or an artifact the caller may not reach is answered, on every surface - the repository and registry paths, the build cache, the API and the console. not-found answers 404, exactly as a name that does not exist, so nobody can learn which tenants, repositories or artifacts exist by probing names and reading the status. forbidden answers 403, which tells a caller that their credential does not reach the name rather than that nothing is there, whether or not the name exists. |
+
 ### Build cache
 
 Explained in [The build cache](/repository/build-cache/).
@@ -145,6 +153,8 @@ Explained in [Screening what comes in](/repository/screening/).
 | `github` | `false` | deployment | essential | on restart | Consult the GitHub Advisory Database. |
 | `github-endpoint` | `https://api.github.com` | deployment | advanced | on restart | The GitHub REST API base URL, for a self-hosted GitHub or a proxy. |
 | `inspection.oversized` | `STREAM` | deployment | advanced | at once | What to do with an artifact larger than the inspection prefix - jenrepo.inspection.prefix-bytes, 32 MiB by default - which is the most of one artifact an inspector is ever handed in memory. |
+| `kev-auto-hold` | `true` | deployment | standard | on restart | When a scheduled scan finds an already-published artifact whose CVE is on a known-exploited catalogue, quarantine it for review (the same hold the gate writes). |
+| `kev-auto-release` | `true` | deployment | advanced | on restart | When a scheduled scan finds a retroactively KEV-held artifact whose CVE is no longer on any known-exploited catalogue (delisted, or the advisory retracted), automatically release the hold - the self-healing counterpart to KEV auto-hold. |
 | `malware-action` | `REJECT` | deployment | essential | at once | Verdict for a package the feed marks malicious. |
 | `openssf` | `false` | deployment | essential | on restart | Consult the curated OpenSSF malicious-packages feed (MAL- records, served by OSV.dev). |
 | `openssf-endpoint` | `https://api.osv.dev` | deployment | advanced | on restart | The OSV API base URL serving the dataset, for a mirror or a proxy. |
@@ -161,6 +171,7 @@ Explained in [Screening what comes in](/repository/screening/).
 | `scan-interval-millis` | `3600000` | deployment | advanced | at once | Milliseconds between scheduled scans; each pass hits the upstream feeds. |
 | `scan-lookback` | `PT1M` | deployment | advanced | at once | How far before the last full pass's stamp an incremental pass still looks. |
 | `scheduled-scan` | `true` | deployment | standard | at once | Re-scan every repository's inventory against the advisory feeds on a schedule. |
+| `signal-refresh-interval-millis` | `300000` | deployment | advanced | at once | Milliseconds between passes that draw a mirroring security signal (the known-exploited catalogue) into its stored snapshot, so a gate decision renders that snapshot instead of fetching on the publish thread. |
 | `signature-attestation-lookup` | *(empty)* | tenant | advanced | at once | The attestation stores asked, by the artifact's digest, for the bundles they hold for an artifact just published, one &lt;ecosystem&gt; = &lt;url&gt; per line; the answer is kept beside the artifact and read as its evidence. |
 | `signature-invalid` | `REJECT` | tenant | standard | at once | Verdict for an artifact whose signature does not match its bytes - the artifact was altered after signing, or the signature was made for different content. |
 | `signature-key-discovery` | *(empty)* | tenant | standard | at once | Sources to fetch the signing keys this deployment does not hold from, comma-separated, asked in the order named; empty (the default) fetches nothing and the pass does not run, so an installation makes no outbound call until this names a source. |
@@ -170,9 +181,13 @@ Explained in [Screening what comes in](/repository/screening/).
 | `signature-key-discovery-url` | `https://keys.openpgp.org` | tenant | advanced | at once | Where keys.openpgp.org is reached - the public instance by default, or an internal mirror of it that speaks the same lookup by key id. |
 | `signature-missing` | `ALLOW` | tenant | standard | at once | Verdict for an artifact carrying no signature where its format expects one. |
 | `signature-missing-proxy` | `ALLOW` | tenant | standard | at once | Verdict for a proxied artifact carrying no signature where its format expects one. |
+| `signature-provenance-accept` | *(empty)* | tenant | standard | at once | The OIDC issuers whose keyless identities are trusted by provenance, comma- or newline-separated - GitHub Actions' https://token.actions.githubusercontent.com being the one to name first. |
 | `signature-quality-action` | `ALLOW` | tenant | standard | at once | What a signature below the quality floor does. |
 | `signature-quality-floor` | `none` | tenant | standard | at once | The grade below which a signature raises a finding - none (the default, quality is reported and never gated), unusable, weak, acceptable or strong. |
 | `signature-signer-changed` | `QUARANTINE` | tenant | standard | at once | Verdict for a coordinate signed by a different signer than its earlier versions carried. |
+| `signature-sigstore-trusted-root` | *(empty)* | tenant | standard | at once | The Sigstore trusted root this deployment verifies bundles against - the JSON a `cosign trusted-root` or the public-good TUF repository serves, naming the Fulcio certificate authorities and the Rekor transparency logs to believe. |
+| `signature-sigstore-trusted-root-interval` | `P1D` | deployment | advanced | at once | How often the trusted root is fetched again, as a duration. |
+| `signature-sigstore-trusted-root-url` | *(empty)* | tenant | advanced | at once | Where the Sigstore trusted root is fetched from when none is pasted above. |
 | `signature-sweep` | `false` | tenant | standard | at once | Apply the signature dials below to what is already published: the sweep re-judges the signature outcome and grade the gate recorded for each version under the current dials and holds a version they no longer admit, in the same review queue as a publish-time hold. |
 | `signature-sweep-interval` | `P1D` | deployment | advanced | at once | How often the signature sweep runs while switched on, as a duration; every version is judged on its first and every Nth pass, the versions published since between. |
 | `signature-trusted-certificates` | *(empty)* | tenant | standard | at once | The PEM certificates a PKCS#7 (CMS) publisher signature must chain to - one or more concatenated -----BEGIN CERTIFICATE----- blocks: a NuGet author or repository signing root, a Swift registry's. |
@@ -372,6 +387,27 @@ Explained in [Proxying upstreams](/repository/proxying/).
 | Key | Default | Level | Tier | Applies | Effect |
 | --- | --- | --- | --- | --- | --- |
 | `rubygems-attestations-url` | *(empty)* | deployment | advanced | on restart | Where the Sigstore attestations of a proxied gem are fetched from, the base of an API answering &lt;base&gt;/&lt;name&gt;-&lt;version&gt;.json with an array of bundles. |
+
+### Search
+
+Explained in [Repositories](/repository/repositories/#browse-search).
+
+| Key | Default | Level | Tier | Applies | Effect |
+| --- | --- | --- | --- | --- | --- |
+| `full-text-search` | `false` | repository | essential | at once | Keep a full-text index of this repository - package names, descriptions, keywords and authors - and answer searches from it. |
+| `search-incremental` | `true` | deployment | advanced | on restart | Apply only what changed (from the dirty-index feed) each pass instead of a full rebuild - the O(delta) steady state. |
+| `search-index-claim` | `PT10M` | deployment | advanced | on restart | How long an unfinished rebuild's claim on an index generation is honoured before another node's rebuild takes it over as a dead rebuild's - the cost a crashed or stalled node's rebuild puts on the fleet. |
+| `search-index-interval` | `PT10M` | deployment | advanced | on restart | How often the search-index pass applies what was published or removed since it last ran, for each repository with full-text search on. |
+| `search-rebuild` | `true` | deployment | advanced | at once | Rebuild the search index of each repository with full-text search on from truth, and compact its change feed, at the end of a walk of the store that carries this consumer (jenrepo.walks): the reconcile that heals whatever the feed missed. |
+| `search-reconcile-interval` | *(empty)* | deployment | advanced | on restart | How long after its last full reconcile the pass rebuilds a repository's index from truth by itself, healing whatever the change feed missed; unset, the default, leaves the reconcile to the walk: the search-rebuild consumer rebuilds from truth and compacts the feed when a walk carrying it runs (jenrepo.walks). |
+
+### Serving
+
+Explained in [Connecting your build tools](/repository/formats/#maven).
+
+| Key | Default | Level | Tier | Applies | Effect |
+| --- | --- | --- | --- | --- | --- |
+| `folder-listing` | `false` | repository | advanced | at once | Answer a folder URL of a Maven repository - a path ending in / - with a page listing what it serves, a thousand names at a time, for the clients that list a folder where maven-metadata.xml is missing (Coursier, sbt) and for people browsing. |
 
 ### Tenancy
 

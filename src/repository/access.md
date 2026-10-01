@@ -158,6 +158,15 @@ KEY=$(curl -s -X POST -H "Authorization: Bearer $ID_TOKEN" https://repo.example.
 
 A token no trust matches is answered `401`.
 
+## What a refused caller is told
+
+A request for a tenant, a repository or an artifact the caller's key does not reach is answered `404`, on every
+surface - the repository and registry paths, the build cache, the API and the console - exactly as a name that does
+not exist. Nobody learns which tenants, repositories or artifacts exist by trying names and reading the status. A
+deployment that prefers to tell a caller their key does not reach the name sets **Access-denied status**
+(`access-denied-status`) to `forbidden`, which answers `403` whether or not the name exists. A request with no key at
+all is answered `401`, with the challenge its client needs, either way.
+
 ## Open deployments
 
 Two shapes skip keys, each on purpose:
