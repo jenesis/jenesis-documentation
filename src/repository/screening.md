@@ -106,12 +106,13 @@ the next person who reads it.
 licence belongs to, such as permissive or copyleft - and by SPDX identifier, each with how many versions carry it. A
 version that declares nothing readable counts as `unknown`. The count is made on request rather than on every visit:
 **Count now** starts it in the background, the page shows it running and refreshes itself, and the result stays with
-the time it was counted until the next count. Where the repository's full-text search is on, each row leads to the
+the time it was counted until the next count - shown beside a new count while it runs, and after one that fails. Where the repository's full-text search is on, each row leads to the
 versions behind it; where it is off, the counts are all the page shows.
 
 A script asks the same of `GET /api/licenses?repo=<name>`, which answers the stored count - its `state`
 (`not-counted`, `running`, `done` or `failed`), when it started and finished, and the counts - and starts a new one
-with `refresh=true`, saying in its `Jenesis-Refresh` header whether this request started it or one was already
+with `refresh=true`, carrying the last finished count as `previous` while a new one runs, and saying in its
+`Jenesis-Refresh` header whether this request started it or one was already
 running. `jenrepo licenses <repo> --count --refresh` starts a count and prints its progress until it lands.
 
 ## Signers
