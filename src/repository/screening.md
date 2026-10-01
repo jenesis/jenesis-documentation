@@ -72,8 +72,9 @@ Expressions are sandboxed - no method calls and no type references - and an empt
 
 ## Quarantine
 
-**Quarantine** is the review queue: every artifact the gate is holding, with its verdict, the reasons, and what
-placed the hold. An editor answers each one:
+**Quarantine** is the review queue: every version the gate is holding, with its verdict, the reasons, what placed
+the hold, and each of its held files - a reason only one file has, such as a missing signature, is shown beside that
+file. An editor answers each version, for all its files at once, since a jar is no use without its POM:
 
 - **release** publishes it into the repository, and clients can fetch it from then on;
 - **discard** drops it for good, after confirming - it cannot be released afterwards.

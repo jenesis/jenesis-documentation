@@ -67,8 +67,8 @@ with no action reads, and changing something takes an action word:
 
 ```bash
 jenrepo repos create libraries maven "Internal libraries" --set keep-last=20
-jenrepo quarantine libraries                      # the review queue, with each held path
-jenrepo quarantine release libraries <path>       # release one, by the path the queue lists
+jenrepo quarantine libraries                      # the review queue, each version with its held paths
+jenrepo quarantine release libraries <path>...    # release a version, by the paths the queue lists
 jenrepo repos settings libraries set routing "writable fallback https://repo1.maven.org/maven2/"
 jenrepo projects create my_project --set project-size=10737418240
 jenrepo walks run
