@@ -109,6 +109,20 @@ version that declares nothing readable counts as `unknown`. The count is made on
 the time it was counted until the next count - shown beside a new count while it runs, and after one that fails. Where the repository's full-text search is on, each row leads to the
 versions behind it; where it is off, the counts are all the page shows.
 
+A declared licence is identified against a built-in table of about sixty SPDX licences, by its identifier or by the
+names and addresses it is published under - "Apache License, Version 2.0", `gnu.org/licenses/gpl-3.0`, and so on.
+Versions stay apart: GPL-2.0 and GPL-3.0 are two rows, and a GNU licence named without a version counts as the
+earliest version "or later". A name the table does not know counts as `unknown`. Licences of your own - an in-house
+licence, or one your packages name in a way the table does not - are added under **License definitions**
+(`license-definitions`), one per line: an identifier, a category, and the names and addresses it goes by:
+
+```text
+Acme-Internal-1.0 | proprietary | Acme Internal License | https://acme.example/license
+```
+
+A row there is tried before the built-in table, its category may be a word of your own, and the gate's allow and deny
+lists and the counts here use it like any other. A search filter on a licence takes its exact identifier.
+
 A script asks the same of `GET /api/licenses?repo=<name>`, which answers the stored count - its `state`
 (`not-counted`, `running`, `done` or `failed`), when it started and finished, and the counts - and starts a new one
 with `refresh=true`, carrying the last finished count as `previous` while a new one runs, and saying in its
