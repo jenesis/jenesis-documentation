@@ -1,14 +1,15 @@
 ---
 order: 9
 title: The build cache
-description: The optional remote build cache the repository can keep for the Jenesis build tool - creating a project with its settings, granting a key access to it, pointing a build at it, and keeping its size in check.
+description: The remote build cache the repository keeps for the Jenesis build tool, Gradle, Maven and Bazel - creating a project with its settings, granting a key access to it, pointing each build tool at it, and keeping its size in check.
 ---
 
-If you build with the [Jenesis build tool](/tool/), the server can keep a **remote build cache** for it beside its
-repositories. A build that finds a step's result in the cache downloads it instead of running the step, so work
-done once - on a colleague's machine, in an earlier CI job - is not done again. A deployment that does not need
-it switches it off with `JENREPO_BUILD_CACHE=false`. The cache answers on the same port, authorises with
-the same keys, and is looked after in the console under **Build cache**.
+The server keeps a **remote build cache** beside its repositories, for the [Jenesis build tool](/tool/), Gradle,
+Maven (through the Maven Build Cache Extension) and Bazel. A build that finds a step's result in the cache downloads
+it instead of running the step, so work done once - on a colleague's machine, in an earlier CI job - is not done
+again. It is on in every image; a deployment that does not need it switches it off with
+`JENREPO_BUILD_CACHE=false`. The cache answers on the same port, authorises with the same keys, and is looked after
+in the console under **Build cache**.
 
 Each tenant has a cache of its own, at `/build/<tenant>/` - `/build/releases/` on a deployment that serves the
 `releases` tenant. A key reaches its own tenant's cache and no other: a request naming another tenant's cache is
@@ -46,6 +47,19 @@ enter the project's name as the scope - or `*` for every project - with the role
 
 ## Pointing a build at it
 
+Each build tool speaks its own protocol, at its own address under the tenant's cache, and each names the project and
+presents the key its own way. **Build cache → Projects** lists every tool with its address for the tenant you are in,
+`jenrepo capabilities` prints the same list, and `GET /api/capabilities` answers it as `cacheProtocols`.
+
+| Build tool | Address | Project and key |
+| --- | --- | --- |
+| Jenesis | `/build/<tenant>` | headers, or the environment |
+| Gradle | `/build/<tenant>/gradle/` | the user name and password of its credentials |
+| Maven | `/build/<tenant>/maven/<project>` | the project in the address, the key as a server's password |
+| Bazel | `/build/<tenant>/bazel` | the user name and password in the address |
+
+### Jenesis
+
 Give the Jenesis build tool the tenant's cache as its address, with the project and the key:
 
 ```bash
@@ -61,6 +75,52 @@ the URL, and both can come from the environment instead -
 `JENESIS_CACHE_PROJECT` and `JENESIS_CACHE_KEY` - which is the usual way in CI. The build tool's chapter on
 [build performance](/tool/build-performance-and-isolation/) covers the rest of the client side: layering the
 remote cache behind the local one, and timeouts.
+
+### Gradle
+
+In `settings.gradle`, the project is the user name and the key the password:
+
+```groovy
+buildCache {
+    remote(HttpBuildCache) {
+        url = 'https://repo.example.com/build/releases/gradle/'
+        push = true                                   // false for a build that should only read
+        credentials { username = 'my_project'; password = System.getenv('JENESIS_KEY') }
+    }
+}
+```
+
+`gradle --build-cache build` then reports a step it took from the cache as `FROM-CACHE`.
+
+### Maven
+
+The [Maven Build Cache Extension](https://maven.apache.org/extensions/maven-build-cache-extension/) is switched on in
+`.mvn/extensions.xml`, and pointed at the project's address in `.mvn/maven-build-cache-config.xml`:
+
+```xml
+<cache xmlns="http://maven.apache.org/BUILD-CACHE-CONFIG/1.0.0">
+  <configuration>
+    <enabled>true</enabled>
+    <remote enabled="true" saveToRemote="true" id="jenesis">
+      <url>https://repo.example.com/build/releases/maven/my_project</url>
+    </remote>
+  </configuration>
+</cache>
+```
+
+The key is the password of the server entry with the same id in `~/.m2/settings.xml`; the user name is not checked.
+A warm build reports `Skipping plugin execution (cached)` for each goal it restored.
+
+### Bazel
+
+Bazel takes the cache as one URL, so the project and the key ride in it as its user name and password:
+
+```bash
+bazel build --remote_cache=https://my_project:$KEY@repo.example.com/build/releases/bazel //...
+```
+
+The key is then in the command line and in Bazel's own logs, so a CI job reads it from a secret into the flag,
+or puts the flag in a `.bazelrc` the job writes and discards. A warm build reports `remote cache hit`.
 
 ## Keeping its size in check
 

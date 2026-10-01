@@ -175,7 +175,19 @@ in a Maven repository, `npm/…` in an npm one - rather than how they are stored
 - A format that keeps its packages outside a folder tree - npm, PyPI, NuGet and their kind - has no folders to
   show, so its releases are listed by coordinate instead, each opening its package's page.
 - The columns sort by name, type and size.
-- **Search** finds packages by coordinate across every format, and opens a hit in the tree.
+- **Search** answers in one of two ways, and the search bar says which:
+  - **By name**, unless the repository keeps a full-text index: a package is looked up by the start of its
+    coordinate - `org.acme` finds `org.acme:widget`, `left` finds `left-pad` - as typed or in lower case, a page at a
+    time. Nothing is built or stored for it.
+  - **Full text**, where the repository's **Full-text search** setting is on: its names, descriptions, keywords and
+    authors, from an index a background pass keeps current. Something published moments ago is found by name
+    before the next pass reaches it.
+
+  Full-text search is off unless a repository asks for it, in the new-repository wizard or its settings. It can feel
+  like an essential feature, but many repositories rarely use it - people look up the artifacts they know by name,
+  or follow up what the gate held - so weigh it against what the index costs to build and keep. `GET /api/search`
+  says which way it answered (`mode`, and `indexed` for whether the index served the page), takes a `limit`, and
+  carries a `nextCursor` exactly when more remain; `jenrepo search` prints the mode beside the hits.
 - An artifact's page shows its size, checksum, the coordinate and version its format read from it, the gate's
   verdict, its signature and provenance where it has them, and - for an artifact fetched from upstream - where
   it came from.
