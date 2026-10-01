@@ -178,7 +178,9 @@ in a Maven repository, `npm/…` in an npm one - rather than how they are stored
 - **Search** answers in one of two ways, and the search bar says which:
   - **By name**, unless the repository keeps a full-text index: a package is looked up by the start of its
     coordinate - `org.acme` finds `org.acme:widget`, `left` finds `left-pad` - as typed or in lower case, a page at a
-    time. Nothing is built or stored for it.
+    time. A file no coordinate names, such as a raw upload, is looked up the same way by the start of the path the
+    repository serves it at: `installers/setup` finds `installers/setup-1.0.bin`. An RPM is named by its yum repository
+    first, as its address reads, so `el9/nginx` finds it. Nothing is built or stored for it.
   - **Full text**, where the repository's **Full-text search** setting is on: its names, descriptions, keywords and
     authors, from an index a background pass keeps current. Something published moments ago is found by name
     before the next pass reaches it.
