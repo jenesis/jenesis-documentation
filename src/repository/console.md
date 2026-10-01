@@ -18,7 +18,7 @@ the middle.
 
 | Section | Pages |
 | --- | --- |
-| **Repositories** | All repositories, Limits, and each repository by name |
+| **Repositories** | All repositories, New repository, Limits |
 | **Build cache** | Projects |
 | **Access** | Credentials, Members |
 | **Operations** | Metrics, Security posture, Caches, Walks |
@@ -27,28 +27,36 @@ the middle.
 **Tenants** is listed for whoever can choose between several: a super-administrator, and a member of more than one
 tenant.
 
+**All repositories** is one table across the page, with a filter above it that narrows the rows to the names,
+formats and descriptions matching what you type. **New repository** - listed for whoever may create one, and linked
+from the page's description too - opens the wizard.
+
 A section is shown only when it holds a page you may open, and clicking it opens its first page. Nothing is
 hidden behind a menu: what you may see is always in one of those two places.
 
 ## Inside a repository
 
 Opening a repository changes the list on the left: it now names the repository, offers **All repositories** to
-go back, and lists that repository's own pages under five headings.
+go back, and lists that repository's own pages: first its contents under the repository's name, then the rest
+under four headings.
 
 | Heading | Pages |
 | --- | --- |
-| **Contents** | Overview, Browse & search, Staging, Import, and Deploy once it is switched on |
+| *(the repository's name)* | Overview, Browse & search, Staging, Import, and Deploy once it is switched on |
 | **Review** | Quarantine, Refused |
 | **Risk** | Vulnerabilities, Findings, Maintainer health |
 | **Provenance** | Signers |
-| **Lifecycle** | Retention & cleanup, Pins, Settings, Export |
+| **Lifecycle** | Retention & cleanup, Pins, Deprecations & yanks, Settings, Export |
 
 Every repository has the same pages, so moving between two of them keeps you on the page you were reading. A
 page whose feature a deployment does not carry - staging, or the vulnerability feeds - is simply not listed.
 
-Each of these pages opens the same way: the trail back through **Repositories** to the repository, the page's
-title, and what the repository is - the format it holds and the address a client reaches it at. A coordinate on
-any of them links to that coordinate's own page, which lists its versions.
+Each of these pages opens the same way: the trail back through **Repositories** to the repository, ending in the
+page's own title, set large. What the repository is - the format it holds and the address a client reaches it at -
+is said once, on its **Overview**. A coordinate on any page links to that coordinate's own page, headed by the
+coordinate, which lists its versions newest first: each with its count of files, the folder they share and the
+files by name under it, a **Pin**, and **Deprecate or yank**, which opens that version on the repository's
+**Deprecations & yanks** page.
 
 ## Wizards
 

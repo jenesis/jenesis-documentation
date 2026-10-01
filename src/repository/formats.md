@@ -356,7 +356,8 @@ dotnet nuget delete Acme.Demo 1.2.0 -s jenesis          # unlists the version, a
 ```
 
 Each needs the key's write right on the repository, and each is recorded on the audit trail. For every other format,
-and to see or clear what is marked, `jenrepo lifecycle` does the same through the API:
+and to see or clear what is marked, the repository's **Deprecations & yanks** page in the console and
+`jenrepo lifecycle` do the same:
 
 ```bash
 jenrepo lifecycle mark libraries com.acme:widget 2.0.1 deprecated --message "use 2.0.2"
