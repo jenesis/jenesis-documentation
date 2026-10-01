@@ -23,6 +23,7 @@ See [Running in production](/repository/deploying/).
 | --- | --- | --- |
 | `store` | `filesystem` | The store backend: `filesystem`, `s3`, `gcs` or `azure-blob`. |
 | `filesystem.root` | *(required)* | The directory the filesystem store keeps everything in; the server refuses to start without it. |
+| `filesystem.durability` | `strict` | `strict` forces every write to the disk before it answers, so an acknowledged write survives a power loss; `relaxed` leaves the flush to the operating system, so a power loss can roll back the last few seconds of writes but never tear one. Relaxed is for a development machine, whose disk often takes ten milliseconds or more per flush. |
 | `s3.bucket` | *(required for s3)* | The bucket. |
 | `s3.region` | `us-east-1` | The signing region. |
 | `s3.endpoint` | *(AWS)* | An S3-compatible endpoint, such as MinIO; must be `https`. |
