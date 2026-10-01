@@ -126,7 +126,7 @@ format**.
 ## Limits
 
 **Repositories → Limits** holds the two limits that apply to all of a tenant's repositories together. Both are
-tenant settings: the deployment's value applies until the tenant sets its own, and **Revert** returns to it. Every
+tenant settings: the deployment's value applies until the tenant sets its own, and **Reset to default** returns to it. Every
 member reads them; an admin changes them.
 
 - **Tenant storage quota** (`tenant-quota`) - the most the tenant may store, across every repository, in bytes; a
@@ -145,8 +145,10 @@ Opening a repository lands on its **Overview**: what it is, what it holds, and h
 
 - **Holdings** - the versions it holds, newest first: the releases published into it, and the copies it cached
   from an upstream, each marked **published** or **cached from** its upstream. Each opens that package's page,
-  which lists its versions with when each was published, whether it is pinned, its download count where downloads are
-  counted, and the paths it is served at. When there are more than the page shows, it says so and links to
+  which lists its versions with when each was published, whether it is pinned and its download count where downloads
+  are counted. A version opens its own page: where it came from and whether it is served, the licences it declares,
+  what its manifest says about it - description, keywords and authors - its signature and provenance, what it depends
+  on, and the files it is served as. When there are more holdings than the overview shows, it says so and links to
   **Browse & search**.
 - **Routing** - how the repository is routed, as badges with any warnings, and where that comes from: its own
   routing, the deployment's definition of its name, or none. A repository with no routing accepts uploads, and

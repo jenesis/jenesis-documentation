@@ -74,8 +74,8 @@ A button's look says what kind of thing it does before you press it; its label s
 | Look | Means |
 | --- | --- |
 | **Filled** | The page's main action, such as **Create repository** or **Save**. |
-| **Plain outline** | An everyday action that changes little, such as **Preview cleanup** or **Revert**. |
-| **Amber outline** | An action with a consequence that can be undone, such as releasing a held artifact, promoting a staged upload or running a cleanup now. It asks before it acts. |
+| **Plain outline** | An everyday action that changes little, such as **Preview cleanup** or **Pin**. |
+| **Amber outline** | An action with a consequence that can be undone, such as releasing a held version, promoting a staged upload, resetting a setting to its default or running a cleanup now. It asks before it acts where the consequence is large. |
 | **Red outline** | An action that loses something, such as deleting a repository or discarding a held artifact. It asks before it acts, and a deletion asks you to type the name of what is deleted. |
 
 Where a row of a list has several actions, they sit together at its end, with the red one last and set apart.

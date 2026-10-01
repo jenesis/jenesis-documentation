@@ -133,7 +133,7 @@ Each project's page carries its settings, the three a project has of its own:
 | **Evict least recently used first** (`project-lru`) | Which entries go first when the cap is reached; switched off, the most recently used go first. Folded under **Advanced**. |
 
 Like any setting, each is inherited until the project sets its own: the deployment and a tenant can set a default
-for every project, and **Revert** returns a project to it. The cache enforces them as it runs. A script changes them
+for every project, and **Reset to default** returns a project to it. The cache enforces them as it runs. A script changes them
 with `jenrepo projects settings <project> set <key> <value>`, or under
 `/api/cache/projects/<name>/settings/<key>`.
 

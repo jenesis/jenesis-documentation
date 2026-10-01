@@ -24,7 +24,7 @@ keeps everything, and a pinned version is kept whatever the rules say.
 
 Each rule is a repository setting, so it is set at three levels: for the whole deployment under **Settings →
 Settings**, for a tenant's repositories under **Settings → Tenant settings**, and for one repository here or on its
-**Settings** page. The repository's own value wins, then the tenant's, then the deployment's. **Revert** makes the
+**Settings** page. The repository's own value wins, then the tenant's, then the deployment's. **Reset to default** makes the
 repository inherit again, and `none` switches a duration rule off for this repository even where a wider level sets
 one. Durations are written `P30D` or `30d`. Changing a rule needs the editor role.
 

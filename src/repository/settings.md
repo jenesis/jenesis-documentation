@@ -71,7 +71,7 @@ shows:
 - the setting's name, its key and the module it comes from;
 - what it does, and its current value against its default;
 - a **live** badge where a change applies at once, or **↻ restart** where it applies on the next start;
-- **changed** when it differs from its default, with a **Revert** button beside it;
+- **overridden** when it is set here rather than left to its default, with **Reset to default** beside its **Save**;
 - **high-impact** where a change can start rejecting or admitting packages, which asks for confirmation.
 
 The filter box above the list finds a setting by any word in its key, name or description, and opens the fold a
@@ -96,7 +96,7 @@ jenrepo settings set vulnerability-threshold HIGH
 ## A repository's settings
 
 A repository's own settings are on its **Settings** page, under **Lifecycle** among its pages. Each row shows the
-value in force - the repository's own, else its tenant's, else the deployment's - and **Revert** makes the
+value in force - the repository's own, else its tenant's, else the deployment's - and **Reset to default** makes the
 repository inherit again. The retention rules are also on its **Retention & cleanup** page, and its routing on its
 **Overview**.
 
