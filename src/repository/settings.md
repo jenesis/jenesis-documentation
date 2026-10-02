@@ -39,9 +39,12 @@ editable as the others.
 **First-run setup** is the wizard of a new deployment, at `/ui/setup`. It asks only what a new deployment has to
 decide; everything else keeps its default and stays on the settings pages.
 
-Its first step replaces the starter key. It says whether the session is still on it, and asks who administers the
-deployment from now on - their sign-in id, such as `github/alice` - to be granted administration when the setup is
-applied. Where GitHub sign-in is available, it also offers a quicker way, described below.
+Its first step replaces the starter key. It says whether the session is still on it, and names who administers the
+deployment from now on, to be granted administration when the setup is applied. Where login keys are installed it
+comes filled in with `keylogin/admin`: applying the setup then also issues that administrator a login key, shown
+once on the screen you land on - only its hash is kept - and you sign in with it from then on. Name someone another
+sign-in method signs in instead, such as `github/alice`, and no key is issued; leave it empty and nobody is granted.
+Where GitHub sign-in is available, the step also offers to sign you in with GitHub, described below.
 
 After it comes one step per group of the essential settings, each row with what it does and its current value. The
 retention rules and full-text search are asked as the deployment's default, which every repository inherits:

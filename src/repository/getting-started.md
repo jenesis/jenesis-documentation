@@ -58,8 +58,10 @@ Open `http://localhost:8080` in a browser. The sign-in page offers **Sign in wit
 key from the log.
 
 The sign-in lands on **First-run setup**, a wizard through the decisions a new deployment should make. Its first
-step is the one to take now: name a real administrator, because the one-time key is about to stop working. The
-step can also sign you in with a GitHub OAuth app and make the identity GitHub returns the administrator, as
+step is the one to take now: name a real administrator, because the one-time key is about to stop working. It
+comes filled in with `keylogin/admin`, so applying the setup makes that administrator and shows its login key once,
+on the screen you land on - copy it, because only its hash is kept, and sign in with it from then on. The step can
+instead sign you in with a GitHub OAuth app and make the identity GitHub returns the administrator, as
 [Settings](/repository/settings/#signing-in-with-github-from-the-first-step) describes.
 
 The steps after it - which advisory feeds to consult, what the gate does with a vulnerable or malicious package,
