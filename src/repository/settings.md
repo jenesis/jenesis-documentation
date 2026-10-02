@@ -31,42 +31,60 @@ switches the rule off at that level even where a wider level sets one.
 
 Every setting also has a **tier**. An **essential** setting is asked by the wizard that creates what it configures;
 a **standard** one is shown on the settings pages; an **advanced** one tunes what was already decided - a cadence, a
-cap, a timeout - and is folded away. Nothing else differs: every tier is as editable as the others.
+cap, a timeout - and is shown once **Show advanced settings** is switched on. Nothing else differs: every tier is as
+editable as the others.
 
 ## First-run setup
 
-**First-run setup** is the wizard of a new deployment, at `/ui/setup`. Its first step is about no setting: it says
-whether the starter key is still in use and links to where a real administrator is granted and a real credential is
-issued. After it comes one step per group of the essential settings of the deployment and of a tenant, each row
-with what it does and its current value:
+**First-run setup** is the wizard of a new deployment, at `/ui/setup`. It asks only what a new deployment has to
+decide; everything else keeps its default and stays on the settings pages.
+
+Its first step replaces the starter key. It says whether the session is still on it, and asks who administers the
+deployment from now on - their sign-in id, such as `github/alice` - to be granted administration when the setup is
+applied. Where GitHub sign-in is available, it also offers a quicker way, described below.
+
+After it comes one step per group of the essential settings, each row with what it does and its current value. The
+retention rules and full-text search are asked as the deployment's default, which every repository inherits:
 
 | Step | Asks |
 | --- | --- |
-| **Collection** | Whether unreferenced content is reclaimed, and by which collector. |
 | **Compliance** | Which advisory and malware feeds to consult, the vulnerability threshold, and what happens to a vulnerable or malicious package. |
 | **Console** | Whether a person may sign in with a key. |
-| **First run** | Whether this wizard opens on sign-in. |
-| **Limits** | Every tenant's storage quota and rate limit. |
-| **Maintenance** | When the store is walked. |
 | **Proxy** | How many days a version fresh from upstream is held for review. |
-| **Tenancy** | The tenant the deployment serves. |
-| **Webhooks** | Whether events are delivered, and where to. |
+| **Retention** | The four retention rules repositories inherit. |
+| **Search** | Whether repositories keep a full-text index. |
 
 **Next** checks a step and moves on; **Back** returns without losing anything, since the values travel with the
-page. The last step is a review of every choice, the defaults left alone included, and **Apply setup** saves every
-changed value at once - a refused value saves none, and the wizard returns to the step that asked it. **Apply now**,
-on any step, finishes with the defaults for the steps not yet seen. Nothing is written before then.
+page, and the list of steps above the wizard returns to any step. The last step is a review of every choice, the
+defaults left alone included, and **Apply setup** saves every changed value at once - a refused value saves none,
+and the wizard returns to the step that asked it. **Apply now**, on a settings step, keeps the defaults of the steps
+not yet seen and goes to the review to confirm. Nothing is written before **Apply setup**.
 
 Someone signing in with the starter key is sent here first, once per session, until `setup-wizard` is switched
-off. **Skip for now** leaves it, and it is always one click away as **Settings → First-run setup**. The command
-line shows the same steps with `jenrepo setup`, and decides one with `jenrepo setup set <key> <value>`.
+off. **Use defaults** leaves it with nothing changed and opens the console's dashboard; the wizard is always one
+click away as **Settings → First-run setup**. The command line shows the same steps with `jenrepo setup`, and
+decides one with `jenrepo setup set <key> <value>`.
+
+### Signing in with GitHub from the first step
+
+The first step shows the callback address to register with GitHub - the console's address followed by
+`/login/oauth2/code/github`. Register a new OAuth app on GitHub with it, paste the
+app's client id and a client secret it generates, and press **Save and sign in with GitHub and make me
+administrator**. The two values are saved as the settings `ui.github.client-id` and `ui.github.client-secret`, which
+apply to the next sign-in without a restart, and the browser goes to GitHub. The identity GitHub returns is made the
+deployment's administrator as it signs in. The offer is good once, for ten minutes, and only in the session that
+made it.
+
+A client secret is stored only encrypted, with the key given to the server as `JENREPO_SECRETS_KEY`. Where none is
+set, the step says so and shows a freshly generated value to set it to before a restart; the Helm chart generates
+one on install. Where a GitHub app is configured already, the step offers only the sign-in.
 
 ## The settings catalogue
 
 **Settings → Settings** lists every deployment-level setting, grouped by what it concerns - Compliance, Proxy,
-Retention, Limits, Webhooks, Network, Caches and more. Each group shows its essential and standard settings first;
-the advanced ones are folded under **Advanced**, which says how many of them differ from their defaults. Each row
-shows:
+Retention, Limits, Webhooks, Network, Caches and more. Each group shows its essential and standard settings; the
+advanced ones join them when **Show advanced settings**, beside the filter, is switched on - except an advanced
+setting given a value here, which is always shown. Each row shows:
 
 - the setting's name, its key and the module it comes from;
 - what it does, and its current value against its default;
@@ -74,9 +92,13 @@ shows:
 - **overridden** when it is set here rather than left to its default, with **Reset to default** beside its **Save**;
 - **high-impact** where a change can start rejecting or admitting packages, which asks for confirmation.
 
-The filter box above the list finds a setting by any word in its key, name or description, and opens the fold a
-match sits in. A value saved here is stored with the repository and shared by every server of a multi-node
+The filter box above the list finds a setting by any word in its key, name or description, and switches on
+**Show advanced settings** when only advanced settings match. A value saved here is stored with the repository and shared by every server of a multi-node
 deployment.
+
+A setting that picks one of a few values shows each by a readable name with a short description - the gate's
+verdicts read **Allow**, **Hold for review** and **Reject** - while the API, the command line and the stored value
+keep the constant (`ALLOW`, `QUARANTINE`, `REJECT`).
 
 A setting also given in the environment is shown **pinned** and cannot be edited here, because the environment
 wins - the page names what pinned it. Every change, on every page and at every level, is checked the same way before
@@ -97,8 +119,8 @@ jenrepo settings set vulnerability-threshold HIGH
 
 A repository's own settings are on its **Settings** page, under **Lifecycle** among its pages. Each row shows the
 value in force - the repository's own, else its tenant's, else the deployment's - and **Reset to default** makes the
-repository inherit again. The retention rules are also on its **Retention & cleanup** page, and its routing on its
-**Overview**.
+repository inherit again. Its routing is changed here, and shown on its **Overview**; the retention rules are also on
+its **Retention & cleanup** page.
 
 A repository can be given its settings as it is created, as [Repositories](/repository/repositories/) shows, and
 changed later:
@@ -130,8 +152,8 @@ change: a restore replaces every stored deployment setting.
 Some settings may differ per tenant - a stricter gate for one, a longer retention for another. **Tenant settings**
 lists the ones that may, for the tenant you are working in, with the deployment's value beside any override, and
 saves or reverts an override; a repository setting set here is the default for the tenant's repositories.
-**Restore** replaces the tenant's overrides with a bundle exported earlier. A single-tenant deployment has little
-reason to use the page.
+**Restore** replaces the tenant's overrides with a bundle exported earlier. The page is listed only where the
+deployment serves several tenants.
 
 ## Modules
 

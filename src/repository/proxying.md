@@ -69,8 +69,8 @@ rather than creating one: the repository is created with its type as [Repositori
 describes, and its routing then decides what it serves.
 
 Routing is the deployment administrators' decision, since it names where the server fetches from. They set it on the
-wizard's **Routing** step when a repository is created, and later on the repository's **Overview** or its
-**Settings** page. A script sets it with a key of the operator tenant:
+wizard's **Routing** step when a repository is created, and later on the repository's **Settings** page. A script
+sets it with a key of the operator tenant:
 
 ```bash
 curl -X PUT -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \

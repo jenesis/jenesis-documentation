@@ -1,7 +1,7 @@
 ---
 order: 9
 title: The build cache
-description: The remote build cache the repository keeps for the Jenesis build tool, Gradle, Maven and Bazel - creating a project with its settings, granting a key access to it, pointing each build tool at it, and keeping its size in check.
+description: The remote build cache the repository keeps for the Jenesis build tool, Gradle, Maven and Bazel - creating a project for one build tool with its settings, granting a key access to it, pointing each build tool at it, and keeping its size in check.
 ---
 
 The server keeps a **remote build cache** beside its repositories, for the [Jenesis build tool](/tool/), Gradle,
@@ -17,23 +17,37 @@ answered `403`.
 
 ## Projects
 
-The cache is divided into **projects**. A project is a separate space of cached results, with its own size limits,
-and a key reaches only the projects it is granted - so two teams, or a trusted main branch and untrusted pull
-requests, need not share results.
+The cache is divided into **projects**. A project is one build tool's cache - `gradle`, `maven`, `bazel` or
+`jenesis`, whichever the deployment serves - with its own size limits, and a key reaches only the projects it is
+granted. So two teams, or a trusted main branch and untrusted pull requests, need not share results.
 
-**Build cache → Projects** lists the projects with how many entries each holds, how much space they take and when
-they were last counted. **New project** opens a wizard: the project's name - letters, digits and underscores - then
-its size cap and how long an unused entry is kept, then a review. **Create project** creates it with those settings
-at once; a value left blank inherits the tenant's and the deployment's.
+**Build cache → Current projects** lists the projects with the build tool and description of each, how many entries
+it holds, how much space they take and when they were last counted; the filter above it matches a name, a build
+tool or a description. **New project** opens a wizard: the project's name - letters, digits and underscores - its
+build tool and an optional description, then its size cap and how long an unused entry is kept, then a review.
+**Create project** creates it with those settings at once; a value left blank inherits the tenant's and the
+deployment's.
 
-A script creates one the same way, with its settings beside it:
+A project answers its own build tool and no other: a request from another tool's endpoint is answered `404`, as if
+the project did not exist. A project a build creates by pushing to a name nobody created takes the type of the
+first tool that stores in it; reading types nothing. A project's page shows its build tool, and an editor changes
+its description in place, with the pencil beside it.
+
+A script creates one the same way, with its type, description and settings beside it, and changes the description
+later:
 
 ```bash
 curl -X POST -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
-  -d '{"settings":{"project-size":"10737418240","project-ttl":"P30D"}}' \
-  'https://repo.example.com/api/cache/projects?name=my_project'
-jenrepo projects create my_project --set project-size=10737418240 --set project-ttl=P30D
+  -d '{"description":"Main branch builds","settings":{"project-size":"10737418240","project-ttl":"P30D"}}' \
+  'https://repo.example.com/api/cache/projects?name=my_project&type=gradle'
+curl -X PUT -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
+  -d '{"description":"Release builds"}' https://repo.example.com/api/cache/projects/my_project/description
+jenrepo projects create my_project gradle "Main branch builds" --set project-size=10737418240 --set project-ttl=P30D
+jenrepo projects describe my_project "Release builds"
 ```
+
+A type the deployment does not serve, or a name that is taken, is refused with `400` and nothing is created. An
+empty description clears it.
 
 ## Granting a key access
 
@@ -48,7 +62,7 @@ enter the project's name as the scope - or `*` for every project - with the role
 ## Pointing a build at it
 
 Each build tool speaks its own protocol, at its own address under the tenant's cache, and each names the project and
-presents the key its own way. **Build cache → Projects** lists every tool with its address for the tenant you are in,
+presents the key its own way. **Build cache → Build tools** lists every tool with its address for the tenant you are in,
 `jenrepo capabilities` prints the same list, and `GET /api/capabilities` answers it as `cacheProtocols`.
 
 | Build tool | Address | Project and key |
@@ -130,7 +144,7 @@ Each project's page carries its settings, the three a project has of its own:
 | --- | --- |
 | **Size cap** (`project-size`) | The most the project's entries may take together, in bytes; past it the least recently used are evicted. `0` is no cap. |
 | **Unused-entry lifetime** (`project-ttl`) | Entries nobody has read or written for this long are removed, as a duration (`P30D`, `30d`); `none` keeps them for ever. |
-| **Evict least recently used first** (`project-lru`) | Which entries go first when the cap is reached; switched off, the most recently used go first. Folded under **Advanced**. |
+| **Evict least recently used first** (`project-lru`) | Which entries go first when the cap is reached; switched off, the most recently used go first. |
 
 Like any setting, each is inherited until the project sets its own: the deployment and a tenant can set a default
 for every project, and **Reset to default** returns a project to it. The cache enforces them as it runs. A script changes them
@@ -146,7 +160,7 @@ in the background, after asking you to type the project's name; it is an admin's
 project stays, and reaches a project created again under that name - so revoke the grants first, or a build still
 writing to it brings it back. A script does the same with `DELETE /api/cache/projects/<name>`.
 
-Below the projects, a super-administrator sees the **Cache volume**: the free space of the disk the cache lives on
+**Build cache → Cache volume**, a super-administrator's page, shows the free space of the disk the cache lives on
 against the target it keeps free, and a reclaim that sweeps the least recently used entries across every tenant's
 projects until the target is met.
 

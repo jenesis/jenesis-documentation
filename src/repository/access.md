@@ -18,7 +18,7 @@ on:
 | --- | --- |
 | **A key** | on by default; `JENREPO_KEY_LOGIN=false` switches it off |
 | **OpenID Connect** - Keycloak, Okta, Entra ID, Google, Auth0 and any other issuer | `JENREPO_UI_OIDC_ISSUER_URI`, `JENREPO_UI_OIDC_CLIENT_ID`, `JENREPO_UI_OIDC_CLIENT_SECRET`, and `JENREPO_UI_OIDC_NAME` to label the button |
-| **GitHub** | `JENREPO_UI_GITHUB_CLIENT_ID` and `JENREPO_UI_GITHUB_CLIENT_SECRET`, from a GitHub OAuth app |
+| **GitHub** | `JENREPO_UI_GITHUB_CLIENT_ID` and `JENREPO_UI_GITHUB_CLIENT_SECRET`, from a GitHub OAuth app - or the settings `ui.github.client-id` and `ui.github.client-secret`, which apply without a restart and which [First-run setup](/repository/settings/#signing-in-with-github-from-the-first-step) can save for you |
 | **LDAP or Active Directory** | `JENREPO_UI_LDAP_URL`, with the settings below |
 
 **Key sign-in** is the way into a new deployment. A start that finds nobody able to sign in prints a one-time key
@@ -139,8 +139,7 @@ Build tools send neither header, so nothing they do changes.
 ## Keyless CI
 
 A CI platform that issues its jobs an identity token - GitHub Actions, GitLab and most others - can exchange it
-for a short-lived key instead of storing one. **Keyless CI (OIDC trust)** on the Credentials page names which
-tokens to accept:
+for a short-lived key instead of storing one. **Access → Keyless CI** names which tokens to accept:
 
 | Field | Example |
 | --- | --- |

@@ -58,12 +58,15 @@ Open `http://localhost:8080` in a browser. The sign-in page offers **Sign in wit
 key from the log.
 
 The sign-in lands on **First-run setup**, a wizard through the decisions a new deployment should make. Its first
-step is the one to take now: grant a real administrator and issue a real credential, because the one-time key is
-about to stop working. The steps after it - which advisory feeds to consult, what the gate does with a vulnerable or
-malicious package, the tenant's limits, webhooks - each show the current value, and **Next** keeps it unless you
-change it. The last step reviews every choice, and **Apply setup** saves them together; nothing is saved before
-that, and every answer can be changed later. **Skip for now** takes you into the console, and the wizard stays
-reachable as **Settings → First-run setup**.
+step is the one to take now: name a real administrator, because the one-time key is about to stop working. The
+step can also sign you in with a GitHub OAuth app and make the identity GitHub returns the administrator, as
+[Settings](/repository/settings/#signing-in-with-github-from-the-first-step) describes.
+
+The steps after it - which advisory feeds to consult, what the gate does with a vulnerable or malicious package,
+how long repositories keep what they hold - each show the current value, and **Next** keeps it unless you change
+it. The last step reviews every choice, and **Apply setup** saves them together; nothing is saved before that, and
+every answer can be changed later. **Use defaults** takes you into the console with nothing changed, and the wizard
+stays reachable as **Settings → First-run setup**.
 
 <div class="warning">
   Signing in with a key is on by default, because it is how a deployment is entered before anything else is set
@@ -80,7 +83,7 @@ The console is laid out in two levels. Across the top are its sections - **Repos
 A repository holds one type of artifact, and it is created before anything is published into it - a publish
 into a repository that does not exist is refused with `404`. Create two:
 
-1. Open **Repositories → All repositories** and press **New repository**.
+1. Open **Repositories → Current repositories** and press **New repository**.
 2. Enter the name `libraries`, choose the format **maven**, and press **Next**. The steps that follow ask how long
    the repository keeps what it holds and where it fetches from; leave them empty for now, and on the review press
    **Create repository**.
@@ -162,8 +165,8 @@ Every other client follows the same pattern - a repository of its type, its URL 
 
 ## See it in the console
 
-Back in the console, **Repositories** lists `libraries` and `npm`. Open `libraries`: the overview shows its most
-recent releases, and the pages on the left take you into it - **Browse & search** walks the stored files, and
+Back in the console, **Repositories** lists `libraries` and `npm`. Open `libraries`: the overview says what it is
+and how it is routed, and the pages on the left take you into it - **Browse & search** walks the stored files, and
 **Quarantine**, **Vulnerabilities** and their neighbours show what the gate decided about each artifact on its way
 in.
 

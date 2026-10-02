@@ -104,6 +104,7 @@ helm install jenesis oci://registry-1.docker.io/jenesisbuild/jenesis --version 1
 | `store.backend` | `filesystem` (a 20 GiB volume by default), `s3`, `gcs` or `azure-blob`, with the backend's own values beside it |
 | `ui.admins`, `ui.oidc.*`, `ui.github.*` | Sign-in, as above |
 | `secrets.*` | Credentials - store keys, client secrets - rendered into a Secret, or `secrets.existingSecret` to use your own |
+| `secrets.generateSettingsKey` | On by default: generates `JENREPO_SECRETS_KEY`, the key settings holding a secret are stored encrypted with, into a Secret of its own on install, and keeps it across upgrades and on uninstall. A key in `secrets.existingSecret` takes precedence |
 | `repository.<key>` | Any other setting, as `JENREPO_<KEY>` - for example `repository.rate-limit: "1200"` |
 | `ingress.*` | An ingress in front of the service |
 

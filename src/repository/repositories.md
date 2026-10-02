@@ -36,18 +36,20 @@ description clears it.
 
 A repository can be given its own settings as it is created - how long it keeps what it holds, and where it fetches
 what it lacks - so it answers its first request as configured. The console asks them in a wizard: **New
-repository** on **Repositories → All repositories** opens it.
+repository** on **Repositories → Current repositories** opens it.
 
 1. **Repository** - the name, the format, and optionally a description.
 2. **Retention** - the four retention rules, each left blank to inherit the tenant's and the deployment's value.
 3. **Routing** - whether it accepts uploads and where it fetches from, written as
    [Proxying upstreams](/repository/proxying/) describes. Routing is the deployment administrators' decision, so
    anyone else sees it fixed rather than asked.
-4. **Review** - every choice, the defaults left alone included.
+4. **Search** - whether the repository keeps a full-text index.
+5. **Review** - every choice, the defaults left alone included.
 
-**Next** checks a step before moving on, and **Back** loses nothing. **Create repository** on the review creates the
-repository and its settings together, and **Create now** does so from any later step with the rest left to inherit.
-Nothing is written before then, so a closed tab leaves nothing half made.
+**Next** checks a step before moving on, **Back** loses nothing, and the list of steps above the wizard returns to
+any of them. **Create repository** on the review creates the repository and its settings together. **Create now**,
+from any later step, leaves the remaining settings to inherit and goes to the review to confirm. Nothing is written
+before **Create repository**, so a closed tab leaves nothing half made.
 
 The API and the command line take the same settings beside the type:
 
@@ -104,7 +106,7 @@ describes a repository; it does not create one. [Proxying upstreams](/repository
 
 ## The Repositories page
 
-**Repositories → All repositories** lists the tenant's repositories, with **New repository** below them. Each is shown
+**Repositories → Current repositories** lists the tenant's repositories, with **New repository** below them. Each is shown
 with the mark of the type it holds, its description, the type's name, when it was created, and badges that describe
 its shape:
 
@@ -129,7 +131,7 @@ format**.
 tenant settings: the deployment's value applies until the tenant sets its own, and **Reset to default** returns to it. Every
 member reads them; an admin changes them.
 
-- **Tenant storage quota** (`tenant-quota`) - the most the tenant may store, across every repository, in bytes; a
+- **Storage quota** (`tenant-quota`) - the most the tenant may store, across every repository, in bytes; a
   publish that would exceed it is refused with `507`. `0` means no limit, and nothing is metered while there is
   none: setting one counts what is already stored on the next cleanup pass, and the page then shows how much is
   stored against it.
@@ -141,20 +143,13 @@ the tenant's own; `0` there returns to the deployment's value.
 
 ## Overview
 
-Opening a repository lands on its **Overview**: what it is, what it holds, and how it is routed.
+Opening a repository lands on its **Overview**: what it is and how it is routed.
 
-- **Holdings** - the versions it holds, newest first: the releases published into it, and the copies it cached
-  from an upstream, each marked **published** or **cached from** its upstream. Each opens that package's page,
-  which lists its versions with when each was published, whether it is pinned and its download count where downloads
-  are counted. A version opens its own page: where it came from and whether it is served, the licences it declares,
-  what its manifest says about it - description, keywords and authors - its signature and provenance, what it depends
-  on, and the files it is served as. When there are more holdings than the overview shows, it says so and links to
-  **Browse & search**.
 - **Routing** - how the repository is routed, as badges with any warnings, and where that comes from: its own
   routing, the deployment's definition of its name, or none. A repository with no routing accepts uploads, and
   fetches what it lacks through its format's upstream where one is named - the page says which. A deployment
-  administrator routes the repository here, or hands it back to the deployment's definition with **Use the
-  deployment routing**.
+  administrator changes the routing on the repository's **Settings** page, where unsetting it hands the repository
+  back to the deployment's definition.
 - **Hardened proxy screening** - shown when the repository screens every upstream body in full before serving
   a byte of it.
 - **Absent formats** - an ecosystem the repository holds data for that no installed format can serve any more.
@@ -176,6 +171,10 @@ in a Maven repository, `npm/…` in an npm one - rather than how they are stored
   quickly as a small one. A folder with a very large number of children is cut short with a notice that says so.
 - A format that keeps its packages outside a folder tree - npm, PyPI, NuGet and their kind - has no folders to
   show, so its releases are listed by coordinate instead, each opening its package's page.
+- A package's page lists its versions with when each was published, whether it is pinned and its download count
+  where downloads are counted. A version opens its own page: where it came from and whether it is served, the
+  licences it declares, what its manifest says about it - description, keywords and authors - its signature and
+  provenance, what it depends on, and the files it is served as.
 - The columns sort by name, type and size.
 - **Search** answers in one of two ways, and the search bar says which:
   - **By name**, unless the repository keeps a full-text index: a package is looked up by the start of its

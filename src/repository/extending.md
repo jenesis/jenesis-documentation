@@ -152,6 +152,22 @@ public final class NoticeConsoleModule implements ConsoleModuleProvider {
 A page returns a view name and a model, never markup built as a string, and a page that needs to see the whole
 store starts that work off the request and shows its progress rather than waiting for it.
 
+The same configuration can add panels to the console's dashboard: a `DashboardContributor` bean answers the
+panels a viewer sees - a title opening its page, a headline figure, a few lines - for the tenant they work in:
+
+```java
+@Bean
+DashboardContributor noticePanel(NoticeLog log) {
+    return viewer -> List.of(new DashboardPanel("Notices", "/ui/notices",
+            Integer.toString(log.pending(viewer.tenant())), "notices wait for delivery",
+            DashboardPanel.Tone.NEUTRAL, List.of()));
+}
+```
+
+A panel is drawn on every visit, so it costs a few point reads at most; a figure that needs every repository is
+counted in the background and read back with the time it was counted. A contributor that fails is shown as
+unreadable while the other panels render.
+
 ### Store artifacts somewhere else
 
 An `ArtifactStoreProvider` is a storage backend. It is chosen by name with `jenrepo.store`, and the filesystem

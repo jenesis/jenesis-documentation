@@ -1,7 +1,7 @@
 ---
 order: 3
 title: Finding your way around
-description: The console's two navigation levels - the sections across the top and the pages beside the content - the pages of a repository, and which pages each role sees.
+description: The console's dashboard, its two navigation levels - the sections across the top and the pages beside the content - the pages of a repository, its wizards, and which pages each role sees.
 ---
 
 The console is where you look after a deployment: what its repositories hold, what the gate decided, who may do
@@ -9,6 +9,24 @@ what, and how the server is configured. It runs inside the server, on the same p
 start - open the server's address in a browser and sign in. An identity provider returns the browser to `/login/oauth2/code/github` or `/login/oauth2/code/oidc`, which is the
 callback address to register with it. This chapter shows how it is laid out, so the
 chapters that follow can say "open **Access → Credentials**" and you know where that is.
+
+## The dashboard
+
+Signing in opens the **Dashboard** of the tenant you work in - chosen for you when you can reach only one - and so
+do the logo in the top left and choosing a tenant. It shows how the deployment stands and what waits for a
+decision, one panel per subject, and each panel's title opens the page where its work is:
+
+| Panel | Shows |
+| --- | --- |
+| **Repositories** | How many repositories there are, and how many build-cache projects. With none yet, it links to **New repository**. |
+| **Storage** | For a super-administrator, the free space of the volume the store lives on, where the store has one. Otherwise, how much is stored against the storage quota, where one is set. |
+| **Held for review** | How many versions wait for a review decision, and the repositories holding most of them. |
+| **Vulnerabilities** | How many versions the last vulnerability scan found a known vulnerability in, and where - shown once a scan has ranked any. |
+| **Security posture** | For a super-administrator, how many unsafe settings are in force. |
+
+The held and vulnerable versions are counted across every repository in the background rather than while you wait.
+Those two panels say when their figures were counted ("As of …"), a figure older than five minutes is counted
+again when the dashboard is opened, and while a count runs the page refreshes itself until it finishes.
 
 ## Two levels
 
@@ -18,16 +36,18 @@ the middle.
 
 | Section | Pages |
 | --- | --- |
-| **Repositories** | All repositories, New repository, Limits |
-| **Build cache** | Projects |
-| **Access** | Credentials, Members |
+| **Repositories** | Current repositories, New repository, Limits |
+| **Build cache** | Current projects, New project, Build tools, Cache volume |
+| **Access** | Current credentials, New credential, Credential policies, Keyless CI, Members, Audit trail |
+| **Tenants** | Current tenants |
 | **Operations** | Metrics, Security posture, Caches, Walks |
-| **Settings** | Settings, Upstreams, Tenant settings, Modules, Tenants, Backup & restore, First-run setup, Login keys |
+| **Settings** | Settings, Upstreams, Tenant settings, Modules, Backup & restore, First-run setup, Login keys |
 
-**Tenants** is listed for whoever can choose between several: a super-administrator, and a member of more than one
-tenant.
+**Tenants** and **Tenant settings** exist only where the deployment serves several tenants, and **Tenants** is
+listed for whoever can choose between them: a super-administrator, and a member of more than one tenant. A
+deployment that serves one tenant speaks of the deployment throughout, never of a tenant.
 
-**All repositories** is one table across the page, with a filter above it that narrows the rows to the names,
+**Current repositories** is one table across the page, with a filter above it that narrows the rows to the names,
 formats and descriptions matching what you type. **New repository** - listed for whoever may create one, and linked
 from the page's description too - opens the wizard.
 
@@ -36,17 +56,17 @@ hidden behind a menu: what you may see is always in one of those two places.
 
 ## Inside a repository
 
-Opening a repository changes the list on the left: it now names the repository, offers **All repositories** to
-go back, and lists that repository's own pages: first its contents under the repository's name, then the rest
-under four headings.
+Opening a repository changes the list on the left: it now lists that repository's own pages, first its contents
+under the repository's name, then the rest under four headings. **Repositories** in the bar across the top leads
+back to the list.
 
 | Heading | Pages |
 | --- | --- |
-| *(the repository's name)* | Overview, Browse & search, Staging, Import, and Deploy once it is switched on |
+| *(the repository's name)* | Overview, Browse & search, Staging, and Deploy once it is switched on |
 | **Review** | Quarantine, Refused |
 | **Risk** | Vulnerabilities, Findings, Licenses, Maintainer health |
 | **Provenance** | Signers |
-| **Lifecycle** | Retention & cleanup, Pins, Deprecations & yanks, Settings, Export |
+| **Lifecycle** | Retention & cleanup, Pins, Import, Deprecations & yanks, Export, Settings |
 
 Every repository has the same pages, so moving between two of them keeps you on the page you were reading. A
 page whose feature a deployment does not carry - staging, or the vulnerability feeds - is simply not listed.
@@ -63,9 +83,11 @@ files by name under it, a **Pin**, and **Deprecate or yank**, which opens that v
 Three things are created through a wizard rather than a single form: the deployment itself on its first boot
 (**Settings → First-run setup**), a repository (**New repository**) and a build-cache project (**New project**).
 Each asks what the thing is, then the settings it should have from the start, one group per step, and ends on a
-review of every choice. **Next** and **Back** move between the steps without losing anything, and nothing is
-written until the last button - so a wizard left half-way leaves nothing behind. [Settings](/repository/settings/)
-says which settings each one asks.
+review of every choice. **Next** and **Back** move between the steps without losing anything, and the list of steps
+above the wizard returns to any of them - a later one once the steps on the way are accepted. **Create now** (or
+**Apply now** in First-run setup) skips the remaining steps, keeping their defaults, and goes to the review to
+confirm. Nothing is written until the review's last button - so a wizard left half-way leaves nothing behind.
+[Settings](/repository/settings/) says which settings each one asks.
 
 ## Buttons
 

@@ -65,11 +65,13 @@ on, so the store is read once rather than once per job.
 | Walk | When | What rides along |
 | --- | --- | --- |
 | `retention` | Daily at 03:00 UTC | Applying each repository's retention policy |
-| `rebuild` | Sundays at 03:00 UTC | Everything else: reclaiming space, repairing indexes, back-filling what a newly installed module needs |
+| `rebuild` | Sundays at 03:00 UTC | Every job: reclaiming space, repairing indexes, back-filling what a newly installed module needs |
 
 Each walk can be edited in place - its schedule as a cron expression with seconds first, in UTC
 (`0 0 3 * * *`), whether it is switched on, and which jobs ride along - or removed, and **Add a walk** schedules
-another. **Walk the store now** starts a walk at once.
+another. **Walk the store now** starts the `rebuild` walk at once, with the jobs its entry names - every job by
+default, and every job too when no `rebuild` walk is scheduled. Like any walk, a `rebuild` walk naming one job
+carries that job alone.
 
 <div class="note">
   A walk reads every object in the store, so on object storage every scheduled walk is a recurring cost. The
