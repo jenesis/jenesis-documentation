@@ -50,7 +50,6 @@ Each entry links here, to its own line of this table:
 | <span id="jenrepo.gate.denylist.action">`jenrepo.gate.denylist.action`</span> | warning | `deny-list-action` is `ALLOW` for a tenant, so the deny list is ignored. |
 | <span id="jenrepo.importer.ssrf">`jenrepo.importer.ssrf`</span> | warning | `block-private-import-hosts=false` - an import may reach internal addresses, or travel unencrypted. |
 | <span id="jenrepo.ratelimit.unset">`jenrepo.ratelimit.unset`</span> | warning | `rate-limit` is `0`, so nothing throttles a client. |
-| <span id="jenrepo.demo.writable">`jenrepo.demo.writable`</span> | warning | A demo deployment that is not read-only, so anyone can write to it. |
 | <span id="jenrepo.consistency.stuck">`jenrepo.consistency.stuck`</span> | warning | One server of several has stopped catching up with what the others have seen. |
 | <span id="jenrepo.posture.collision">`jenrepo.posture.collision`</span> | warning | Two installed modules report under the same advisory name - a packaging fault, shown rather than hidden. |
 

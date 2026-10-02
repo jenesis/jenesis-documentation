@@ -62,7 +62,9 @@ step is the one to take now: name a real administrator, because the one-time key
 comes filled in with `keylogin/admin`, so applying the setup makes that administrator and shows its login key once,
 on the screen you land on - copy it, because only its hash is kept, and sign in with it from then on. The step can
 instead sign you in with a GitHub OAuth app and make the identity GitHub returns the administrator, as
-[Settings](/repository/settings/#signing-in-with-github-from-the-first-step) describes.
+[Settings](/repository/settings/#signing-in-with-github-from-the-first-step) describes. On a deployment with no
+repository yet, the first page also offers to [load a demo](/repository/settings/#trying-jenesis-with-a-demo) that
+fills the console with sample repositories and packages.
 
 The steps after it - which advisory feeds to consult, what the gate does with a vulnerable or malicious package,
 how long repositories keep what they hold - each show the current value, and **Next** keeps it unless you change

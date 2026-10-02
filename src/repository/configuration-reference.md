@@ -230,7 +230,6 @@ Explained in [Settings](/repository/settings/#first-run-setup).
 
 | Key | Default | Level | Tier | Applies | Effect |
 | --- | --- | --- | --- | --- | --- |
-| `demo` | `false` | deployment | advanced | on restart | Seed a fresh, completely empty repository with real artifacts (including old, benign-but-vulnerable coordinates like log4j-core 2.14.1 and lodash 4.17.11) so an evaluator has data to look at - pulled through the formats' own upstreams, screened by the compliance gate, with a small demo gate config applied. |
 | `setup-wizard` | `true` | deployment | standard | at once | Send a super-admin who signs in with the starter key to the first-run setup screen, which walks the decisions a new deployment should make: the starter credentials, the compliance verdicts, the advisory feeds, retention. |
 
 ### Formats

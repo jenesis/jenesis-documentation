@@ -46,7 +46,21 @@ once on the screen you land on - only its hash is kept - and you sign in with it
 sign-in method signs in instead, such as `github/alice`, and no key is issued; leave it empty and nobody is granted.
 Where GitHub sign-in is available, the step also offers to sign you in with GitHub, described below.
 
-After it comes one step per group of the essential settings, each row with what it does and its current value. The
+### Trying Jenesis with a demo
+
+While the deployment holds no repository, the setup's first page also offers to load a demo, so that every screen
+has something to show. It creates hosted Maven and npm repositories and proxies of Maven Central and the npm
+registry, publishes a few small packages into the hosted ones - one of them on the deny list, so the review queue
+holds it - reads a few old versions with known vulnerabilities through the proxies, and, once a registry has
+answered, switches the OSV advisory feed on and asks for a vulnerability scan. The offer lists every repository,
+setting and registry it touches and warns that it loads code with known vulnerabilities into the deployment; it
+starts only after you type `I want to trial jenesis` into its confirmation. It runs in the background, and its page
+shows each step as it lands and, at the end, what was made and what stayed empty - without internet access the
+hosted repositories still load. Once any repository exists, the offer is gone.
+
+### The steps
+
+After the first step comes one step per group of the essential settings, each row with what it does and its current value. The
 retention rules and full-text search are asked as the deployment's default, which every repository inherits:
 
 | Step | Asks |
