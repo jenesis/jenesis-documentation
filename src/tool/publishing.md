@@ -47,6 +47,10 @@ java -Djenesis.project.version=1.0.0 \
      build/jenesis/Make.java stage
 ```
 
+Central requires the `-javadoc.jar` but not that it documents anything, and rendered documentation can make
+up most of a release's size. With `-Djenesis.documentation.empty=true`, the jar is still staged but holds
+nothing but a file named `INTENTIONALLY_EMPTY`, and no documentation tool runs.
+
 Central also requires the POM to carry `name`, `description`, `url`, `<licenses>`, `<developers>`, and
 `<scm>`. Jenesis folds two channels into each POM. Everything it can derive from the source comes first: the
 coordinate from the module name, and the name and description from its Javadoc, or all three from the source

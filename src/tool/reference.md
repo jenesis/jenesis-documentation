@@ -125,6 +125,7 @@ in one step.
 | `jenesis.project.metadata` | *(unset)* | Comma-separated project-level metadata files for the POM and the SBOM. Unset reads `project.properties` at the project root when it exists; an empty value reads none. |
 | `jenesis.project.sources` | `false` | Also assemble a per-module sources jar. |
 | `jenesis.project.documentation` | `false` | Also assemble a per-module javadoc jar. |
+| `jenesis.documentation.empty` | `false` | Archive that javadoc jar with nothing but an `INTENTIONALLY_EMPTY` file in it instead of rendering the documentation, for a repository such as Maven Central that requires the jar but not its content (see *[Publishing](/tool/publishing/#staging-the-release-tree)*). |
 | `jenesis.project.resources` | *(unset)* | Comma-separated `<path>:<target>` pairs of project files or folders placed among the resources of every module, as `LICENSE:META-INF/LICENSE,NOTICE:META-INF/NOTICE` (see *[Supply-chain features](/tool/supply-chain/#the-licence-text-in-the-jar)*). |
 | `jenesis.project.watch` | `false` | Keep the process alive and rebuild on every source change (see *[Building &amp; running](/tool/building-and-running/)*). |
 
