@@ -312,54 +312,54 @@ JENREPO_S3_REGION=eu-central-1</code></pre>
       <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-repositories" aria-labelledby="tab-shot-repositories">
         <figure>
           <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/repositories.webp" width="1440" height="746" loading="lazy" decoding="async"
-            alt="The console's list of repositories: five of them - a Maven repository for the platform team's libraries, an npm, a PyPI and a container-image repository, and a read-only Maven repository that pulls through Maven Central - each with its format, description and creation date, under a filter that narrows them as you type.">
+            alt="The console's list of repositories: four of them - libs, a Maven repository for internal Java libraries published by CI, an npm and a container-image repository, and central, a read-only Maven repository that fetches from Maven Central and caches what it fetches - each with its format, description and creation date, under a filter that narrows them as you type.">
           <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/repositories.webp" width="1440" height="746" loading="lazy" decoding="async"
-            alt="The console's list of repositories: five of them - a Maven repository for the platform team's libraries, an npm, a PyPI and a container-image repository, and a read-only Maven repository that pulls through Maven Central - each with its format, description and creation date, under a filter that narrows them as you type.">
+            alt="The console's list of repositories: four of them - libs, a Maven repository for internal Java libraries published by CI, an npm and a container-image repository, and central, a read-only Maven repository that fetches from Maven Central and caches what it fetches - each with its format, description and creation date, under a filter that narrows them as you type.">
           <figcaption><strong>The repositories.</strong> Every repository of a tenant in one list, each with its format, what it is for and how it is routed.</figcaption>
         </figure>
       </div>
       <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-overview" aria-labelledby="tab-shot-overview" hidden>
         <figure>
           <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/overview.webp" width="1440" height="900" loading="lazy" decoding="async"
-            alt="The overview of the repository maven-central, a Maven pull-through served at /repository/releases/maven-central/. Its holdings list Guava, SLF4J, Jackson and Commons Lang versions, each marked as cached from https://repo1.maven.org/maven2/. Its description sits under the URL with a pencil to edit it, and the sidebar lists the repository's pages under General, Review, Risk, Provenance and Lifecycle.">
+            alt="The overview of the repository central, a Maven repository served at /repository/releases/central/: its description with a pencil to edit it, its routing - read-only, with Maven Central as a cached source under the default screening - and the sidebar listing the repository's pages under General, Review, Risk, Provenance and Lifecycle.">
           <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/overview.webp" width="1440" height="900" loading="lazy" decoding="async"
-            alt="The overview of the repository maven-central, a Maven pull-through served at /repository/releases/maven-central/. Its holdings list Guava, SLF4J, Jackson and Commons Lang versions, each marked as cached from https://repo1.maven.org/maven2/. Its description sits under the URL with a pencil to edit it, and the sidebar lists the repository's pages under General, Review, Risk, Provenance and Lifecycle.">
-          <figcaption><strong>The overview of a proxy.</strong> A pull-through of Maven Central: what it has cached, and from where. Everything it caches is screened and re-scanned like a release.</figcaption>
+            alt="The overview of the repository central, a Maven repository served at /repository/releases/central/: its description with a pencil to edit it, its routing - read-only, with Maven Central as a cached source under the default screening - and the sidebar listing the repository's pages under General, Review, Risk, Provenance and Lifecycle.">
+          <figcaption><strong>The overview of a proxy.</strong> A pull-through of Maven Central: what it is for, and where it fetches from. Everything it caches is screened and re-scanned like a release.</figcaption>
         </figure>
       </div>
       <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-package" aria-labelledby="tab-shot-package" hidden>
         <figure>
           <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/package.webp" width="1440" height="795" loading="lazy" decoding="async"
-            alt="The page of the package com.fasterxml.jackson.core:jackson-databind in maven-central: a table of its versions with whether each was published or cached, whether it is pinned, its downloads and its files - the jar, the POM and their signatures - named under the folder they share.">
+            alt="The page of the package com.acme.payments:payments-core in libs: a table of its three versions, newest first, each with when it was published, a Pin button, its findings and its files.">
           <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/package.webp" width="1440" height="795" loading="lazy" decoding="async"
-            alt="The page of the package com.fasterxml.jackson.core:jackson-databind in maven-central: a table of its versions with whether each was published or cached, whether it is pinned, its downloads and its files - the jar, the POM and their signatures - named under the folder they share.">
-          <figcaption><strong>The versions of a package.</strong> One package and its versions: where each came from, whether it is pinned, and every path it is served at.</figcaption>
+            alt="The page of the package com.acme.payments:payments-core in libs: a table of its three versions, newest first, each with when it was published, a Pin button, its findings and its files.">
+          <figcaption><strong>The versions of a package.</strong> One package and its versions: when each arrived, whether it is pinned, what was found in it, and its files.</figcaption>
         </figure>
       </div>
       <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-quarantine" aria-labelledby="tab-shot-quarantine" hidden>
         <figure>
           <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/quarantine.webp" width="1440" height="705" loading="lazy" decoding="async"
-            alt="The quarantine of the repository libraries: the jar and the POM of com.acme.reports:pdf-renderer 3.1.0, both held by the gate on arrival because a policy rule matched their AGPL licence and they carry no publisher signature, each with a Release and a Discard button and its reasons on a line of their own beneath it.">
+            alt="The quarantine of the repository libs: com.acme.legacy:xml-utils 1.0.3, held by the gate on arrival because the deny list names it and its jar and POM carry no publisher signature, with a Release and a Discard button and its reasons on lines of their own beneath it.">
           <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/quarantine.webp" width="1440" height="705" loading="lazy" decoding="async"
-            alt="The quarantine of the repository libraries: the jar and the POM of com.acme.reports:pdf-renderer 3.1.0, both held by the gate on arrival because a policy rule matched their AGPL licence and they carry no publisher signature, each with a Release and a Discard button and its reasons on a line of their own beneath it.">
+            alt="The quarantine of the repository libs: com.acme.legacy:xml-utils 1.0.3, held by the gate on arrival because the deny list names it and its jar and POM carry no publisher signature, with a Release and a Discard button and its reasons on lines of their own beneath it.">
           <figcaption><strong>The review queue.</strong> What the gate held back, and why. A person releases or discards each; until then no client can download it.</figcaption>
         </figure>
       </div>
       <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-wizard" aria-labelledby="tab-shot-wizard" hidden>
         <figure>
           <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/wizard.webp" width="1440" height="660" loading="lazy" decoding="async"
-            alt="The last step of the New repository wizard, Review, after the steps Repository, Retention and Routing: it lists the name gradle-plugins, the format maven, a description, the retention rules with the defaults marked, and the routing fallback https://plugins.gradle.org/m2/, above the buttons Create repository, Back and Cancel.">
+            alt="The last step of the New repository wizard, Review, after the steps Repository, Retention, Routing and Search: a table of every setting the run makes - the name gradle-plugins, the format maven and a description chosen here, and the retention rules at their defaults - with where each value comes from.">
           <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/wizard.webp" width="1440" height="660" loading="lazy" decoding="async"
-            alt="The last step of the New repository wizard, Review, after the steps Repository, Retention and Routing: it lists the name gradle-plugins, the format maven, a description, the retention rules with the defaults marked, and the routing fallback https://plugins.gradle.org/m2/, above the buttons Create repository, Back and Cancel.">
+            alt="The last step of the New repository wizard, Review, after the steps Repository, Retention, Routing and Search: a table of every setting the run makes - the name gradle-plugins, the format maven and a description chosen here, and the retention rules at their defaults - with where each value comes from.">
           <figcaption><strong>The new-repository wizard.</strong> A repository is created with its retention and routing in one step, after a review - nothing is written before it.</figcaption>
         </figure>
       </div>
       <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-settings" aria-labelledby="tab-shot-settings" hidden>
         <figure>
           <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/settings.webp" width="1440" height="900" loading="lazy" decoding="async"
-            alt="The Settings page of the repository libraries, under a filter for finding a setting by what it does: its retention rules, Keep last set to 10 with a Save and a Revert button beside it, and Maximum age and Not downloaded for left unset, each with what it does and its effective value.">
+            alt="The Settings page of the repository libs, under a filter for finding a setting by what it does: its retention rules, Keep last set to 10 with Save and Reset to default beside it, and Maximum age, Not downloaded for and Prerelease expiry left unset, each with what it does.">
           <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/settings.webp" width="1440" height="900" loading="lazy" decoding="async"
-            alt="The Settings page of the repository libraries, under a filter for finding a setting by what it does: its retention rules, Keep last set to 10 with a Save and a Revert button beside it, and Maximum age and Not downloaded for left unset, each with what it does and its effective value.">
+            alt="The Settings page of the repository libs, under a filter for finding a setting by what it does: its retention rules, Keep last set to 10 with Save and Reset to default beside it, and Maximum age, Not downloaded for and Prerelease expiry left unset, each with what it does.">
           <figcaption><strong>A repository's settings.</strong> What each setting does and the value it has, found by name or by what it does.</figcaption>
         </figure>
       </div>
