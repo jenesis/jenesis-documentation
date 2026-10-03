@@ -44,7 +44,7 @@ REPO=https://repo.example.com/repository/releases/<repo>
 | Maven | `maven`, `java` | `$REPO/maven/` | a `settings.xml` server entry, the key as password |
 | Gradle, Maven layout | `maven`, `java` | `$REPO/maven/` | `credentials { password = key }` |
 | Gradle, Ivy layout | `ivy` | `$REPO/` | `credentials { password = key }` |
-| Jenesis modules | `jenesis`, `java` | `jenesis.module.uri=$REPO/` | `jenesis.module.token=$KEY` |
+| Java modules | `jenesis`, `java` | `jenesis.module.uri=$REPO/` | `jenesis.module.token=$KEY` |
 
 ### Language package managers
 
