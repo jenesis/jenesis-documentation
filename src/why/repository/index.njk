@@ -311,13 +311,15 @@ JENREPO_S3_REGION=eu-central-1</code></pre>
         <button role="tab" id="tab-shot-vulnerabilities" aria-controls="panel-shot-vulnerabilities" aria-selected="false" tabindex="-1">Vulnerabilities</button>
         <button role="tab" id="tab-shot-quarantine" aria-controls="panel-shot-quarantine" aria-selected="false" tabindex="-1">Quarantine</button>
         <button role="tab" id="tab-shot-settings" aria-controls="panel-shot-settings" aria-selected="false" tabindex="-1">Settings</button>
+        <button role="tab" id="tab-shot-projects" aria-controls="panel-shot-projects" aria-selected="false" tabindex="-1">Build cache</button>
+        <button role="tab" id="tab-shot-walks" aria-controls="panel-shot-walks" aria-selected="false" tabindex="-1">Walks</button>
       </div>
       <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-dashboard" aria-labelledby="tab-shot-dashboard">
         <figure>
           <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/dashboard.webp" width="1440" height="609" loading="lazy" decoding="async"
-            alt="The console's dashboard: four repositories, no build-cache project yet with a link to create one, three versions held for review - two in demo-maven-proxy and one in demo-maven, as of a time shown - the free space on the store, and one unsafe setting in force.">
+            alt="The console's dashboard: four repositories, two build-cache projects, three versions held for review - two in demo-maven-proxy and one in demo-maven, as of a time shown - the free space on the store, and one unsafe setting in force.">
           <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/dashboard.webp" width="1440" height="609" loading="lazy" decoding="async"
-            alt="The console's dashboard: four repositories, no build-cache project yet with a link to create one, three versions held for review - two in demo-maven-proxy and one in demo-maven, as of a time shown - the free space on the store, and one unsafe setting in force.">
+            alt="The console's dashboard: four repositories, two build-cache projects, three versions held for review - two in demo-maven-proxy and one in demo-maven, as of a time shown - the free space on the store, and one unsafe setting in force.">
           <figcaption><strong>The dashboard.</strong> What a deployment holds and what waits on someone: the versions held for review, by repository, and any setting that weakens it.</figcaption>
         </figure>
       </div>
@@ -382,6 +384,24 @@ JENREPO_S3_REGION=eu-central-1</code></pre>
           <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/settings.webp" width="1440" height="900" loading="lazy" decoding="async"
             alt="The Settings page of demo-maven, under a filter for finding a setting by what it does: its retention rules - Keep last at its default, Maximum age, Not downloaded for and Prerelease expiry as an amount and a unit - each with what it does and a Save beside it.">
           <figcaption><strong>A repository's settings.</strong> What each setting does and the value it has, found by name or by what it does.</figcaption>
+        </figure>
+      </div>
+      <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-projects" aria-labelledby="tab-shot-projects" hidden>
+        <figure>
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/projects.webp" width="1440" height="617" loading="lazy" decoding="async"
+            alt="The build-cache projects: jenesis_build, the Jenesis build tool's cache of compiled classes, test results and packaged modules, holding 12 entries and 2.0 MiB, and payments_service, a Gradle build's cache of task outputs, holding 6 entries and 1.0 MiB - each with its build tool, when it was counted, its size cap and how long an unused entry is kept, under a filter and a link to create a new project.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/projects.webp" width="1440" height="617" loading="lazy" decoding="async"
+            alt="The build-cache projects: jenesis_build, the Jenesis build tool's cache of compiled classes, test results and packaged modules, holding 12 entries and 2.0 MiB, and payments_service, a Gradle build's cache of task outputs, holding 6 entries and 1.0 MiB - each with its build tool, when it was counted, its size cap and how long an unused entry is kept, under a filter and a link to create a new project.">
+          <figcaption><strong>The build cache.</strong> A project per build, for the Jenesis build tool, Gradle, Maven or Bazel, each with what it holds and when that was counted.</figcaption>
+        </figure>
+      </div>
+      <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-walks" aria-labelledby="tab-shot-walks" hidden>
+        <figure>
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/walks.webp" width="1440" height="900" loading="lazy" decoding="async"
+            alt="The Walks page under Operations: what a walk of the store costs, and the rebuild walk - its next run, its last run finished clean after 3 seconds in some five thousand reads and five hundred writes, the objects it handed over by kind, its cron expression, and switches for the walk and for each consumer that rides it, collect, index-rebase, inventory-backfill and listing-rebuild among them, each with what it repairs and what it reads.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/walks.webp" width="1440" height="900" loading="lazy" decoding="async"
+            alt="The Walks page under Operations: what a walk of the store costs, and the rebuild walk - its next run, its last run finished clean after 3 seconds in some five thousand reads and five hundred writes, the objects it handed over by kind, its cron expression, and switches for the walk and for each consumer that rides it, collect, index-rebase, inventory-backfill and listing-rebuild among them, each with what it repairs and what it reads.">
+          <figcaption><strong>The walks.</strong> When the store is walked, what the last walk cost in reads and writes, and which repairs ride it.</figcaption>
         </figure>
       </div>
     </div>
