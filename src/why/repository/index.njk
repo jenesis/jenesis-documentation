@@ -297,72 +297,94 @@ JENREPO_S3_REGION=eu-central-1</code></pre>
     <h2 id="console-title">See what every repository holds, and why.</h2>
     <p class="lp-section-lede">
       A web console comes with the server, on the same port. It shows what each repository holds and where it came
-      from, what the gate held back, and every setting at the level it is set - and a wizard creates a repository
-      with its settings in one step.
+      from, what the advisory feeds say about it, what the gate held back, and every setting at the level it is set -
+      and a wizard creates a repository with its settings in one step. The screens below are of a fresh deployment
+      the first-run demo filled.
     </p>
     <div class="lp-tabs lp-tabs--shots" data-tabs>
       <div class="lp-tabs__list" role="tablist" aria-label="Screens of the console">
-        <button role="tab" id="tab-shot-repositories" aria-controls="panel-shot-repositories" aria-selected="true">Repositories</button>
-        <button role="tab" id="tab-shot-overview" aria-controls="panel-shot-overview" aria-selected="false" tabindex="-1">A pull-through</button>
+        <button role="tab" id="tab-shot-dashboard" aria-controls="panel-shot-dashboard" aria-selected="true">The dashboard</button>
+        <button role="tab" id="tab-shot-repositories" aria-controls="panel-shot-repositories" aria-selected="false" tabindex="-1">Repositories</button>
+        <button role="tab" id="tab-shot-overview" aria-controls="panel-shot-overview" aria-selected="false" tabindex="-1">A repository</button>
+        <button role="tab" id="tab-shot-browse" aria-controls="panel-shot-browse" aria-selected="false" tabindex="-1">Browse</button>
         <button role="tab" id="tab-shot-package" aria-controls="panel-shot-package" aria-selected="false" tabindex="-1">A package</button>
+        <button role="tab" id="tab-shot-vulnerabilities" aria-controls="panel-shot-vulnerabilities" aria-selected="false" tabindex="-1">Vulnerabilities</button>
         <button role="tab" id="tab-shot-quarantine" aria-controls="panel-shot-quarantine" aria-selected="false" tabindex="-1">Quarantine</button>
-        <button role="tab" id="tab-shot-wizard" aria-controls="panel-shot-wizard" aria-selected="false" tabindex="-1">New repository</button>
         <button role="tab" id="tab-shot-settings" aria-controls="panel-shot-settings" aria-selected="false" tabindex="-1">Settings</button>
       </div>
-      <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-repositories" aria-labelledby="tab-shot-repositories">
+      <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-dashboard" aria-labelledby="tab-shot-dashboard">
         <figure>
-          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/repositories.webp" width="1440" height="746" loading="lazy" decoding="async"
-            alt="The console's list of repositories: four of them - libs, a Maven repository for internal Java libraries published by CI, an npm and a container-image repository, and central, a read-only Maven repository that fetches from Maven Central and caches what it fetches - each with its format, description and creation date, under a filter that narrows them as you type.">
-          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/repositories.webp" width="1440" height="746" loading="lazy" decoding="async"
-            alt="The console's list of repositories: four of them - libs, a Maven repository for internal Java libraries published by CI, an npm and a container-image repository, and central, a read-only Maven repository that fetches from Maven Central and caches what it fetches - each with its format, description and creation date, under a filter that narrows them as you type.">
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/dashboard.webp" width="1440" height="565" loading="lazy" decoding="async"
+            alt="The console's dashboard: four repositories, no build-cache project yet with a link to create one, three versions held for review - two in demo-maven-proxy and one in demo-maven, as of a time shown - the free space on the store, and one unsafe setting in force.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/dashboard.webp" width="1440" height="565" loading="lazy" decoding="async"
+            alt="The console's dashboard: four repositories, no build-cache project yet with a link to create one, three versions held for review - two in demo-maven-proxy and one in demo-maven, as of a time shown - the free space on the store, and one unsafe setting in force.">
+          <figcaption><strong>The dashboard.</strong> What a deployment holds and what waits on someone: the versions held for review, by repository, and any setting that weakens it.</figcaption>
+        </figure>
+      </div>
+      <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-repositories" aria-labelledby="tab-shot-repositories" hidden>
+        <figure>
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/repositories.webp" width="1440" height="702" loading="lazy" decoding="async"
+            alt="The console's list of repositories: demo-maven and demo-npm, which accept uploads, and demo-maven-proxy and demo-npm-proxy, read-only proxies of Maven Central and the npm registry that cache what is read through them, each with its format, description and creation date, under a filter that narrows them as you type.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/repositories.webp" width="1440" height="702" loading="lazy" decoding="async"
+            alt="The console's list of repositories: demo-maven and demo-npm, which accept uploads, and demo-maven-proxy and demo-npm-proxy, read-only proxies of Maven Central and the npm registry that cache what is read through them, each with its format, description and creation date, under a filter that narrows them as you type.">
           <figcaption><strong>The repositories.</strong> Every repository of a tenant in one list, each with its format, what it is for and how it is routed.</figcaption>
         </figure>
       </div>
       <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-overview" aria-labelledby="tab-shot-overview" hidden>
         <figure>
           <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/overview.webp" width="1440" height="900" loading="lazy" decoding="async"
-            alt="The overview of the repository central, a Maven repository served at /repository/releases/central/: its description with a pencil to edit it, its routing - read-only, with Maven Central as a cached source under the default screening - and the sidebar listing the repository's pages under General, Review, Risk, Provenance and Lifecycle.">
+            alt="The overview of demo-maven, a Maven repository served at /repository/releases/demo-maven/: its description with a pencil to edit it, the versions most recently added - org.jenesis.demo:greeting 1.1.0 and 1.0.0, each published and when - its routing, and the sidebar of the repository's pages under General, Review, Risk, Provenance and Lifecycle.">
           <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/overview.webp" width="1440" height="900" loading="lazy" decoding="async"
-            alt="The overview of the repository central, a Maven repository served at /repository/releases/central/: its description with a pencil to edit it, its routing - read-only, with Maven Central as a cached source under the default screening - and the sidebar listing the repository's pages under General, Review, Risk, Provenance and Lifecycle.">
-          <figcaption><strong>The overview of a proxy.</strong> A pull-through of Maven Central: what it is for, and where it fetches from. Everything it caches is screened and re-scanned like a release.</figcaption>
+            alt="The overview of demo-maven, a Maven repository served at /repository/releases/demo-maven/: its description with a pencil to edit it, the versions most recently added - org.jenesis.demo:greeting 1.1.0 and 1.0.0, each published and when - its routing, and the sidebar of the repository's pages under General, Review, Risk, Provenance and Lifecycle.">
+          <figcaption><strong>A repository's overview.</strong> What it is for, what arrived in it last, and where it fetches from.</figcaption>
+        </figure>
+      </div>
+      <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-browse" aria-labelledby="tab-shot-browse" hidden>
+        <figure>
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/browse.webp" width="1440" height="572" loading="lazy" decoding="async"
+            alt="The browse tree of demo-maven at maven/org/jenesis/demo/greeting: a breadcrumb back to the repository's root, a look-up by name, and the folders 1.0.0 and 1.1.0 with their sizes, each expandable in place.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/browse.webp" width="1440" height="572" loading="lazy" decoding="async"
+            alt="The browse tree of demo-maven at maven/org/jenesis/demo/greeting: a breadcrumb back to the repository's root, a look-up by name, and the folders 1.0.0 and 1.1.0 with their sizes, each expandable in place.">
+          <figcaption><strong>The browse tree.</strong> A repository's files as its clients address them, a folder at a time, with a look-up by name above.</figcaption>
         </figure>
       </div>
       <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-package" aria-labelledby="tab-shot-package" hidden>
         <figure>
-          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/package.webp" width="1440" height="795" loading="lazy" decoding="async"
-            alt="The page of the package com.acme.payments:payments-core in libs: a table of its three versions, newest first, each with when it was published, a Pin button, its findings and its files.">
-          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/package.webp" width="1440" height="795" loading="lazy" decoding="async"
-            alt="The page of the package com.acme.payments:payments-core in libs: a table of its three versions, newest first, each with when it was published, a Pin button, its findings and its files.">
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/package.webp" width="1440" height="621" loading="lazy" decoding="async"
+            alt="The page of the package org.jenesis.demo:greeting in demo-maven: its two versions, 1.1.0 and 1.0.0, newest first, each with when it was published, a Pin button, its findings and its files.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/package.webp" width="1440" height="621" loading="lazy" decoding="async"
+            alt="The page of the package org.jenesis.demo:greeting in demo-maven: its two versions, 1.1.0 and 1.0.0, newest first, each with when it was published, a Pin button, its findings and its files.">
           <figcaption><strong>The versions of a package.</strong> One package and its versions: when each arrived, whether it is pinned, what was found in it, and its files.</figcaption>
+        </figure>
+      </div>
+      <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-vulnerabilities" aria-labelledby="tab-shot-vulnerabilities" hidden>
+        <figure>
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/vulnerabilities.webp" width="1440" height="822" loading="lazy" decoding="async"
+            alt="The vulnerabilities of demo-npm-proxy, worst first: lodash 4.17.11 and minimist 1.2.0, cached from the npm registry, with seven advisories between them - two critical - each with its severity and the versions that fix it, the time the repository was last scanned against the advisory feeds and a button to rescan.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/vulnerabilities.webp" width="1440" height="822" loading="lazy" decoding="async"
+            alt="The vulnerabilities of demo-npm-proxy, worst first: lodash 4.17.11 and minimist 1.2.0, cached from the npm registry, with seven advisories between them - two critical - each with its severity and the versions that fix it, the time the repository was last scanned against the advisory feeds and a button to rescan.">
+          <figcaption><strong>Known vulnerabilities.</strong> What the advisory feeds say about what a repository holds, worst first, with the version that fixes each and when it was last checked.</figcaption>
         </figure>
       </div>
       <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-quarantine" aria-labelledby="tab-shot-quarantine" hidden>
         <figure>
-          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/quarantine.webp" width="1440" height="705" loading="lazy" decoding="async"
-            alt="The quarantine of the repository libs: com.acme.legacy:xml-utils 1.0.3, held by the gate on arrival because the deny list names it and its jar and POM carry no publisher signature, with a Release and a Discard button and its reasons on lines of their own beneath it.">
-          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/quarantine.webp" width="1440" height="705" loading="lazy" decoding="async"
-            alt="The quarantine of the repository libs: com.acme.legacy:xml-utils 1.0.3, held by the gate on arrival because the deny list names it and its jar and POM carry no publisher signature, with a Release and a Discard button and its reasons on lines of their own beneath it.">
-          <figcaption><strong>The review queue.</strong> What the gate held back, and why. A person releases or discards each; until then no client can download it.</figcaption>
-        </figure>
-      </div>
-      <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-wizard" aria-labelledby="tab-shot-wizard" hidden>
-        <figure>
-          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/wizard.webp" width="1440" height="660" loading="lazy" decoding="async"
-            alt="The last step of the New repository wizard, Review, after the steps Repository, Retention, Routing and Search: a table of every setting the run makes - the name gradle-plugins, the format maven and a description chosen here, and the retention rules at their defaults - with where each value comes from.">
-          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/wizard.webp" width="1440" height="660" loading="lazy" decoding="async"
-            alt="The last step of the New repository wizard, Review, after the steps Repository, Retention, Routing and Search: a table of every setting the run makes - the name gradle-plugins, the format maven and a description chosen here, and the retention rules at their defaults - with where each value comes from.">
-          <figcaption><strong>The new-repository wizard.</strong> A repository is created with its retention and routing in one step, after a review - nothing is written before it.</figcaption>
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/quarantine.webp" width="1440" height="697" loading="lazy" decoding="async"
+            alt="The quarantine of demo-maven-proxy: log4j-core 2.14.1 and commons-collections 3.2.1, held by the gate as they were read through from Maven Central because this deployment has no reason yet to trust the key that signed them, each with a Release and a Discard button and its reasons beneath it.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/quarantine.webp" width="1440" height="697" loading="lazy" decoding="async"
+            alt="The quarantine of demo-maven-proxy: log4j-core 2.14.1 and commons-collections 3.2.1, held by the gate as they were read through from Maven Central because this deployment has no reason yet to trust the key that signed them, each with a Release and a Discard button and its reasons beneath it.">
+          <figcaption><strong>The review queue.</strong> What the gate held back, and why - here, versions read through a proxy whose signer the deployment does not yet trust. A person releases or discards each; until then no client can download it.</figcaption>
         </figure>
       </div>
       <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-settings" aria-labelledby="tab-shot-settings" hidden>
         <figure>
           <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/settings.webp" width="1440" height="900" loading="lazy" decoding="async"
-            alt="The Settings page of the repository libs, under a filter for finding a setting by what it does: its retention rules, Keep last set to 10 with Save and Reset to default beside it, and Maximum age, Not downloaded for and Prerelease expiry left unset, each with what it does.">
+            alt="The Settings page of demo-maven, under a filter for finding a setting by what it does: its retention rules - Keep last at its default, Maximum age, Not downloaded for and Prerelease expiry as an amount and a unit - each with what it does and a Save beside it.">
           <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/settings.webp" width="1440" height="900" loading="lazy" decoding="async"
-            alt="The Settings page of the repository libs, under a filter for finding a setting by what it does: its retention rules, Keep last set to 10 with Save and Reset to default beside it, and Maximum age, Not downloaded for and Prerelease expiry left unset, each with what it does.">
+            alt="The Settings page of demo-maven, under a filter for finding a setting by what it does: its retention rules - Keep last at its default, Maximum age, Not downloaded for and Prerelease expiry as an amount and a unit - each with what it does and a Save beside it.">
           <figcaption><strong>A repository's settings.</strong> What each setting does and the value it has, found by name or by what it does.</figcaption>
         </figure>
       </div>
+    </div>
     </div>
   </div>
 </section>
