@@ -1,7 +1,7 @@
 ---
 order: 6
 title: Proxying upstreams
-description: Serving what the repository does not hold yet from Maven Central, npm, Docker Hub or a private registry - format upstreams, a repository's routing with fallbacks and groups, upstream credentials, and how a fetched artifact is checked and kept.
+description: Serving what the repository does not hold yet from Maven Central, npm, Docker Hub or a private registry - format upstreams, a repository's routing with fallbacks and groups, upstream credentials, how a fetched artifact is checked and kept, how long an upstream's documents are remembered, and what a repository that both hosts and proxies answers.
 ---
 
 A repository is most useful as a build's **single front door**: it serves your own packages and, on a miss,
@@ -46,19 +46,21 @@ then fetch from it instead of the deployment's, and a repository's **Overview** 
 ## Signed packages from upstream
 
 Maven Central signs what it serves, and the gate checks every signature it finds. A new deployment trusts no
-signer yet, so the first time it fetches a signed artifact from Maven Central, the artifact is **held in
-Quarantine** with the reason *No trusted signer*, and the build that asked gets `404`. Decide once, under
-**Settings → Settings** in the **Compliance** group, how this deployment should treat signers it does not know:
+signer yet, so every signed artifact it fetches reads as signed by an untrusted signer: it is served, and that
+outcome is recorded on its version for you to see. A signature that does not match its bytes is still refused, and a
+package whose signer changes between versions is held for review.
+
+To make signatures decide what is served, tell the deployment whom it trusts, under **Settings → Settings** in the
+**Compliance** group:
 
 - **Trust the signers you rely on.** Paste their public keys into `signature-trusted-keys`, and optionally pin
   them to their namespaces with `signature-trusted-signers` - `org.apache.* = openpgp:…`. The strictest choice, and
   the most work.
 - **Look the keys up.** `signature-key-discovery=keyserver.ubuntu.com,keys.openpgp.org` fetches each signer's key
   from the public keyservers in the background, and `signature-key-discovery-accept=true` trusts what they serve.
-- **Allow signatures from unknown signers.** `signature-untrusted=ALLOW` admits them. A signature that does not match
-  its bytes is still refused, and a package whose signer changes between versions is still held.
 
-A setting changes what happens from then on; an artifact already held stays in **Quarantine** until an editor
+Then set `signature-untrusted` to `QUARANTINE` to hold what anyone else signed for review, or to `REJECT` to refuse
+it. A setting changes what happens from then on; an artifact already held stays in **Quarantine** until an editor
 releases it.
 
 ## A repository's routing
@@ -126,15 +128,20 @@ and an unscreened address would turn the proxy into a way into your own network.
 
 A request is always answered locally first. On a miss, the repository fetches from the upstream and:
 
-- **checks it** - against the digest the upstream publishes where there is one, a Maven artifact against its
-  `.sha1`, an image layer against its `sha256:` name - and refuses a mismatch rather than keeping it;
+- **checks it** - against the digest the upstream's own registry declares for it, where it declares one - and
+  refuses a mismatch rather than keeping it;
 - **screens it** through the same gate a publish passes, as described in [Screening what comes
   in](/repository/screening/);
 - **keeps it**, so the next request is a local hit that never reaches the upstream.
 
-An index that changes upstream - a `maven-metadata.xml`, an npm package document - is fetched fresh each time,
-with a conditional request so an unchanged one costs no transfer. A definite `404` from upstream is remembered for
-a minute (`proxy-miss-ttl`), so a build probing for things that do not exist does not flood the upstream.
+The digests checked are the ones a registry advertises: an npm version's `integrity` or `shasum`, the `#sha256=` a
+PyPI page links a file with, the checksum a Debian `Packages` index or an RPM repository's `primary.xml` lists, a
+Helm chart's `digest`, the checksum database's hash of a Go module, an image layer's `sha256:` name, and their kind.
+A fetched file that does not match is not kept, not served, and fetched again on the next request. A checksum the
+*publisher* uploaded beside a file - a Maven or Ivy `.sha1`, a Conan `conanmanifest.txt` - is not one of them: it is
+relayed as the upstream serves it, for the client to check, and the file is kept without it being read. A definite
+`404` from upstream is remembered for a minute (`proxy-miss-ttl`), so a build probing for things that do not exist
+does not flood the upstream.
 
 A fetch that stalls is given up rather than held open: an upstream that delivers less than 16 KiB over any minute
 spent waiting on it is abandoned, as one that goes silent is, while a large file on a slow but steady link still
@@ -144,7 +151,7 @@ Where an index names each artifact's download URL, the served copy points those 
 a client installs through it rather than straight from the upstream. A Helm chart repository is one: the
 `index.yaml` is served with each version's `urls` rewritten to this repository's `charts/`, its `digest` unchanged,
 and a chart fetched through it is checked against that digest.
-An Ivy repository is proxied file by file, each file checked against the `.sha1` the upstream publishes beside it.
+An Ivy repository is proxied file by file, each file kept as the upstream serves it and its checksums relayed beside it.
 A module's directory listing, which Ivy reads to resolve a revision such as `1.+`, is relayed as the upstream lists it.
 An Alpine repository's `APKINDEX.tar.gz` is relayed as the upstream signed it, so clients keep trusting the
 upstream's key. A package fetched through it is checked twice: its control member against the checksum the index
@@ -162,6 +169,57 @@ is fetched through this repository when its host is listed in `terraform.git-hos
 a tag that later moves to other contents is refused. The list is empty by default; a git source on an unlisted
 host, or one that names no single ref, is handed to the client to clone, or refused when
 `terraform.git-refuse-unlisted` is `true`.
+
+## Upstream documents
+
+A document that changes upstream - a `maven-metadata.xml`, an npm package document, a PyPI Simple page, a Helm
+`index.yaml`, a Go module's version list - is relayed rather than kept, and the server remembers it for six hours
+(`cache.upstream-ttl`), so a burst of builds costs the upstream one fetch. A release published upstream can
+therefore take that long to be listed here; `0` switches the memory off, and every read then fetches the document
+afresh. The memory is per repository, so a document fetched with one repository's upstream credentials never
+answers another, and it holds only what the upstream served - never an error or a refusal. It is bounded: a node
+keeps at most 64 MiB of such documents, none larger than 1 MiB, and a larger one is relayed every time. **Clear
+caches on this node**, under [Operations](/repository/operations/#caches), drops it at once.
+
+Some documents vouch for each other, and are remembered only together. A Debian suite's `InRelease`, `Release` and
+`Release.gpg` are fetched in one go and remembered as one when the upstream declares `Acquire-By-Hash`; every index
+the remembered `Release` names is then fetched by its digest, so what apt is given agrees with the release it was
+given, however the upstream has moved since. An RPM repository's `repomd.xml` is remembered with its signature and
+key when every metadata file it names carries its checksum in its name, as `createrepo` names them by default; if one
+of those files is gone upstream, the node forgets the family and fetches the current one. A suite or repository that
+cannot be pinned this way is relayed fresh on every read. So is the RubyGems compact index: `/versions` names each
+gem's `info` file by a digest no upstream address serves it by, so the two can only agree when read at one moment.
+
+A Hugging Face branch is resolved to its commit, and that resolution is remembered for the same six hours, so a
+burst of downloads from one branch costs the upstream one lookup, and a branch that moved resolves again once it is
+forgotten. A container image's tag works the same way: a tag pushed to this repository answers as it stands, while a
+tag relayed from the upstream answers as remembered and is asked of the upstream again once forgotten - or, if the
+upstream cannot answer then, as it last stood.
+
+## A repository that hosts and proxies
+
+A repository routed `writable fallback …` - **host+proxy** on the Repositories page - serves what was published into
+it and fetches the rest. Every read is answered locally first, so wherever both sides hold an answer to one request,
+what was published here wins.
+
+For a file a client asks for by its own address, both sides resolve: an image by digest, a Go module's `.zip`, a
+version's jar, a raw file - what was published here is served, and anything else is fetched. A document a client
+finds versions through is different, because the copy published here answers in place of the upstream's:
+
+- **A document per name** - an npm package document, a PyPI project page, a Go module's version list, a Conan
+  recipe's revisions - answers from this repository once that name has something published here, so the upstream's
+  versions of that name are no longer listed. Other names still answer from the upstream. Clients that ask for a
+  version by its address rather than through the list - Go, Conan, Maven, Ivy and Hugging Face - still resolve an
+  upstream version they name exactly.
+- **An index of everything** - a Helm `index.yaml`, a Conda subdirectory's `repodata.json`, an Alpine architecture's
+  `APKINDEX.tar.gz`, an RPM repository's metadata - answers from what was published here once anything is, and lists
+  none of the upstream's packages.
+- **A container image's tag** is the exception: a tag pushed here answers as it stands, and any other tag is asked of
+  the upstream, as described above.
+
+A name published here therefore hides the upstream's releases of it from the clients that list versions. A
+`maven-metadata.xml` can instead merge both sides into one list, which [Connecting your build
+tools](/repository/formats/#maven-metadata-xml) describes.
 
 ## The cooldown on fresh versions
 

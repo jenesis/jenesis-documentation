@@ -114,7 +114,7 @@ its shape:
 | --- | --- |
 | **writable** | It accepts uploads into its own store. |
 | **read-only** | It serves only what it fetches or groups; a publish to it is refused. |
-| **host+proxy** | It accepts uploads *and* fetches misses from an upstream. |
+| **host+proxy** | It accepts uploads *and* fetches misses from an upstream; what it published answers first, as [Proxying upstreams](/repository/proxying/#a-repository-that-hosts-and-proxies) describes. |
 | **fallback cached** / **fallback pass-through** | Where a miss goes, and whether what comes back is kept. |
 
 A definition that is valid but risky - an upstream over plain HTTP, a fallback that skips screening - is listed
@@ -135,8 +135,9 @@ member reads them; an admin changes them.
   publish that would exceed it is refused with `507`. `0` means no limit, and nothing is metered while there is
   none: setting one counts what is already stored on the next cleanup pass, and the page then shows how much is
   stored against it.
-- **Rate limit** (`rate-limit`) - how many requests a minute the tenant is served before answering `429`, 6 000 by
-  default. [Operations](/repository/operations/) explains how requests are counted.
+- **Rate limit** (`rate-limit`) - how many requests a minute the tenant is served before answering `429`; none by
+  default, since a per-address limit already stops a runaway client. [Operations](/repository/operations/) explains
+  how requests are counted.
 
 `jenrepo limits` shows both, and `jenrepo limits set quota <bytes>` or `jenrepo limits set rate <per-minute>` sets
 the tenant's own; `0` there returns to the deployment's value.
@@ -175,6 +176,10 @@ in a Maven repository, `npm/…` in an npm one - rather than how they are stored
   where downloads are counted. A version opens its own page: where it came from and whether it is served, the
   licences it declares, what its manifest says about it - description, keywords and authors - its signature and
   provenance, what it depends on, and the files it is served as.
+- A version is the sum of its files. Its download count counts each download of one of its files, while a checksum or
+  a signature fetched beside a file counts nothing. Its signature is the weakest among its files' - a signed jar
+  beside an unsigned POM makes an unsigned version - while each file keeps its own, which the file's page shows. A
+  RubyGems gem built for a platform, such as `1.16.0-x86_64-linux`, is a version of its own.
 - The columns sort by name, type and size.
 - **Search** answers in one of two ways, and the search bar says which:
   - **By name**, unless the repository keeps a full-text index: a package is looked up by the start of its

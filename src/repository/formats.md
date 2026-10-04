@@ -103,8 +103,8 @@ name creates that space; the repository itself has to exist first. The Terraform
 A repository holds one format, so each tool needs a repository of the type it speaks. Maven, Gradle and a Jenesis
 build all read the Maven layout from a `maven` or `java` repository at `/repository/releases/<repo>/maven/`; a Gradle
 build that publishes Ivy descriptors needs an `ivy` repository, and a Jenesis build that resolves modules by name a
-`jenesis` or `java` repository. What a client uploads - POMs and `maven-metadata.xml` included - is stored and
-served back verbatim. A key goes wherever the tool keeps credentials outside the project, so it is never
+`jenesis` or `java` repository. What a client uploads - POMs, checksums and `maven-metadata.xml` included - is
+stored and served back verbatim. A key goes wherever the tool keeps credentials outside the project, so it is never
 committed with the build.
 
 ### Maven
@@ -168,6 +168,27 @@ clients need it, or for a tenant or the whole deployment:
 ```bash
 jenrepo repos settings <repo> set folder-listing true
 ```
+
+### maven-metadata.xml
+
+By default a `maven-metadata.xml` is served byte for byte as the client uploaded it, with the checksums the client
+uploaded beside it. The same holds for every checksum: a `.sha1`, `.md5`, `.sha256` or `.sha512` is stored and served
+exactly as uploaded, never checked against the file it describes, and never made up where none was uploaded. A
+checksum is the publisher's to provide and the client's to check. One beside a release is as fixed as the release: a
+different one uploaded over it is refused with `409`, as a release's own bytes are, unless `allow-redeploy` is on.
+
+With `maven-metadata-compute` switched on - a deployment setting, applied on the next restart - the server computes
+each artifact's document instead. Its `<versions>` list is reconciled against the versions stored here, every other
+field is kept as published, and a document is derived for an artifact that never had one uploaded, as after an
+import. The computed document comes with all four checksums.
+
+The two differ most in a repository that both [hosts and proxies](/repository/proxying/#a-repository-that-hosts-and-proxies):
+
+- **Computed**, the document lists the upstream's versions and the ones published here as one list, kept live: a
+  release published upstream later appears in it, and a version yanked here is left out whichever side lists it.
+- **By default**, `mvn deploy` uploads the document it read before deploying - the upstream's, relayed through this
+  repository - with its own version added. That stored copy then answers ahead of the upstream's, so releases the
+  upstream publishes afterwards are not listed for that artifact.
 
 ### Gradle
 

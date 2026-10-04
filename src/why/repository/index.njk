@@ -316,10 +316,10 @@ JENREPO_S3_REGION=eu-central-1</code></pre>
       </div>
       <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-dashboard" aria-labelledby="tab-shot-dashboard">
         <figure>
-          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/dashboard.webp" width="1440" height="609" loading="lazy" decoding="async"
-            alt="The console's dashboard: four repositories, two build-cache projects, three versions held for review - two in demo-maven-proxy and one in demo-maven, as of a time shown - the free space on the store, and one unsafe setting in force.">
-          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/dashboard.webp" width="1440" height="609" loading="lazy" decoding="async"
-            alt="The console's dashboard: four repositories, two build-cache projects, three versions held for review - two in demo-maven-proxy and one in demo-maven, as of a time shown - the free space on the store, and one unsafe setting in force.">
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/dashboard.webp" width="1440" height="654" loading="lazy" decoding="async"
+            alt="The console's dashboard: four repositories, two build-cache projects, three versions held for review - two in demo-maven-proxy and one in demo-maven - two versions with known vulnerabilities in demo-npm-proxy, each as of a time shown, the free space on the store, and one unsafe setting in force.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/dashboard.webp" width="1440" height="654" loading="lazy" decoding="async"
+            alt="The console's dashboard: four repositories, two build-cache projects, three versions held for review - two in demo-maven-proxy and one in demo-maven - two versions with known vulnerabilities in demo-npm-proxy, each as of a time shown, the free space on the store, and one unsafe setting in force.">
           <figcaption><strong>The dashboard.</strong> What a deployment holds and what waits on someone: the versions held for review, by repository, and any setting that weakens it.</figcaption>
         </figure>
       </div>
@@ -352,28 +352,28 @@ JENREPO_S3_REGION=eu-central-1</code></pre>
       </div>
       <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-package" aria-labelledby="tab-shot-package" hidden>
         <figure>
-          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/package.webp" width="1440" height="621" loading="lazy" decoding="async"
-            alt="The page of the package org.jenesis.demo:greeting in demo-maven: its two versions, 1.1.0 and 1.0.0, newest first, each with when it was published, a Pin button, its findings and its files.">
-          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/package.webp" width="1440" height="621" loading="lazy" decoding="async"
-            alt="The page of the package org.jenesis.demo:greeting in demo-maven: its two versions, 1.1.0 and 1.0.0, newest first, each with when it was published, a Pin button, its findings and its files.">
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/package.webp" width="1440" height="566" loading="lazy" decoding="async"
+            alt="The page of the package lodash in demo-npm-proxy: its one version, 4.17.11, cached from the npm registry, with when it was cached, its findings - seven, the worst critical, in that severity's colour - its file and a Hold button.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/package.webp" width="1440" height="566" loading="lazy" decoding="async"
+            alt="The page of the package lodash in demo-npm-proxy: its one version, 4.17.11, cached from the npm registry, with when it was cached, its findings - seven, the worst critical, in that severity's colour - its file and a Hold button.">
           <figcaption><strong>The versions of a package.</strong> One package and its versions: when each arrived, whether it is pinned, what was found in it, and its files.</figcaption>
         </figure>
       </div>
       <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-vulnerabilities" aria-labelledby="tab-shot-vulnerabilities" hidden>
         <figure>
-          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/vulnerabilities.webp" width="1440" height="822" loading="lazy" decoding="async"
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/vulnerabilities.webp" width="1440" height="794" loading="lazy" decoding="async"
             alt="The vulnerabilities of demo-npm-proxy, worst first: lodash 4.17.11 and minimist 1.2.0, cached from the npm registry, with seven advisories between them - two critical - each with its severity and the versions that fix it, the time the repository was last scanned against the advisory feeds and a button to rescan.">
-          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/vulnerabilities.webp" width="1440" height="822" loading="lazy" decoding="async"
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/vulnerabilities.webp" width="1440" height="794" loading="lazy" decoding="async"
             alt="The vulnerabilities of demo-npm-proxy, worst first: lodash 4.17.11 and minimist 1.2.0, cached from the npm registry, with seven advisories between them - two critical - each with its severity and the versions that fix it, the time the repository was last scanned against the advisory feeds and a button to rescan.">
           <figcaption><strong>Known vulnerabilities.</strong> What the advisory feeds say about what a repository holds, worst first, with the version that fixes each and when it was last checked.</figcaption>
         </figure>
       </div>
       <div class="lp-tabs__panel lp-shot" role="tabpanel" id="panel-shot-quarantine" aria-labelledby="tab-shot-quarantine" hidden>
         <figure>
-          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/quarantine.webp" width="1440" height="697" loading="lazy" decoding="async"
-            alt="The quarantine of demo-maven-proxy: log4j-core 2.14.1 and commons-collections 3.2.1, held by the gate as they were read through from Maven Central because this deployment has no reason yet to trust the key that signed them, each with a Release and a Discard button and its reasons beneath it.">
-          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/quarantine.webp" width="1440" height="697" loading="lazy" decoding="async"
-            alt="The quarantine of demo-maven-proxy: log4j-core 2.14.1 and commons-collections 3.2.1, held by the gate as they were read through from Maven Central because this deployment has no reason yet to trust the key that signed them, each with a Release and a Discard button and its reasons beneath it.">
+          <img class="lp-shot__img lp-shot__img--light" src="/assets/screenshots/repository/light/quarantine.webp" width="1440" height="749" loading="lazy" decoding="async"
+            alt="The quarantine of demo-maven-proxy: log4j-core 2.14.1 and commons-collections 3.2.1, held for a vulnerability as they were read through from Maven Central - log4j-core for Log4Shell, GHSA-jfh8-c2jp-5v3q, and a second critical advisory - each with a Release and a Discard button and its reasons beneath it, among them a signer this deployment has no reason yet to trust.">
+          <img class="lp-shot__img lp-shot__img--dark" src="/assets/screenshots/repository/dark/quarantine.webp" width="1440" height="749" loading="lazy" decoding="async"
+            alt="The quarantine of demo-maven-proxy: log4j-core 2.14.1 and commons-collections 3.2.1, held for a vulnerability as they were read through from Maven Central - log4j-core for Log4Shell, GHSA-jfh8-c2jp-5v3q, and a second critical advisory - each with a Release and a Discard button and its reasons beneath it, among them a signer this deployment has no reason yet to trust.">
           <figcaption><strong>The review queue.</strong> What the gate held back, and why - here, versions read through a proxy whose signer the deployment does not yet trust. A person releases or discards each; until then no client can download it.</figcaption>
         </figure>
       </div>
@@ -421,9 +421,9 @@ JENREPO_S3_REGION=eu-central-1</code></pre>
     <div class="lp-features">
       <div>
         <h3>Screened on the way in</h3>
-        <p>Critical vulnerabilities, known malware and your deny list are refused by default. Rules of your own
-          quarantine or refuse by ecosystem, version, licence or severity, and a review queue releases or
-          discards what is held.</p>
+        <p>Known malware and your deny list are refused by default, and a version with a critical advisory is held
+          for review. Rules of your own quarantine or refuse by ecosystem, version, licence or severity, and a
+          review queue releases or discards each held version whole.</p>
       </div>
       <div>
         <h3>Advisory feeds</h3>
@@ -432,8 +432,8 @@ JENREPO_S3_REGION=eu-central-1</code></pre>
       </div>
       <div>
         <h3>Careful with upstreams</h3>
-        <p>A version its upstream dates to the last two days is held before it is served. Upstream checksums are
-          verified, and plaintext and private addresses are refused as upstreams.</p>
+        <p>A version its upstream dates to the last two days is held before it is served. A fetched file is held to
+          the digest its registry declares, and plaintext and private addresses are refused as upstreams.</p>
       </div>
       <div>
         <h3>Signatures checked</h3>

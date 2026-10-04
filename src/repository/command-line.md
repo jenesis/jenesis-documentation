@@ -69,6 +69,7 @@ with no action reads, and changing something takes an action word:
 jenrepo repos create libraries maven "Internal libraries" --set keep-last=20
 jenrepo quarantine libraries                      # the review queue, each version with its held paths
 jenrepo quarantine release libraries <path>...    # release a version, by the paths the queue lists
+jenrepo quarantine hold libraries Maven org.acme:widget 1.2.0   # hold a version for review by hand
 jenrepo repos settings libraries set routing "writable fallback https://repo1.maven.org/maven2/"
 jenrepo projects create my_project gradle "Main branch builds" --set project-size=10737418240
 jenrepo walks run

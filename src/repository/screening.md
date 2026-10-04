@@ -13,6 +13,12 @@ repository fetched it from upstream. The gate reaches one of three verdicts:
 | **Quarantine** | The artifact is stored but withheld: clients get `404` for it until someone releases it from the review queue. |
 | **Reject** | The artifact is refused and nothing is stored. The client gets an error, and the refusal is recorded. |
 
+A version's dependencies are screened where a build fetches them, not when the version is published: a package your
+own library pulls in from upstream passes the gate as the build fetches it through the repository, however deep it
+sits in the graph, and a build that needs one the gate holds fails on that fetch, with the package in the review
+queue. A build only reaches what the repository serves when every dependency comes through it, so point the clients
+at the repository rather than at the upstream beside it.
+
 This chapter covers what the gate checks, how to tune it, and the **Screening** pages every repository has in the
 console.
 
@@ -20,10 +26,10 @@ console.
 
 | Check | Default | Settings |
 | --- | --- | --- |
-| **Known vulnerabilities** - advisories at or above a severity band | Reject at `CRITICAL` | `vulnerability-threshold`, `vulnerability-action` |
+| **Known vulnerabilities** - advisories at or above a severity band | Quarantine at `CRITICAL` | `vulnerability-threshold`, `vulnerability-action` |
 | **Malicious packages** - packages a curated feed marks malicious | Reject | `malware-action` |
 | **The deny list** - coordinates you forbid outright | Reject | `deny-list`, `deny-list-action` |
-| **Signatures** - an untrusted signer, a signature that does not match its bytes, a coordinate whose signer changed | Quarantine an untrusted or changed signer, reject a broken signature | `signature-untrusted`, `signature-invalid`, `signature-signer-changed` |
+| **Signatures** - an untrusted signer, a signature that does not match its bytes, a coordinate whose signer changed | Reject a broken signature, quarantine a changed signer, allow an untrusted signer and record it on the version | `signature-untrusted`, `signature-invalid`, `signature-signer-changed` |
 | **Provenance** - build attestations that name the wrong builder or source | Quarantine, once you name what to expect | `provenance-admission-*` |
 | **Your own rules** - expressions over what the gate knows | None | `policy-rules` |
 | **Release immutability** - republishing a release version with different bytes, in every format but Hugging Face, whose revisions move by design | Refused with `409`, or npm's own `403` | `allow-redeploy` |
@@ -42,8 +48,8 @@ you say so**. Three feeds ship with the image, each off by default:
 | GitHub Advisory Database | `github` | Known vulnerabilities, with GitHub's reviewed severities |
 | OpenSSF malicious packages | `openssf` | Packages published with malicious intent |
 
-Switch them on during **Setup**, or set them in **Settings → Settings** and restart. Each feed has an endpoint
-setting beside it (`osv-endpoint`, `github-endpoint`, `openssf-endpoint`) for a mirror or a proxy.
+Switch them on during **Setup**, or in **Settings → Settings**; the gate screens with a feed from the moment it is
+switched on, with no restart. Each feed has an endpoint setting beside it (`osv-endpoint`, `github-endpoint`, `openssf-endpoint`) for a mirror or a proxy.
 
 <div class="warning">
   A feed fails closed. While it is on and cannot be reached, a publish it would have screened is held for review
@@ -72,15 +78,42 @@ Expressions are sandboxed - no method calls and no type references - and an empt
 
 ## Quarantine
 
-**Quarantine** is the review queue: every version the gate is holding, with its verdict, the reasons, what placed
-the hold, and each of its held files - a reason only one file has, such as a missing signature, is shown beside that
-file. An editor answers each version, for all its files at once, since a jar is no use without its POM:
+**Quarantine** is the review queue: every version the gate is holding, with what it is **held for** - the rules
+that decided its holds, such as *Deny list* or *Version held* - the reasons beneath, and each of its held files. A
+reason only one file has, such as a missing signature, is shown beside that file. An editor answers each version,
+for all its files at once, since a jar is no use without its POM:
 
 - **release** publishes it into the repository, and clients can fetch it from then on;
 - **discard** drops it for good, after confirming - it cannot be released afterwards.
 
+The API and `jenrepo quarantine release` or `discard` answer versions the same way: naming any one held file of a
+version acts on every held file of it.
+
+A version is reviewed whole. While one of its files is held, a file arriving for the same version - a sources jar,
+another wheel - lands held with it, under the rule *Version held*, whatever the gate finds of that file alone; a file
+the gate refuses is still refused. The exception is a file that completes what its held siblings lacked, such as a
+POM or an `ivy.xml` declaring the licence its jar, sent first, was held without. It is admitted, so that its arrival
+can release them; once they have been assessed again, it is held with the version if the version is still held.
+
 The queue pages through a backlog of any size. A hold placed by a module that has since been removed is still
 listed, marked as not installed, and can still be released.
+
+### Holding a version by hand
+
+An editor can hold any version that serves, whatever the gate found of it: **Hold** beside it in its package's list
+of versions, or **Hold for review** on the version's own page. Every file of it stops serving until it is released,
+and the queue lists it as held for *Held by an operator*. A script holds a version by its ecosystem, coordinate and
+version:
+
+```bash
+curl -X POST -H "Jenesis-Repository-Key: $KEY" -H 'Content-Type: application/json' \
+  -d '{"ecosystem":"Maven","coordinate":"org.acme:widget","version":"1.2.0"}' \
+  'https://repo.example.com/api/quarantine/hold?repo=libraries'
+jenrepo quarantine hold libraries Maven org.acme:widget 1.2.0
+```
+
+The answer, `{"held":true}` or `{"held":false}`, says whether anything was held: a version that serves no file holds
+nothing. The hold is audited as `quarantine.hold`, and is released or discarded like any other.
 
 ## Refused
 
@@ -91,7 +124,9 @@ and often the only one.
 ## Vulnerabilities
 
 **Vulnerabilities** lists the advisories that apply to what the repository holds - its releases and its cached
-copies - from the last scan, and says when that scan ran. **Rescan against the advisory feeds** starts a fresh one in the background; the page shows it running and refreshes
+copies - from the last scan, and says when that scan ran. A version whose findings reach `vulnerability-risk-threshold`,
+`LOW` by default, is marked as a risk on its package's list of versions and on its own page; what is held stays the
+vulnerability threshold's to decide. **Rescan against the advisory feeds** starts a fresh one in the background; the page shows it running and refreshes
 itself until it finishes. With no feed switched on, the page says so and links to the settings that change it.
 
 ## Findings

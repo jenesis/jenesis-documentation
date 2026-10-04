@@ -128,9 +128,10 @@ Explained in [Operations](/repository/operations/#caches).
 | Key | Default | Level | Tier | Applies | Effect |
 | --- | --- | --- | --- | --- | --- |
 | `auth.cache-ttl` | `PT15M` | deployment | advanced | on restart | How long a node serves a credential's documents before asking the store again. |
-| `cache.document-ttl` | `PT30S` | deployment | advanced | on restart | How long a node serves a listing it has already read - a packument, a Simple page, a maven-metadata.xml, a Packages file, a tag list - from memory before reading the store again, so a burst of builds starting at once costs the store one read per document rather than one per build. |
+| `cache.document-ttl` | `PT30S` | deployment | advanced | on restart | How long a node serves a listing it has already read - a packument, a Simple page, a Packages file, a tag list - from memory, so a burst of builds costs the store one read per document rather than one per build. |
 | `cache.miss-ttl` | `PT10S` | deployment | advanced | on restart | How long a node remembers that a coordinate it looked for was not there, and answers the same probe from memory instead of reading the store again - a build tool asking for a version range, a missing snapshot or an optional classifier asks the same question of the same repositories many times in a row. |
 | `cache.ttl` | `PT5M` | deployment | advanced | on restart | How long a node serves a credential, a settings document, a ceiling or a tenant list it has already read before asking the store again. |
+| `cache.upstream-ttl` | `PT6H` | deployment | advanced | on restart | How long a node serves a document it relayed from an upstream - a proxied maven-metadata.xml, packument or index the repository holds none of - from memory before fetching it again, so a burst of builds costs the upstream one fetch; this is how long a release published upstream may take to be listed here. Only a document the upstream served is remembered, and the memory is bounded. Zero switches it off. |
 
 ### Collection
 
@@ -152,17 +153,17 @@ Explained in [Screening what comes in](/repository/screening/).
 | `allow-redeploy` | `false` | tenant | standard | at once | Off by default: release-version immutability refuses re-pointing an already-published immutable release coordinate at different bytes (a 409), a supply-chain / dependency-confusion guard. |
 | `deny-list` | *(empty)* | deployment | standard | at once | Comma-separated coordinates an operator forbids; always refused. |
 | `deny-list-action` | `REJECT` | deployment | standard | at once | Verdict for a coordinate the deny list names. |
-| `github` | `false` | deployment | essential | on restart | Consult the GitHub Advisory Database. |
-| `github-endpoint` | `https://api.github.com` | deployment | advanced | on restart | The GitHub REST API base URL, for a self-hosted GitHub or a proxy. |
+| `github` | `false` | deployment | essential | at once | Consult the GitHub Advisory Database. |
+| `github-endpoint` | `https://api.github.com` | deployment | advanced | at once | The GitHub REST API base URL, for a self-hosted GitHub or a proxy. |
 | `inspection.oversized` | `STREAM` | deployment | advanced | at once | What to do with an artifact larger than the inspection prefix - jenrepo.inspection.prefix-bytes, 32 MiB by default - which is the most of one artifact an inspector is ever handed in memory. |
 | `kev-auto-hold` | `true` | deployment | advanced | on restart | When a scheduled scan finds an already-published artifact whose CVE is on a known-exploited catalogue, quarantine it for review (the same hold the gate writes). |
 | `kev-auto-release` | `true` | deployment | advanced | on restart | When a scheduled scan finds a retroactively KEV-held artifact whose CVE is no longer on any known-exploited catalogue (delisted, or the advisory retracted), automatically release the hold - the self-healing counterpart to KEV auto-hold. |
 | `license-definitions` | *(empty)* | deployment | advanced | at once | Licenses to identify beyond the built-in table of SPDX licenses, one per line or separated by ';', each '&lt;identifier&gt; \| &lt;category&gt; \| &lt;name or URL&gt; \| ...' - e.g. 'Acme-Internal-1.0 \| proprietary \| Acme Internal License \| https://acme.example/license'. |
 | `malware-action` | `REJECT` | deployment | essential | at once | Verdict for a package the feed marks malicious: `ALLOW`, `QUARANTINE` or `REJECT`, which the console names Allow, Hold for review and Reject. |
-| `openssf` | `false` | deployment | essential | on restart | Consult the curated OpenSSF malicious-packages feed (MAL- records, served by OSV.dev). |
-| `openssf-endpoint` | `https://api.osv.dev` | deployment | advanced | on restart | The OSV API base URL serving the dataset, for a mirror or a proxy. |
-| `osv` | `false` | deployment | essential | on restart | Consult the OSV (osv.dev) vulnerability feed. |
-| `osv-endpoint` | `https://api.osv.dev` | deployment | advanced | on restart | The OSV API base URL, for a mirror or a proxy. |
+| `openssf` | `false` | deployment | essential | at once | Consult the curated OpenSSF malicious-packages feed (MAL- records, served by OSV.dev). |
+| `openssf-endpoint` | `https://api.osv.dev` | deployment | advanced | at once | The OSV API base URL serving the dataset, for a mirror or a proxy. |
+| `osv` | `false` | deployment | essential | at once | Consult the OSV (osv.dev) vulnerability feed. |
+| `osv-endpoint` | `https://api.osv.dev` | deployment | advanced | at once | The OSV API base URL, for a mirror or a proxy. |
 | `policy-rules` | *(empty)* | tenant | standard | at once | Expression-based gate rules, one per line (or separated by ';'), each '&lt;verdict&gt; &lt;expression&gt;' where verdict is allow, quarantine or reject - e.g. 'quarantine #ecosystem == "npm" and #advisoryCount &gt; 0' or 'quarantine !#licenses.?[#this matches "(?i).*agpl.*"].empty'. |
 | `provenance-admission-action` | `QUARANTINE` | tenant | standard | at once | Verdict for an artifact whose inbound attestation fails verification - unsigned by a trusted key, signed for a different artifact, or an unexpected builder or source. |
 | `provenance-admission-builder` | *(empty)* | tenant | standard | at once | Comma-separated builder identities an inbound attestation must name, e.g. "https://github.com/acme/.github/workflows/release.yml@refs/tags/*". |
@@ -197,10 +198,11 @@ Explained in [Screening what comes in](/repository/screening/).
 | `signature-trusted-keys` | *(empty)* | tenant | standard | at once | The armoured OpenPGP public keys this deployment verifies publisher signatures against - one or more concatenated -----BEGIN PGP PUBLIC KEY BLOCK----- sections. |
 | `signature-trusted-public-keys` | *(empty)* | tenant | advanced | at once | The PEM public keys a bare RSA publisher signature is verified against - an Alpine package's signature member, whose key the client keeps in /etc/apk/keys/. |
 | `signature-trusted-signers` | *(empty)* | tenant | standard | at once | Per-namespace pinned signers, e.g. "org.apache.* = openpgp:0x1234ABCD", comma- or newline-separated, a trailing * matching a whole namespace. |
-| `signature-untrusted` | `QUARANTINE` | tenant | standard | at once | Verdict for a well-formed signature by a signer this deployment has no reason to believe - no key for it, or a key not admitted for that namespace. |
+| `signature-untrusted` | `ALLOW` | tenant | standard | at once | Verdict for a well-formed signature by a signer this deployment has no reason to believe - no key for it, or a key not admitted for that namespace. It is what every signed artifact reads as until an operator admits a signer, so by default it is served and the outcome recorded on the version. |
 | `strict-hold-mapping` | `false` | deployment | advanced | at once | Off by default: after an accepted publish through a blobs-namespace format, the publish-time hold-mapping round-trip check verifies the format's blobKeys/servedPaths resolve the served path and content hash just laid out (so a hold placed after the publish could retract it). |
-| `vulnerability-action` | `REJECT` | deployment | essential | at once | Verdict for an artifact whose advisories reach the threshold above: `ALLOW`, `QUARANTINE` or `REJECT`, which the console names Allow, Hold for review and Reject. |
-| `vulnerability-threshold` | `CRITICAL` | deployment | essential | at once | Reject vulnerabilities at or above this CVSS band; NONE disables the check. |
+| `vulnerability-action` | `QUARANTINE` | deployment | essential | at once | Verdict for an artifact whose advisories reach the threshold below: `ALLOW`, `QUARANTINE` or `REJECT`, which the console names Allow, Hold for review and Reject. Holding it for review stores the bytes and withholds them until a reviewer releases or discards them; refusing it stores nothing. |
+| `vulnerability-risk-threshold` | `LOW` | deployment | standard | at once | The CVSS band from which a version's findings mark it as a risk, on its package's list of versions and on its own page. A finding below it is still listed with the repository's vulnerabilities but marks nothing; what is held is the vulnerability threshold's to decide. |
+| `vulnerability-threshold` | `CRITICAL` | deployment | essential | at once | The CVSS band at or above which a vulnerability brings the vulnerability action to bear; `NONE` switches the check off. |
 
 ### Consistency
 
@@ -268,7 +270,9 @@ Explained in [Repositories](/repository/repositories/#limits).
 
 | Key | Default | Level | Tier | Applies | Effect |
 | --- | --- | --- | --- | --- | --- |
-| `rate-limit` | `6000` | tenant | standard | on restart | Request ceiling in permits per minute per tenant; 0 disables. |
+| `rate-limit` | `0` | tenant | standard | at once | Requests a minute a tenant's credentials make together before further ones are answered `429`; `0` sets no ceiling. |
+| `rate-limit-account` | `0` | tenant | advanced | at once | Requests a minute one credential makes before further ones are answered `429`; `0` sets no ceiling of its own. |
+| `rate-limit-address` | `60000` | deployment | advanced | at once | Requests a minute one client address makes, keyed or not, before further ones are answered `429`; `0` sets no ceiling. |
 | `tenant-quota` | `0` | tenant | standard | at once | The storage quota: how many bytes of stored content a tenant's repositories may hold together; 0 is unlimited. |
 
 ### Maintenance
@@ -293,7 +297,7 @@ Explained in [Connecting your build tools](/repository/formats/).
 
 | Key | Default | Level | Tier | Applies | Effect |
 | --- | --- | --- | --- | --- | --- |
-| `maven-metadata-compute` | `false` | deployment | advanced | on restart | Compute the artifact-level maven-metadata.xml on read rather than serving the publisher's stored document verbatim: reconcile only its &lt;versions&gt; list against the stored version folders (every other field preserved), and derive a document for a coordinate no client ever uploaded one for (an imported or batch-ingested repository). |
+| `maven-metadata-compute` | `false` | deployment | advanced | on restart | Compute the artifact-level maven-metadata.xml on read rather than serving the publisher's stored document verbatim: reconcile only its &lt;versions&gt; list against the stored version folders (every other field preserved), and derive a document for a coordinate no client ever uploaded one for (an imported or batch-ingested repository). In a repository that also proxies, the document lists the upstream's versions beside the ones published here. |
 
 ### Network
 

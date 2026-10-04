@@ -55,7 +55,7 @@ The request fields, which match the form:
 | `url` | yes | The base URL of the source. It must be `https` and resolve to a public host (see below). |
 | `repository` | yes | The source repository to read - a Nexus or Artifactory repository name, or the path under the base URL. |
 | `format` | Artifactory | The ecosystem of the source repository, as Artifactory names its package type: `maven`, `npm`, `pypi`, `nuget`, `docker`, `alpine`, `swift`, `terraform`, `raw` and the others this product serves. |
-| `format` | index | The installed format whose own index is walked. The OCI format is the one that enumerates its index, so `oci` is the format to name; any other finds nothing to import. |
+| `format` | index | The installed format whose own index is walked: `pypi`, `nuget`, `debian`, `rpm`, `conda`, `composer` or `oci`. Any other finds nothing to import. |
 | `username`, `password` | no | Credentials sent to the source. The `jenesis` connector takes its API key as the `password`. |
 | `resume` | no | The id of an earlier job. The walk continues under that same id, from its recorded position. |
 
@@ -150,21 +150,32 @@ Every asset is reported as `maven`.
 ### Index
 
 `index` walks a format's own published index rather than a vendor API, which is why it needs the `format`
-up front. It migrates whatever the installed format can enumerate from the source.
+up front: a PyPI Simple index, a NuGet V3 feed, a Debian archive's `Packages` indexes, an RPM repository's
+`repodata`, a conda channel's `repodata.json`, a Composer repository's `packages.json` or a registry's catalog. The
+walk starts at the base URL with `repository` appended - `.` appends nothing - which is where the format's own client
+is pointed. For an OCI registry that is the registry's root; to walk one repository of another Jenesis Repository,
+point it at that repository's own registry, `https://repo.example.com/v2/<tenant>/<repository>/`.
+
+An RPM repository, a conda channel and a Composer repository are each named by the last segment of the address
+their index is read from, and the import lays the packages out in a repository, channel or registry of the same name
+here, so a client keeps the address it had.
 
 ### Jenesis
 
 `jenesis` walks another Jenesis Repository through its `/api/assets` listing (below), so one instance
 migrates into another. `repository` names the source repository, and the credential is the source's API key,
 passed as the `password`. Each asset is downloaded from the path the listing says the source serves it at, so
-nothing about the source's layout needs configuring.
+nothing about the source's layout needs configuring, and it is laid out at that same path here: an RPM repository,
+a conda channel, or a Composer, Cargo, Helm, CocoaPods, Hugging Face, Conan, winget, Swift or Terraform registry
+keeps its name. A version comes across whole: a container image as its config and layers, then the manifests of its
+platforms, then its tag; a Go module as its `.info`, `.mod` and `.zip`; a winget version as its manifest, then its
+installers.
 
 ## What the importers write
 
-A connector hands each asset to the importer for its format. Every format except Ivy and the Jenesis module layout
-carries one, and each accepts the names Nexus and Artifactory give that format as well as its own - `yum` for RPM,
-`apt` for Debian, `alpine` for apk, `golang`, `gems`, `crates`, `huggingfaceml` - and publishes each asset through
-the format's own publish path. Three are worth knowing in detail:
+A connector hands each asset to the importer for its format. Every format carries one, and each accepts the names
+Nexus and Artifactory give that format as well as its own - `yum` for RPM, `apt` for Debian, `alpine` for apk,
+`golang`, `gems`, `crates`, `huggingfaceml` - and publishes each asset through the format's own publish path. Three are worth knowing in detail:
 
 | Importer | Accepts source formats | Writes |
 |---|---|---|
@@ -177,9 +188,9 @@ left behind - their checksums describe bytes the source served, not the copy you
 serves a stored `maven-metadata.xml` verbatim, so an imported coordinate has no version listing until one is
 published, and a client asking "which versions exist?" gets a `404`. Switch on
 `jenrepo.maven-metadata-compute=true` and the server derives the listing from the version folders it holds
-instead. The `maven` connector also skips checksum sidecars (`.sha1`, `.md5`), and the server does not derive
-them, so a client that verifies checksums warns until one is published beside the artifact. The Nexus and
-Artifactory connectors import the sidecars they list.
+instead. An artifact's own checksums (`.sha1`, `.md5`, `.sha256`, `.sha512`) do come across: the server serves
+an artifact's checksums as they were uploaded and derives none, so the `maven` connector imports the ones a
+directory listing shows beside each artifact, and the Nexus and Artifactory connectors import the sidecars they list.
 
 When a job finishes, the server builds the listings the imported artifacts imply - an OCI repository's tag
 list and catalogue, a raw folder's listing - before it reports `completed`, and regenerates ones that
@@ -231,6 +242,11 @@ plus `served`, the URL path a client downloads it from, and the format's reading
 `coordinate`, `version` and `prerelease`. Pass the returned `cursor` back as `?cursor=` for the next page; it is
 `null` once the listing is exhausted. `repo` is required and names a repository of the tenant the server serves;
 `limit` defaults to 500 and is capped at 1 000. The read needs `repository:read` on the repository it lists.
+
+A format that keeps its packages in an index of its own - npm, PyPI, NuGet, Debian, RPM and most others - is listed
+after the files published at a path of their own, version by version, newest first. A page of those holds the files of
+at most `limit` versions, so it can carry more entries than `limit`, and a page can be empty while its `cursor` is not:
+follow the cursor until it is `null`.
 
 The bytes themselves are addressed by the `served` paths the listing returns, so any HTTP client can copy a
 repository out - and another Jenesis Repository imports one directly with the `jenesis` connector above.
