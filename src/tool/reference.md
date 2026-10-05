@@ -226,6 +226,7 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.artifact.japicmp` | `true` | Run the japicmp API comparison when its file is present. |
 | `jenesis.compile.errorprone` | `true` | Run Error Prone when an `errorprone.properties` is present; `javac` forks while it does, to grant the plugin the compiler internals it reads. |
 | `jenesis.generate.<tool>` | `true` | Per-generator switch (`xjc`, `protoc`, `avro`, `wsimport`, `openapi`, `antlr`). |
+| `jenesis.generate.classpath` | `true` | Write `META-INF/services` files, and `Enable-Native-Access` for a module granting itself, from `module-info` when a `classpath.properties` is present - see *[A modular jar on the class path](/tool/packaging/#a-modular-jar-on-the-class-path)*. |
 
 The quality and packaging *files* these keys gate (`checkstyle.xml`, `packaging.properties`, and the like)
 are covered in *[Code quality &amp; testing](/tool/code-quality-and-testing/)*, *[Generating
@@ -378,6 +379,7 @@ in the linked chapter.
 | `compiled` | Compiled classes from sources and the compile class path (`javac`, or a language compiler). |
 | `classes` | The version-stamped classes exposed to downstream consumers. |
 | `validate` | Byte-code analysis (SpotBugs, as `validate/spotbugs`). |
+| `classpath` | The `META-INF/services` files and manifest attribute that let a modular jar run on the class path, when a `classpath.properties` is present (as `classpath/services`). |
 | `artifacts` | The packaged jar. |
 | `check` | Static-analysis findings (Checkstyle, PMD, detekt, …). |
 | `format` | Formatting verification, or an in-place rewrite. |
