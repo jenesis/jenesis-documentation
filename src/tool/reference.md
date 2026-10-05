@@ -338,8 +338,8 @@ password location is missing.
 
 | Key | Default | Effect |
 | --- | --- | --- |
+| `jenesis.palette.colors` | `ansi` | `ansi` colours what the build prints with ANSI escape sequences; `none` prints plain text. |
 | `jenesis.print.progress` | `true` | Per-step `[STARTED]`/`[SKIPPED]`/… lines; `false` runs silently. |
-| `jenesis.print.color` | `true` | Colour what the build prints with ANSI escape sequences; `false` prints plain text. |
 | `jenesis.print.docker` | `true` | Print the Docker image a step is wrapped in. |
 | `jenesis.print.command` | `false` | Print each external tool's command line. |
 | `jenesis.print.process` | `false` | Stream every external tool's output; `jenesis.print.<command>` targets one tool. |
