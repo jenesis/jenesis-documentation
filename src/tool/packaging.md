@@ -480,12 +480,8 @@ Two other differences are handled as well:
   `--enable-native-access`. A manifest that already sets the attribute keeps its value.
 - The main class needs nothing: `@jenesis.main` puts it into the manifest and into `module-info` alike.
 
-What the class path cannot do fails the build rather than the program:
-
-- A provider must be a public class with a public constructor taking no arguments. The module path also
-  accepts a public static `provider()` method, which a class-path `ServiceLoader` ignores.
-- A module that ships its own `META-INF/services/<service>` for a service it also `provides` is refused,
-  because the build writes that file itself.
+A module that ships its own `META-INF/services/<service>` for a service it also `provides` fails the build,
+because the build writes that file itself.
 
 `-Djenesis.generate.classpath=false` switches the step off, in a profile if need be, without deleting the file.
 
