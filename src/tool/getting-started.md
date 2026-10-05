@@ -290,7 +290,7 @@ discovered module. The other targets:
 | `configuration` | Print every setting with the value in force, one per line. |
 | `properties` | Print only the `jenesis.*` settings this run sets. |
 | `help` | Print the usage screen. |
-| `skill` | Print the briefing a coding agent works from. |
+| `skill` | Print the briefing a coding agent works from; `skill/start` prints its overview and `skill/<page>` one page of it. |
 
 A `+<module>` selector builds just one module's subtree - `+greeter` builds the `greeter` module and
 whatever it depends on, without touching unrelated siblings. Selectors and the build graph they walk are the
