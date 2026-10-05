@@ -67,6 +67,9 @@ Every object leads with its `status`:
 A file without that last line belongs to a build that is still running or was killed.
 `-Djenesis.executor.events=false` writes no file and leaves one that an earlier build wrote in place.
 
+The progress lines, the dependency tree and every other line the build prints are coloured with ANSI escape
+sequences. To read them as plain text, from a file or a pipe, pass `-Djenesis.print.color=false`.
+
 ### Writing tests
 
 Where tests live depends on the layout, and in both cases it is what you would write anyway.
