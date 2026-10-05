@@ -215,6 +215,18 @@ java -Djenesis.test.tag=fast+-slow,io+-slow build/jenesis/Make.java
 `jenesis.test.filter` takes a comma-separated list of `<classRegex>[#<method>]` entries and runs only what
 matches. `jenesis.test.tag` selects by tag, in a syntax of its own described below.
 
+An entry applies to every test module, and a test module where it matches no test fails the build. In a
+project with several test modules, lead the entry with a module's folder and a `/` to keep it to that module's
+tests:
+
+```bash
+java -Djenesis.test.filter='greeter-test/.*GreeterTest#prefix_is_a_greeting' build/jenesis/Make.java
+```
+
+The folder is the one a `+<module>` selector names, and a nested folder such as `libs/core/.*Test` works too.
+A test module that no entry reaches runs no tests rather than failing, while one an entry does reach still
+fails when nothing there matches.
+
 ### Selecting tests by tag
 
 The tag selection is **framework neutral**: it is written the same way whatever the tests run on, and Jenesis
@@ -275,7 +287,7 @@ again and starts a new memory.
   result can be served to someone asking for more.
 </div>
 
-{% demos 3, 35 %}
+{% demos 3, 4, 35 %}
 
 ## Running only the tests a change affects
 

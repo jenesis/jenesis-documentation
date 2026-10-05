@@ -203,7 +203,7 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | Key | Default | Effect |
 | --- | --- | --- |
 | `jenesis.test.skip` | `false` | Register no test steps, so no tests run. Naming the key with no value is `true`; `=false` runs the tests. |
-| `jenesis.test.filter` | *(unset)* | Comma-separated `<classRegex>[#<method>]` list; runs only matching tests. |
+| `jenesis.test.filter` | *(unset)* | Comma-separated `[<module>/]<classRegex>[#<method>]` list; runs only matching tests. An entry naming a module's folder applies to that module's tests alone, and a test module no entry reaches runs none. |
 | `jenesis.test.tag` | *(unset)* | Tests to run by tag, in a framework-neutral syntax that needs no quoting on a command line: comma-separated alternatives, a test running where it matches any of them, each a tag, several joined by `+` for the tests carrying all of them, and `-<tag>` for the tests not carrying it; translated for the test framework. A run remembers what it covered until the tests' inputs change, so a later selection runs only what no earlier run did (see *[Code quality & testing](/tool/code-quality-and-testing/#selecting-tests-by-tag)*). |
 | `jenesis.test.parallel` | `false` | Run tests in parallel where the framework supports it. |
 | `jenesis.test.reporting` | `false` | Emit test reports under `reports/tests/`: legacy JUnit XML and Open Test Reporting XML for `junit-platform`, TestNG's own report for `testng`. |
