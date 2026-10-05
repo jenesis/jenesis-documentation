@@ -54,7 +54,7 @@ property). The top-level targets the shipped layouts register:
 | `dependencies` | Print each module's resolved dependency graph with licences. |
 | `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata at the project root (see *[Building &amp; running](/tool/building-and-running/#opening-the-project-in-an-ide)*). |
 | `help` | Print a one-screen orientation: how to start, the selectors, and how to make a step verbose. |
-| `skill` | Print the briefing a coding agent works from. |
+| `skill` | Print the briefing a coding agent works from, every page of it; `skill/start` prints the overview, which names the pages, and `skill/<page>` one page. |
 | `metadata` | Refresh the metadata module outputs without building artifacts. |
 | `configuration` | Print every setting with the value in force, one per line: `jenesis.<key>=<value> [set\|default\|unset] <what it does>`. Built to grep, and the tool's own property reference. |
 | `properties` | Print every `jenesis.*` setting in force for this run - from the command line, `jenesis.properties` or a profile alike - sorted by key. |
@@ -246,6 +246,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.pin.provided` | *(unset)* | Comma-separated pin files, relative to the project root, whose entries the file `jenesis.pin.file` names leaves out where the version and the checksum are the same. |
 | `jenesis.pin.concurrency` | *(processor count)* | How many modules' pins `pin` rewrites at once; `0` is unbounded. |
 | `jenesis.platform.<token>` | *(detected)* | Add (`=true`) or remove (`=false`) a platform token used to select guarded pins. |
+| `jenesis.variable.<key>` | *(unset)* | What a value `@<key>` or `@<key>/<default>` in a `process-<command>.properties` or `environment-<command>.properties` stands for; part of the input of every program it reaches (see *[Building &amp; running](/tool/building-and-running/#values-from-the-command-line)*). |
 | `jenesis.plugin.<name>` | `true` | `false` leaves out the plugin `<name>` that `jenesis.plugins.properties` names (see *[Extending the build](/tool/extending-the-build/#adding-plugins-to-the-stock-build)*). |
 | `jenesis.project.plugins` | `true` | `false` leaves out every plugin that `jenesis.plugins.properties` names, while `pin` still pins those of the whole project (see *[Extending the build](/tool/extending-the-build/#pinning-them)*). |
 | `jenesis.project.digest` | `SHA-256` | Digest algorithm the `pin` step uses to checksum artifacts. |
