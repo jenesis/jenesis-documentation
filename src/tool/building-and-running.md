@@ -46,7 +46,7 @@ object per line, and the next build replaces it. The second progress line, `[EVE
 script or a coding agent reads it instead of parsing the console:
 
 ```
-{"status":"started","target":"/.../demo-01-java-pom/target"}
+{"status":"started","target":"/.../demo-01-java-pom/target","directory":"/.../demo-01-java-pom"}
 {"status":"resolved","module":"build","seconds":0.067}
 {"status":"skipped","step":"build/maven/identifier/prepare","folder":"/.../target/build/maven/identifier/prepare"}
 {"status":"completed","seconds":0.342,"executed":1,"skipped":18,"failed":0}
@@ -56,16 +56,21 @@ Every object leads with its `status`:
 
 | `status` | Written for | Beside it |
 | --- | --- | --- |
-| `started` | the build, first line | `target` |
+| `started` | the build, first line | `target`, and the `directory` the build ran in |
 | `executed` | a step that ran | `step`, `seconds` and `folder`, which holds the step's `output/` |
 | `skipped` | a step none of whose inputs changed | `step` and `folder` |
 | `loaded`, `stored` | a step's output fetched from or stored in the build cache | `step` and `seconds` |
 | `resolved` | a module | `module` and `seconds` |
-| `failed` | a step or a module that failed | `step` or `module`, the `error` class and its `message` |
+| `failed` | a step or a module that failed | `step` or `module`, the `error` class and its `message`; a failed step also its `folder` |
 | `completed`, `failed` | the build, last line | `seconds` and how many steps `executed`, `skipped` and `failed`; a failed build adds its `error` and `message` |
 
 A file without that last line belongs to a build that is still running or was killed.
 `-Djenesis.executor.events=false` writes no file and leaves one that an earlier build wrote in place.
+
+A failed step keeps what it wrote. Its `folder` ends in `~` and holds the step's `output/` and, for a tool the
+build ran, the command, the tool's output and its reports under `supplement/`, beside an empty
+`.jenesis.failed` marker. The folder stays until the step comes up again in a later build. A failure that says
+to execute a command names paths relative to the `directory` of the `started` line.
 
 ### Writing tests
 
@@ -295,6 +300,65 @@ applies to *every* forked `java` process, the program `Execute` runs included, w
 </div>
 
 {% demos 12 %}
+
+## Handing a program environment variables
+
+A test run, or any other program the build forks, sees only the platform's own environment variables:
+`PATH`, `HOME`, `LANG`, `LC_*` and `TMPDIR`, and on Windows `SystemRoot`, `TEMP`, `USERPROFILE` and the like.
+Nothing else of your shell reaches it. A variable is no input of the build, so a test result never depends on
+one the build cannot see, and no tool reads a secret it was not handed.
+
+To hand a program more, add an **`environment-<command>.properties`** file to a configuration folder, named
+like a `process-<command>.properties`:
+
+```properties
+# environment-test.properties  →  the test run gets GREETING, and TOKEN from your shell
+GREETING=Hello
+TOKEN
+```
+
+`NAME=value` sets a variable to the value written. A name with no value passes on your shell's own value when
+the program runs, and leaves the variable unset when your shell has none. The file is an input of the program,
+so editing a value runs it again. A value taken from your shell is not part of that input, which suits a
+credential or a proxy but not a value a result depends on.
+
+Four names take such a file:
+
+| File | Reaches |
+| --- | --- |
+| `environment-java.properties` | every JVM the build forks, the test run included |
+| `environment-test.properties` | the test run only, merged over the `java` file |
+| `environment-pitest.properties` | PIT's mutation run |
+| `environment-native-image.properties` | `native-image` |
+
+A JDK tool such as `javac` or `javadoc` takes none, as it may run inside the build's own JVM, and a file naming
+one fails the build. `native-image` is handed the variables its C compiler reads without a file: `INCLUDE`,
+`LIB` and `LIBPATH` from a Visual Studio developer prompt, `CPATH`, `C_INCLUDE_PATH`, `LIBRARY_PATH` and
+`SDKROOT`. A release run by the build hands JReleaser every `JRELEASER_*` variable, where it reads its
+credentials. The program `Execute.java` or `jpx` runs is the one you asked for rather than a step of the
+build, so it is handed your whole environment, as from a shell.
+
+### Values from the command line
+
+In a `process-<command>.properties` or an `environment-<command>.properties`, a value `@<key>` stands for the
+setting `jenesis.variable.<key>`, and `@<key>/<default>` falls back to what follows the slash when the setting
+is absent. `@@` writes a literal `@`. A missing setting without a default fails the build and names the
+setting:
+
+```properties
+# environment-test.properties
+GREETING=@greeting/Hello
+```
+
+```bash
+java -Djenesis.variable.greeting=Hi build/jenesis/Make.java
+```
+
+The setting comes from the command line, a `jenesis.properties` or a profile, like any other. The resolved
+value is part of the input of every program it reaches, so another value runs the program again. It is also
+written into the build's output under `target/`, so a credential stays a name without a value.
+
+{% demos 4 %}
 
 ## Annotation processing
 
