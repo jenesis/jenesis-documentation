@@ -216,7 +216,7 @@ it would be stranded there.
   <code>jlink</code> accepts.
 </div>
 
-{% demos 9, 55 %}
+{% demos 9, 56 %}
 
 ## Making a closure linkable
 
@@ -458,6 +458,39 @@ verified and the build stays reproducible.
 
 {% demos 8, 9 %}
 
+## A modular jar on the class path
+
+A modular jar declares its services in `module-info.java`. The module path reads them from there, but a
+`ServiceLoader` on the class path finds a provider only through a `META-INF/services/<service>` file. To have
+one jar serve both, place an empty `classpath.properties` in a configuration folder:
+
+```text
+build.jenesis/
+`-- classpath.properties
+```
+
+For each `provides <service> with <providers>` clause in a module's compiled `module-info`, the jar then gets a
+`META-INF/services/<service>` file that names the providers, one per line. A module without a `module-info` is a
+class-path jar already and gets nothing.
+
+Two other differences are handled as well:
+
+- A module that grants native access to itself with `@jenesis.native` also gets
+  `Enable-Native-Access: ALL-UNNAMED` in its manifest, which `java -jar` reads where the module path reads
+  `--enable-native-access`. A manifest that already sets the attribute keeps its value.
+- The main class needs nothing: `@jenesis.main` puts it into the manifest and into `module-info` alike.
+
+What the class path cannot do fails the build rather than the program:
+
+- A provider must be a public class with a public constructor taking no arguments. The module path also
+  accepts a public static `provider()` method, which a class-path `ServiceLoader` ignores.
+- A module that ships its own `META-INF/services/<service>` for a service it also `provides` is refused,
+  because the build writes that file itself.
+
+`-Djenesis.generate.classpath=false` switches the step off, in a profile if need be, without deleting the file.
+
+{% demos 54 %}
+
 ## Native images
 
 `native=true` compiles the application ahead of time into a **single standalone native executable** with
@@ -492,7 +525,7 @@ directory to maintain.
   inside every jar - the way to vet exactly what reflection is baked into a published artifact.
 </div>
 
-{% demos 68 %}
+{% demos 69 %}
 
 ### native-image or jpackage?
 
@@ -538,4 +571,4 @@ takes the whole folder below it.
   adds nothing to <code>legal/</code>, so check its licence before shipping it.
 </div>
 
-{% demos 9, 21, 68 %}
+{% demos 9, 21, 69 %}

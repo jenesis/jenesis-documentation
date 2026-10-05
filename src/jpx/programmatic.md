@@ -91,7 +91,7 @@ int status = installation.launch(command.mainClass(), List.of("--version"));
   above.
 </div>
 
-{% demos 69 %}
+{% demos 70 %}
 
 ## Reading what was installed
 
