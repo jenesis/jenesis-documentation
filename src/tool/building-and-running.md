@@ -72,6 +72,9 @@ build ran, the command, the tool's output and its reports under `supplement/`, b
 `.jenesis.failed` marker. The folder stays until the step comes up again in a later build. A failure that says
 to execute a command names paths relative to the `directory` of the `started` line.
 
+The progress lines, the dependency tree and every other line the build prints are coloured with ANSI escape
+sequences. To read them as plain text, from a file or a pipe, pass `-Djenesis.palette.colors=none`.
+
 ### Writing tests
 
 Where tests live depends on the layout, and in both cases it is what you would write anyway.
