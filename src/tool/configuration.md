@@ -126,6 +126,8 @@ What these folders can hold - presence activates, contents configure:
 - **API compatibility**: `japicmp.properties`.
 - **Forked-tool arguments**: `process-<command>.properties` - extra flags for `javac`, `kotlinc`, `jar`, and
   the like (see *[Building & running](/tool/building-and-running/)*).
+- **Forked-program environment**: `environment-<command>.properties` - variables for the test run, a forked
+  JVM, PIT or `native-image` (see *[Building & running](/tool/building-and-running/#handing-a-program-environment-variables)*).
 
 Each of these is the subject of a later chapter; here the point is only *where* they go and that a file's mere
 presence switches its feature on.
