@@ -300,11 +300,11 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | Key | Default | Effect |
 | --- | --- | --- |
 | `jenesis.execute.module` | *(prompt)* | The module to run with `Execute.java`. |
-| `jenesis.execute.mainClass` | *(inferred)* | The main class to run. |
+| `jenesis.execute.main` | *(inferred)* | The main class to run. |
 | `jenesis.project.docker` | `false` | Build inside a throwaway container. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.project.docker.image` | *(hardened)* | Image for the build container. Command line or `~/.jenesis/jenesis.properties` only. |
-| `jenesis.project.docker.mount` | *(none)* | `<host>[:<container>],…` read-only bind mounts. Command line or `~/.jenesis/jenesis.properties` only. |
-| `jenesis.project.docker.mountWritable` | *(none)* | Writable bind mounts. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.project.docker.readable` | *(none)* | `<host>[:<container>],…` read-only bind mounts. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.project.docker.writable` | *(none)* | Writable bind mounts. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.project.docker.env` | *(none)* | `<name>[=<value>],…` environment forwarded into the container. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.execute.docker` | `false` | Run the launched program in a container. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.execute.docker.image` / `.mount` / `.env` | *(as above)* | The run-side equivalents. Command line or `~/.jenesis/jenesis.properties` only. |
@@ -318,7 +318,7 @@ Read by the `release` target - see *[Publishing](/tool/publishing/)*.
 | `jenesis.release.uri` (`JENESIS_RELEASE_URI`) | *(unset)* | The Jenesis module repository `release` puts each staged module into, with one put of its jar at `module/<module>/<version>/<module>.jar`, so every module needs a version: the `https:` address of a `jenesis` repository of a Jenesis Repository, the one `jenesis.module.uri` names; a `java` repository takes Maven publishes only and refuses the put. Unset, `release` puts nothing there. Its environment variable is not the one a build resolves through. |
 | `jenesis.release.token` (`JENESIS_RELEASE_TOKEN`) | *(unset)* | `Authorization` header sent to that repository, as given. Command line, `~/.jenesis/jenesis.properties` or the environment only. It travels only to a `jenesis.release.uri` named in the environment, on the command line or there, never to one a project's own file named. Its environment variable is not the one sent to the resolving repositories. |
 | `jenesis.jreleaser.config` | *(discovered)* | The release-tool configuration file; must exist when named. |
-| `jenesis.jreleaser.dryRun` | `true` | Perform every local phase and skip every remote one; `false` publishes. |
+| `jenesis.jreleaser.dry` | `true` | Perform every local phase and skip every remote one; `false` publishes. |
 | `jenesis.jreleaser.executable` | `jreleaser` | The executable to locate. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.jreleaser.command` | `full-release` | The subcommand to run. |
 
