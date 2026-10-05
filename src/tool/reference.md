@@ -303,7 +303,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.execute.main` | *(inferred)* | The main class to run. |
 | `jenesis.project.docker` | `false` | Build inside a throwaway container. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.project.docker.image` | *(hardened)* | Image for the build container. Command line or `~/.jenesis/jenesis.properties` only. |
-| `jenesis.project.docker.mount` | *(none)* | `<host>[:<container>],…` read-only bind mounts. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.project.docker.readable` | *(none)* | `<host>[:<container>],…` read-only bind mounts. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.project.docker.writable` | *(none)* | Writable bind mounts. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.project.docker.env` | *(none)* | `<name>[=<value>],…` environment forwarded into the container. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.execute.docker` | `false` | Run the launched program in a container. Command line or `~/.jenesis/jenesis.properties` only. |
