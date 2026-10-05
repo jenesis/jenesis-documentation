@@ -46,9 +46,9 @@ object per line, and the next build replaces it. The second progress line, `[EVE
 script or a coding agent reads it instead of parsing the console:
 
 ```
-{"status":"started","target":"/.../demo-01-java-pom/target","directory":"/.../demo-01-java-pom"}
+{"status":"started","target":"/.../demo-01-java-pom/target","directory":"/.../demo-01-java-pom","run":"20261005T180707.205894Z"}
 {"status":"resolved","module":"build","seconds":0.067}
-{"status":"skipped","step":"build/maven/identifier/prepare","folder":"/.../target/build/maven/identifier/prepare"}
+{"status":"skipped","step":"build/maven/identifier/prepare","folder":"/.../target/build/maven/identifier/prepare","run":"20261005T180659.583809Z"}
 {"status":"completed","seconds":0.342,"executed":1,"skipped":18,"failed":0}
 ```
 
@@ -56,13 +56,25 @@ Every object leads with its `status`:
 
 | `status` | Written for | Beside it |
 | --- | --- | --- |
-| `started` | the build, first line | `target`, and the `directory` the build ran in |
+| `started` | the build, first line | `target`, the `directory` the build ran in, and the `run` |
 | `executed` | a step that ran | `step`, `seconds` and `folder`, which holds the step's `output/` |
-| `skipped` | a step none of whose inputs changed | `step` and `folder` |
+| `skipped` | a step none of whose inputs changed | `step`, `folder`, and the earlier `run` that produced the folder |
 | `loaded`, `stored` | a step's output fetched from or stored in the build cache | `step` and `seconds` |
 | `resolved` | a module | `module` and `seconds` |
 | `failed` | a step or a module that failed | `step` or `module`, the `error` class and its `message`; a failed step also its `folder` |
 | `completed`, `failed` | the build, last line | `seconds` and how many steps `executed`, `skipped` and `failed`; a failed build adds its `error` and `message` |
+
+Every build is a run, named on the `started` line by the moment it began, in UTC. A step that executed is this
+run's. A skipped step names the earlier run whose output it kept, so a test report in its folder is that run's
+result, not this one's. The same name sits in a `local.properties` beside the step's `output/`, with
+`cached=true` when the output came from the build cache:
+
+```properties
+run=20261005T180659.583809Z
+cached=false
+```
+
+That file stays on the machine that wrote it: no checksum covers it and no build cache carries it.
 
 A file without that last line belongs to a build that is still running or was killed.
 `-Djenesis.executor.events=false` writes no file and leaves one that an earlier build wrote in place.
