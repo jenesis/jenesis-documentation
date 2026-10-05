@@ -461,7 +461,7 @@ narrows the build to that module's subtree:
 
 ```bash
 java -Djenesis.execute.module=tools \
-     -Djenesis.execute.mainClass=org.example.tools.Cli \
+     -Djenesis.execute.main=org.example.tools.Cli \
      build/jenesis/Execute.java --help
 ```
 

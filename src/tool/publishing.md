@@ -317,7 +317,7 @@ build.
 
 <div class="warning">
   <code>release</code> is a <strong>dry run by default</strong>: every local phase runs and every remote one is
-  skipped. A real release needs <code>-Djenesis.jreleaser.dryRun=false</code>, the single switch that separates
+  skipped. A real release needs <code>-Djenesis.jreleaser.dry=false</code>, the single switch that separates
   a rehearsal from a publication - so no combination of selectors alone can publish.
 </div>
 

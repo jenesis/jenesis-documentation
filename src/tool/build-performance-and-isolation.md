@@ -109,7 +109,7 @@ Anything else the build needs from outside the root is **invisible** inside the 
 
 A `build/jenesis` symlinked to a shared engine checkout, a sibling source tree, or a generated-sources directory
 lives outside the root and so is not present. Add such paths with
-`-Djenesis.project.docker.mount=<host>[:<container>],...`:
+`-Djenesis.project.docker.readable=<host>[:<container>],...`:
 
 - a bare `host` is mounted at the **same** path inside the container (`host:host`) - what a symlink or absolute
   reference needs to resolve; `host:container` remaps it instead;
@@ -117,7 +117,7 @@ lives outside the root and so is not present. Add such paths with
 - relative host paths resolve against the project root, and several mounts are comma-separated.
 
 For the rare case that the build must write to a host path outside the project root, use
-`-Djenesis.project.docker.mountWritable=<host>[:<container>],...`. Reach for it sparingly: every writable mount
+`-Djenesis.project.docker.writable=<host>[:<container>],...`. Reach for it sparingly: every writable mount
 is a hole in the confinement.
 
 By default **no host environment is forwarded** into the container. Pass selected variables with
@@ -148,7 +148,7 @@ java -Djenesis.execute.docker=true build/jenesis/Execute.java
 
 The container does not receive the host environment and its home is not the host's, so the artifact runs but the
 secrets are out of reach. `-Djenesis.execute.docker.image=<reference>` overrides the image, and
-`-Djenesis.execute.docker.mount` (read-only), `-Djenesis.execute.docker.mountWritable` (read-write), and
+`-Djenesis.execute.docker.readable` (read-only), `-Djenesis.execute.docker.writable` (read-write), and
 `-Djenesis.execute.docker.env=<name>[=<value>],...` behave exactly like their `jenesis.project.docker.*`
 counterparts. Because the build runs as usual and only the launch crosses the container boundary, the **build
 image and the runtime image can differ**.
