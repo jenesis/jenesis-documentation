@@ -397,10 +397,11 @@ Wired by keys in `packaging.properties` - see *[Packaging](/tool/packaging/)*.
 | `legal` | The legal notices of the module's jar and its runtime dependencies, for its `.jmod` and a native image. |
 | `jmod` | A `.jmod` link-time module. |
 | `jlink` | A custom runtime image. |
-| `jpackage` | A native installer or self-contained app image. |
+| `jpackage` | A native installer or self-contained app image; with several types, every package `jpackage` lists. |
+| `jpackage-<type>` | One type's package, where several types are built or the container image needs one `jpackage` does not list. |
 | `bundle` | A self-contained `bundle.zip` of the application. |
 | `launcher` | A single executable launcher jar (see *[Jenesis Launcher](/launcher/)*). |
-| `docker` | A container build context - a `Dockerfile` and the jars it copies. |
+| `docker` | A container build context - a `Dockerfile` and the jars it copies, or the jpackage package `docker.jpackage` names. |
 | `native-image` | A GraalVM native executable. |
 | `modules` | The dependency closure rewritten into explicit named modules (from `modules.properties`). |
 
