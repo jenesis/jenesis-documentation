@@ -254,7 +254,7 @@ documentation tool (`javadoc` for Java) and adds a `-javadoc.jar`. Both are off 
 build time you do not want on every inner-loop run. Turn them on for a release, or record them in a profile
 (see *[Configuration](/tool/configuration/)*).
 
-{% demos 65 %}
+{% demos 66 %}
 
 ### Reproducible archives
 
@@ -281,7 +281,7 @@ fixes the line endings of every file Git treats as text, whatever machine checks
 * text=auto eol=lf
 ```
 
-{% demos 67 %}
+{% demos 68 %}
 
 ## Passing extra arguments to a tool
 
