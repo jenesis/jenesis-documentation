@@ -39,6 +39,34 @@ when it is the tools themselves that are heavy, `-Djenesis.process.concurrency=<
   covers change - not on every build.
 </div>
 
+### Reading a build's outcome
+
+Besides the progress lines, every build writes what happened to `target/.jenesis.events.jsonl`, one JSON
+object per line, and the next build replaces it. The second progress line, `[EVENTS]`, names the file, so a
+script or a coding agent reads it instead of parsing the console:
+
+```
+{"status":"started","target":"/.../demo-01-java-pom/target"}
+{"status":"resolved","module":"build","seconds":0.067}
+{"status":"skipped","step":"build/maven/identifier/prepare","folder":"/.../target/build/maven/identifier/prepare"}
+{"status":"completed","seconds":0.342,"executed":1,"skipped":18,"failed":0}
+```
+
+Every object leads with its `status`:
+
+| `status` | Written for | Beside it |
+| --- | --- | --- |
+| `started` | the build, first line | `target` |
+| `executed` | a step that ran | `step`, `seconds` and `folder`, which holds the step's `output/` |
+| `skipped` | a step none of whose inputs changed | `step` and `folder` |
+| `loaded`, `stored` | a step's output fetched from or stored in the build cache | `step` and `seconds` |
+| `resolved` | a module | `module` and `seconds` |
+| `failed` | a step or a module that failed | `step` or `module`, the `error` class and its `message` |
+| `completed`, `failed` | the build, last line | `seconds` and how many steps `executed`, `skipped` and `failed`; a failed build adds its `error` and `message` |
+
+A file without that last line belongs to a build that is still running or was killed.
+`-Djenesis.executor.events=false` writes no file and leaves one that an earlier build wrote in place.
+
 ### Writing tests
 
 Where tests live depends on the layout, and in both cases it is what you would write anyway.

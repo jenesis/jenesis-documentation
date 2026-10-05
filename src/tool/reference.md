@@ -357,6 +357,7 @@ password location is missing.
 | `jenesis.executor.timeout` | `PT0S` | ISO-8601 per-step timeout; `PT0S` disables it. |
 | `jenesis.executor.rebuild` | `false` | Delete `target/` first, forcing a full rebuild. |
 | `jenesis.executor.aggregate` | `false` | Let independent step failures aggregate into one report instead of failing at the first. |
+| `jenesis.executor.events` | `true` | Write each step's outcome of the latest build to `target/.jenesis.events.jsonl`, one JSON object per line (see *[Building &amp; running](/tool/building-and-running/#reading-a-build-s-outcome)*). |
 | `jenesis.executor.concurrency` | `0` | The most build steps that run at once across the whole build; `0` means no limit. |
 | `jenesis.process.factory` | `tool` | How JDK tool steps launch: `tool` (in-process) or `fork`. |
 | `jenesis.process.concurrency` | `0` | The most JDK tool runs that happen at once across the whole build; `0` means no limit. |
@@ -397,10 +398,11 @@ Wired by keys in `packaging.properties` - see *[Packaging](/tool/packaging/)*.
 | `legal` | The legal notices of the module's jar and its runtime dependencies, for its `.jmod` and a native image. |
 | `jmod` | A `.jmod` link-time module. |
 | `jlink` | A custom runtime image. |
-| `jpackage` | A native installer or self-contained app image. |
+| `jpackage` | A native installer or self-contained app image; with several types, every package `jpackage` lists. |
+| `jpackage-<type>` | One type's package, where several types are built or the container image needs one `jpackage` does not list. |
 | `bundle` | A self-contained `bundle.zip` of the application. |
 | `launcher` | A single executable launcher jar (see *[Jenesis Launcher](/launcher/)*). |
-| `docker` | A container build context - a `Dockerfile` and the jars it copies. |
+| `docker` | A container build context - a `Dockerfile` and the jars it copies, or the jpackage package `docker.jpackage` names. |
 | `native-image` | A GraalVM native executable. |
 | `modules` | The dependency closure rewritten into explicit named modules (from `modules.properties`). |
 

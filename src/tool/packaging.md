@@ -16,12 +16,12 @@ that declares a main class.
 
 | Key in `packaging.properties` | Produces |
 | --- | --- |
-| `jpackage=app-image` \| `deb` \| `rpm` \| `dmg` \| `pkg` \| `exe` \| `msi` | a self-contained application image or a native installer |
+| `jpackage=app-image` \| `deb` \| `rpm` \| `dmg` \| `pkg` \| `exe` \| `msi` | a self-contained application image or a native installer, one per type for several types separated by commas |
 | `jlink=true` | a custom runtime image (modular only) |
 | `jmod=true` | a `.jmod` module file (modular only) |
 | `bundle=true` | a `bundle.zip` to drop onto a stock JRE |
 | `launcher=true` | a single executable jar |
-| `docker=<base image>` | a container build context - a `Dockerfile` and the jars it copies, labelled by `docker.label.<name>=<value>` lines |
+| `docker=<base image>` | a container build context - a `Dockerfile` and the jars it copies, labelled by `docker.label.<name>=<value>` lines, or a jpackage package with `docker.jpackage=<type>` |
 | `native=true` | a GraalVM native binary |
 
 <div class="note">
@@ -83,6 +83,9 @@ FROM debian:stable-slim
 COPY target/stage/packages/output/demo.modular.executable /opt/app
 ENTRYPOINT ["/opt/app/bin/demo.modular.executable"]
 ```
+
+`docker.jpackage=app-image` writes this file for you, as *[A container build context](#a-container-build-context)*
+below shows.
 
 <div class="tip">
   jpackage links the bundled runtime from <strong>the very JDK that compiled the code and ran the tests</strong>.
@@ -150,6 +153,31 @@ An installer carries the whole bundled runtime, so it is tens of megabytes. Prod
 own packaging tooling on the `PATH`: `dpkg-deb`/`fakeroot` for `deb` and `rpmbuild` for `rpm` on Linux, the
 WiX Toolset on Windows, the bundled `productbuild`/`hdiutil` on macOS. For that reason an installer is usually
 built locally, while the tooling-free `app-image` covers the packaging path in CI.
+
+### Several types in one build
+
+`jpackage` takes several types, separated by commas, and builds one package per type. Each type is built
+once, and every package is staged side by side under `stage/packages/`:
+
+```properties
+# build.jenesis/packaging.properties
+jpackage=app-image,deb
+```
+
+```
+target/stage/packages/output/
+|-- demo.modular.executable/                the application image
+`-- demo.modular.executable_1.0_amd64.deb   the installer
+```
+
+Each type is handed only the flags it takes, so a derived installer flag such as `--about-url` never reaches
+the application image. What `process-jpackage.properties` sets reaches every type, and a
+`process-jpackage-<type>.properties` beside it adds flags for that type alone:
+
+```properties
+# build.jenesis/process-jpackage-deb.properties
+--linux-deb-maintainer=ops@example.com
+```
 
 {% demos 8, 9 %}
 
@@ -352,6 +380,54 @@ replaces:
 ```dockerfile
 ENV JDK_JAVA_OPTIONS="${JDK_JAVA_OPTIONS} --add-modules com.example.extension"
 ```
+
+### A jpackage package in the image
+
+`docker.jpackage=<type>` beside `docker=<image>` puts a jpackage package into the image instead of the jars
+and the argument file. The package carries its own runtime, so the base image needs no Java at all:
+
+```properties
+# build.jenesis/packaging.properties
+docker=debian:stable-slim
+docker.jpackage=app-image
+```
+
+The staged context then holds the application image beside the `Dockerfile`, which starts its launcher:
+
+```dockerfile
+FROM debian:stable-slim
+LABEL ...
+WORKDIR /app
+COPY ["demo.modular.executable/", "/app/"]
+ENTRYPOINT ["/app/bin/demo.modular.executable"]
+```
+
+The type is one a Linux image can run, and any other is refused:
+
+| Type | In the image |
+| --- | --- |
+| `app-image` | copied to `/app` and started by its own launcher |
+| `deb` | installed with `apt-get`, which also installs the system libraries the package declares |
+| `rpm` | installed with `dnf`, `yum` or `zypper`, whichever the base image has, or else with `rpm` |
+
+An installed `deb` or `rpm` is started through `/app/launcher`, a link to the launcher the package installed.
+The labels are written as before. The `/app/extensions/` folders have no counterpart here, because jpackage
+fixes the application and its runtime when it links them.
+
+The type is built for the image whether or not `jpackage` lists it, and staged under `stage/packages/` only
+when it does. A type both name is built once:
+
+| `packaging.properties` | Staged under `stage/packages/` | In the image |
+| --- | --- | --- |
+| `docker.jpackage=app-image` | nothing | an application image |
+| `jpackage=deb` and `docker.jpackage=app-image` | the `deb` | an application image |
+| `jpackage=app-image,deb` and `docker.jpackage=deb` | both | the staged `deb` |
+
+<div class="warning">
+  jpackage builds packages for the platform it runs on, so an image of a jpackage package needs a build on
+  Linux. On macOS or Windows the build stops and names <code>-Djenesis.project.docker=true</code>, which
+  runs the build in a Linux container instead.
+</div>
 
 <div class="note">
   The build never invokes a container tool - it writes files - so producing the context needs no Docker
