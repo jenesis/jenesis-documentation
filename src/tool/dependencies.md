@@ -142,14 +142,19 @@ The `dependencies` selector prints each module's resolved tree, the way `mvn dep
 java build/jenesis/Make.java dependencies
 ```
 
-Each module gets one tree per scope, starting from the module itself and written like any other node: the
-coordinate it is published under, its version, the scope and its module name, tagged `local` with the folder
-it is built from (`maven/greeter/greeter 0-SNAPSHOT [compile] (module greeter, local ./sources)`). A module
-built in the project carries the same `local` tag and folder wherever it appears in another module's tree.
-Each node below shows the version every parent requested, the **negotiated** version inline when it differs
-(`[1,2] -> 2`), the scope, the dependency's licence (`{Apache-2.0}`), and the module name. A per-module
-*Resolved dependencies* list and a licence summary follow the tree. It is the fastest way to answer "why is
-this version on my class path?" before you pin anything.
+Each module gets one tree, starting from the module itself and written like any other node: the coordinate it
+is published under, its version, the scopes it resolves and its module name, tagged `local` with the folder it
+is built from (`maven/greeter/greeter 0-SNAPSHOT [compile, runtime] (module greeter, local ./sources)`). A
+module built in the project carries the same `local` tag and folder wherever it appears in another module's
+tree. Each node below shows the version every parent requested, the **negotiated** version inline when it
+differs (`[1,2] -> 2`), the scopes it is resolved in, the dependency's licence (`{Apache-2.0}`), and the module
+name. A dependency that only one scope reaches names that scope alone (`[runtime]`), and one whose negotiated
+version differs between the scopes is listed once per version. A per-module *Resolved dependencies* list and a
+licence summary follow the tree. It is the fastest way to answer "why is this version on my class path?"
+before you pin anything.
+
+`-Djenesis.tree.scopes=separate` prints one tree per module and scope instead, each starting from the module
+in that scope, with every node below it carrying the scope it was declared with.
 
 When the whole closure is more than you want to read, `-Djenesis.tree.format` narrows what the trees show:
 
