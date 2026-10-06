@@ -355,6 +355,7 @@ password location is missing.
 | `jenesis.print.aliases` | `false` | Print an `[ALIAS]` line per `@jenesis.alias` whose target already declares that module name. |
 | `jenesis.print.jreleaser` | `false` | Stream the release tool's output. |
 | `jenesis.tree.format` | `full` | The `dependencies` tree rendering: `full` or `compact`. |
+| `jenesis.tree.scopes` | `merged` | The `dependencies` trees per module: `merged` prints one tree whose every node names the scopes it is resolved in, `separate` one tree per scope. |
 | `jenesis.tree.tests` | `true` | Include the test modules in the `dependencies` trees and their licence summary. |
 | `jenesis.executor.digest` | `MD5` | Digest for the per-file content and per-step config hashes. |
 | `jenesis.executor.timeout` | `PT0S` | ISO-8601 per-step timeout; `PT0S` disables it. |

@@ -214,16 +214,15 @@ java build/jenesis/Make.java dependencies
 ```
 
 ```
-maven/greeter/greeter 0-SNAPSHOT [compile] (module greeter, local ./sources)
-└─ maven/org.apache.commons/commons-lang3 3.20.0 [compile] (module org.apache.commons.lang3) {Apache-2.0}
+maven/greeter/greeter 0-SNAPSHOT [compile, runtime] (module greeter, local ./sources)
+└─ maven/org.apache.commons/commons-lang3 3.20.0 [compile, runtime] (module org.apache.commons.lang3) {Apache-2.0}
 ```
 
 The tree starts from your own module, written like every line below it: the coordinate it is published under,
-its version, the scope the tree resolves and its **Java module name**, tagged `local` with the folder it is
-built from. Every dependency hangs below it with the resolution key, the version that resolved, the Maven
-scope, the module name it carries and its declared **licence**: a real module graph, not a flat class path. A
-second tree follows for the `runtime` scope, and the selector also reports the licences and the module shape
-of the whole closure.
+its version, the scopes it resolves and its **Java module name**, tagged `local` with the folder it is built
+from. Every dependency hangs below it with the resolution key, the version that resolved, the scopes it is
+resolved in, the module name it carries and its declared **licence**: a real module graph, not a flat class
+path. The selector also reports the licences and the module shape of the whole closure.
 
 ### Staging it for release
 
