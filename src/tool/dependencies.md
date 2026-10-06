@@ -149,12 +149,14 @@ module built in the project carries the same `local` tag and folder wherever it 
 tree. Each node below shows the version every parent requested, the **negotiated** version inline when it
 differs (`[1,2] -> 2`), the scopes it is resolved in, the dependency's licence (`{Apache-2.0}`), and the module
 name. A dependency that only one scope reaches names that scope alone (`[runtime]`), and one whose negotiated
-version differs between the scopes is listed once per version. A per-module *Resolved dependencies* list and a
-licence summary follow the tree. It is the fastest way to answer "why is this version on my class path?"
-before you pin anything.
+version differs between the scopes is listed once per version. A per-module *Resolved dependencies* list,
+sorted by name, follows the tree, and a licence and module summary closes the output. It is the fastest way to
+answer "why is this version on my class path?" before you pin anything.
 
-`-Djenesis.tree.scopes=separate` prints one tree per module and scope instead, each starting from the module
-in that scope, with every node below it carrying the scope it was declared with.
+The list and the summary count only what the build downloads: the modules the project builds itself stay in
+the trees but are left out of both unless `-Djenesis.tree.internal=true` is set. `-Djenesis.tree.merge=false`
+prints one tree per module and scope instead of one per module, each starting from the module in that scope,
+with every node below it carrying the scope it was declared with.
 
 When the whole closure is more than you want to read, `-Djenesis.tree.format` narrows what the trees show:
 
