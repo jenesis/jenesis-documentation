@@ -243,6 +243,11 @@ read and used only when the repository cannot be reached, so a build that resolv
 offline, at the versions it last saw. Nothing is written into `~/.m2/repository`, whose `maven-metadata.xml`
 belongs to Maven.
 
+To make sure a build touches no network at all, say so with `-Djenesis.repository.offline=true`. Everything then
+comes from `.jenesis/artifacts`, the local Maven repository or a local module folder, and a file that is in none
+of them fails the build with its URL named instead of being downloaded. A pinned project needs nothing else once
+it has built once, which the `pinning` demo shows.
+
 A resolution is still only repeated when the dependency set changes, because the step that performs it is
 cached like every other. `RELEASE` therefore means *the newest version as of the last resolution*, which is
 what `pin` exists to make explicit.
