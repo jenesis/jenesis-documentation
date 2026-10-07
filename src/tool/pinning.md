@@ -186,6 +186,10 @@ every version was a decision somebody wrote down.
   a checksum to satisfy strict mode.
 </div>
 
+A pinned project that has built once holds everything it needs in `.jenesis/artifacts`, so it can build with
+`-Djenesis.repository.offline=true`, which downloads nothing and fails the build with the URL of any file the
+local caches lack - see *[Dependencies](/tool/dependencies/#how-fresh-the-metadata-is)*.
+
 {% demos 28 %}
 
 ## Refreshing the pins

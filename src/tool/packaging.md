@@ -521,7 +521,7 @@ directory to maintain.
   inside every jar - the way to vet exactly what reflection is baked into a published artifact.
 </div>
 
-{% demos 69 %}
+{% demos 71 %}
 
 ### native-image or jpackage?
 
@@ -567,4 +567,4 @@ takes the whole folder below it.
   adds nothing to <code>legal/</code>, so check its licence before shipping it.
 </div>
 
-{% demos 9, 21, 69 %}
+{% demos 9, 21, 71 %}

@@ -282,6 +282,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.repository.backoff` | `125` | Initial retry wait in milliseconds, doubling each attempt. |
 | `jenesis.repository.connect.timeout` | `10000` | Connect timeout for a repository fetch, in milliseconds. |
 | `jenesis.repository.read.timeout` | `30000` | Read timeout for a repository fetch, in milliseconds. |
+| `jenesis.repository.discover` | `false` | Before the module and Maven repositories, read `https://<domain>/.well-known/java-repository.properties` of the domain a module or Maven group is named after - see *[Discovery](/tool/discovery/)*. |
 | `jenesis.repository.offline` | `false` | Download nothing. Modules, artifacts, checksums and keys come from `.jenesis/artifacts`, the local Maven repository or a local module folder, and Maven metadata an earlier resolution stored answers a version range at the versions it named then. A fetch that would need the network fails the build with its URL named. The remote build cache is skipped, and a vulnerability lookup or a release fails the build. |
 
 ### Caching
