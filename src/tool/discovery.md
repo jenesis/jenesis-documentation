@@ -5,8 +5,8 @@ description: A proposed well-known file by which the owner of a domain says how 
 ---
 
 <div class="warning">
-  This page describes a <strong>proposal</strong>. The file format and the <code>jenesis.repository.discover</code>
-  setting below are not part of a Jenesis release, and both may change before they become one.
+  The file format on this page is a <strong>proposal</strong> for any Java tool to adopt, so it may still change
+  as others take it up. Jenesis reads it where <code>jenesis.repository.discover</code> is set.
 </div>
 
 A Java module name and a Maven groupId are reversed domain names: `net.bytebuddy` belongs to `bytebuddy.net`.
@@ -235,6 +235,8 @@ domain's file once per build, and resolves anything a file does not name exactly
 The file is always read at `https://<domain>/.well-known/java-repository.properties`: its location is a convention,
 not a setting, so every build asks a domain the same question. A location named over plain `http` is followed only
 where `jenesis.repository.insecure` allows it, and under `jenesis.repository.offline` no domain is asked at all.
+
+{% demos 68, 69 %}
 
 ## Example: publishing Jenesis through its GitHub releases
 

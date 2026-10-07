@@ -281,7 +281,7 @@ fixes the line endings of every file Git treats as text, whatever machine checks
 * text=auto eol=lf
 ```
 
-{% demos 68 %}
+{% demos 70 %}
 
 ## Passing extra arguments to a tool
 
