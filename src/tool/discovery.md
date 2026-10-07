@@ -1,5 +1,5 @@
 ---
-order: 18
+order: 17
 title: Discovery (proposal)
 description: A proposed well-known file by which the author of a library says where its Maven artifacts and Java modules are published - why it matters, how to describe Maven artifacts, modules mapped to Maven and pure module repositories, and the grammar and algorithm for a client.
 ---
