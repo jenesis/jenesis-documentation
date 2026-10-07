@@ -14,51 +14,82 @@ This proposal lets whoever owns that domain say, in one small file on its websit
 modules named after it are published. A build that reads the file downloads them from there - a GitHub release,
 the author's own server, or a Maven repository of the author's choosing - before it asks any central repository.
 
-The file is a plain `java.util.Properties` file at a fixed address, so any tool can read it with the JDK alone,
+The file is a plain
+[`java.util.Properties`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Properties.html)
+file at a fixed address, so any tool can read it with the JDK alone,
 and it names Maven groups and Java modules rather than a build tool. Publishing it costs the author a static
 file; reading it costs a build one request per vendor.
 
 ## Do you suggest not having a central repository?
 
 No. A central repository that keeps every version ever published, immutable and in one place, has real value,
-and nothing here replaces it. But that infrastructure is expensive, and Maven Central - Maven's default
-repository, and the one most Java builds resolve from - is under constant pressure to pay for itself.
+and nothing here replaces it. But that infrastructure is expensive, and Maven Central -
+[Maven's default repository](https://maven.apache.org/ref/current/maven-model-builder/super-pom.html), and the
+one most Java builds resolve from - is under constant pressure to pay for itself.
 
 Since October 2026, publishing an artifact of a commercial nature to Maven Central requires Sonatype's paid
-Publisher Pro, and so does publishing beyond monthly quotas on file count, release count and release size.
-Sonatype sets those quotas where the busiest tenth of publishers begin, and says they may be adjusted over time.
-Community projects can ask for an exemption, which Sonatype grants case by case.
+[Publisher Pro](https://central.sonatype.org/news/20260908_publisher_tiers_commercial_use/), and so does
+publishing beyond [monthly quotas](https://central.sonatype.org/publish/maven-central-publishing-limits/) on file
+count, release count and release size, which
+[took effect](https://community.sonatype.com/t/maven-central-publishing-limits-are-now-in-effect/16675) the same
+month. Sonatype sets the quotas where the busiest tenth of publishers begin, counts every signature, checksum,
+POM, sources and javadoc jar as a file, and says the quotas may be adjusted over time. Community projects can ask
+for an exemption, which Sonatype grants case by case.
 
-Byte Buddy would, for the most part, have stayed within the file and release quotas set today. A release of it
-now publishes about 120 files and close to 70 MB, though, so a second release in the same month passes the
-size quota - as it did in about half the months since 2023 in which Byte Buddy released. And nothing guarantees
-that the quotas will not be lowered: the free Community Edition of Nexus Repository was launched in 2025 with
-limits of 100,000 components and 200,000 requests, which a later release cut to 40,000 components and 100,000
-requests a day. An author who gives away free code should not depend on such terms. That is not satisfactory.
+Byte Buddy would, for the most part, have stayed within the file and release quotas set today. A
+[release of it](https://repo1.maven.org/maven2/net/bytebuddy/) now publishes about 120 files and close to 70 MB,
+though, so a second release in the same month passes the size quota - as happened in about half the months since
+2023 in which Byte Buddy released. And nothing guarantees that the quotas will not be lowered: the free Community
+Edition of Nexus Repository was
+[launched in 2025](https://www.sonatype.com/blog/sonatype-nexus-repository-community-edition) with limits of
+100,000 components and 200,000 requests, which a
+[later release](https://community.sonatype.com/t/sonatype-nexus-repository-3-87-0-released/15852) cut to
+[40,000 components and 100,000 requests a day](https://help.sonatype.com/en/usage-center.html).
 
-The discovery file gives authors a second way to distribute what they build, beside the central one rather than
-instead of it:
+### What quotas do to what is published
 
-- **Authors decide** where they publish what, and how often. An author who does not accept a central
-  repository's terms of use can still publish, and builds still find the library, by the domain its name
-  reverses to.
-- **Ownership is the same as today.** Sonatype grants a groupId to whoever proves, by a DNS record, that they
-  own the domain it reverses to - the very domain whose file a build reads. A change of ownership is caught by
-  pinned checksums, as Jenesis, Gradle's dependency verification and Bazel's pinned Maven installs record them,
-  not by the place a file was downloaded from.
+The quotas are counted per organisation, across all of its namespaces, and every release must carry
+[sources, javadoc, signatures and checksums](https://central.sonatype.org/publish/requirements/). An author who
+nears them can only publish less: merge small modules into larger ones or drop them, release fixes less often,
+or stop publishing a second project that shares the organisation. Each of these choices is reasonable for one
+author. Together they leave less on offer - coarser modules, slower fixes, and side projects that are never
+published - and that is a cost every user of the ecosystem pays, though no invoice shows it.
+
+### A second leg of distribution
+
+The discovery file turns the question around: it lets authors distribute what they build themselves, beside the
+central repository rather than instead of it, and it frees them from fitting their work to someone else's
+quota. Some already do:
+[the Shibboleth project does not publish OpenSAML to Maven Central](https://shibboleth.atlassian.net/wiki/spaces/DEV/pages/1123844333),
+because Central's terms require an indemnification its developers will not take on personally - the older
+versions found there were uploaded by others - and
+[Jenkins releases its plugins and libraries](https://www.jenkins.io/doc/developer/publishing/artifact-repository/)
+from its own repository alone. Today, a build finds such a library only once its user configures that
+repository; with a discovery file, it is found by its name.
+
+- **Authors decide** where they publish what, and how often, including those who do not accept a central
+  repository's terms.
+- **Ownership is the same as today.** Sonatype grants a groupId to whoever proves, by a
+  [DNS record](https://central.sonatype.org/register/namespace/), that they own the domain it reverses to - the
+  very domain whose file a build reads. A change of ownership is caught by pinned checksums, as Jenesis,
+  [Gradle's dependency verification](https://docs.gradle.org/current/userguide/dependency_verification.html) and
+  [Bazel's pinned Maven installs](https://github.com/bazel-contrib/rules_jvm_external) record them, not by the
+  place a file was downloaded from.
 - **Authors control their costs.** An author can remove an outdated, unmaintained version to save hosting, and
-  publish new versions as often as needed, without a subscription.
+  publish modules as finely, and new versions as often, as the work calls for, without a subscription.
 - **Central repositories stay useful.** A file can point at Maven Central itself, which is where builds look
   today anyway. A repository that keeps the full collection can offer it as a service, and companies have even
   more reason than before to keep copies of what they depend on in their own mirrors.
 - **The load is shared.** Every download served by an author's own hosting is one Maven Central does not serve.
 
-In short, hosting moves back towards the authors and developers who produce the code, as a second leg of library
-distribution, without changing anything for those who also publish to a central repository.
+Hosting thereby moves back towards the authors and developers who produce the code, as a second leg of library
+distribution that changes nothing for those who also publish to a central repository - and that leaves what an
+author publishes to the author.
 
 ## Describing Maven artifacts
 
-A domain publishes the file at `https://<domain>/.well-known/java-repository.properties`, in UTF-8. Its `maven`
+A domain publishes the file at `https://<domain>/.well-known/java-repository.properties`, a
+[well-known location](https://www.rfc-editor.org/rfc/rfc8615), in UTF-8. Its `maven`
 key says where the artifacts of every group below that domain are:
 
 ```properties
@@ -101,7 +132,8 @@ signature is never answered with the jar itself.
 Two keys beside a key restrict the versions it serves, and leave every other version to the usual repositories:
 
 - **`<key>.since=<version>`** names the first version, so an author can move downloads to a new place from one
-  release on. Versions are ordered as Maven orders them: `1.2.3-rc.1` comes before `1.2.3`, `1.10.0` after it.
+  release on. Versions are ordered as
+  [Maven orders them](https://maven.apache.org/pom.html#version-order-specification): `1.2.3-rc.1` comes before `1.2.3`, `1.10.0` after it.
 - **`<key>.suffixes=<suffix>[,<suffix>...]`** lists the qualifiers it serves - the part of a version after its
   first dash, matched by its leading word, ignoring case. `none` names a version without one; without the key,
   every version is served.
@@ -119,16 +151,19 @@ against the template:
 maven.latest=https://github.com/jenesis/jenesis/releases/latest/download/{artifactId}.pom
 ```
 
-GitHub redirects `releases/latest/download/<name>` to `releases/download/v<version>/<name>` of the newest
-release, whatever `<name>` is, so the link names the version without downloading anything. The version is then
+GitHub [redirects](https://docs.github.com/en/repositories/releasing-projects-on-github/linking-to-releases)
+`releases/latest/download/<name>` to `releases/download/v<version>/<name>` of the newest release, whatever
+`<name>` is, so the link names the version without downloading anything. The version is then
 checked like any other, and the template answers Maven metadata naming it, merged with that of the usual
 repositories.
 
 ### Publishing through GitHub releases
 
 Jenesis publishes this way itself. Its release stages a Maven repository, and [JReleaser](https://jreleaser.org)
-attaches the jar, the POM, the sources jar and the javadoc jar to the GitHub release. JReleaser signs every file
-it attaches, and `checksum.individual` has it upload a `.sha256` beside each:
+attaches the jar, the POM, the sources jar and the javadoc jar to the GitHub release. JReleaser
+[signs](https://jreleaser.org/guide/latest/reference/signing.html) every file it attaches, and
+[`checksum.individual`](https://jreleaser.org/guide/latest/reference/checksum.html) has it upload a `.sha256`
+beside each:
 
 ```yaml
 signing:
