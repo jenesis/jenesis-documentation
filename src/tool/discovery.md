@@ -69,12 +69,18 @@ repository; with a discovery file, it is found by its name.
 
 - **Authors decide** where they publish what, and how often, including those who do not accept a central
   repository's terms.
-- **Ownership is the same as today.** Sonatype grants a groupId to whoever proves, by a
+- **Ownership follows the domain.** Sonatype grants a new groupId to whoever proves, by a
   [DNS record](https://central.sonatype.org/register/namespace/), that they own the domain it reverses to - the
-  very domain whose file a build reads. A change of ownership is caught by pinned checksums, as Jenesis,
+  very domain whose file a build reads. In 2024,
+  [MavenGate](https://oversecured.com/blog/introducing-mavengate-a-supply-chain-attack-method-for-java-and-android-applications)
+  showed how lapsed domains could be bought to take over groupIds; Sonatype
+  [answered](https://thehackernews.com/2024/01/hackers-hijack-popular-java-and-android.html) that its checks
+  prevent it and disabled the accounts of expired domains. A discovery file, by contrast, always speaks for
+  whoever owns the domain now. What protects a build is what it recorded: pinned checksums - as Jenesis,
+  [Maven's trusted checksums](https://maven.apache.org/resolver/expected-checksums.html),
   [Gradle's dependency verification](https://docs.gradle.org/current/userguide/dependency_verification.html) and
-  [Bazel's pinned Maven installs](https://github.com/bazel-contrib/rules_jvm_external) record them, not by the
-  place a file was downloaded from.
+  [Bazel's pinned Maven installs](https://github.com/bazel-contrib/rules_jvm_external) record them, compared
+  [side by side](/why/tool/#verify-what-the-build-downloads) - and declared signatures.
 - **Authors control their costs.** An author can remove an outdated, unmaintained version to save hosting, and
   publish modules as finely, and new versions as often, as the work calls for, without a subscription.
 - **Central repositories stay useful.** A file can point at Maven Central itself, which is where builds look
@@ -157,41 +163,6 @@ GitHub [redirects](https://docs.github.com/en/repositories/releasing-projects-on
 checked like any other, and the template answers Maven metadata naming it, merged with that of the usual
 repositories.
 
-### Publishing through GitHub releases
-
-Jenesis publishes this way itself. Its release stages a Maven repository, and [JReleaser](https://jreleaser.org)
-attaches the jar, the POM, the sources jar and the javadoc jar to the GitHub release. JReleaser
-[signs](https://jreleaser.org/guide/latest/reference/signing.html) every file it attaches, and
-[`checksum.individual`](https://jreleaser.org/guide/latest/reference/checksum.html) has it upload a `.sha256`
-beside each:
-
-```yaml
-signing:
-  active: ALWAYS
-  pgp:
-    armored: true
-    mode: MEMORY
-
-release:
-  github:
-    owner: jenesis
-    name: jenesis
-    tagName: 'v{{projectVersion}}'
-
-checksum:
-  individual: true
-
-files:
-  artifacts:
-    - path: 'target/stage/maven/output/build/jenesis/build.jenesis/{{projectVersion}}/build.jenesis-{{projectVersion}}.jar'
-    - path: 'target/stage/maven/output/build/jenesis/build.jenesis/{{projectVersion}}/build.jenesis-{{projectVersion}}.pom'
-    - path: 'target/stage/maven/output/build/jenesis/build.jenesis/{{projectVersion}}/build.jenesis-{{projectVersion}}-sources.jar'
-    - path: 'target/stage/maven/output/build/jenesis/build.jenesis/{{projectVersion}}/build.jenesis-{{projectVersion}}-javadoc.jar'
-```
-
-Through `{type}` and `{-classifier}`, the template above serves each of those files and every `.asc`, and
-checks each against its `.sha256`.
-
 ### Reading the files with Jenesis
 
 Jenesis reads the files where `jenesis.repository.discover` is set, on the command line or in
@@ -258,12 +229,75 @@ Jenesis, the `modular` layout - and so downloads `build.jenesis-<version>.jar` w
 as the latest link too, `https://repo.jenesis.build/module/{module}/{module}.jar`: it names the version in a
 `Jenesis-ModuleVersion` header, which is read before the redirect.
 
-A key that does not answer leaves the request to the other. A domain that publishes both `module` and
-`moduletomaven` therefore serves either kind of build, and the complete file at
-[`https://jenesis.build/.well-known/java-repository.properties`](/.well-known/java-repository.properties)
-is the three keys above with their restrictions and latest links.
+A key that does not answer leaves the request to the other, so a domain that publishes both `module` and
+`moduletomaven` serves either kind of build.
 
 {% demos 68 %}
+
+## Publishing everything a build may ask for
+
+One release can serve every kind of build at once: the module path, a module resolved through Maven, and a Maven
+dependency, each with its sources, javadoc, signatures and checksums. Jenesis does so itself. Its release
+stages a Maven repository, and [JReleaser](https://jreleaser.org) attaches the jar, the POM, the sources jar and
+the javadoc jar to the GitHub release. JReleaser [signs](https://jreleaser.org/guide/latest/reference/signing.html)
+every file it attaches, and [`checksum.individual`](https://jreleaser.org/guide/latest/reference/checksum.html)
+has it upload a `.sha256` beside each, as in this excerpt of Jenesis's own
+[`jreleaser.yml`](https://github.com/jenesis/jenesis/blob/main/jreleaser.yml):
+
+```yaml
+signing:
+  active: ALWAYS
+  pgp:
+    armored: true
+    mode: MEMORY
+
+release:
+  github:
+    owner: jenesis
+    name: jenesis
+    tagName: 'v{{projectVersion}}'
+
+checksum:
+  individual: true
+
+files:
+  artifacts:
+    - path: 'target/stage/maven/output/build/jenesis/build.jenesis/{{projectVersion}}/build.jenesis-{{projectVersion}}.jar'
+    - path: 'target/stage/maven/output/build/jenesis/build.jenesis/{{projectVersion}}/build.jenesis-{{projectVersion}}.pom'
+    - path: 'target/stage/maven/output/build/jenesis/build.jenesis/{{projectVersion}}/build.jenesis-{{projectVersion}}-sources.jar'
+    - path: 'target/stage/maven/output/build/jenesis/build.jenesis/{{projectVersion}}/build.jenesis-{{projectVersion}}-javadoc.jar'
+```
+
+Every release then holds `build.jenesis-<version>.jar`, `.pom`, `-sources.jar` and `-javadoc.jar`, each with an
+`.asc` and a `.sha256`, and one file at
+[`https://jenesis.build/.well-known/java-repository.properties`](/.well-known/java-repository.properties) points
+every kind of request at them:
+
+```properties
+module=https://github.com/jenesis/jenesis/releases/download/v{version}/{module}-{version}{-classifier}.{type}
+module.latest=https://github.com/jenesis/jenesis/releases/latest/download/{module}.jar
+module.suffixes=none
+moduletomaven=build.jenesis:{module}
+maven=https://github.com/jenesis/jenesis/releases/download/v{version}/{artifactId}-{version}{-classifier}.{type}
+maven.latest=https://github.com/jenesis/jenesis/releases/latest/download/{artifactId}.pom
+maven.suffixes=none
+```
+
+| A build asks for | Answered by | Downloads |
+|---|---|---|
+| `requires build.jenesis` on the module path | `module` | `build.jenesis-<version>.jar` |
+| `requires build.jenesis`, resolved through Maven | `moduletomaven`, then `maven` | `build.jenesis-<version>.pom`, then the jar |
+| the Maven dependency `build.jenesis:build.jenesis:<version>` | `maven` | the POM, then the jar |
+| its sources or javadoc | `module` or `maven` | `-sources.jar`, `-javadoc.jar` |
+| a signature | `module` or `maven` | `.jar.asc`, `.pom.asc` |
+| a checksum, to check each download | the same template | `.jar.sha256`, `.pom.sha256` |
+| the newest version | `module.latest`, `maven.latest` | nothing: a `HEAD` request that GitHub redirects |
+
+The `module` template names files by module name, which works because Jenesis's artifactId is its module name.
+Where the two differ, name the files the way the artifacts are named instead, with `{-suffix}` -
+`.../byte-buddy{-suffix}-{version}{-classifier}.{type}` - or publish `moduletomaven` alone. A release made before
+its POM was attached leaves that POM to the usual repositories, if the build has any.
+
 
 ## Implementing a client
 
@@ -335,4 +369,8 @@ latest link that leads elsewhere or names no version.
 Every location is read over `https` once its placeholders are filled in, and a redirect is followed only to
 `http` or `https`, so no file can make a tool read a local `file:` or `jar:` URI. A certificate that does not
 verify fails the build. The file only says where a file comes from: a pinned checksum or a declared signature
-still decides what is accepted, so a domain that changed hands can break a build but never change what it trusts.
+still decides what is accepted. A domain that changes hands passes its file to the new owner, so for every
+version a build pinned, the new owner can break the build but never change what it accepts; a version the build
+did not pin is only as trustworthy as the domain's owner, unless a
+[declared signature](/tool/securing-the-supply-chain/#provenance-who-produced-the-bytes) names who must have
+produced it.
