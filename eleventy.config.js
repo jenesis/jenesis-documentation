@@ -20,6 +20,7 @@ export default function (eleventy) {
   eleventy.addPassthroughCopy({ "src/assets": "assets" });
   eleventy.addPassthroughCopy({ "src/CNAME": "CNAME" });
   eleventy.addPassthroughCopy({ "src/KEYS": "KEYS" });
+  eleventy.addPassthroughCopy({ "src/.well-known": ".well-known" });
 
   // Every chapter heading gets an id derived from its own words, so a section can be linked to and the
   // copy-link affordance in anchor.js has something to copy. A heading that already carries a hand-written
