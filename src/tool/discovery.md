@@ -29,6 +29,15 @@ alive. That low barrier to entry is worth keeping. But the infrastructure is exp
 [Maven's default repository](https://maven.apache.org/ref/current/maven-model-builder/super-pom.html), and the
 one most Java builds resolve from - is under constant pressure to pay for itself.
 
+Maven Central is, in effect, a monopoly: one repository, run by one company, that every build looks to and
+that no build replaces on its own. That is a problem in itself, whatever its operator does today. Its operator,
+Sonatype, is a private firm, majority-owned since
+[2019](https://www.sonatype.com/press-releases/vista-acquires-majority-interest-in-sonatype) by the private equity
+firm [Vista Equity Partners](https://www.vistaequitypartners.com/companies/sonatype/). A private firm can change
+its course quickly, all the more after a change of ownership, and the Java ecosystem has no say in either. An
+alternative is therefore a contribution merely by existing: the textbook check on a monopoly is not that it
+behaves well, but that its users could go elsewhere.
+
 Since October 2026, publishing an artifact of a commercial nature to Maven Central requires Sonatype's paid
 [Publisher Pro](https://central.sonatype.org/news/20260908_publisher_tiers_commercial_use/), and so does
 publishing beyond [monthly quotas](https://central.sonatype.org/publish/maven-central-publishing-limits/) on file
