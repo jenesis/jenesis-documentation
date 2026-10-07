@@ -23,7 +23,9 @@ file; reading it costs a build one request per vendor.
 ## Do you suggest not having a central repository?
 
 No. A central repository that keeps every version ever published, immutable and in one place, has real value,
-and nothing here replaces it. But that infrastructure is expensive, and Maven Central -
+and nothing here replaces it. It is also a great way to distribute a small open-source project released now and
+then: one account and one upload, and every build finds the library, with no hosting for its author to keep
+alive. That low barrier to entry is worth keeping. But the infrastructure is expensive, and Maven Central -
 [Maven's default repository](https://maven.apache.org/ref/current/maven-model-builder/super-pom.html), and the
 one most Java builds resolve from - is under constant pressure to pay for itself.
 
@@ -66,6 +68,14 @@ versions found there were uploaded by others - and
 [Jenkins releases its plugins and libraries](https://www.jenkins.io/doc/developer/publishing/artifact-repository/)
 from its own repository alone. Today, a build finds such a library only once its user configures that
 repository; with a discovery file, it is found by its name.
+
+Other ecosystems already distribute this way. Go
+[asks the domain of a module path](https://go.dev/ref/mod#vcs-find) where its code lives, through a `go-import`
+tag the domain serves, and puts a [proxy and a checksum database](https://go.dev/ref/mod#private-module-privacy)
+on top as a cache and a ledger, not as a place every module must be uploaded to. Homebrew
+[formulae](https://docs.brew.sh/Formula-Cookbook) download each package from wherever its project hosts it,
+checked against a SHA-256, and [taps](https://docs.brew.sh/Taps) let anyone publish formulae from a repository
+of their own.
 
 - **Authors decide** where they publish what, and how often, including those who do not accept a central
   repository's terms.
