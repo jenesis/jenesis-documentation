@@ -43,6 +43,14 @@ safe to turn a tool on across an existing codebase without an immediate red buil
 tool in strict mode, where a non-zero tool exit fails the build; that takes a few lines of build code, which
 *Extending the build* introduces.
 
+Report-only covers findings, not a tool that never ran. A linter that fails on its own configuration, and so
+writes no complete report, fails its step either way.
+
+Checkstyle reads `${config_loc}` as the folder of `checkstyle.xml`, as the Maven and Gradle plugins define
+it. A file the configuration names as `${config_loc}/<path>`, such as a suppressions file beside it, is handed
+to Checkstyle with it, and changing that file runs the check again. A path that leaves the folder of
+`checkstyle.xml` is refused.
+
 ### Switching a tool off
 
 To skip a discovered tool without deleting its configuration file, set its property to `false`. Every property
@@ -170,7 +178,8 @@ works for every layout; a `pom.xml` project can also scope it to its tests with 
 
 With the file present, the test step is launched with the JaCoCo agent attached as a `-javaagent`. It
 instruments the run without touching your sources and writes its execution data (`jacoco.exec`); a downstream
-report step renders an HTML and XML report under `reports/jacoco/`. Open the `index.html` to browse coverage
+report step renders an HTML and XML report under `reports/jacoco/`, over the classes of the code under test,
+never the compiled tests themselves. Open the `index.html` to browse coverage
 line by line. JaCoCo, like every tool here, resolves in its own group (`jacoco`) apart from your dependencies.
 
 <div class="note">
@@ -365,7 +374,8 @@ baseline=modular/com.example/library/1.2.3             # served from a named rep
 A module with no Maven coordinate has nothing to default to and says so. The file is read per module, so a
 project-wide `japicmp.properties` without a `baseline` gives every module its own coordinate - a `baseline`
 there would point them all at one artifact, so a per-module baseline belongs in that module's own
-configuration folder.
+configuration folder. A test module, such as the tests of a `pom.xml` project, has no release of its own and is
+never compared.
 
 The remaining keys map onto japicmp's own options:
 
