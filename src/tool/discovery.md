@@ -326,9 +326,8 @@ A key that does not answer leaves the request to the other, so a domain that pub
 ## Publishing everything a build may ask for
 
 One release can serve every kind of build at once: the module path, a module resolved through Maven, and a Maven
-dependency, each with its sources, javadoc, signatures and checksums. Jenesis does so itself. Its release
-stages a Maven repository, and [JReleaser](https://jreleaser.org) attaches the jar, the POM, the sources jar and
-the javadoc jar to the GitHub release. JReleaser [signs](https://jreleaser.org/guide/latest/reference/signing.html)
+dependency, each with its signatures and checksums. Jenesis does so itself. Its release stages a Maven
+repository, and [JReleaser](https://jreleaser.org) attaches the jar and the POM to the GitHub release. JReleaser [signs](https://jreleaser.org/guide/latest/reference/signing.html)
 every file it attaches, and [`checksum.individual`](https://jreleaser.org/guide/latest/reference/checksum.html)
 has it upload a `.sha256` beside each, as in this excerpt of Jenesis's own
 [`jreleaser.yml`](https://github.com/jenesis/jenesis/blob/main/jreleaser.yml):
@@ -353,12 +352,9 @@ files:
   artifacts:
     - path: 'target/stage/maven/output/build/jenesis/build.jenesis/{{projectVersion}}/build.jenesis-{{projectVersion}}.jar'
     - path: 'target/stage/maven/output/build/jenesis/build.jenesis/{{projectVersion}}/build.jenesis-{{projectVersion}}.pom'
-    - path: 'target/stage/maven/output/build/jenesis/build.jenesis/{{projectVersion}}/build.jenesis-{{projectVersion}}-sources.jar'
-    - path: 'target/stage/maven/output/build/jenesis/build.jenesis/{{projectVersion}}/build.jenesis-{{projectVersion}}-javadoc.jar'
 ```
 
-Every release then holds `build.jenesis-<version>.jar`, `.pom`, `-sources.jar` and `-javadoc.jar`, each with an
-`.asc` and a `.sha256`, and one file at
+Every release then holds `build.jenesis-<version>.jar` and `.pom`, each with an `.asc` and a `.sha256`, and one file at
 [`https://jenesis.build/.well-known/java-repository.properties`](/.well-known/java-repository.properties) points
 every kind of request at them:
 
@@ -377,7 +373,6 @@ maven.suffixes=none
 | `requires build.jenesis` on the module path | `module` | `build.jenesis-<version>.jar` |
 | `requires build.jenesis`, resolved through Maven | `moduletomaven`, then `maven` | `build.jenesis-<version>.pom`, then the jar |
 | the Maven dependency `build.jenesis:build.jenesis:<version>` | `maven` | the POM, then the jar |
-| its sources or javadoc | `module` or `maven` | `-sources.jar`, `-javadoc.jar` |
 | a signature | `module` or `maven` | `.jar.asc`, `.pom.asc` |
 | a checksum, to check each download | the same template | `.jar.sha256`, `.pom.sha256` |
 | the newest version | `module.latest`, `maven.latest` | nothing: a `HEAD` request that GitHub redirects |
@@ -405,7 +400,7 @@ a release must be identical to the repository's copy, and a signature is copied,
 read from `MAVEN_REPOSITORY_URI` as Jenesis reads it, or from `--maven`, so the files can come from a mirror such
 as [Google's](https://storage-download.googleapis.com/maven-central/index.html).
 
-`--sources` and `--javadoc` add those jars, but neither is needed. Sources and javadoc are not really repository
+`--sources` and `--javadoc` add those jars, but neither is needed, and Jenesis's own releases attach neither. Sources and javadoc are not really repository
 artifacts: GitHub already publishes the
 [source code of every release](https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives)
 as an archive, and javadoc jars seem rather outdated - Central accepts
