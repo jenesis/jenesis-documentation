@@ -339,6 +339,24 @@ applies to *every* forked `java` process, the program `Execute` runs included, w
   extra <code>javac</code> flags.
 </div>
 
+### Attributes of the jar's manifest
+
+The build writes the jar's manifest itself, so `process-jar.properties` cannot name one: a `--manifest` line
+there fails the build. A `META-INF/MANIFEST.MF` among the module's resources is the basis of the manifest
+instead - beside the sources of a module, or under `src/main/resources/` in a Maven project:
+
+```text
+Manifest-Version: 1.0
+Implementation-Title: Compiler arguments demo
+Implementation-Vendor: Example Corp
+```
+
+The jar's manifest holds these lines and, merged over them, the ones the build writes, such as the location of
+the bill of materials. This is where Maven's `<manifestEntries>` or Gradle's
+`jar.manifest.attributes` go, an `Automatic-Module-Name` among them. Resources are not filtered, so a value
+is written as it stands. An attribute the build writes with a different value fails the build rather than
+being replaced.
+
 {% demos 12 %}
 
 ## Handing a program environment variables
