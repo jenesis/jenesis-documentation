@@ -64,7 +64,7 @@ point runs as `custom/<name>`, in the module build itself:
 | `format` | Beside the stock formatters, handed the same. |
 | `compliance` | Beside the licence and vulnerability checks, handed the manifests and the resolved dependencies. |
 | `binary/generated` | Before compilation, beside the stock generators; a `sources/` tree it writes is compiled with the module. |
-| `binary/compiled` | Beside the stock compilers, handed what they compile. |
+| `binary/compiled` | Beside the stock compilers, handed what they compile; what it writes below `classes/` joins the module's jar, and a class that two compilers or plugins both write fails the build, naming both. |
 | `binary/validate` | After compilation, beside the bytecode checks, handed the compiled classes. |
 | `binary` | Within the module's compile toolchain, handed what the toolchain reads. |
 | `artifact` | Once the module's jar is built, handed it with the module's dependencies. |
