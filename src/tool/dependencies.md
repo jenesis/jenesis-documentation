@@ -185,13 +185,19 @@ When two paths through the graph ask for different versions of the same library,
 default, the rule matches the repository:
 
 - **Maven** coordinates use Maven's own **nearest-wins** conflict resolution, and understand version ranges
-  and the `LATEST`/`RELEASE` selectors - the same behaviour `mvn` gives you.
+  and the `LATEST`/`RELEASE` selectors - the same behaviour `mvn` gives you. `RELEASE` passes over a version
+  with a pre-release qualifier, such as `-rc-1` or `-M2`, while a version without one is published.
 - **Module** names use **first-parent-wins**: the first requirer reached in the resolution walk fixes the
   version, and a later, deeper requirer asking for a different version is ignored.
 
 To override the negotiated result, declare the version you want directly: a `<version>` (or a
 `<dependencyManagement>` entry) in Maven, or a [`@jenesis.pin`](#declaring-a-dependency) tag in a modular
 project. A declared version always beats what negotiation would have chosen.
+
+A Maven coordinate whose POM declares a relocation is resolved at the coordinate it names, and a `[RELOCATED]`
+line says so. A `-SNAPSHOT` version resolves from the local Maven repository, or else as the newest
+timestamped file the remote repository's `maven-metadata.xml` names. A parent POM that cannot be fetched fails
+the build, naming the parent.
 
 ### Choosing a different strategy
 
