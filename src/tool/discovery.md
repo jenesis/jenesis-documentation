@@ -206,10 +206,13 @@ repositories.
 
 Jenesis reads the files where `jenesis.repository.discover` is set, on the command line or in
 `jenesis.properties`. It asks about every Maven group before any configured repository, reads each domain's file
-once per build, and resolves what no file names as it always has:
+once per build, and resolves what no file names as it always has. To rely on the files alone, empty the
+repositories beside them, so that nothing falls back:
 
 ```
 jenesis.repository.discover=true
+jenesis.maven.uri=
+jenesis.module.uri=
 ```
 
 A location over plain `http` is followed only where `jenesis.repository.insecure` allows it, and under
