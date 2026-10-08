@@ -149,6 +149,24 @@ modules require it. It can be tested like any other module: a module tagged `@je
 is run as the other test modules are, and staged as the test variant of `demo.greeter.testing`. Since `abstract`
 is a Java keyword it can never be a module name, so the two forms of the tag never collide.
 
+In every layout a test class is found by Maven's naming: a class named `Test*`, `*Test`, `*Tests`,
+`*TestCase`, `IT*`, `*IT` or `*ITCase` runs, in a named package or in the default one. An abstract class, a
+nested class, the module descriptor and a class of a multi-release overlay are never run.
+
+### Tests that read their resources as files
+
+The tests run against the packaged test jar, so a resource a test loads with `getResource` is an entry
+inside a jar. A test that turns its URL into a `java.io.File` fails there with
+"URI is not hierarchical". `-Djenesis.test.jars=false` runs the tests against the module's classes and
+resources folders instead, as Maven and Gradle do, while the modules they depend on stay jars:
+
+```bash
+java -Djenesis.test.jars=false build/jenesis/Make.java
+```
+
+A module whose tests run on the module path refuses the setting, because a folder of resources is no part of a
+module there.
+
 {% demos 3, 4, 35 %}
 
 ### Skipping the tests

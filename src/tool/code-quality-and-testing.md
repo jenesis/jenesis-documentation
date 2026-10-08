@@ -213,7 +213,8 @@ java -Djenesis.test.tag=fast+-slow,io+-slow build/jenesis/Make.java
 ```
 
 `jenesis.test.filter` takes a comma-separated list of `<classRegex>[#<method>]` entries and runs only what
-matches. `jenesis.test.tag` selects by tag, in a syntax of its own described below.
+matches. The expression matches the whole class name and takes the place of the default naming (`*Test`,
+`*IT` and the rest), so `.*Check` runs classes that the naming would leave out. `jenesis.test.tag` selects by tag, in a syntax of its own described below.
 
 An entry applies to every test module, and a test module where it matches no test fails the build. In a
 project with several test modules, lead the entry with a module's folder and a `/` to keep it to that module's
