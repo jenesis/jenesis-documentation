@@ -217,10 +217,17 @@ module demo.app {
 
 A `pom.xml` project sets the same thing through the `maven.compiler.release` property in its
 `<properties>` block, and `maven.compiler.testRelease`, where it names one, is the release its tests compile
-for.
+for. Without a release, `maven.compiler.target` or else `maven.compiler.source` names it, with `1.8` read as
+`8`, and these are read from a profile the POM activates as well. A POM that names none of them compiles for
+the JDK running the build, and a line says so:
+
+```text
+[RELEASE]   com.example:mig compiles for release 25, the JDK the build runs on, as pom.xml sets neither maven.compiler.release nor its target or source - maven.compiler.release sets it
+```
 
 Without either, the module compiles for the release of the JDK running the build: `--release 25` on any JDK
-25, and Kotlin and Scala sources target the same release. That keeps the output the same across updates and
+25, and Kotlin and Scala sources target the same release, a release of 8 or lower reaching `kotlinc` in the
+`1.8` form it accepts. That keeps the output the same across updates and
 vendors of one JDK. Which JDK runs the build can be named as well, as described under
 [The JDK a build runs on](#the-jdk-a-build-runs-on).
 
