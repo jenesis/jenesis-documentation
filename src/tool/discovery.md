@@ -163,7 +163,7 @@ and that those releases hold no snapshots. A dependency on `build.jenesis:build.
 For `net.bytebuddy.agent`, a tool reads the file of `bytebuddy.net` - the two labels a vendor owns - and the
 file of `agent.bytebuddy.net` only where `bytebuddy.net` publishes none. The first file found speaks for every
 name below its domain, so one request answers for all of a vendor's groups, and a key it does not hold is
-absent rather than asked of a subdomain. A vendor whose subdomains publish files of their own adds `stop=false`:
+absent rather than asked of a subdomain. A vendor whose subdomains publish files of their own adds `delegate=true`:
 those files are then read as well, the most specific one holding a key answers, and the vendor's own entries
 stand for the rest.
 
@@ -374,9 +374,9 @@ The file is read as `java.util.Properties` reads one, with `#` comments and `\` 
 key named twice the last value counts, and a key a reader does not know is ignored, so the format can grow:
 
 ```
-file          = *( entry / stop )
+file          = *( entry / delegate )
 entry         = key "=" value
-stop          = "stop=" ( "true" / "false" )         ; true, the default: no subdomain is read
+delegate      = "delegate=" ( "true" / "false" )     ; false, the default: no subdomain is read
 key           = ( "module" / "moduletomaven" / "maven" ) [ ".since" / ".suffixes" / ".latest" ]
 module        = location
 moduletomaven = coordinate
@@ -409,7 +409,7 @@ To find a key for a module name or a group ID:
    be fetched - a `404`, an unknown host, a proxy that cannot reach it - is absent.
 4. Skip a domain without a file. Where a file holds the key, it becomes the answer, unless its value is a
    coordinate without placeholders and the domain is shorter than the name's own.
-5. Stop after the first file found, unless it says `stop=false`; the last answer found counts.
+5. Stop after the first file found, unless it says `delegate=true`; the last answer found counts.
 
 ### Answering a request
 
@@ -430,7 +430,7 @@ To find a key for a module name or a group ID:
 
 ### Failing and trusting
 
-A tool fails, naming the file, on a key without a value, a suffix that is not a word, a `stop` that is neither
+A tool fails, naming the file, on a key without a value, a suffix that is not a word, a `delegate` that is neither
 `true` nor `false`, an unknown placeholder, a coordinate that names no artifact, a coordinate in `module` or a
 location in `moduletomaven`, a latest link beside a root, a coordinate or a template without `{version}`, and a
 latest link that leads elsewhere or names no version.
