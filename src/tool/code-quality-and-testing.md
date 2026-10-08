@@ -113,7 +113,9 @@ warnings and a handful are errors.
 
 The two halves are independent on purpose, and each fails loudly without the other: with the tag but no
 configuration file the plugin resolves and sits unused, because `javac` runs a plugin only when it is named;
-with the file but no tag the build stops and names the `@jenesis.plugin` line that is missing.
+with the file but no tag the build stops and names the `@jenesis.plugin` line that is missing. A `pom.xml`
+project declares the plugin as a `<!--jenesis.plugin javac maven/com.google.errorprone/error_prone_core-->`
+comment, in the module's POM or in a parent POM in the project, and the build names that comment instead.
 
 <div class="note">
   Error Prone reads <code>com.sun.tools.javac</code> internals that <code>jdk.compiler</code> does not
