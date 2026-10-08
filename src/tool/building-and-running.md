@@ -196,7 +196,8 @@ module demo.app {
 ```
 
 A `pom.xml` project sets the same thing through the `maven.compiler.release` property in its
-`<properties>` block.
+`<properties>` block, and `maven.compiler.testRelease`, where it names one, is the release its tests compile
+for.
 
 Without either, the module compiles for the release of the JDK running the build: `--release 25` on any JDK
 25, and Kotlin and Scala sources target the same release. That keeps the output the same across updates and
@@ -317,7 +318,13 @@ flag with its argument:
 Each key is a flag and its value the flag's argument, so the second line passes `-Xmaxwarns 500`. A key with
 **no value emits a bare flag**, as the first line does; a value with embedded newlines repeats the flag once
 per line. The file merges over the arguments Jenesis already generates - so `javac` here receives both the
-build's own `--release` and your two flags.
+build's own `--release` and your two flags. A properties file splits a line at the first `:` or `=`, so a
+flag that holds one escapes it, as `-Xlint\:all` does.
+
+A flag the module's declaration already hands the tool cannot be set here. A `--release` or
+`--enable-preview` line in `process-javac.properties` fails the build and names where the release is
+declared instead: `@jenesis.release` in `module-info.java`, or `maven.compiler.release` and
+`maven.compiler.testRelease` in a `pom.xml`. Declared there, it reaches every tool that reads it.
 
 The same mechanism works for every tool the build forks: `javac`, `kotlinc`, `scalac`, `jar`, `jmod`, `jlink`,
 `jpackage`, and `native-image`. Two names address the forked JVMs specifically: **`process-java.properties`**
