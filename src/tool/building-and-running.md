@@ -153,7 +153,16 @@ is a Java keyword it can never be a module name, so the two forms of the tag nev
 
 In every layout a test class is found by Maven's naming: a class named `Test*`, `*Test`, `*Tests`,
 `*TestCase`, `IT*`, `*IT` or `*ITCase` runs, in a named package or in the default one. An abstract class, a
-nested class, the module descriptor and a class of a multi-release overlay are never run.
+nested class, the module descriptor and a class of a multi-release overlay are never run. Under JUnit 4, as in
+Surefire, a class so named runs only where it or a superclass declares an `@Test` method, a `@RunWith` or a
+`suite()` method, or where it extends `TestCase`.
+
+On the JUnit Platform every engine on the test path discovers tests, including one that a library or the test
+resources register for a test of their own. `-Djenesis.test.engines` names the engines a run uses by their ids,
+and a leading `-` leaves one out, so `-Djenesis.test.engines=-junit-vintage` runs the Jupiter tests alone. An
+`engines` key in a module's `test.properties` takes the same list and replaces the setting for that module.
+JUnit 4 and TestNG run no platform engine, so they refuse it. The JUnit Platform's console launcher must be
+1.5 or newer; an older one is refused, naming the versions to raise.
 
 ### Tests that read their resources as files
 
