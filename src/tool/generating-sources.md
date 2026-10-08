@@ -62,7 +62,9 @@ folders=schemas
 Now `schemas/user.avsc` is read by the generator *and* packaged, for code that also reads the schema at run
 time. A JAX-WS client is the common case among the other generators, since it reads its WSDL when the
 service class is constructed. `folders` takes a comma-separated list, and each entry is searched under both
-sources and resources.
+sources and resources. In a `pom.xml` project the folder has to be in a resource directory to ship: as with
+Maven, only what a compiler reads - `.java`, `.kt`, `.scala`, `.groovy` - is taken from a source directory, and
+every other file there stays out of the jar.
 
 <div class="note">
   Moving a contract between folders does not re-run the generator. The build links each file under the name
