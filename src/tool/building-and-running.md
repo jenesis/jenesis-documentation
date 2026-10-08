@@ -82,7 +82,9 @@ A file without that last line belongs to a build that is still running or was ki
 A failed step keeps what it wrote. Its `folder` ends in `~` and holds the step's `output/` and, for a tool the
 build ran, the command, the tool's output and its reports under `supplement/`, beside an empty
 `.jenesis.failed` marker. The folder stays until the step comes up again in a later build. A failure that says
-to execute a command names paths relative to the `directory` of the `started` line.
+to execute a command names paths relative to the `directory` of the `started` line. The command is quoted for a POSIX
+shell, and the arguments of a JDK tool such as `javac` or `javadoc` are moved into an argument file under
+`supplement/`, so the line is pasted into a shell as it stands.
 
 The progress lines, the dependency tree and every other line the build prints are coloured with ANSI escape
 sequences. To read them as plain text, from a file or a pipe, pass `-Djenesis.palette.colors=none`.
