@@ -6,7 +6,7 @@ description: A proposed well-known file by which the author of a library says wh
 
 <div class="warning">
   The file format on this page is a <strong>proposal</strong> for any Java tool to adopt, so it may still change
-  as others take it up. Jenesis reads it where <code>jenesis.repository.discover</code> is set.
+  as others take it up. Jenesis reads it where <code>jenesis.repository.discovery</code> is set.
 </div>
 
 A Maven group ID and a Java module name are reversed domain names: `net.bytebuddy` belongs to `bytebuddy.net`.
@@ -215,13 +215,13 @@ it serves, as its metadata - so a version range sees them too.
 
 ### Reading the files with Jenesis
 
-Jenesis reads the files where `jenesis.repository.discover` is set, on the command line or in
+Jenesis reads the files where `jenesis.repository.discovery` is set, on the command line or in
 `jenesis.properties`. It asks about every Maven group before any configured repository, reads each domain's file
 once per build, and resolves what no file names as it always has. To rely on the files alone, empty the
 repositories beside them, so that nothing falls back:
 
 ```
-jenesis.repository.discover=true
+jenesis.repository.discovery=true
 jenesis.maven.uri=
 jenesis.module.uri=
 ```
