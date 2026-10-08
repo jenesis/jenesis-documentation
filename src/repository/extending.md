@@ -27,8 +27,9 @@ module com.example.repository.notice {
 }
 ```
 
-Each release publishes the free modules to Maven Central under the group `build.jenesis`, every artifact named
-for its module, so a build resolves `build.jenesis:build.jenesis.repository.store` like any other dependency.
+Each release publishes its modules to Maven Central under the group `build.jenesis`, every artifact named for
+its module, so a build resolves `build.jenesis:build.jenesis.repository.store` like any other dependency. The
+release on GitHub carries each module's jar and POM as well, each with an `.asc` signature and a `.sha256`.
 
 A few rules hold for every seam:
 

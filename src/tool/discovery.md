@@ -440,7 +440,7 @@ Where the two differ, name the files the way the artifacts are named instead, wi
 A release made before its POM was attached leaves that POM to the usual repositories, if the build has any.
 [`github-backfill.sh`](https://github.com/jenesis/jenesis/blob/main/github-backfill.sh) attaches what such
 releases lack, for any project on GitHub whose artifacts a Maven repository holds. It needs `gh`, signed in to an
-account that may edit the releases, and `curl`:
+account that may edit the releases, `curl`, `sha1sum` and `sha256sum`:
 
 ```
 ./github-backfill.sh --repository=jenesis/jenesis --artifact=build.jenesis:build.jenesis
@@ -454,7 +454,8 @@ a release must be identical to the repository's copy, and a signature is copied,
 read from `MAVEN_REPOSITORY_URI` as Jenesis reads it, or from `--maven`, so the files can come from a mirror such
 as [Google's](https://storage-download.googleapis.com/maven-central/index.html).
 
-`--sources` and `--javadoc` add those jars, but neither is needed, and Jenesis's own releases attach neither. Sources and javadoc are not really repository
+`--sources` and `--javadoc` add those jars, but neither is needed, and the releases of the Jenesis tools attach
+neither. Sources and javadoc are not really repository
 artifacts: GitHub already publishes the
 [source code of every release](https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives)
 as an archive, and javadoc jars seem rather outdated - Central accepts
