@@ -196,9 +196,8 @@ stand for the rest.
 
 A domain often serves more than one project, each released on its own and with versions of its own. Each key
 then names the artifacts it is for in brackets, and the keys beside it carry the same selector. `jenesis.build`
-serves the build tool, the launcher and the crawler, all in the group `build.jenesis`, from the GitHub releases of
-three repositories, and the modules of Jenesis Repository, all named `build.jenesis.repository.*`, from Maven
-Central:
+serves the build tool, the launcher, the crawler and the modules of Jenesis Repository, all in the group
+`build.jenesis`, from the GitHub releases of four repositories:
 
 ```properties
 maven[build.jenesis]=https://github.com/jenesis/jenesis/releases/download/v{version}/{artifactId}-{version}{-classifier}.{type}
@@ -207,13 +206,15 @@ maven[build.jenesis.launcher]=https://github.com/jenesis/jenesis-launcher/releas
 maven[build.jenesis.launcher].latest=https://github.com/jenesis/jenesis-launcher/releases/latest/download/{artifactId}.pom
 maven[build.jenesis.crawler]=https://github.com/jenesis/jenesis-modules/releases/download/v{version}/{artifactId}-{version}{-classifier}.{type}
 maven[build.jenesis.crawler].latest=https://github.com/jenesis/jenesis-modules/releases/latest/download/{artifactId}.pom
-maven[build.jenesis.repository.*]=https://repo1.maven.org/maven2/
+maven[build.jenesis.repository.*]=https://github.com/jenesis/jenesis-repository/releases/download/v{version}/{artifactId}-{version}{-classifier}.{type}
+maven[build.jenesis.repository.*].latest=https://github.com/jenesis/jenesis-repository/releases/latest/download/{artifactId}.pom
 ```
 
 `maven` selects by artifact ID, and `module` and `moduletomaven` select by module name. A selector ending in `*`
-selects every name that starts with the rest, as `maven[build.jenesis.repository.*]` does. The
-exact name wins over the longest such prefix, and either over the key for all. A name that no key of the file
-selects, in a file without a key for all, is absent from it.
+selects every name that starts with the rest, as `maven[build.jenesis.repository.*]` does for the modules of
+Jenesis Repository, all named `build.jenesis.repository.*`. The exact name wins over the longest such prefix, and
+either over the key for all. A name that no key of the file selects, in a file without a key for all, is absent
+from it.
 
 ### Roots and templates
 
