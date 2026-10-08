@@ -62,9 +62,12 @@ The chapters build up from zero knowledge:
 9. **Generating sources** - compiling a schema or a service contract into Java as part of the build.
 10. **Code quality & testing** - formatting, coverage, test selection, and mutation testing.
 11. **Supply-chain features** - SBOM, dependency licensing, and vulnerability scanning.
-12. **Packaging** - executables, bundles, jlink/jpackage, container contexts, native images, launcher jars.
-13. **Publishing** - staging a release bundle, publishing it, and driving a release tool.
-14. **Build performance & isolation** - Docker isolation and the build cache.
-15. **Extending the build** - custom assemblers and build definitions.
-16. **Reference** - the command line, configuration keys, and the built-in steps.
-17. **Demos** - a runnable example project for every feature.
+12. **Securing the supply chain** - which attack each supply-chain feature answers, and where each one stops.
+13. **Packaging** - executables, bundles, jlink/jpackage, container contexts, native images, launcher jars.
+14. **Publishing** - staging a release bundle, publishing it, and driving a release tool.
+15. **Build performance & isolation** - Docker isolation and the build cache.
+16. **Extending the build** - plugins, custom build steps, and entry points of your own.
+17. **Migrating from Maven or Gradle** - moving an existing build over, one concern at a time.
+18. **Discovery (proposal)** - a proposed well-known file by which a library's author says where it is published.
+19. **Reference** - the command line, configuration keys, and the built-in steps.
+20. **Demos** - a runnable example project for every feature.
