@@ -293,6 +293,7 @@
 .lp-howto p { margin: 0 0 0.6rem; color: var(--lp-text); }
 .lp-command { background: var(--lp-code-bg); border-radius: var(--app-radius-md); }
 .lp-command pre { overflow-x: auto; }
+.lp-wrap > .lp-command { margin-bottom: var(--pico-typography-spacing-vertical); }
 .lp-after { margin: 1.5rem 0 0; }
 
 /* ---- Console screenshots ----------------------------------------------------------------------------------- */
