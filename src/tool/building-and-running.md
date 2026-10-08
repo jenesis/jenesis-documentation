@@ -253,7 +253,15 @@ sources/
 
 The jar that comes out runs the baseline on a Java 21 runtime and the override on Java 25 - one artifact, two
 implementations, selected by the JVM. Nothing else is needed: producing an overlay is what marks the jar
-`Multi-Release: true`, the flag that tells the JVM to look in the versioned directory at all.
+`Multi-Release: true`, the flag that tells the JVM to look in the versioned directory at all. Each overlay
+compiles for its own release alone, whatever release the module's declaration names.
+
+An overlay may also carry the `module-info.java` itself. That is how a library whose main code targets Java 8,
+which predates the Java Module System, declares a module: the descriptor sits in `META-INF/versions/9/`, is
+compiled against the module path with the main classes as part of the module, and may `requires` library
+modules. On Java 9 and later the jar is a named module, while Java 8 reads it from the class path as before.
+In a `pom.xml` project with `maven.compiler.release` at `8`, the descriptor lives in
+`src/main/java/META-INF/versions/9/`.
 
 {% demos 11 %}
 
