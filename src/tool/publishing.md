@@ -95,7 +95,15 @@ in a POM either and are recorded in the SBOM alone. Every one of these keys is o
 for a key the project does not declare.
 
 A developer is published with its key as the POM's `<id>`, `raphw` above. `developer.<key>.id` names another
-id, or none when it is empty. A source `pom.xml` developer that declares no `<id>` is published without one.
+id, or none when it is empty. A source `pom.xml` developer that declares no `<id>` is published without one,
+and one that declares nothing but its `<id>` is kept as well.
+
+In a `pom.xml` project, a module inherits its description, URL, licences, developers, organisation and SCM
+from its parents, local or fetched, as Maven's model does. The URL and the SCM locations get the module's
+artifact ID appended, unless the parent sets `child.project.url.inherit.append.path="false"` on its
+`<project>`, or the matching `child.scm.*.inherit.append.path` on its `<scm>`; licences and developers are
+inherited only as a whole. What a module declares or inherits wins, and `project.properties` fills in only what
+the POMs leave out. The version, tag, revision and tree given as settings win over both.
 
 In a project built from `module-info.java`, the coordinate follows from the module name: its first two
 segments form the group ID (`jenesis.maven.segments`) and the whole name is the artifact ID. `project=<groupId>`
