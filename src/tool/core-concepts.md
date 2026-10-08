@@ -100,7 +100,9 @@ way to move a Maven or Gradle build in.
   Discovery walks the project tree, so a repository that holds more than one project needs a way to say where
   one stops. An empty <strong><code>.jenesis.skip</code></strong> file marks a subtree as none of this build's
   business - the scan does not descend into it. That is how a sample project, a build plugin, or a vendored build
-  can sit inside a repository without being built as part of it.
+  can sit inside a repository without being built as part of it. It holds for a module a <code>pom.xml</code>
+  lists under <code>&lt;modules&gt;</code> as well, while a listed folder that holds no <code>pom.xml</code>
+  fails the build, naming the entry.
 </div>
 
 ### maven vs. the two modular layouts
