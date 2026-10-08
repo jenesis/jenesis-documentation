@@ -344,8 +344,16 @@ The alias travels with the jar: its manifest records it as `Jenesis-Aliases`, so
 applies only where that target is resolved, so a downstream module that never pulls the optional dependency
 in ignores it.
 
-Aliases are a `modular_to_maven` feature: they reach an artifact by its Maven coordinate, which the strict
-`modular` layout does not use.
+Aliases reach an artifact by its Maven coordinate, which the strict `modular` layout does not use. A
+`pom.xml` project declares the same lines in a `<!--jenesis.alias ... -->` comment of the POM, one per line,
+and a module inherits those of a local parent. That is how the `module-info.java` a `pom.xml` build compiles in
+a multi-release overlay requires a jar that declares no module name:
+
+```xml
+<!--jenesis.alias
+jline jline/jline
+-->
+```
 
 {% demos 21 %}
 
