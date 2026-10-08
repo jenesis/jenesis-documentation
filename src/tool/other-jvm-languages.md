@@ -95,8 +95,9 @@ java build/jenesis/Make.java pin
 
 <div class="tip">
   For Scala and Groovy this is more than reproducibility. Their latest releases on Maven Central are often
-  pre-release builds - a Scala <code>-RC</code> or a Groovy <code>-alpha</code> - so an unpinned build can drift
-  onto one. Pinning keeps the module on a stable compiler while you upgrade deliberately.
+  pre-release builds - a Scala <code>-RC</code> or a Groovy <code>-alpha</code>. An unpinned build skips a
+  version with a pre-release qualifier while a version without one is published, and so takes the newest stable
+  compiler of the day; pinning keeps the module on one compiler while you upgrade deliberately.
 </div>
 
 ## A compiler plugin
