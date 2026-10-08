@@ -185,7 +185,7 @@ A location takes one of two forms:
 - A **root** is a URI without placeholders: a traditional Maven repository such as Maven Central, a Nexus or an
   Artifactory, or any web server holding files in the Maven layout. It is read with its checksums, and its
   `maven-metadata.xml` is merged with that of the usual repositories, so a version range sees the versions of
-  both - `maven=https://maven.example.com/releases/`.
+  both - `maven=https://maven-repository.example.com/releases/`.
 - A **template** names each file through placeholders, which suits a flat list of downloads such as the assets
   of a GitHub release. Where a template names `{type}`, each file is checked against the `.sha512`, `.sha256` or
   `.sha1` beside it, the strongest one present, and a mismatch fails the build.
@@ -226,10 +226,11 @@ checked like any other, and the template answers Maven metadata naming it, merge
 repositories.
 
 A link may instead name a `maven-metadata.xml`, so that the files come from one place and the versions from a
-Maven repository - a release's assets, say, and Maven Central's list of what was published:
+Maven repository - a release's assets, say, and the list of what was published that a privately hosted Maven
+repository keeps:
 
 ```properties
-maven.latest=https://repo1.maven.org/maven2/{groupPath}/{artifactId}/maven-metadata.xml
+maven.latest=https://maven-repository.example.com/releases/{groupPath}/{artifactId}/maven-metadata.xml
 ```
 
 A link ending in `/maven-metadata.xml` is downloaded rather than sent a `HEAD` request. Its release, among the
