@@ -39,9 +39,18 @@ project does nothing.
 ### Report-only by default
 
 By default every linter is **report-only**: it records its findings but never fails the build. That makes it
-safe to turn a tool on across an existing codebase without an immediate red build. A build can also wire a
-tool in strict mode, where a non-zero tool exit fails the build; that takes a few lines of build code, which
-*Extending the build* introduces.
+safe to turn a tool on across an existing codebase without an immediate red build. A linter that found
+something says so in one line, with the number of findings and where its report is:
+
+```text
+[FINDINGS]  checkstyle found 2 findings, reported in target/build/.../reports/checkstyle/checkstyle-report.xml
+```
+
+`-Djenesis.print.findings=false` leaves that line out. To make findings fail the build, set the tool's strict
+setting, on the command line or in `jenesis.properties`: `jenesis.source.<tool>.strict=true` for the source
+linters, `jenesis.validator.spotbugs.strict=true` for SpotBugs. Checkstyle, PMD, detekt, ktlint, Scalastyle and
+scalafmt fail as their own exit code decides, so a Checkstyle finding at severity `warning` is reported but
+does not fail the build. SpotBugs and CodeNarc fail on any finding their report holds.
 
 Report-only covers findings, not a tool that never ran. A linter that fails on its own configuration, and so
 writes no complete report, fails its step either way.

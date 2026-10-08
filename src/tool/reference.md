@@ -219,7 +219,9 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.legal.notices` | `META-INF/NOTICE,META-INF/LICENSE,META-INF/license/,META-INF/licenses/,LICENSE,about.html` | Comma-separated jar entries taken as legal notices into a `.jmod`, a linked or packaged image and beside a native image, from the module's jar and from each runtime dependency's jar; names match regardless of case and also with an extension, and an entry ending in `/` takes the folder below it (see *[Packaging](/tool/packaging/#licences-in-each-form)*). |
 | `jenesis.compliance` | `true` | Run the licence and vulnerability checks; `false` skips both. |
 | `jenesis.source.<tool>` | `true` | Per-linter switch (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`). |
+| `jenesis.source.<tool>.strict` | `false` | Fail the build on the findings of that linter instead of only reporting them, as its own exit code decides; scalafmt fails on a source it would format differently, CodeNarc on any finding. |
 | `jenesis.validator.spotbugs` | `true` | Run SpotBugs when its filter file is present. |
+| `jenesis.validator.spotbugs.strict` | `false` | Fail the build on any finding SpotBugs reports instead of only reporting it. |
 | `jenesis.format.java` / `.ktlint` / `.scalafmt` | `true` | Per-formatter switch. |
 | `jenesis.format.rewrite` | `false` | Rewrite sources in place instead of verifying. |
 | `jenesis.observe.jacoco` | `true` | Run JaCoCo coverage when its file is present. |
@@ -351,6 +353,7 @@ password location is missing.
 | `jenesis.print.command` | `false` | Print each external tool's command line. |
 | `jenesis.print.process` | `false` | Stream every external tool's output; `jenesis.print.<command>` targets one tool. |
 | `jenesis.print.tests` | `false` | Stream the test JVM's command and output. |
+| `jenesis.print.findings` | `true` | Print a `[FINDINGS]` line for each linter that found something, with the number of findings and where its report is. |
 | `jenesis.print.fetch` | `false` | Print a `[FETCHED]` line per downloaded artifact. |
 | `jenesis.print.cache` | `false` | Print `[LOADED]`/`[STORED]` lines for the build cache, local and shared. |
 | `jenesis.print.signatures` | `false` | Print a `[VERIFIED]` line per checked dependency with the key or the identity that signed it, `[EXPIRED]` with both dates where the key has since expired, and `[UNDECLARED]`/`[UNSIGNED]` for the ones no declaration covers. |
