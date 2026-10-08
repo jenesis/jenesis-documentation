@@ -31,6 +31,10 @@ overrides a file entry, so you can still override the project's baseline for a s
 java -Djenesis.project.sources=false build/jenesis/Make.java
 ```
 
+A key in the file is written in full, `jenesis.` prefix included, exactly as the `configuration` selector prints
+it. A key without the prefix, such as `test.skip=true`, is no setting: the build refuses it and names the key to
+write instead, `jenesis.test.skip`.
+
 `jenesis.make.root` belongs on the command line only, because the root is what locates the file in the first
 place. Setting it in a file is reported as an error.
 
