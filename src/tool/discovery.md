@@ -73,6 +73,18 @@ count, release count and release size, which
 month. The quotas start where the busiest tenth of publishers begin, count every signature, checksum, POM,
 sources and javadoc jar as a file, and may be adjusted over time; community projects can ask for an exemption.
 
+For a company, this puts a price on shipping a Java SDK. Sonatype counts an artifact as
+[commercial](https://central.sonatype.org/news/20260908_publisher_tiers_commercial_use/) if it supports the
+adoption, integration or operation of a commercial product or service, naming service-dependent SDKs and generated
+clients, however few files they hold. Other ecosystems do not charge for this: npm gives organisations
+[unlimited public packages](https://docs.npmjs.com/creating-an-organization) on its free plan,
+[NuGet.org](https://learn.microsoft.com/en-us/nuget/nuget-org/publish-a-package) publishes from a free account, and
+PyPI charges companies only for its optional [organisation features](https://docs.pypi.org/organization-accounts/).
+Nor is there a way around it: a company can host its own Maven repository, but only Maven Central is available to
+every build by default. That is an entry barrier the other major ecosystems do not have, and it is bound to damage
+the adoption and the reputation of Java over time - a vendor that chooses the languages to offer an SDK for now
+finds one where shipping it takes a subscription.
+
 Byte Buddy would mostly have stayed within today's quotas, but a
 [release of it](https://repo1.maven.org/maven2/net/bytebuddy/) now publishes about 120 files and close to 70 MB,
 so a second release in a month passes the size quota - as in about half the months since 2023 in which it
