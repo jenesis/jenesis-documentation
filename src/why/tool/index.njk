@@ -244,3 +244,20 @@ java build/jenesis/Make.java</code></pre></div>
     </details>
   </div>
 </section>
+
+<section class="lp-band lp-band--tint" id="migrate" aria-labelledby="migrate-title">
+  <div class="lp-wrap">
+    <h2 id="migrate-title">How to migrate to Jenesis?</h2>
+    <p>Hand it to a coding agent. A migration is work a build tool checks automatically, so an agent can move one
+      concern at a time and build after each step, and every failure has a single cause it can fix. Jenesis ships
+      the briefing for this: <code>skill/migrate</code> walks through the move from a Maven or Gradle build, and
+      <code>skill/registry</code> names what replaces each plugin. With it, an agent should be able to port a build
+      in a short session and at low cost.</p>
+    <div class="lp-command"><pre><code>java build/jenesis/Make.java skill/migrate</code></pre></div>
+    <p>The most common Maven and Gradle plugins - compilers, code generators, checks, test runners and coverage -
+      are built in. A less common or custom plugin is ported to one of the
+      <a class="lp-link" href="{{ docs }}extending-the-build/#hook-points">hook points</a> of a plugin, without
+      changing anything else of the build. The result is validated by comparing what both builds produce: the
+      jar contents, the dependency tree, the number of tests run and the POM a consumer receives.</p>
+  </div>
+</section>
