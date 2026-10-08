@@ -281,6 +281,10 @@ documentation tool (`javadoc` for Java) and adds a `-javadoc.jar`. Both are off 
 build time you do not want on every inner-loop run. Turn them on for a release, or record them in a profile
 (see *[Configuration](/tool/configuration/)*).
 
+Both jars cover the sources a generator or a plugin added to the module as well as your own: `javadoc`
+documents the generated classes, and the sources jar carries their source files beside the schema they follow
+from, as Maven's does.
+
 {% demos 66 %}
 
 ### Reproducible archives
@@ -334,11 +338,23 @@ A flag the module's declaration already hands the tool cannot be set here. A `--
 declared instead: `@jenesis.release` in `module-info.java`, or `maven.compiler.release` and
 `maven.compiler.testRelease` in a `pom.xml`. Declared there, it reaches every tool that reads it.
 
-The same mechanism works for every tool the build forks: `javac`, `kotlinc`, `scalac`, `jar`, `jmod`, `jlink`,
-`jpackage`, and `native-image`. Two names address the forked JVMs specifically: **`process-java.properties`**
+The same mechanism works for every tool the build forks: `javac`, `javadoc`, `kotlinc`, `scalac`, `jar`, `jmod`,
+`jlink`, `jpackage`, and `native-image`. Two names address the forked JVMs specifically: **`process-java.properties`**
 applies to *every* forked `java` process, the program `Execute` runs included, while
 **`process-test.properties`** targets only the test JVM
 (merged over the `java` file, with test keys winning).
+
+`javadoc` runs with `-Xdoclint:none`, so a missing comment or tag is not reported. An `-Xdoclint` flag in
+`process-javadoc.properties` replaces that default, and `-Werror=` makes a warning fail the build:
+
+```properties
+# process-javadoc.properties  →  report every doclint finding, and fail on it
+-Xdoclint\:all=
+-Werror=
+```
+
+An error fails the build either way. A module whose sources declare no public type has nothing to
+document and is skipped, unless `process-javadoc.properties` asks for more with `-package` or `-private`.
 
 <div class="tip">
   Because the file lives in a configuration folder, it is profile-aware and resolved by first match. A
