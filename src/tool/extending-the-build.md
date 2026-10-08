@@ -434,6 +434,106 @@ is built and exported like any other module, and resolved by its module name.
   <em>dependencies</em> need not be, since a module layer admits automatic modules too.
 </div>
 
+### A worked example: classes generated with Byte Buddy
+
+A plugin is written against a library's own Java API. This one uses [Byte Buddy](https://bytebuddy.net) to
+generate `sample.Greeting`, a `java.util.function.Supplier` that returns a configured text, and adds it to the
+module's jar beside the classes `javac` compiled. The class has no source anywhere in the project.
+
+The project names the plugin, the hook point it joins and the folder it is compiled from:
+
+```properties
+# jenesis.plugins.properties
+greeter+binary/compiled=./plugin
+```
+
+`plugin/` holds the plugin module, with an empty `.jenesis.skip` beside its declaration. It requires the
+build API and Byte Buddy, and provides its build module:
+
+```java
+module demo.plugin {
+    requires build.jenesis;
+    requires net.bytebuddy;
+    provides build.jenesis.BuildExecutorModule with demo.plugin.GreeterModule;
+}
+```
+
+The plugin runs in a module where `plugin-greeter.properties` is found:
+
+```properties
+# build.jenesis/plugin-greeter.properties
+implementation=sample.Greeting
+greeting=Hello from a class that Byte Buddy generated in a build plugin!
+```
+
+Its values reach the provider's constructor as a `SequencedMap<String, String>`, in the file's order. The
+provider keeps what it needs, and its `accept(BuildExecutor, SequencedMap<String, Path>)` adds one step, a
+record of those two values:
+
+```java
+public GreeterModule(SequencedMap<String, String> properties) {
+    implementation = properties.getOrDefault("implementation", "sample.Greeting");
+    greeting = properties.getOrDefault("greeting", "Hello from a generated class!");
+}
+
+@Override
+public void accept(BuildExecutor executor, SequencedMap<String, Path> inherited) {
+    executor.addStep("generate", new Generate(implementation, greeting));
+}
+```
+
+The step's `apply(Executor, BuildStepContext, SequencedMap<String, BuildStepArgument>)` describes the class
+with Byte Buddy and saves it below `classes/` in its own output folder, `context.next()`:
+
+```java
+private record Generate(String implementation, String greeting) implements BuildStep {
+
+    @Override
+    public CompletionStage<BuildStepResult> apply(Executor executor,
+                                                  BuildStepContext context,
+                                                  SequencedMap<String, BuildStepArgument> arguments)
+            throws IOException {
+        new ByteBuddy()
+                .subclass(Object.class)
+                .name(implementation)
+                .implement(Supplier.class)
+                .method(named("get"))
+                .intercept(FixedValue.value(greeting))
+                .make()
+                .saveIn(Files.createDirectories(context.next().resolve(BuildStep.CLASSES)).toFile());
+        return CompletableFuture.completedStage(new BuildStepResult(true));
+    }
+}
+```
+
+The two values are the step's serialised state, so changing either in `plugin-greeter.properties` runs the
+step again, and nothing else does. What it writes below `classes/` is merged into the module's jar, and the
+tests and every later step see `sample.Greeting` as one of the module's classes.
+
+Byte Buddy is configured in code here rather than discovered. Its Maven and Gradle plugins run the Byte Buddy
+plugins they find in `META-INF/net.bytebuddy/build.plugins` or that the build file names, configured in XML
+or the build's DSL. The provider above builds what Byte Buddy does in Java instead, from the values of its own
+properties file, and runs nothing it did not name.
+
+Byte Buddy resolves into the plugin's own module layer and never reaches the application. `pin` records the
+plugin's closure in the project's `module-info.java`, in the group named after the plugin:
+
+```java
+/**
+ * @jenesis.pin plugin-greeter/module/build.jenesis <version> SHA-256/...
+ * @jenesis.pin plugin-greeter/module/net.bytebuddy <version> SHA-256/...
+ */
+```
+
+<div class="warning">
+  A plugin at <code>binary/compiled</code> adds classes; it cannot rewrite the classes <code>javac</code>
+  compiled. No hook point hands a plugin the compiled classes to change, and a class that the plugin and
+  <code>javac</code> both write fails the build. An enhancement in the sense of Byte Buddy's Maven plugin,
+  which transforms compiled classes in place, therefore has no place in the stock build.
+</div>
+
+{% demos 73 %}
+
 ## Writing an entry point of your own
 
 A build that plugins cannot express - one that changes what the stock steps do, several builds compared, one
