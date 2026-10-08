@@ -507,18 +507,23 @@ To find a key for a module name, or for a group ID and an artifact ID:
 4. Resolve: expand a coordinate and resolve it as a Maven artifact; ask a root as a repository, listing only
    the versions the key serves; fill in a template, download the file, and check it against the strongest
    checksum beside it.
-5. Where a key does not answer, try the next one, then the configured repositories.
+5. Check the name a module's jar declares, in its `module-info` or as its `Automatic-Module-Name`, against the
+   module name that was asked for, whichever key answered.
+6. Where a key does not answer, try the next one, then the configured repositories.
 
 ### Failing and trusting
 
 A tool fails, naming the file, on a key without a value, a selector that is no name or prefix, a suffix that is
-not a word, a `delegate` that is neither `true` nor `false`, an unknown placeholder, a coordinate that names no artifact, a coordinate in `module` or a
-location in `moduletomaven`, a latest link beside a root, a coordinate or a template without `{version}`, and a
-latest link that leads elsewhere or names no version.
+not a word, a `delegate` that is neither `true` nor `false`, an unknown placeholder, a coordinate that names no
+artifact, a coordinate in `module` or a location in `moduletomaven`, a latest link beside a root, a coordinate or
+a template without `{version}`, a latest link that leads elsewhere or names no version, and a module jar that
+declares another name than the one asked for, or none.
 
 Every location is read over `https` once its placeholders are filled in, and a redirect is followed only to
 `http` or `https`, so no file can make a tool read a local `file:` or `jar:` URI. A certificate that does not
-verify fails the build. The file only says where a file comes from: a pinned checksum or a declared signature
+verify fails the build. A domain answers only for names below it, and checking the name a downloaded module
+declares keeps it from answering for one of them with another module, which a coordinate in `moduletomaven` could
+otherwise name. The file only says where a file comes from: a pinned checksum or a declared signature
 still decides what is accepted. A domain that changes hands passes its file to the new owner, so for every
 version a build pinned, the new owner can break the build but never change what it accepts; a version the build
 did not pin is only as trustworthy as the domain's owner, unless a
