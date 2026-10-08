@@ -105,8 +105,7 @@ The discovery file turns the question around: it lets authors distribute what th
 central repository rather than instead of it, and it frees them from fitting their work to someone else's
 quota. Some already do:
 [the Shibboleth project does not publish OpenSAML to Maven Central](https://shibboleth.atlassian.net/wiki/spaces/DEV/pages/1123844333),
-because Central's terms require an indemnification its developers will not take on personally - the older
-versions found there were uploaded by others - and
+because Central's terms require an indemnification its developers will not take on personally, and
 [Jenkins releases its plugins and libraries](https://www.jenkins.io/doc/developer/publishing/artifact-repository/)
 from its own repository alone. Today, a build finds such a library only once its user configures that
 repository; with a discovery file, it is found by its name.
