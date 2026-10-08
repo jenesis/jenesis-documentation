@@ -9,7 +9,8 @@ description: A proposed well-known file by which the author of a library says wh
   as others take it up. Jenesis reads it where <code>jenesis.repository.discovery</code> is set.
 </div>
 
-A Maven group ID and a Java module name are reversed domain names: `net.bytebuddy` belongs to `bytebuddy.net`.
+A Maven group ID or a Java module name are typically reversed domain names: `net.bytebuddy` belongs to
+`bytebuddy.net`, for example.
 This proposal lets whoever owns that domain say, in one small file on its website, where the artifacts and
 modules named after it are published. A build that reads the file downloads them from there - a GitHub release,
 the author's own server, or a Maven repository of the author's choosing - before it asks any central repository.
@@ -17,7 +18,7 @@ the author's own server, or a Maven repository of the author's choosing - before
 The file is a plain
 [`java.util.Properties`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Properties.html)
 file at a fixed address, so any tool can read it with the JDK alone,
-and it names Maven groups and Java modules rather than a build tool. Publishing it costs the author a static
+and it is agnostic to any particularities of a given build tool. Publishing it costs the author a static
 file; reading it costs a build one request per vendor.
 
 ## Do you suggest not having a central repository?
