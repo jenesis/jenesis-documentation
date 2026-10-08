@@ -11,8 +11,9 @@ description: A proposed well-known file by which the author of a library says wh
 
 A Maven group ID or a Java module name are typically reversed domain names: `net.bytebuddy` belongs to
 `bytebuddy.net`, for example.
-This proposal lets whoever owns that domain say, in one small file on its website, where the artifacts and
-modules named after it are published. A build that reads the file downloads them from there - a GitHub release,
+This proposal lets whoever owns that domain say, in one small file on its website,
+`https://<domain>/.well-known/java-repository.properties`, where the artifacts and modules named after it are
+published. A build that reads the file downloads them from there - a GitHub release,
 the author's own server, or a Maven repository of the author's choosing - before it asks any central repository.
 
 The file is a plain
@@ -250,8 +251,7 @@ jenesis.maven.uri=
 jenesis.module.uri=
 ```
 
-A location over plain `http` is followed only where `jenesis.repository.insecure` allows it, and under
-`jenesis.repository.offline` no domain is asked at all.
+A location over plain `http` is followed only where `jenesis.repository.insecure` allows it.
 
 {% demos 69 %}
 
