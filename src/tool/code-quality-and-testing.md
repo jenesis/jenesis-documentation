@@ -191,6 +191,9 @@ instruments the run without touching your sources and writes its execution data 
 report step renders an HTML and XML report under `reports/jacoco/`, over the classes of the code under test,
 never the compiled tests themselves. Open the `index.html` to browse coverage
 line by line. JaCoCo, like every tool here, resolves in its own group (`jacoco`) apart from your dependencies.
+The agent writes the data the CLI reads, so it follows the release the group pins for the CLI: a pin of
+`jacoco/maven/org.jacoco/org.jacoco.cli` alone runs the tests under that version's agent as well, until `pin`
+records both.
 
 <div class="note">
   Coverage is <strong>reported, not enforced</strong>. A method your tests never reach shows up as uncovered
