@@ -167,7 +167,7 @@ users who run it.
 ## Describing Maven artifacts
 
 The rest of this page is the proposal itself: the file a domain publishes and how a build reads it, starting with
-Maven artifacts, then modules mapped to Maven, then modules alone.
+Maven artifacts, then modules mapped to Maven, then modules alone, and finally the sources of a release.
 
 A domain publishes the file at `https://<domain>/.well-known/java-repository.properties`, a
 [well-known location](https://www.rfc-editor.org/rfc/rfc8615), in UTF-8. Its `maven`
@@ -352,6 +352,26 @@ A key that does not answer leaves the request to the other, so a domain that pub
 
 {% demos 68 %}
 
+## The sources of a release
+
+A release's sources belong to it as much as its jar does, so the file names them too. Maven Central asks for a
+sources jar beside every artifact; here, the domain names an archive of the sources of each version instead,
+typically the one a code host keeps of every tag, as GitHub keeps
+[an archive of every release](https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives):
+
+```properties
+sources[build.jenesis]=https://github.com/jenesis/jenesis/archive/refs/tags/v{version}.zip
+```
+
+`sources` is a template that names `{version}`, and it takes the placeholders of `maven` for a Maven dependency
+and those of `module` for a module. It is selected like the other keys, so a domain with several projects names
+the archive of each, and `.since` and `.suffixes` limit the versions it answers for. Jenesis lists the archive in
+the [CycloneDX](https://cyclonedx.org/docs/1.6/json/#components_items_externalReferences_items_type) SBOM of a
+build, as the `source-distribution` reference of each dependency the file answers for, so whoever reads the SBOM
+finds the code each jar was built from.
+
+{% demos 68 %}
+
 ## Publishing everything a build may ask for
 
 One release can serve every kind of build at once: the module path, a module resolved through Maven, and a Maven
@@ -404,6 +424,7 @@ maven[build.jenesis].suffixes=none
 | the Maven dependency `build.jenesis:build.jenesis:<version>` | `maven` | the POM, then the jar |
 | a signature | `module` or `maven` | `.jar.asc`, `.pom.asc` |
 | a checksum, to check each download | the same template | `.jar.sha256`, `.pom.sha256` |
+| its sources | `sources` | nothing: the archive GitHub keeps of the release's tag |
 | the newest version | `module.latest`, `maven.latest` | nothing: a `HEAD` request that GitHub redirects |
 
 The same file holds such keys for the launcher, the crawler and Jenesis Repository, which are released from
@@ -454,12 +475,13 @@ file          = *( entry / delegate )
 entry         = key "=" value
 delegate      = "delegate=" ( "true" / "false" )     ; false, the default: no subdomain is read
 key           = kind [ "[" selector "]" ] [ ".since" / ".suffixes" / ".latest" ]
-kind          = "module" / "moduletomaven" / "maven"
+kind          = "module" / "moduletomaven" / "maven" / "sources"
 selector      = 1*( ALPHA / DIGIT / "_" / "." / "-" ) [ "*" ] ; an artifact ID for maven, a module name
                                                      ; otherwise, or the start of one before "*"
 module        = location
 moduletomaven = coordinate
 maven         = location
+sources       = location                             ; a template naming {version}
 latest        = https-uri                            ; beside a template naming {version}: a redirecting
                                                      ; link, or one ending in "/maven-metadata.xml"
 coordinate    = groupId ":" artifactId [ ":" extension [ ":" classifier ] ]
@@ -471,11 +493,12 @@ suffixes      = suffix *( "," suffix )
 suffix        = 1*( ALPHA / DIGIT )                  ; "none" names a version without one
 ```
 
-| Placeholder | `maven` | `module` | `moduletomaven` |
-|---|---|---|---|
-| `{groupId}`, `{groupPath}`, `{artifactId}` | yes | | |
-| `{module}`, `{-suffix}` | | yes | yes |
-| `{version}`, `{-classifier}`, `{type}` | yes | yes | |
+| Placeholder | `maven` | `module` | `moduletomaven` | `sources` |
+|---|---|---|---|---|
+| `{groupId}`, `{groupPath}`, `{artifactId}` | yes | | | for a Maven dependency |
+| `{module}`, `{-suffix}` | | yes | yes | for a module |
+| `{version}` | yes | yes | | yes |
+| `{-classifier}`, `{type}` | yes | yes | | |
 
 ### Finding a key
 
@@ -515,9 +538,9 @@ To find a key for a module name, or for a group ID and an artifact ID:
 
 A tool fails, naming the file, on a key without a value, a selector that is no name or prefix, a suffix that is
 not a word, a `delegate` that is neither `true` nor `false`, an unknown placeholder, a coordinate that names no
-artifact, a coordinate in `module` or a location in `moduletomaven`, a latest link beside a root, a coordinate or
-a template without `{version}`, a latest link that leads elsewhere or names no version, and a module jar that
-declares another name than the one asked for, or none.
+artifact, a coordinate in `module` or a location in `moduletomaven`, a `sources` that is no template naming
+`{version}`, a latest link beside a root, a coordinate or a template without `{version}`, a latest link that leads
+elsewhere or names no version, and a module jar that declares another name than the one asked for, or none.
 
 Every location is read over `https` once its placeholders are filled in, and a redirect is followed only to
 `http` or `https`, so no file can make a tool read a local `file:` or `jar:` URI. A certificate that does not
