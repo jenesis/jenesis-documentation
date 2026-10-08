@@ -778,7 +778,13 @@ whatever name you picked there.
 
 A module's classpath holds what the module declares. The tools the build resolves for itself - Checkstyle, PMD,
 SpotBugs, a formatter - stay out of it. A test module is marked as test sources, and an `@jenesis.test abstract`
-module as ordinary sources, since other modules compile against it.
+module as ordinary sources, since other modules compile against it. A `pom.xml` module is one IDE module, its
+tests among its test sources and the libraries only they need in the test scope.
+
+Where a module's folder is its source folder, as in a `module-info.java` project, the IDE files land among the
+sources. The build leaves them out of every jar: an `.iml`, a `.classpath` or a `.project` file, and a
+`.settings/`, `.factorypath` or `.eclipse/` entry at the root of a source or resource folder never reach the
+module's artifacts.
 
 Run `ide` again after changing a dependency or adding a module: the files name the resolved jars by their path, so
 a stale file points at a jar the build no longer produces.
