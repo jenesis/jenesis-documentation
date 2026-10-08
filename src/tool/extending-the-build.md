@@ -413,6 +413,15 @@ argument `../inputs/<input>`, and a transform or an inspection finds each module
 BuildStepArgument legal = arguments.get("../inputs/legal");
 ```
 
+Each argument is keyed by its predecessor's path: `argument.folder()` is that predecessor's output, and
+`argument.files()` holds the checksum of each file in it. Beside the source folders, a plugin of a module hook
+point is handed the module's `metadata.properties`, with its version, name and the rest, and its
+`module.properties`, whose `test` key tells the tests of a `pom.xml` from its main code - so a step that belongs
+to one of them returns early on the other. The resolved dependencies arrive as a folder too, read with
+`build.jenesis.step.Dependencies`: `Dependencies.select(folder, "main", "compile")` lists the jars of one group and scope, and
+`Dependencies.all(folder)` every one. What a step in `binary/compiled` writes as `classes/` and as a
+`manifest.mf` is merged into the module's jar.
+
 A plugin compiled from source lives in a project folder of its own, which carries an empty **`.jenesis.skip`**
 marker so the project's module discovery does not mistake it for a second project module. A published plugin
 is built and exported like any other module, and resolved by its module name.
