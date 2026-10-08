@@ -191,6 +191,27 @@ absent rather than asked of a subdomain. A vendor whose subdomains publish files
 those files are then read as well, the most specific one holding a key answers, and the vendor's own entries
 stand for the rest.
 
+### Several projects under one domain
+
+A domain often serves more than one project, each released on its own and with versions of its own. A key then
+names the artifact it is for in brackets, and the keys beside it carry the same selector. `jenesis.build` serves
+the build tool, the launcher and the crawler, all in the group `build.jenesis`, from the GitHub releases of three
+repositories:
+
+```properties
+maven=https://github.com/jenesis/jenesis/releases/download/v{version}/{artifactId}-{version}{-classifier}.{type}
+maven.latest=https://github.com/jenesis/jenesis/releases/latest/download/{artifactId}.pom
+maven[build.jenesis.launcher]=https://github.com/jenesis/jenesis-launcher/releases/download/v{version}/{artifactId}-{version}{-classifier}.{type}
+maven[build.jenesis.launcher].latest=https://github.com/jenesis/jenesis-launcher/releases/latest/download/{artifactId}.pom
+maven[build.jenesis.crawler]=https://github.com/jenesis/jenesis-modules/releases/download/v{version}/{artifactId}-{version}{-classifier}.{type}
+maven[build.jenesis.crawler].latest=https://github.com/jenesis/jenesis-modules/releases/latest/download/{artifactId}.pom
+```
+
+`maven` selects by artifact ID, and `module` and `moduletomaven` select by module name. A selector ending in `*`
+selects every name that starts with the rest, as `maven[byte-buddy-*]` would for Byte Buddy's artifacts. The
+exact name wins over the longest such prefix, and either over the key for all. A name that no key of the file
+selects, in a file without a key for all, is absent from it.
+
 ### Roots and templates
 
 A location takes one of two forms:
@@ -291,7 +312,12 @@ moduletomaven=net.bytebuddy:byte-buddy{-suffix}
 
 A module whose suffix names no artifact, such as `net.bytebuddy.utility`, finds nothing and resolves as if the
 file did not name it. A coordinate without placeholders belongs to one module only - the one whose own domain
-publishes the file - so an artifact that follows no pattern is named at its module's own domain.
+publishes the file - unless its key selects a module. An artifact that follows no pattern is then named for its
+module in the same file:
+
+```properties
+moduletomaven[com.example.legacy]=com.example:example-classic
+```
 
 A build that resolves modules through Maven, reading their POMs, asks `moduletomaven` first. In Jenesis that is
 the `modular_to_maven` layout, the one a `module-info.java` gets by default.
@@ -377,6 +403,9 @@ maven.suffixes=none
 | a checksum, to check each download | the same template | `.jar.sha256`, `.pom.sha256` |
 | the newest version | `module.latest`, `maven.latest` | nothing: a `HEAD` request that GitHub redirects |
 
+The same file selects the keys of the launcher and the crawler, which are released from repositories of their
+own, as *[Several projects under one domain](#several-projects-under-one-domain)* shows.
+
 The `module` template names files by module name, which works because Jenesis's artifact ID is its module name.
 Where the two differ, name the files the way the artifacts are named instead, with `{-suffix}` -
 `.../byte-buddy{-suffix}-{version}{-classifier}.{type}` - or publish `moduletomaven` alone.
@@ -421,7 +450,10 @@ key named twice the last value counts, and a key a reader does not know is ignor
 file          = *( entry / delegate )
 entry         = key "=" value
 delegate      = "delegate=" ( "true" / "false" )     ; false, the default: no subdomain is read
-key           = ( "module" / "moduletomaven" / "maven" ) [ ".since" / ".suffixes" / ".latest" ]
+key           = kind [ "[" selector "]" ] [ ".since" / ".suffixes" / ".latest" ]
+kind          = "module" / "moduletomaven" / "maven"
+selector      = 1*( ALPHA / DIGIT / "_" / "." / "-" ) [ "*" ] ; an artifact ID for maven, a module name
+                                                     ; otherwise, or the start of one before "*"
 module        = location
 moduletomaven = coordinate
 maven         = location
@@ -444,15 +476,17 @@ suffix        = 1*( ALPHA / DIGIT )                  ; "none" names a version wi
 
 ### Finding a key
 
-To find a key for a module name or a group ID:
+To find a key for a module name, or for a group ID and an artifact ID:
 
 1. Skip a name that cannot be a domain: one label, or a label with anything but letters, digits, `_` and `-`.
 2. Reverse the labels into domains, shortest first, from two labels to all of them: `net.bytebuddy.agent` gives
    `bytebuddy.net`, then `agent.bytebuddy.net`.
 3. Fetch each domain's file once per run, remembering an absent file as well as a present one. A file that cannot
    be fetched - a `404`, an unknown host, a proxy that cannot reach it - is absent.
-4. Skip a domain without a file. Where a file holds the key, it becomes the answer, unless its value is a
-   coordinate without placeholders and the domain is shorter than the name's own.
+4. Skip a domain without a file. In a file, take the key that selects the module name or artifact ID exactly,
+   else the one whose selector is the longest prefix of it, else the key for all. That key becomes the answer,
+   unless it is the key for all, its value a coordinate without placeholders, and the domain shorter than the
+   name's own.
 5. Stop after the first file found, unless it says `delegate=true`; the last answer found counts.
 
 ### Answering a request
@@ -474,8 +508,8 @@ To find a key for a module name or a group ID:
 
 ### Failing and trusting
 
-A tool fails, naming the file, on a key without a value, a suffix that is not a word, a `delegate` that is neither
-`true` nor `false`, an unknown placeholder, a coordinate that names no artifact, a coordinate in `module` or a
+A tool fails, naming the file, on a key without a value, a selector that is no name or prefix, a suffix that is
+not a word, a `delegate` that is neither `true` nor `false`, an unknown placeholder, a coordinate that names no artifact, a coordinate in `module` or a
 location in `moduletomaven`, a latest link beside a root, a coordinate or a template without `{version}`, and a
 latest link that leads elsewhere or names no version.
 
