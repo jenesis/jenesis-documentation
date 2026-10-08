@@ -173,6 +173,12 @@ When the whole closure is more than you want to read, `-Djenesis.tree.format` na
 the test modules (see *[Building and running](/tool/building-and-running/)*), which are not part of what the
 project releases, so neither the trees nor the licence summary count what only a test run pulls in.
 
+The tools a module resolves for its build rather than for itself - a linter, a formatter, a plugin, an
+annotation processor - each resolve in a group of their own and are no dependency of the module, so the trees
+leave them out. `-Djenesis.tree.tools=true` prints each such group apart, under a heading naming it, as
+`Group checkstyle, resolved to build maven/demo.quality/demo.quality 0-SNAPSHOT:`, and counts it in the licence
+summary.
+
 ## Version negotiation
 
 When two paths through the graph ask for different versions of the same library, Jenesis picks one. By
