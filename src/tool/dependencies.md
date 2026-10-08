@@ -88,7 +88,7 @@ the variable of the same name:
 
 | Property (environment variable) | What it overrides |
 | --- | --- |
-| `jenesis.maven.uri` (`MAVEN_REPOSITORY_URI`) | The Maven upstream. Accepts a comma-separated list, queried left to right; an entry may append `\|`-separated group ids to serve only those groups, and a bare `@` splices the default chain back in (`https://nexus.corp/,@`). |
+| `jenesis.maven.uri` (`MAVEN_REPOSITORY_URI`) | The Maven upstream. Accepts a comma-separated list, queried left to right; an entry may append `\|`-separated group IDs to serve only those groups, and a bare `@` splices the default chain back in (`https://nexus.corp/,@`). |
 | `jenesis.maven.token` (`MAVEN_REPOSITORY_TOKEN`) | Sent verbatim as the `Authorization` header on every Maven fetch (e.g. `Bearer …` or `Basic …`; a [Jenesis Repository](/repository/access/) key can be given as is). |
 | `jenesis.maven.local` (`MAVEN_REPOSITORY_LOCAL`) | The local Maven repository directory (default `~/.m2/repository`). |
 | `jenesis.module.uri` (`JENESIS_REPOSITORY_URI`) | The module index base URL (default `https://repo.jenesis.build/`), with the same list/filter/`@` grammar. A `maven:<uri>` entry reads a Maven repository by the publishing convention instead, and a `mapped:<uri or @>:<list>[;<list>...]` entry reads the modules a company's `.properties` lists map to Maven coordinates, as `com.example.billing=com.example/billing-core`, from that Maven repository or, for `@`, from the build's own. |

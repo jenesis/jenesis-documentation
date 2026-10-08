@@ -69,8 +69,8 @@ bundled agents, module-access grants, signer reconstruction - are for a jar you 
 
 ## Where the jar lands
 
-The jar is named after the module's artifact id - `demo.modular.executable.jar` for the modular demo - or
-`application.jar` when the build knows no artifact id. It is written into the module's build output, under
+The jar is named after the module's artifact ID - `demo.modular.executable.jar` for the modular demo - or
+`application.jar` when the build knows no artifact ID. It is written into the module's build output, under
 the `launcher` module's `bundle` step:
 
 ```

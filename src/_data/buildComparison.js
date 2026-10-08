@@ -406,7 +406,7 @@ export default {
       lede: `<p>A library and the application that uses it, built together. In Jenesis the Java module name is how
         one module of the project refers to another: <code>requires demo.greeter</code> is all the wiring there
         is, and the sibling is built first and resolved from the build itself. There is no root file.</p>
-        <p>The other tools know a module by a name of their own - an artifactId, a project path, a label - so each
+        <p>The other tools know a module by a name of their own - an artifact ID, a project path, a label - so each
         sibling is named twice, and the two names are kept in step by hand. The second one is highlighted in their
         tabs.</p>`,
       tools: {
@@ -418,7 +418,7 @@ export default {
         maven: {
           status: "manual",
           badge: "Named twice",
-          verdict: "<code>requires demo.greeter</code>, and again as the artifactId <code>greeter</code>.",
+          verdict: "<code>requires demo.greeter</code>, and again as the artifact ID <code>greeter</code>.",
           files: [
             file("modules/maven", "app/src/main/java/module-info.java"),
             file("modules/maven", "app/pom.xml", { match: "<artifactId>greeter</artifactId>" }),

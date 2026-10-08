@@ -9,7 +9,7 @@ description: A proposed well-known file by which the author of a library says wh
   as others take it up. Jenesis reads it where <code>jenesis.repository.discover</code> is set.
 </div>
 
-A Maven groupId and a Java module name are reversed domain names: `net.bytebuddy` belongs to `bytebuddy.net`.
+A Maven group ID and a Java module name are reversed domain names: `net.bytebuddy` belongs to `bytebuddy.net`.
 This proposal lets whoever owns that domain say, in one small file on its website, where the artifacts and
 modules named after it are published. A build that reads the file downloads them from there - a GitHub release,
 the author's own server, or a Maven repository of the author's choosing - before it asks any central repository.
@@ -88,11 +88,11 @@ of their own.
 
 - **Authors decide** where they publish what, and how often, including those who do not accept a central
   repository's terms.
-- **Ownership follows the domain.** Sonatype grants a new groupId to whoever proves, by a
+- **Ownership follows the domain.** Sonatype grants a new group ID to whoever proves, by a
   [DNS record](https://central.sonatype.org/register/namespace/), that they own the domain it reverses to - the
   very domain whose file a build reads. In 2024,
   [MavenGate](https://oversecured.com/blog/introducing-mavengate-a-supply-chain-attack-method-for-java-and-android-applications)
-  showed how lapsed domains could be bought to take over groupIds; Sonatype
+  showed how lapsed domains could be bought to take over group IDs; Sonatype
   [answered](https://thehackernews.com/2024/01/hackers-hijack-popular-java-and-android.html) that its checks
   prevent it and disabled the accounts of expired domains. A discovery file, by contrast, always speaks for
   whoever owns the domain now. What protects a build is what it recorded: pinned checksums - as Jenesis,
@@ -312,7 +312,7 @@ maven.suffixes=none
 | a checksum, to check each download | the same template | `.jar.sha256`, `.pom.sha256` |
 | the newest version | `module.latest`, `maven.latest` | nothing: a `HEAD` request that GitHub redirects |
 
-The `module` template names files by module name, which works because Jenesis's artifactId is its module name.
+The `module` template names files by module name, which works because Jenesis's artifact ID is its module name.
 Where the two differ, name the files the way the artifacts are named instead, with `{-suffix}` -
 `.../byte-buddy{-suffix}-{version}{-classifier}.{type}` - or publish `moduletomaven` alone. A release made before
 its POM was attached leaves that POM to the usual repositories, if the build has any.
@@ -353,7 +353,7 @@ suffix        = 1*( ALPHA / DIGIT )                  ; "none" names a version wi
 
 ### Finding a key
 
-To find a key for a module name or a groupId:
+To find a key for a module name or a group ID:
 
 1. Skip a name that cannot be a domain: one label, or a label with anything but letters, digits, `_` and `-`.
 2. Reverse the labels into domains, shortest first, from two labels to all of them: `net.bytebuddy.agent` gives
