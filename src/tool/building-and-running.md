@@ -304,7 +304,8 @@ java -Djenesis.project.sources=true \
 ```
 
 `jenesis.project.sources` adds a per-module `-sources.jar`, and `jenesis.project.documentation` runs the
-documentation tool (`javadoc` for Java) and adds a `-javadoc.jar`. Both are off by default because they cost
+documentation tool (`javadoc` for Java) and adds a `-javadoc.jar`. A test module is documented only where
+`jenesis.stage.tests` stages it. Both are off by default because they cost
 build time you do not want on every inner-loop run. Turn them on for a release, or record them in a profile
 (see *[Configuration](/tool/configuration/)*).
 
@@ -381,7 +382,9 @@ applies to *every* forked `java` process, the program `Execute` runs included, w
 ```
 
 An error fails the build either way. A module whose sources declare no public type has nothing to
-document and is skipped, unless `process-javadoc.properties` asks for more with `-package` or `-private`.
+document and is skipped, unless `process-javadoc.properties` asks for more with `-package` or `-private`. An
+`-exclude` line there, as `-exclude=com.example.internal`, leaves those packages and their subpackages out of
+the documentation, several of them separated by `:`, as Maven's `excludePackageNames` does.
 
 <div class="tip">
   Because the file lives in a configuration folder, it is profile-aware and resolved by first match. A
