@@ -67,7 +67,8 @@ The chapters build up from zero knowledge:
 14. **Publishing** - staging a release bundle, publishing it, and driving a release tool.
 15. **Build performance & isolation** - Docker isolation and the build cache.
 16. **Extending the build** - plugins, custom build steps, and entry points of your own.
-17. **Migrating from Maven or Gradle** - moving an existing build over, one concern at a time.
-18. **Discovery (proposal)** - a proposed well-known file by which a library's author says where it is published.
-19. **Reference** - the command line, configuration keys, and the built-in steps.
-20. **Demos** - a runnable example project for every feature.
+17. **Migrating a Maven or Gradle build** - moving an existing build over, one concern at a time.
+18. **Moving a build to modules** - declaring a migrated build in `module-info.java`.
+19. **Discovery (proposal)** - a proposed well-known file by which a library's author says where it is published.
+20. **Reference** - the command line, configuration keys, and the built-in steps.
+21. **Demos** - a runnable example project for every feature.
