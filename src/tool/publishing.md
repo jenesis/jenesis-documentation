@@ -27,6 +27,9 @@ java build/jenesis/Make.java export
   of any build tool through the local Maven repository, and by a Jenesis project that requires the module by
   name through the local module repository.
 
+A `pom.xml` module whose properties set `maven.install.skip` to `true` is staged as usual, but `export` leaves
+it out of the local repository, as Maven's install plugin does.
+
 A project that sets no version exports an unversioned module, whose POM carries `0-SNAPSHOT`. Another project
 requires the module by name, and the local repositories are read before any remote: without a pin it takes
 the latest export, with a pinned version that version's build. A consumer does not notice a new export on its
@@ -54,6 +57,11 @@ build starts.
 Central requires the `-javadoc.jar` but not that it documents anything, and rendered documentation can make
 up most of a release's size. With `-Djenesis.documentation.empty=true`, the jar is still staged but holds
 nothing but a file named `INTENTIONALLY_EMPTY`, and no documentation tool runs.
+
+A `pom.xml` module whose properties set `maven.deploy.skip` is built and tested but never staged, so it is
+neither released nor exported. The values are those Maven's deploy plugin reads: `true` skips every version,
+`releases` a version without `-SNAPSHOT`, `snapshots` one with it, and `false` none; any other value is
+refused.
 
 Central also requires the POM to carry `name`, `description`, `url`, `<licenses>`, `<developers>`, and
 `<scm>`. Jenesis folds two channels into each POM. Everything it can derive from the source comes first: the
