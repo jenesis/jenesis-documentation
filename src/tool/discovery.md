@@ -137,8 +137,19 @@ changing the file, as the owner of a domain moves a website to another host with
 
 Anyone could run such a repository, so there need not be only one. Several could exist side by side, competing on
 availability, on the record they keep and on the checks they run, and offering proxying and supply chain
-security as a service - a market that a single central repository does not allow for today. Hosting moves back
-towards the authors who produce the code, and the choice of whom to trust towards the users who run it.
+security as a service - a market that a single central repository does not allow for today.
+
+Such a market also lets the Java ecosystem face a question it will have to entertain at some point: whether
+every version must be kept forever. Maven Central
+[never removes what was published](https://central.sonatype.org/faq/can-i-change-a-component/), but no one can
+hoard all code forever, and the constraints of recent years show where that premise leads. With several
+repositories, an author can drop an outdated version from their own hosting, and a repository that still keeps
+it can charge for doing so. A build that relies on Byte Buddy 0.1, a pre-release from 2014, would then pay a
+premium to keep it available - and that cost is an incentive to migrate away once the legacy has become too
+expensive.
+
+Hosting thereby moves back towards the authors who produce the code, and the choice of whom to trust towards the
+users who run it.
 
 ## Describing Maven artifacts
 
