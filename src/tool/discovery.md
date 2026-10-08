@@ -26,14 +26,19 @@ file; reading it costs a build one request per vendor.
 No. A central repository that keeps every version ever published, immutable and in one place, has real value,
 and nothing here replaces it. It is also a great way to distribute a small open-source project released now and
 then: one account and one upload, and every build finds the library, with no hosting for its author to keep
-alive. That low barrier to entry is worth keeping. But the infrastructure is expensive, and Maven Central -
+alive. That low barrier to entry is worth keeping.
+
+What this proposal questions is that there is only one such repository, and that every library has to pass
+through it. Today that repository is Maven Central -
 [Maven's default repository](https://maven.apache.org/ref/current/maven-model-builder/super-pom.html), and the
-one most Java builds resolve from - is under constant pressure to pay for itself.
+one most Java builds resolve from.
+
+### One repository, run by one company
 
 Maven Central is, in effect, a monopoly: one repository, run by one company, that every build looks to and
-that no build replaces on its own. That is a problem in itself, whatever its operator does today. It is also a
-single point of failure: when Central cannot be reached, neither can any library published nowhere else, and
-Central's own [terms of service](https://central.sonatype.org/terms.html) state that outages may occur and that
+that no build replaces on its own. That is a problem in itself, whatever its operator does today. It also makes
+Central a single point of failure: when it cannot be reached, neither can any library published nowhere else,
+and its own [terms of service](https://central.sonatype.org/terms.html) state that outages may occur and that
 Sonatype is under no obligation to store or back up what is published.
 
 Mirrors do not change this. [Google's mirror](https://storage-download.googleapis.com/maven-central/index.html),
@@ -44,6 +49,11 @@ otherwise: the language through the [Java Community Process](https://jcp.org/en/
 [OpenJDK bylaws](https://openjdk.org/bylaws), and Maven itself at the
 [Apache Software Foundation](https://www.apache.org/foundation/how-it-works/).
 
+Sonatype is a private firm, majority-owned since
+[2019](https://www.sonatype.com/press-releases/vista-acquires-majority-interest-in-sonatype) by the private equity
+firm [Vista Equity Partners](https://www.vistaequitypartners.com/companies/sonatype/). A private firm can change
+its course quickly, all the more after a change of ownership, and the Java ecosystem has no say in either.
+
 The operator of a monopoly also decides what the ecosystem's repository can do. Java modules have named a library
 the Java-native way since [Java 9](https://openjdk.org/projects/jdk9/) in 2017, almost ten years, yet Maven
 Central [finds an artifact](https://central.sonatype.org/search/rest-api-guide/) by its coordinate, a class name
@@ -52,14 +62,13 @@ elsewhere, such as the [Jenesis Module Index](/modules/), and that is one reason
 the [most downloaded libraries of 2025](https://github.com/jenesis/jenesis-modules/blob/main/data/top/2025.md),
 fewer than a third declare a named module.
 
-Sonatype is a private firm, majority-owned since
-[2019](https://www.sonatype.com/press-releases/vista-acquires-majority-interest-in-sonatype) by the private equity
-firm [Vista Equity Partners](https://www.vistaequitypartners.com/companies/sonatype/). A private firm can change
-its course quickly, all the more after a change of ownership, and the Java ecosystem has no say in either. An
-alternative is therefore a contribution merely by existing: the textbook check on a monopoly is not that it
+An alternative is therefore a contribution merely by existing: the textbook check on a monopoly is not that it
 behaves well, but that its users could go elsewhere.
 
-Since October 2026, publishing an artifact of a commercial nature to Maven Central requires Sonatype's paid
+### What quotas do to what is published
+
+The infrastructure is expensive, and Maven Central is under constant pressure to pay for itself. Since October
+2026, publishing an artifact of a commercial nature to it requires Sonatype's paid
 [Publisher Pro](https://central.sonatype.org/news/20260908_publisher_tiers_commercial_use/), and so does
 publishing beyond [monthly quotas](https://central.sonatype.org/publish/maven-central-publishing-limits/) on file
 count, release count and release size, which
@@ -77,8 +86,6 @@ Edition of Nexus Repository was
 100,000 components and 200,000 requests, which a
 [later release](https://community.sonatype.com/t/sonatype-nexus-repository-3-87-0-released/15852) cut to
 [40,000 components and 100,000 requests a day](https://help.sonatype.com/en/usage-center.html).
-
-### What quotas do to what is published
 
 The quotas are counted per organisation, across all of its namespaces, and every release must carry
 [sources, javadoc, signatures and checksums](https://central.sonatype.org/publish/requirements/). An author who
@@ -123,14 +130,27 @@ of their own.
   [side by side](/why/tool/#verify-what-the-build-downloads) - and declared signatures.
 - **Authors control their costs.** An author can remove an outdated, unmaintained version to save hosting, and
   publish modules as finely, and new versions as often, as the work calls for, without a subscription.
-- **Central repositories stay useful.** A file can point at Maven Central itself, which is where builds look
-  today anyway. A repository that keeps the full collection can offer it as a service, and companies have even
-  more reason than before to keep copies of what they depend on in their own mirrors.
 - **The load is shared.** Every download served by an author's own hosting is one Maven Central does not serve.
+
+### Many central repositories
+
+A discovery file can name Maven Central itself, which is where builds look today anyway, so nothing changes for
+an author who keeps publishing there. And a central repository need not hold every file to offer what builds
+value in Central. A repository could fetch each artifact as a build does, through its author's file, and serve
+it to its users as a proxy. It could keep each version as it was when the repository first fetched it, which a
+repository that follows the latest links keeps close to publication, so that a version, once seen, never
+changes. It could even keep only the checksums it recorded then, and refuse any later file that does not match
+them: the guarantee central storage gives, without storing the artifacts.
+
+Several such repositories could exist side by side, each a proxy of what authors publish, competing on what they
+add - availability, the record they keep, the checks they run on what passes through - and offering to secure a
+build's supply chain as a service. That is more than a single central repository allows for today, where every
+build trusts the same operator to keep what it serves unchanged. Companies, too, have more reason than before to
+keep copies of what they depend on in their own mirrors.
 
 Hosting thereby moves back towards the authors and developers who produce the code, as a second leg of library
 distribution that changes nothing for those who also publish to a central repository - and that leaves what an
-author publishes to the author.
+author publishes to the author, and whom to trust with it to the user.
 
 ## Describing Maven artifacts
 
