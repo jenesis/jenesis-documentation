@@ -93,6 +93,18 @@ nears them can only publish less: merge small modules or drop them, release fixe
 a second project of the same organisation. Each choice is reasonable for one author. Together they leave less on
 offer, a cost every user of the ecosystem pays, though no invoice shows it.
 
+And the restrictions come at an inconvenient time. The pace of publication is likely to accelerate with
+agent-supported development: developers pushed
+[nearly a billion commits to GitHub in 2025](https://github.blog/news-insights/octoverse/octoverse-a-new-developer-joins-github-every-second-as-ai-leads-typescript-to-1/),
+a quarter more than the year before, and more code means more releases. Central is already strained - by
+[Sonatype's own analysis](https://www.sonatype.com/blog/maven-central-and-the-tragedy-of-the-commons), 1% of IP
+addresses consume 83% of its bandwidth - and with more releases and more builds, that strain will likely grow out
+of proportion, with serious consequences for an ecosystem that depends on one repository. At the same time,
+security issues in libraries are found at a far greater pace -
+[published CVE records grew by 21% in 2025](https://github.blog/security/supply-chain-security/a-year-of-open-source-vulnerability-trends-cves-advisories-and-malware/) -
+and every fix asks for a release, so authors must publish more often just as publishing more is what the quotas
+restrict.
+
 ### Publishing beside it
 
 The discovery file lets authors distribute what they build themselves, beside a central repository rather than
@@ -372,8 +384,33 @@ maven.suffixes=none
 
 The `module` template names files by module name, which works because Jenesis's artifact ID is its module name.
 Where the two differ, name the files the way the artifacts are named instead, with `{-suffix}` -
-`.../byte-buddy{-suffix}-{version}{-classifier}.{type}` - or publish `moduletomaven` alone. A release made before
-its POM was attached leaves that POM to the usual repositories, if the build has any.
+`.../byte-buddy{-suffix}-{version}{-classifier}.{type}` - or publish `moduletomaven` alone.
+
+### Attaching the files to earlier releases
+
+A release made before its POM was attached leaves that POM to the usual repositories, if the build has any.
+[`github-backfill.sh`](https://github.com/jenesis/jenesis/blob/main/github-backfill.sh) attaches what such
+releases lack, for any project on GitHub whose artifacts a Maven repository holds. It needs `gh`, signed in to an
+account that may edit the releases, and `curl`:
+
+```
+./github-backfill.sh --repository=jenesis/jenesis --artifact=build.jenesis:build.jenesis
+./github-backfill.sh --repository=jenesis/jenesis --artifact=build.jenesis:build.jenesis --apply
+```
+
+For every release whose tag matches `--tag` (`v{version}` by default), or for the versions named, it downloads the
+jar and the POM of each `--artifact` with their `.asc` signatures, checks each against its `.sha1`, and attaches
+them with a `.sha256`. The first command only lists what it would upload; `--apply` uploads it. A file already on
+a release must be identical to the repository's copy, and a signature is copied, never made. The repositories are
+read from `MAVEN_REPOSITORY_URI` as Jenesis reads it, or from `--maven`, so the files can come from a mirror such
+as [Google's](https://storage-download.googleapis.com/maven-central/index.html).
+
+`--sources` and `--javadoc` add those jars, but neither is needed. Sources and javadoc are not really repository
+artifacts: GitHub already publishes the
+[source code of every release](https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives)
+as an archive, and javadoc jars seem rather outdated - Central accepts
+[placeholders](https://central.sonatype.org/publish/requirements/) for both, and Jenesis can stage an
+[intentionally empty one](/tool/publishing/#staging-the-release-tree).
 
 
 ## Implementing a client
