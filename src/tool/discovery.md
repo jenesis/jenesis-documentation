@@ -202,6 +202,17 @@ GitHub [redirects](https://docs.github.com/en/repositories/releasing-projects-on
 checked like any other, and the template answers Maven metadata naming it, merged with that of the usual
 repositories.
 
+A link may instead name a `maven-metadata.xml`, so that the files come from one place and the versions from a
+Maven repository - a release's assets, say, and Maven Central's list of what was published:
+
+```properties
+maven.latest=https://repo1.maven.org/maven2/{groupPath}/{artifactId}/maven-metadata.xml
+```
+
+A link ending in `/maven-metadata.xml` is downloaded rather than sent a `HEAD` request. Its release, among the
+versions the key serves, is the newest version, and the template answers the file's versions, limited to those
+it serves, as its metadata - so a version range sees them too.
+
 ### Reading the files with Jenesis
 
 Jenesis reads the files where `jenesis.repository.discover` is set, on the command line or in
@@ -358,7 +369,8 @@ key           = ( "module" / "moduletomaven" / "maven" ) [ ".since" / ".suffixes
 module        = location
 moduletomaven = coordinate
 maven         = location
-latest        = https-uri                            ; beside a template naming {version}
+latest        = https-uri                            ; beside a template naming {version}: a redirecting
+                                                     ; link, or one ending in "/maven-metadata.xml"
 coordinate    = groupId ":" artifactId [ ":" extension [ ":" classifier ] ]
 location      = https-uri                            ; names "://": a root, or a template with placeholders
 placeholder   = "{" ( "groupId" / "groupPath" / "artifactId" / "module" / "-suffix"
@@ -391,9 +403,12 @@ To find a key for a module name or a group ID:
 
 1. Choose the keys: `maven` for a Maven request; for a module, `module` then `moduletomaven` on the module path,
    or the other way round when resolving through Maven.
-2. For a request without a version against a template, send its latest link a `HEAD` request without following
-   redirects. A `404` names no version. Otherwise take the `Jenesis-ModuleVersion` or `Jenesis-MavenVersion`
-   header, or match the `Location` against the template up to the end of the path segment holding `{version}`.
+2. For a request without a version against a template, read its latest link. A link ending in
+   `/maven-metadata.xml` is downloaded, and its release among the versions the key serves is the version; a
+   Maven metadata request is answered with its versions, limited the same way. Any other link is sent a `HEAD`
+   request without following redirects: a `404` names no version, and otherwise take the
+   `Jenesis-ModuleVersion` or `Jenesis-MavenVersion` header, or match the `Location` against the template up to
+   the end of the path segment holding `{version}`.
 3. Check the version against `.since` and `.suffixes`; a request still without a version passes over a key
    that restricts versions.
 4. Resolve: expand a coordinate and resolve it as a Maven artifact; ask a root as a repository, listing only
