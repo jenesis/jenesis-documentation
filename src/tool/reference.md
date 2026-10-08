@@ -372,9 +372,9 @@ password location is missing.
 | `jenesis.executor.rebuild` | `false` | Delete `target/` first, forcing a full rebuild. |
 | `jenesis.executor.aggregate` | `false` | Let independent step failures aggregate into one report instead of failing at the first. |
 | `jenesis.executor.events` | `true` | Write each step's outcome of the latest build to `target/.jenesis.events.jsonl`, one JSON object per line (see *[Building &amp; running](/tool/building-and-running/#reading-a-build-s-outcome)*). |
-| `jenesis.executor.concurrency` | `0` | The most build steps that run at once across the whole build; `0` means no limit. |
+| `jenesis.executor.concurrency` | `0` | The most build steps that run at once across the whole build; `0` means no limit, while `jenesis.process.concurrency` still bounds the tools they run. |
 | `jenesis.process.factory` | `tool` | How JDK tool steps launch: `tool` (in-process) or `fork`. |
-| `jenesis.process.concurrency` | `0` | The most JDK tool runs that happen at once across the whole build; `0` means no limit. |
+| `jenesis.process.concurrency` | *(processor count)* | The most tool runs - a compiler, a JDK tool, a forked JVM such as a test run - that happen at once across the whole build; `0` means no limit. |
 | `JAVA_HOME` (env) | *(from `java.home`)* | Locates the JDK binaries when the runtime is not a JDK. |
 
 ## Built-in steps

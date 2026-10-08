@@ -16,9 +16,12 @@ For each module, the inferred build wires the same short chain of steps: **compi
 `build` (or just `java build/jenesis/Make.java` with no selector) walks that chain for every discovered
 module in dependency order. Steps that do not depend on each other run at the same time; on a machine where
 that is too much - a laptop on battery, a small CI runner - `-Djenesis.executor.concurrency=<n>` caps how
-many run at once (`0`, the default, is no limit). `-Djenesis.executor.concurrency` counts every kind of step;
-when it is the tools themselves that are heavy, `-Djenesis.process.concurrency=<n>` caps how many `javac`,
-`jar`, `javadoc` and the like run at once, underneath whatever step limit is in force.
+many run at once (`0`, the default, is no limit). `-Djenesis.executor.concurrency` counts every kind of step.
+The tools the steps run - a compiler, a JDK tool such as `jar` or `javadoc`, a forked JVM such as a test run -
+are bounded apart from it, underneath whatever step limit is in force: by default to as many at once as the
+machine has processors. `-Djenesis.process.concurrency=<n>` sets another bound, and `0` lifts it. A project
+with many test modules on a machine with little memory runs fewer at once with a low value, beside an `-Xmx` for
+the test JVM in `process-test.properties`.
 
 - **Compile** runs `javac` over the module's sources, resolving its dependencies onto the class or module
   path, and writes the `.class` files. Other-language compiles (Kotlin, Scala, Groovy) slot into the same
