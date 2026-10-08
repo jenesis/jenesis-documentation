@@ -86,6 +86,15 @@ to execute a command names paths relative to the `directory` of the `started` li
 shell, and the arguments of a JDK tool such as `javac` or `javadoc` are moved into an argument file under
 `supplement/`, so the line is pasted into a shell as it stands.
 
+The failure quotes the last 200 lines of the tool's output and of its error, naming the file under
+`supplement/` that holds all of it. A failed test run first names its failed tests, up to twenty, read from
+the reports the runner writes under `supplement/reports/` whatever reached the console:
+
+```text
+1 test failed, as reported in target/build/.../test/executed~/supplement/reports:
+  demo.BrokenTest#fails()
+```
+
 The progress lines, the dependency tree and every other line the build prints are coloured with ANSI escape
 sequences. To read them as plain text, from a file or a pipe, pass `-Djenesis.palette.colors=none`.
 
