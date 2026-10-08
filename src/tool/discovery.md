@@ -132,7 +132,8 @@ artifacts it knows, notice each new release as it appears, and fetch it as a bui
 version as first fetched, close to publication, so that a version once seen never changes. Or it could keep only
 the checksums it recorded then and refuse any later file that does not match - the guarantee of central storage,
 without storing the artifacts. A discovery file may name Maven Central itself, so nothing changes for an author
-who publishes there.
+who publishes there. And as a project grows into different needs, its author can move it elsewhere by
+changing the file, as the owner of a domain moves a website to another host without changing its address.
 
 Anyone could run such a repository, so there need not be only one. Several could exist side by side, competing on
 availability, on the record they keep and on the checks they run, and offering proxying and supply chain
