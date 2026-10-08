@@ -58,9 +58,7 @@ The operator of a monopoly also decides what the ecosystem's repository can do. 
 the Java-native way since [Java 9](https://openjdk.org/projects/jdk9/) in 2017, almost ten years, yet Maven
 Central [finds an artifact](https://central.sonatype.org/search/rest-api-guide/) by its coordinate, a class name
 or a checksum, never by its module name. A build cannot resolve a `requires` from Central without a mapping kept
-elsewhere, such as the [Jenesis Module Index](/modules/), and that is one reason modules are adopted slowly: of
-the [most downloaded libraries of 2025](https://github.com/jenesis/jenesis-modules/blob/main/data/top/2025.md),
-fewer than a third declare a named module.
+elsewhere, such as the [Jenesis Module Index](/modules/), and that is one reason modules are adopted slowly.
 
 An alternative is therefore a contribution merely by existing: the textbook check on a monopoly is not that it
 behaves well, but that its users could go elsewhere.
