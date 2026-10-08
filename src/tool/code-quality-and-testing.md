@@ -235,8 +235,19 @@ java -Djenesis.test.filter='greeter-test/.*GreeterTest#prefix_is_a_greeting' bui
 ```
 
 The folder is the one a `+<module>` selector names, and a nested folder such as `libs/core/.*Test` works too.
+In a `pom.xml` project it is the folder of the module's `pom.xml` relative to the root, so the root module's
+entry is written `/<classRegex>`, with nothing before the slash.
 A test module that no entry reaches runs no tests rather than failing, while one an entry does reach still
 fails when nothing there matches.
+
+`jenesis.test.exclude` leaves classes out instead, as Surefire's `<excludes>` does. It takes the same entries
+without a `#<method>`, and the default naming or the filter stays in force for everything else:
+
+```bash
+java -Djenesis.test.exclude='.*IntegrationTest' build/jenesis/Make.java
+```
+
+A test module whose every selected class is left out runs no tests.
 
 ### Selecting tests by tag
 
