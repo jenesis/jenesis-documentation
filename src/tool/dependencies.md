@@ -327,6 +327,11 @@ The tag maps a module name onto a `<groupId>/<artifactId>` the resolved closure 
 is then a module name like any other; the `opens` above is what lets args4j set the annotated fields by
 reflection. Nothing is synthesised and no jar is rewritten.
 
+The alias travels with the jar: its manifest records it as `Jenesis-Aliases`, so a module that depends on
+`demo.cli` inherits the name without declaring it again. An alias for the target of a `requires static`
+applies only where that target is resolved, so a downstream module that never pulls the optional dependency
+in ignores it.
+
 Aliases are a `modular_to_maven` feature: they reach an artifact by its Maven coordinate, which the strict
 `modular` layout does not use.
 

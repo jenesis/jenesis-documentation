@@ -87,7 +87,8 @@ module demo.errorprone {
 
 `@jenesis.plugin <compiler> <coordinate>` resolves into the `plugin` scope of that compiler's own group, the
 same shape a Kotlin compiler plugin uses, and `javac` reads that group into its processor path. An Error
-Prone plugin such as NullAway is another line of exactly the same form.
+Prone plugin such as NullAway is another line of exactly the same form. A coordinate written without a
+version, as here, takes the newest release until `pin` records one.
 
 An `errorprone.properties` in the configuration folder is what turns the plugin on, and carries its flags:
 

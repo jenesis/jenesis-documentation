@@ -23,7 +23,8 @@ java build/jenesis/Make.java pin
 It is opt-in - not part of `build` - and it writes into your project tree rather than under `target/`: a
 `@jenesis.pin` tag per dependency in a **modular** project, a `<dependencyManagement>` block with a
 `<!--Checksum/…-->` comment per entry in a **`pom.xml`** project. Commit the result and the pin set travels
-with the project.
+with the project. A module of a `pom.xml` project inherits the `<!--jenesis.pin-->` and `<!--jenesis.plugin-->`
+comments of a parent POM within the project, and its own pin wins where both name a coordinate.
 
 `pin` is project-wide, and a `+<module>` selector beside it narrows `build` rather than the pin. To pin one
 module, name its step - `<path>` is the module's folder with `+` in place of `/`, as the step's folder under
@@ -77,6 +78,12 @@ module demo.app {
 
 commons-text's POM asks for commons-lang3 3.14.0; the coordinate line overrides it wherever the closure
 reaches it, and the next `pin` records the checksum of the version you chose.
+
+A coordinate with a type or a classifier is longer than `<groupId>/<artifactId>`, so it is written with its
+repository in front, as `maven/org.glassfish/jakarta.json/jar/module` names the type `jar` and the classifier
+`module`.
+Without the `maven/`, the group ID would read as a dependency group, and the build refuses such a token,
+naming the spelling to write.
 
 A refresh rewrites every line of the closure it resolved and removes every other line, except those of a
 group this run resolved no closure for: the documentation tool's pins, in a group of their own that only
