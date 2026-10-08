@@ -171,16 +171,17 @@ Maven artifacts, then modules mapped to Maven, then modules alone.
 
 A domain publishes the file at `https://<domain>/.well-known/java-repository.properties`, a
 [well-known location](https://www.rfc-editor.org/rfc/rfc8615), in UTF-8. Its `maven`
-key says where the artifacts of every group below that domain are:
+key says where the artifacts named after that domain are, and the name in brackets the artifact it is for:
 
 ```properties
-maven=https://github.com/jenesis/jenesis/releases/download/v{version}/{artifactId}-{version}{-classifier}.{type}
-maven.suffixes=none
+maven[build.jenesis]=https://github.com/jenesis/jenesis/releases/download/v{version}/{artifactId}-{version}{-classifier}.{type}
+maven[build.jenesis].suffixes=none
 ```
 
-This file at `jenesis.build` says that the group `build.jenesis` is attached to the GitHub releases of Jenesis,
-and that those releases hold no snapshots. A dependency on `build.jenesis:build.jenesis:0.15.4` then downloads
-`https://github.com/jenesis/jenesis/releases/download/v0.15.4/build.jenesis-0.15.4.jar`.
+This file at `jenesis.build` says that the artifact `build.jenesis` is attached to the GitHub releases of
+Jenesis, and that those releases hold no snapshots. A dependency on `build.jenesis:build.jenesis:0.15.4` then
+downloads `https://github.com/jenesis/jenesis/releases/download/v0.15.4/build.jenesis-0.15.4.jar`. A key without
+brackets, `maven=...`, serves every artifact of every group below the domain.
 
 ### Which file answers
 
@@ -193,22 +194,24 @@ stand for the rest.
 
 ### Several projects under one domain
 
-A domain often serves more than one project, each released on its own and with versions of its own. A key then
-names the artifact it is for in brackets, and the keys beside it carry the same selector. `jenesis.build` serves
-the build tool, the launcher and the crawler, all in the group `build.jenesis`, from the GitHub releases of three
-repositories:
+A domain often serves more than one project, each released on its own and with versions of its own. Each key
+then names the artifacts it is for in brackets, and the keys beside it carry the same selector. `jenesis.build`
+serves the build tool, the launcher and the crawler, all in the group `build.jenesis`, from the GitHub releases of
+three repositories, and the modules of Jenesis Repository, all named `build.jenesis.repository.*`, from Maven
+Central:
 
 ```properties
-maven=https://github.com/jenesis/jenesis/releases/download/v{version}/{artifactId}-{version}{-classifier}.{type}
-maven.latest=https://github.com/jenesis/jenesis/releases/latest/download/{artifactId}.pom
+maven[build.jenesis]=https://github.com/jenesis/jenesis/releases/download/v{version}/{artifactId}-{version}{-classifier}.{type}
+maven[build.jenesis].latest=https://github.com/jenesis/jenesis/releases/latest/download/{artifactId}.pom
 maven[build.jenesis.launcher]=https://github.com/jenesis/jenesis-launcher/releases/download/v{version}/{artifactId}-{version}{-classifier}.{type}
 maven[build.jenesis.launcher].latest=https://github.com/jenesis/jenesis-launcher/releases/latest/download/{artifactId}.pom
 maven[build.jenesis.crawler]=https://github.com/jenesis/jenesis-modules/releases/download/v{version}/{artifactId}-{version}{-classifier}.{type}
 maven[build.jenesis.crawler].latest=https://github.com/jenesis/jenesis-modules/releases/latest/download/{artifactId}.pom
+maven[build.jenesis.repository.*]=https://repo1.maven.org/maven2/
 ```
 
 `maven` selects by artifact ID, and `module` and `moduletomaven` select by module name. A selector ending in `*`
-selects every name that starts with the rest, as `maven[byte-buddy-*]` would for Byte Buddy's artifacts. The
+selects every name that starts with the rest, as `maven[build.jenesis.repository.*]` does. The
 exact name wins over the longest such prefix, and either over the key for all. A name that no key of the file
 selects, in a file without a key for all, is absent from it.
 
@@ -250,7 +253,7 @@ sends the link a `HEAD` request, follows no redirect, and reads the version from
 against the template:
 
 ```properties
-maven.latest=https://github.com/jenesis/jenesis/releases/latest/download/{artifactId}.pom
+maven[build.jenesis].latest=https://github.com/jenesis/jenesis/releases/latest/download/{artifactId}.pom
 ```
 
 GitHub [redirects](https://docs.github.com/en/repositories/releasing-projects-on-github/linking-to-releases)
@@ -264,7 +267,7 @@ Maven repository - a release's assets, say, and the list of what was published t
 repository keeps:
 
 ```properties
-maven.latest=https://maven-repository.example.com/releases/{groupPath}/{artifactId}/maven-metadata.xml
+maven[build.jenesis].latest=https://maven-repository.example.com/releases/{groupPath}/{artifactId}/maven-metadata.xml
 ```
 
 A link ending in `/maven-metadata.xml` is downloaded rather than sent a `HEAD` request. Its release, among the
@@ -333,9 +336,9 @@ A module that is not published to Maven, or a build that resolves modules on the
   repository is.
 
 ```properties
-module=https://github.com/jenesis/jenesis/releases/download/v{version}/{module}-{version}{-classifier}.{type}
-module.latest=https://github.com/jenesis/jenesis/releases/latest/download/{module}.jar
-module.suffixes=none
+module[build.jenesis]=https://github.com/jenesis/jenesis/releases/download/v{version}/{module}-{version}{-classifier}.{type}
+module[build.jenesis].latest=https://github.com/jenesis/jenesis/releases/latest/download/{module}.jar
+module[build.jenesis].suffixes=none
 ```
 
 A build that resolves a module from its jar and the `requires` of its `module-info` asks `module` first - in
@@ -385,13 +388,13 @@ Every release then holds `build.jenesis-<version>.jar` and `.pom`, each with an 
 every kind of request at them:
 
 ```properties
-module=https://github.com/jenesis/jenesis/releases/download/v{version}/{module}-{version}{-classifier}.{type}
-module.latest=https://github.com/jenesis/jenesis/releases/latest/download/{module}.jar
-module.suffixes=none
+module[build.jenesis]=https://github.com/jenesis/jenesis/releases/download/v{version}/{module}-{version}{-classifier}.{type}
+module[build.jenesis].latest=https://github.com/jenesis/jenesis/releases/latest/download/{module}.jar
+module[build.jenesis].suffixes=none
 moduletomaven=build.jenesis:{module}
-maven=https://github.com/jenesis/jenesis/releases/download/v{version}/{artifactId}-{version}{-classifier}.{type}
-maven.latest=https://github.com/jenesis/jenesis/releases/latest/download/{artifactId}.pom
-maven.suffixes=none
+maven[build.jenesis]=https://github.com/jenesis/jenesis/releases/download/v{version}/{artifactId}-{version}{-classifier}.{type}
+maven[build.jenesis].latest=https://github.com/jenesis/jenesis/releases/latest/download/{artifactId}.pom
+maven[build.jenesis].suffixes=none
 ```
 
 | A build asks for | Answered by | Downloads |
@@ -403,8 +406,8 @@ maven.suffixes=none
 | a checksum, to check each download | the same template | `.jar.sha256`, `.pom.sha256` |
 | the newest version | `module.latest`, `maven.latest` | nothing: a `HEAD` request that GitHub redirects |
 
-The same file selects the keys of the launcher and the crawler, which are released from repositories of their
-own, as *[Several projects under one domain](#several-projects-under-one-domain)* shows.
+The same file holds such keys for the launcher, the crawler and Jenesis Repository, which are released from
+repositories of their own, as *[Several projects under one domain](#several-projects-under-one-domain)* shows.
 
 The `module` template names files by module name, which works because Jenesis's artifact ID is its module name.
 Where the two differ, name the files the way the artifacts are named instead, with `{-suffix}` -
