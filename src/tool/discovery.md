@@ -78,12 +78,19 @@ for an exemption, which Sonatype grants case by case.
 Byte Buddy would, for the most part, have stayed within the file and release quotas set today. A
 [release of it](https://repo1.maven.org/maven2/net/bytebuddy/) now publishes about 120 files and close to 70 MB,
 though, so a second release in the same month passes the size quota - as happened in about half the months since
-2023 in which Byte Buddy released. And nothing guarantees that the quotas will not be lowered: the free Community
-Edition of Nexus Repository was
-[launched in 2025](https://www.sonatype.com/blog/sonatype-nexus-repository-community-edition) with limits of
-100,000 components and 200,000 requests, which a
-[later release](https://community.sonatype.com/t/sonatype-nexus-repository-3-87-0-released/15852) cut to
-[40,000 components and 100,000 requests a day](https://help.sonatype.com/en/usage-center.html).
+2023 in which Byte Buddy released. And nothing guarantees that the quotas will not be lowered, as Sonatype's
+repository manager shows. Its free edition was Nexus Repository OSS,
+[open source under the Eclipse Public License](https://github.com/sonatype/nexus-public) and without usage limits,
+until [version 3.77.0](https://community.sonatype.com/t/sonatype-nexus-repository-oss-is-now-community-edition/14324)
+replaced it in 2025 with a
+[Community Edition](https://www.sonatype.com/blog/sonatype-nexus-repository-community-edition): free of charge,
+but no longer open source, used under an
+[end-user licence agreement](https://www.sonatype.com/dnt/usage/community-edition-eula), and capped at 100,000
+components and 200,000 requests. That edition was already a limitation, and beyond its caps Sonatype
+[requires a paid Pro licence](https://help.sonatype.com/en/usage-center.html). A
+[later release](https://community.sonatype.com/t/sonatype-nexus-repository-3-87-0-released/15852) cut the caps
+to 40,000 components and 100,000 requests a day. The open-source core is still published, but with the Maven,
+raw and APT formats alone and an embedded database meant for small workloads.
 
 The quotas are counted per organisation, across all of its namespaces, and every release must carry
 [sources, javadoc, signatures and checksums](https://central.sonatype.org/publish/requirements/). An author who
