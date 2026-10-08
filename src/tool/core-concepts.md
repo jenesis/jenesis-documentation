@@ -92,6 +92,10 @@ how their dependencies resolve, and what artifacts come out. The setting
 `auto` resolves to `maven` when it finds a root `pom.xml`, and otherwise to `modular_to_maven` when it finds a
 `module-info.java`. It never chooses `modular` for you - you ask for it explicitly.
 
+A project with neither file has nothing to build yet. `help` and `skill` still print there, so the engine can
+be vendored before a build declaration exists, and every other selector fails, naming `skill/migrate` as the
+way to move a Maven or Gradle build in.
+
 <div class="note">
   Discovery walks the project tree, so a repository that holds more than one project needs a way to say where
   one stops. An empty <strong><code>.jenesis.skip</code></strong> file marks a subtree as none of this build's
