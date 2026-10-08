@@ -106,8 +106,20 @@ A developer is published with its key as the POM's `<id>`, `raphw` above. `devel
 id, or none when it is empty. A source `pom.xml` developer that declares no `<id>` is published without one,
 and one that declares nothing but its `<id>` is kept as well.
 
-In a `pom.xml` project, a module inherits its description, URL, licences, developers, organisation and SCM
-from its parents, local or fetched, as Maven's model does. The URL and the SCM locations get the module's
+A developer may also carry `developer.<key>.url`, `organization`, `organizationUrl`, `timezone` and `roles`, the
+roles comma-separated, and the POM's `<issueManagement>` and `<ciManagement>` come from `issueManagement.system`
+and `issueManagement.url`, and `ciManagement.system` and `ciManagement.url`:
+
+```properties
+developer.raphw.roles=maintainer
+issueManagement.system=GitHub
+issueManagement.url=https://github.com/jenesis/jenesis/issues
+```
+
+A source `pom.xml` supplies all of these from its own elements, and from its parents where it declares none.
+
+In a `pom.xml` project, a module inherits its description, URL, licences, developers, organisation, SCM, issue
+management and CI management from its parents, local or fetched, as Maven's model does. The URL and the SCM locations get the module's
 artifact ID appended, unless the parent sets `child.project.url.inherit.append.path="false"` on its
 `<project>`, or the matching `child.scm.*.inherit.append.path` on its `<scm>`; licences and developers are
 inherited only as a whole. What a module declares or inherits wins, and `project.properties` fills in only what
