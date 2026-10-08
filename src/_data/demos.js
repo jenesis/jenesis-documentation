@@ -14,7 +14,7 @@ export default {
       demos: [
         { slug: "demo-01-java-pom", name: "Java (Maven project)", blurb: "A single-module Java project in the classic Maven layout." },
         { slug: "demo-02-java-modular", name: "Java (modular project)", blurb: "The same, as a real Java Module System module with a module-info." },
-        { slug: "demo-03-java-pom-multi", name: "Multi-module (Maven)", blurb: "Several Maven-layout modules built together." },
+        { slug: "demo-03-java-pom-multi", name: "Multi-module (Maven)", blurb: "Several Maven-layout modules built together, with a bill of materials over them." },
         { slug: "demo-04-java-modular-multi", name: "Multi-module (modular)", blurb: "A multi-module modular project and its module graph." },
         { slug: "demo-05-java-pom-model-4-1-0", name: "Multi-module (POM model 4.1.0)", blurb: "The multi-module Maven project in Maven 4's POM model, with its subprojects, parents and versions inferred." },
         { slug: "demo-06-startup", name: "Startup cost", blurb: "What a build pays to launch, and what a reused JVM saves on the calls after it." },
