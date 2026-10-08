@@ -47,6 +47,10 @@ java -Djenesis.project.version=1.0.0 \
      build/jenesis/Make.java stage
 ```
 
+`javac` stamps the version into what it compiles as the module version, so it must be one: a version that starts
+with a digit, as `1.2.0` or `1.2.0-3-gbd7698f`. Any other value, such as `v1.2.0`, is refused before the
+build starts.
+
 Central requires the `-javadoc.jar` but not that it documents anything, and rendered documentation can make
 up most of a release's size. With `-Djenesis.documentation.empty=true`, the jar is still staged but holds
 nothing but a file named `INTENTIONALLY_EMPTY`, and no documentation tool runs.
@@ -89,6 +93,16 @@ them from its own `<organization>`. `copyright` has no place in a POM; it is tak
 an installer, and no year is added to it. `manufacturer.name`, `manufacturer.url` and `publisher` have no place
 in a POM either and are recorded in the SBOM alone. Every one of these keys is optional, and nothing is recorded
 for a key the project does not declare.
+
+A developer is published with its key as the POM's `<id>`, `raphw` above. `developer.<key>.id` names another
+id, or none when it is empty. A source `pom.xml` developer that declares no `<id>` is published without one.
+
+In a project built from `module-info.java`, the coordinate follows from the module name: its first two
+segments form the group ID (`jenesis.maven.segments`) and the whole name is the artifact ID. `project=<groupId>`
+and `artifact=<artifactId>` in `project.properties` replace them for every module. A module that must keep a
+coordinate of its own, such as one it was published under before, declares it in a `project.properties` of its
+own, in the `META-INF/build.jenesis/` folder beside its sources. That file is layered over the root one and
+wins for every key it names, the metadata above included.
 
 The jar carries the POM it is published with as well, at `META-INF/maven/<groupId>/<artifactId>/pom.xml`, beside a
 `pom.properties` that holds its `groupId`, `artifactId` and `version` - where Maven places them in every jar it
@@ -308,8 +322,9 @@ rather than the usual per-module configuration folder, because JReleaser resolve
 configuration against one base directory. `-Djenesis.jreleaser.config=<path>` names a different file.
 
 It contributes two steps. The first writes a `jreleaser.properties` holding `JRELEASER_PROJECT_VERSION`, the
-version this build stamped, so the version is stated once rather than passed to two tools that can then
-disagree. Point a configuration at it with
+version this build stamped: `jenesis.project.version`, or where it is not set the version every staged POM
+carries, as a `pom.xml` declares it in `<version>`. The version is thereby stated once rather than passed to
+two tools that can then disagree. Point a configuration at it with
 `environment: { variables: target/release/jreleaser/environment/output/jreleaser.properties }`. The second runs
 the `jreleaser` executable found in the environment, forwarding the process environment unchanged. Every
 `JRELEASER_*` credential is therefore read by JReleaser itself and never touched, logged, or stored by the
