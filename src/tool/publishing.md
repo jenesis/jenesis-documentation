@@ -207,7 +207,21 @@ into the local module repository beside the module jar:
 Another project consumes it with `@jenesis.bom demo.bom`, exactly the way it consumes a hand-written file. The
 BOM travels through the module layout only; the Maven export never carries it.
 
-{% demos 20 %}
+### A Maven BOM from a pom.xml
+
+In a `pom.xml` project, a bill of materials is a module of `<packaging>pom</packaging>` that lists no modules
+but declares a `<dependencyManagement>`, as a `mockito-bom` does. Nothing is compiled for it, and `stage`
+publishes it as its POM alone, beside the jars:
+
+```text
+target/stage/maven/output/build/jenesis/demo/bom/1.0.0/bom-1.0.0.pom
+```
+
+The staged POM carries the BOM's coordinate, packaging and metadata, and its own `<dependencyManagement>` with
+every `${...}` resolved. It names no parent and leaves out the parent's managed versions, since an aggregator
+is not published. `export` installs it and `release` publishes it like any staged POM.
+
+{% demos 20, 3 %}
 
 ## Signing the jar itself
 

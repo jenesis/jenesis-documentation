@@ -74,8 +74,9 @@ A `pom.xml` is read for what it declares, not for how Maven builds it:
   of any POM that Maven activates by `<jdk>` or by `<activeByDefault>`.
 - **Ignored:** `<build><plugins>` and `<pluginManagement>`, a profile activated by a property, the operating
   system, a file or `-P`, `<repositories>` and `settings.xml`, a resource's includes, excludes, `targetPath`
-  and filtering, and every packaging but `jar`. A `pom` aggregator is followed for its modules; a `war` is not
-  built.
+  and filtering, and every packaging but `jar`. A `pom` aggregator is followed for its modules, a `pom` module
+  with a `<dependencyManagement>` and no modules is published as a
+  [bill of materials](/tool/publishing/#a-maven-bom-from-a-pom-xml), and a `war` is not built.
 
 Nothing ignored is reported, so list the old build's plugins, profiles and repositories before deleting
 anything. A source directory gives the jar only what its compilers read, as Maven's does, so a file that must
