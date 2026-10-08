@@ -79,6 +79,7 @@ tree, on its current default branch, before a chapter describes it.
 | build extensions | plugin; in Jenesis Repository, module or capability | plug-in |
 | `build.jenesis/` | the configuration folder | configuration location, configuration directory |
 | paths | class path, module path (two words in prose) | classpath (except the `classpath/` folder) |
+| Maven coordinates | group ID, artifact ID in prose; `groupId`, `artifactId` as code | groupId, artifactId as plain text; group id |
 | PIT | PIT (`pitest.properties`) | PiTest |
 
 British spelling throughout (licence, behaviour, serialise, recognise); Java identifiers keep their own

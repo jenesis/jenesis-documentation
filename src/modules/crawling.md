@@ -109,7 +109,7 @@ Programs that only read what is on disk:
 | `DriftReport` | Writes the drift report. With `-Djenesis.crawler.drift.emit=<category>` it also writes a `SetOwners` file proposing an owner for every module in that category. |
 | `ModuleSummary` | Regenerates the coverage summary. |
 | `TopModules` | Writes a top-modules report for each `data/top/<year>.txt` list you pass; `-Djenesis.crawler.top.bleeding=true` produces the bleeding-edge variant. `-Djenesis.crawler.top.releases.uri=<repository>` adds the publishing columns, read from that repository's directory listings, which its `robots.txt` must allow; `-Djenesis.crawler.top.releases.concurrency` (default `32`) bounds the listing requests in flight. |
-| `ModuleMaven` | Prints the named modules of the index whose name starts with their owner's groupId as a flat `<module-name>=<groupId>:<artifactId>` properties stream, for a tool that only needs the mapping. Reads `data/modules/` in the working directory. |
+| `ModuleMaven` | Prints the named modules of the index whose name starts with their owner's group ID as a flat `<module-name>=<groupId>:<artifactId>` properties stream, for a tool that only needs the mapping. Reads `data/modules/` in the working directory. |
 
 The [reports chapter](/modules/reports/) describes what the summary, top-modules and drift reports contain;
 the public index regenerates them daily. The checked-in `owners-republisher-fixes.properties` in the

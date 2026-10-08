@@ -19,7 +19,7 @@ door is the **module summary**, which links the top-modules reports; the drift r
 for all of Maven Central. Its opening **Totals** table is the headline. In a recent crawl it counted more
 than **18 million** artifacts scanned, of which about **1.7 million** are modular - over **350 000** named
 and about **1.3 million** automatic. They carry more than **40 000** distinct module names from over
-**5 000** publishing groupIds.
+**5 000** publishing group IDs.
 
 Two terms recur throughout, and the split matters:
 
@@ -30,7 +30,7 @@ Two terms recur throughout, and the split matters:
 Below the totals, the summary breaks the index down further. It reports the resolved index size,
 named-versus-automatic counts, and how often a declared `module-info` version agrees with the Maven
 version. It then shows monthly publication activity, naming patterns, and top-N tables such as modules by
-version count and groupIds by module count.
+version count and group IDs by module count.
 
 <div class="note">
   Unless a section is explicitly labelled <em>audit</em> or <em>history</em>, every number in the summary
@@ -47,7 +47,7 @@ There is one report per year - [2019](https://github.com/jenesis/jenesis-modules
 through [2025](https://github.com/jenesis/jenesis-modules/blob/main/data/top/2025.md) - so you can watch
 adoption move over time.
 
-Each report opens with two summary tables, **by artifact** and **by groupId**, counted in three columns:
+Each report opens with two summary tables, **by artifact** and **by `groupId`**, counted in three columns:
 
 | Column | Covers |
 | --- | --- |
@@ -86,8 +86,8 @@ today, and the ⚠️ / 🚩 activity flags use rolling 12- and 36-month windows
 the trend; read this one for where modularisation stands right now.
 
 It also measures how each row publishes against Maven Central's publishing limits, which the per-year
-reports leave out. The figures describe the row's whole **groupId** rather than its single artifact,
-because a group is the closest stand-in for the organisation Central limits. Rows sharing a groupId
+reports leave out. The figures describe the row's whole **group ID** rather than its single artifact,
+because a group is the closest stand-in for the organisation Central limits. Rows sharing a group ID
 therefore carry the same figures:
 
 | Column | Shows |
@@ -98,7 +98,7 @@ therefore carry the same figures:
 | Over Central limit | Which limits - files, size, releases - the group's monthly volume exceeds. A 🔺 marks each figure above its limit. |
 
 The two summary tables gain matching rows, counting the artifacts and the groups over each limit and over
-any of them. Read every figure as a **best case**. An organisation may hold several groupIds, so a group
+any of them. Read every figure as a **best case**. An organisation may hold several group IDs, so a group
 under a limit can still belong to an account over it. Central also averages over a rolling three months,
 so a group that published in one burst can breach there while its yearly mean here stays under.
 
@@ -107,7 +107,7 @@ so a group that published in one burst can breach there while its yearly mean he
 A module name is not owned by anyone on Maven Central. It is just a string a jar carries, and unrelated
 artifacts routinely declare the same one. The
 [**drift report**](https://github.com/jenesis/jenesis-modules/blob/main/data/DRIFTERS.md) lists every module
-name published by **more than one groupId** whose ownership has not been fully decided - that is,
+name published by **more than one group ID** whose ownership has not been fully decided - that is,
 whose `owners.tsv` does not mark every publisher as `allowed` or `rejected`.
 
 It opens with a table counting, per category, both the names still unresolved and those already
@@ -115,15 +115,15 @@ resolved through an `owners.tsv`. The lists that follow cover the unresolved nam
 
 | Category | What the collision looks like |
 | --- | --- |
-| `migration` | A groupId rename or relocation: the old coordinate went dormant and a newer one took over. |
+| `migration` | A group ID rename or relocation: the old coordinate went dormant and a newer one took over. |
 | `fork` | A second, cross-organisation coordinate publishes the name while the original is still active. |
 | `republisher` | The earliest publisher of the name is a repackager, and the natural owner also publishes it - so the resolved owner would change. |
 | `shaded` | The natural owner already resolves; other coordinates merely bundle a copy under the same name. |
 | `explicit-rules` | Names a hand-curated rule assigns to a fixed owner, regardless of the heuristic. |
-| `tld-dropped`, `two-segments` | Names whose prefix is the owner's groupId with its first one or two segments dropped (`org.example.foo` publishing `example.foo`). |
+| `tld-dropped`, `two-segments` | Names whose prefix is the owner's group ID with its first one or two segments dropped (`org.example.foo` publishing `example.foo`). |
 | `unclassified` | Everything that fits none of the above. |
 
-Each category then lists its modules with a per-groupId timeline: whether that groupId is `allowed`,
+Each category then lists its modules with a timeline per group ID: whether that group ID is `allowed`,
 `rejected`, or still undecided, which one is the **current owner**, and each publisher's version range and
 activity.
 

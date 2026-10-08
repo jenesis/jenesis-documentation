@@ -296,7 +296,7 @@ a resolver of your own. Each module has a directory whose path mirrors its dot-s
 | `versions.tsv` | The **audit log**: every `(groupId, artifactId, version)` that has ever declared this name, append-only in publication order, never pruned. |
 | `artifacts.tsv` | The **resolved view** keyed by Maven version, read by `/artifact/`. |
 | `modules.tsv` | The **resolved view** keyed by module-info version, read by `/module/`. Present only when the owner publishes named releases. |
-| `owners.tsv` | An optional **ownership policy**: which publishing groupIds are `allowed` or `rejected` for this name. |
+| `owners.tsv` | An optional **ownership policy**: which publishing group IDs are `allowed` or `rejected` for this name. |
 
 **`artifacts.tsv`** has four columns, sorted version-descending:
 
@@ -323,7 +323,7 @@ fetch the coordinate named by the last three. Classifier-scoped variants live al
 A tool that needs only the mapping can read
 [`data/module-maven.properties`](https://github.com/jenesis/jenesis-modules/blob/main/data/module-maven.properties)
 instead, regenerated daily. It lists named modules as `<module>=<groupId>:<artifactId>`, one per line, for
-each name that starts with its owner's groupId or a known alias of it, such as `kotlin` for
+each name that starts with its owner's group ID or a known alias of it, such as `kotlin` for
 `org.jetbrains.kotlin`.
 
 The build tool reads them this way on request, so a project that would rather not depend on the service can
