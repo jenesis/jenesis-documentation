@@ -116,6 +116,10 @@ runs from the most specific per-module location to the project-wide fallback:
 | `build.jenesis/` next to the `pom.xml` | `maven` | both of the pom's modules |
 | the `jenesis.project.configuration` folders (default `build.jenesis/` at the project root) | all | project-wide |
 
+The first file found configures the tool alone, and nothing merges. A module's `process-javac.properties`
+therefore replaces the project-wide one rather than adding to it, and repeats the lines of it the module still
+needs. Nothing below `META-INF/build.jenesis/` reaches a jar the module packs, the sources jar included.
+
 What these folders can hold - presence activates, contents configure:
 
 - **Code quality**: `checkstyle.xml`, `pmd.xml`, `spotbugs-exclude.xml`, `detekt.yml`, `codenarc.xml`,
