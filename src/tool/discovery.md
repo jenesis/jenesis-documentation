@@ -30,8 +30,28 @@ alive. That low barrier to entry is worth keeping. But the infrastructure is exp
 one most Java builds resolve from - is under constant pressure to pay for itself.
 
 Maven Central is, in effect, a monopoly: one repository, run by one company, that every build looks to and
-that no build replaces on its own. That is a problem in itself, whatever its operator does today. Its operator,
-Sonatype, is a private firm, majority-owned since
+that no build replaces on its own. That is a problem in itself, whatever its operator does today. It is also a
+single point of failure: when Central cannot be reached, neither can any library published nowhere else, and
+Central's own [terms of service](https://central.sonatype.org/terms.html) state that outages may occur and that
+Sonatype is under no obligation to store or back up what is published.
+
+Mirrors do not change this. [Google's mirror](https://storage-download.googleapis.com/maven-central/index.html),
+like those companies run for themselves, copies what Central holds, while publishing still goes through Sonatype
+alone. Under the same terms, Sonatype decides at its sole discretion what it accepts, and may change the terms at
+any time without notice, with no community process behind either. The rest of the Java ecosystem is governed
+otherwise: the language through the [Java Community Process](https://jcp.org/en/home/index), the JDK under the
+[OpenJDK bylaws](https://openjdk.org/bylaws), and Maven itself at the
+[Apache Software Foundation](https://www.apache.org/foundation/how-it-works/).
+
+The operator of a monopoly also decides what the ecosystem's repository can do. Java modules have named a library
+the Java-native way since [Java 9](https://openjdk.org/projects/jdk9/) in 2017, almost ten years, yet Maven
+Central [finds an artifact](https://central.sonatype.org/search/rest-api-guide/) by its coordinate, a class name
+or a checksum, never by its module name. A build cannot resolve a `requires` from Central without a mapping kept
+elsewhere, such as the [Jenesis Module Index](/modules/), and that is one reason modules are adopted slowly: of
+the [most downloaded libraries of 2025](https://github.com/jenesis/jenesis-modules/blob/main/data/top/2025.md),
+fewer than a third declare a named module.
+
+Sonatype is a private firm, majority-owned since
 [2019](https://www.sonatype.com/press-releases/vista-acquires-majority-interest-in-sonatype) by the private equity
 firm [Vista Equity Partners](https://www.vistaequitypartners.com/companies/sonatype/). A private firm can change
 its course quickly, all the more after a change of ownership, and the Java ecosystem has no say in either. An
