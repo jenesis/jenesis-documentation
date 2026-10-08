@@ -142,6 +142,9 @@ towards the authors who produce the code, and the choice of whom to trust toward
 
 ## Describing Maven artifacts
 
+The rest of this page is the proposal itself: the file a domain publishes and how a build reads it, starting with
+Maven artifacts, then modules mapped to Maven, then modules alone.
+
 A domain publishes the file at `https://<domain>/.well-known/java-repository.properties`, a
 [well-known location](https://www.rfc-editor.org/rfc/rfc8615), in UTF-8. Its `maven`
 key says where the artifacts of every group below that domain are:
