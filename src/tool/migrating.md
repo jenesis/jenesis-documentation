@@ -45,8 +45,8 @@ project, as white-box tests are, or by two projects of the build. Run the first 
 the second at the root:
 
 ```bash
-comm -12 <(cd src/main/java && find . -name '*.java' | sed 's|/[^/]*$||' | sort -u) \
-         <(cd src/test/java && find . -name '*.java' | sed 's|/[^/]*$||' | sort -u)
+comm -12 <(cd src/main/java && find . -name '*.java' ! -name module-info.java | sed 's|/[^/]*$||' | sort -u) \
+         <(cd src/test/java && find . -name '*.java' ! -name module-info.java | sed 's|/[^/]*$||' | sort -u)
 find . -path '*/src/main/java/*.java' | sed 's|/src/main/java/| |; s|/[^/]*$||' \
     | sort -u | cut -d' ' -f2 | sort | uniq -d
 ```
@@ -129,7 +129,13 @@ A module inherits these comments from its local parent, never from a POM that on
 
 In a process file, a flag given more than once, as `--add-opens` is, takes one argument per line of its value,
 and a `--release` is refused, since `maven.compiler.release` declares it. `javac` runs without `-g`, so a test
-that reads parameter names needs `-g=` or `-parameters=` there.
+that reads parameter names needs `-g=` or `-parameters=` there. A plugin may pass flags its configuration never
+shows, as Palantir Baseline adds `-parameters`, so compare the old build's effective `javac` arguments:
+`mvn -X compile` prints them after "Command line options:", and `gradle compileJava --debug` on its "Compiler
+arguments:" line.
+
+Checkstyle reads a copy of the sources below `target/build/`, so a suppression keyed on a source folder, as
+`src/test/java`, matches nothing. Key it on the package's folders instead, as `[/\\]example[/\\]test[/\\]`.
 
 The tests run a little differently, too. `jenesis.test.filter` replaces the default naming rather than
 narrowing it, and the root module's entry is written `/<classRegex>`. The tests run against the module's jar,
@@ -143,7 +149,8 @@ version must not meet the consumer's, goes into a
 [module layer](/tool/dependencies/#keeping-a-dependency-private), which is declared in `module-info.java`
 alone, so a `pom.xml` build keeps such a dependency plain until phase two. One runnable jar is `launcher=true`
 in `packaging.properties`, and fewer dependencies for consumers means publishing the dependency as a
-dependency.
+dependency. A Spring Boot application that was repackaged is `bundle=true` instead: its jars and the argument
+file that launches them.
 
 ## Pinning and comparing the two builds
 
