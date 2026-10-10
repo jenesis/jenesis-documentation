@@ -62,6 +62,7 @@ The tests then run on the module path, which breaks what read the class path:
 | A class in the unnamed package | A module holds none, so a test class there fails to load. Move it into a package; a test that needs such a class compiles it at run time. |
 | `javac` called by a test | compile-testing and `javax.tools` compile against `java.class.path`, which is empty now. Hand the compiler `-classpath` with `System.getProperty("jdk.module.path")`, or append that property to `java.class.path` before the tests run, from a `LauncherSessionListener` the test module provides. |
 | Mockito and a JDK interface | Mocking an interface of a JDK module, as `java.compiler`'s `Element`, needs `org.mockito` to read that module: `--add-reads=org.mockito=java.compiler` in `process-test.properties`. |
+| A jar that cannot be a module | A dependency with a class in the unnamed package, as JavaCC 8 has, fails the tests' module path with a `FindException`, and no dependency of a module stays on the class path alone. Move the tests that need it to a test source folder only the old build compiles. |
 
 ## Declaring the build in module-info.java
 
