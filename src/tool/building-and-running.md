@@ -195,7 +195,8 @@ file of the module rather than a setting. JUnit 4 and TestNG run no platform eng
 The tests run against the packaged test jar, so a resource a test loads with `getResource` is an entry
 inside a jar. A test that turns its URL into a `java.io.File` fails there with
 "URI is not hierarchical". `-Djenesis.test.jars=false` runs the tests against the module's classes and
-resources folders instead, as Maven and Gradle do, while the modules they depend on stay jars:
+resources folders instead, as Maven and Gradle do, while the modules they depend on stay jars. Each class is
+then on the test path once, so a scan of the class path finds it once:
 
 ```bash
 java -Djenesis.test.jars=false build/jenesis/Make.java
