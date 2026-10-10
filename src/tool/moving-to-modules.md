@@ -20,6 +20,17 @@ package at a time, building after each:
 | White-box tests | Moving them into packages of the test module's own, such as `<package>.test`, testing the public API where they can. What a test still needs becomes public in a package exported to the tests alone, `exports <package> to <test module>`, with `opens <package> to <test module>` where it reflects. |
 | Two projects | Moving the classes so each package lives in one module, or merging the projects, with a qualified export for a package only a sibling uses. |
 | A dependency | Excluding the jar that holds the package, or moving the project's classes out of it. |
+| Two dependencies | Excluding one of the jars, or dropping the test that needs both. |
+
+No module path holds a package two jars share. After a build of the `pom.xml`, this prints each package two
+jars of a test closure hold:
+
+```bash
+for jar in $(find target/build -path '*/test-module-*/resolved/*.jar'); do
+    unzip -Z1 "$jar" '*.class' 2>/dev/null | grep / | grep -v '^META-INF/' \
+        | sed "s|/[^/]*$| ${jar##*/}|"
+done | sort -u | cut -d' ' -f1 | uniq -d
+```
 
 ### Exports and opens to the test module
 
@@ -42,6 +53,16 @@ A test `module-info.java` that names the main module itself, the `--patch-module
 for white-box tests, is not supported. The tests become a module of their own, as the table above takes them
 apart.
 
+### What tests on the module path break
+
+The tests then run on the module path, which breaks what read the class path:
+
+| What breaks | What to do |
+| --- | --- |
+| A class in the unnamed package | A module holds none, so a test class there fails to load. Move it into a package; a test that needs such a class compiles it at run time. |
+| `javac` called by a test | compile-testing and `javax.tools` compile against `java.class.path`, which is empty now. Hand the compiler `-classpath` with `System.getProperty("jdk.module.path")`, or append that property to `java.class.path` before the tests run, from a `LauncherSessionListener` the test module provides. |
+| Mockito and a JDK interface | Mocking an interface of a JDK module, as `java.compiler`'s `Element`, needs `org.mockito` to read that module: `--add-reads=org.mockito=java.compiler` in `process-test.properties`. |
+
 ## Declaring the build in module-info.java
 
 Each module is the folder whose `module-info.java` sits at the root of its sources. In a Maven tree that is
@@ -63,7 +84,7 @@ into the module declaration and the files beside it:
 | Name and description | The first sentence and the second paragraph of the module's Javadoc. |
 | The coordinate | Derived from the module name; `project` and `artifact` in `project.properties` keep a published one. |
 | URL, licences, developers, SCM | `project.properties`. |
-| The version | `-Djenesis.project.version`. |
+| The version | `version=<version>` in `project.properties` at the root, which `-Djenesis.project.version` overrides. |
 
 ### Keeping published coordinates
 
@@ -73,6 +94,9 @@ the artifact ID. A project whose artifacts were published under other coordinate
 its own declares them in a `project.properties` of its own, in the `META-INF/build.jenesis/` folder beside its
 sources, which wins over the root file for every key it names. *[Publishing](/tool/publishing/)* lists the
 other keys the file holds.
+
+Once the `pom.xml` files are gone, so is the version they held. Without a `version` in `project.properties` or
+the setting, what is staged is unversioned and its POM carries `0-SNAPSHOT`.
 
 ## Pinning again
 
