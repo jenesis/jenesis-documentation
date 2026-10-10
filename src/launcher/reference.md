@@ -7,8 +7,9 @@ description: Every descriptor key and manifest attribute the launcher reads, whi
 Two files drive a launcher jar: the **descriptor** at `META-INF/jenesis/application.properties` that tells the launcher what to
 run, and the jar **manifest** that tells the JVM to start the launcher. When the build tool
 [produces the jar](/launcher/producing-a-launcher-jar/), it writes `mainClass`, `mainModule`, `classpath`,
-`modulepath` and the keys of each [module layer](#module-layers) into the descriptor, and `Main-Class` into
-the manifest - nothing else. Everything else on this page is what
+`modulepath` and the keys of each [module layer](#module-layers) into the descriptor, with the
+[module-access grants](#relaxing-module-access) and native access that `process-java.properties` names, and
+`Main-Class` into the manifest - nothing else. Everything else on this page is what
 the launcher itself understands, for a jar you assemble yourself with the same layout: by hand, with a
 script, or with another tool.
 

@@ -48,7 +48,9 @@ place here:
    jar describes a module, so a `pom.xml` application without a module has everything on its class path. A
    project that declares a [module layer](/tool/dependencies/#keeping-a-dependency-private) gets a
    `modulepath.<layer>` list beside them, and a `classpath.<layer>` when the layer holds jars that name no
-   module.
+   module. The `--add-reads`, `--add-exports`, `--add-opens` and `--enable-native-access` lines of
+   `process-java.properties` become the `addReads`, `addExports`, `addOpens` and `enableNativeAccess` keys,
+   and an `--enable-native-access=ALL-UNNAMED` becomes the manifest's `Enable-Native-Access` attribute.
 4. **The manifest names the launcher** as `Main-Class: build.jenesis.launcher.Launcher`, so `java -jar` starts
    the launcher.
 5. **The jar gets a bill of materials of its own** when the module gets one (see
@@ -58,7 +60,7 @@ place here:
    stays in the folder of the application's own jar.
 
 That is the complete set. The other descriptor keys and manifest attributes the launcher understands -
-bundled agents, module-access grants, signer reconstruction - are for a jar you assemble yourself; the
+bundled agents and signer reconstruction - are for a jar you assemble yourself; the
 [*Reference*](/launcher/reference/) chapter lists them.
 
 <div class="note">

@@ -120,8 +120,9 @@ than a heading and must match the id the repository server emits, not the wordin
   signature shown is checked against `Jpx.java`. A `--docker` run with a named image is not hardened and
   reuses the host JDK.
 - **Launcher.** The build writes the descriptor keys `mainClass`, `mainModule` (modular only), `classpath`,
-  `modulepath` (always, empty when nothing is modular) and, per module layer, `modulepath.<layer>` and
-  `classpath.<layer>` (when non-empty), plus the manifest's `Main-Class` - nothing else; the other descriptor
+  `modulepath` (always, empty when nothing is modular), per module layer `modulepath.<layer>` and
+  `classpath.<layer>` (when non-empty), `enableNativeAccess`, and `addReads`, `addExports` and `addOpens` from
+  the lines of `process-java.properties`, plus the manifest's `Main-Class` - nothing else; the other descriptor
   keys and manifest attributes are launcher capabilities for jars assembled by other means. A subfolder is
   named after the module its jar carries, or the URL-encoded coordinate for a jar that declares none; the
   application's own classes sit under `classes.jar/`.

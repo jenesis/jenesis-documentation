@@ -185,7 +185,8 @@ under its own coordinate, pinned and reported like any other.
 A dependency kept private, whose version must not meet the consumer's, goes into a
 [module layer](/tool/dependencies/#keeping-a-dependency-private), declared in `module-info.java` alone, so a
 `pom.xml` build keeps it plain until phase two. One runnable jar is `launcher=true` in `packaging.properties`,
-or `bundle=true` for a repackaged Spring Boot application: its jars and the argument file that launches them.
+a repackaged Spring Boot application included; `bundle=true` ships the jars whole, beside the argument file that
+launches them.
 Fewer dependencies for consumers means publishing the dependency as a dependency.
 
 ## Pinning and comparing the two builds
