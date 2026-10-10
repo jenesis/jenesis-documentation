@@ -100,6 +100,21 @@ java build/jenesis/Make.java pin
   compiler of the day; pinning keeps the module on one compiler while you upgrade deliberately.
 </div>
 
+## Compiler arguments
+
+A `process-kotlinc.properties` in a configuration folder hands `kotlinc` arguments of its own, written as
+`process-javac.properties` writes them for `javac` (see *[Building & running](/tool/building-and-running/#passing-extra-arguments-to-a-tool)*):
+
+```properties
+# build.jenesis/process-kotlinc.properties
+-api-version=2.0
+-java-parameters=
+-J-Xss4m=
+```
+
+Each line is an argument of the compiler. A `-J<option>` line or a `-D` line goes to the JVM that runs it
+instead, as the `kotlinc` command passes them, so the last line gives that JVM `-Xss4m`.
+
 ## A compiler plugin
 
 A Kotlin or Scala compiler plugin is declared exactly like a Java annotation processor
