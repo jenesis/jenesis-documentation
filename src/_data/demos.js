@@ -138,7 +138,7 @@ export default {
       demos: [
         { slug: "demo-65-code-signing", name: "Code signing", blurb: "The produced jar signed with jarsigner, with the key named by the machine rather than by the project." },
         { slug: "demo-66-export", name: "Exporting to the local repositories", blurb: "A module exported into the local repositories and required from a second project by name, with both repositories in a temporary folder." },
-        { slug: "demo-67-publishing", name: "Publishing", blurb: "A Maven Central ready bundle - POM metadata, sources and javadoc jars - resolved back to prove it." },
+        { slug: "demo-67-publishing", name: "Publishing", blurb: "A Maven Central ready bundle - POM metadata, sources and javadoc jars - resolved back to prove it, and released as a version and a snapshot into a Maven repository on this machine." },
         { slug: "demo-68-module-convention", name: "Your own module repository", blurb: "Modules published to a plain Maven repository and resolved back by module name, with no registry to keep in sync." },
         { slug: "demo-69-discovery-module", name: "Module discovery", blurb: "A module resolved from what its domain's .well-known file says - the jar straight from a GitHub release, without a module repository or Maven." },
         { slug: "demo-70-discovery-maven", name: "Maven discovery", blurb: "A Maven dependency resolved from the location its group's domain names, beside the Maven remotes." },

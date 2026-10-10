@@ -282,7 +282,7 @@ discovered module. The other targets:
 | `build` | Compile, jar, and test every module *(the default)*. |
 | `stage` | The full release recipe - build, then lay out a publishable tree under `target/stage/`. |
 | `export` | Publish the staged tree into your local Maven repository (`~/.m2`), your local module repository (`~/.jenesis`), or both. |
-| `release` | Hand the staged tree to a configured release tool, as a dry run unless told otherwise (see *[Publishing](/tool/publishing/)*). |
+| `release` | Put the staged tree into a repository you name, and hand it to a configured release tool, which runs as a dry run unless told otherwise (see *[Publishing](/tool/publishing/)*). |
 | `pin` | Rewrite every `pom.xml` / `module-info.java` to pin the full resolved dependency closure. |
 | `dependencies` | Print each module's resolved dependency graph with licences (shown above). |
 | `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata. |
