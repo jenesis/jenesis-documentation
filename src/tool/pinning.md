@@ -83,8 +83,8 @@ commons-text's POM asks for commons-lang3 3.14.0; the coordinate line overrides 
 reaches it, and the next `pin` records the checksum of the version you chose.
 
 A coordinate with a type or a classifier is longer than `<groupId>/<artifactId>`, so it is written with its
-repository in front, as `maven/org.glassfish/jakarta.json/jar/module` names the type `jar` and the classifier
-`module`.
+repository in front, as `maven/<groupId>/<artifactId>/jar/<classifier>` names the type `jar` and a
+classifier.
 Without the `maven/`, the group ID would read as a dependency group, and the build refuses such a token,
 naming the spelling to write.
 
