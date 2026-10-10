@@ -69,9 +69,9 @@ A `pom.xml` is read for what it declares, not for how Maven builds it:
   `<modules>`; properties; dependencies of every scope but `system`, with `<optional>`, `<exclusions>`,
   `<type>` and `<classifier>`; `<dependencyManagement>` with imported BOMs; `maven.compiler.release`, or else
   `target` or `source`, with `testRelease` and `enablePreview`; the metadata of the module and its parents;
-  source and resource directories, a local parent's where the module names none; the `<!--jenesis.plugin-->`,
-  `<!--jenesis.pin-->` and `<!--jenesis.alias-->` comments of the module and of a local parent; and a profile
-  of any POM that Maven activates by `<jdk>` or by `<activeByDefault>`. An unclosed `<jdk>` range such as `[9,`
+  source and resource directories, a local parent's where the module names none; the `<!--jenesis.plugin-->`
+  and `<!--jenesis.alias-->` comments of the module and of a local parent, and its own `<!--jenesis.pin-->`;
+  and a profile of any POM that Maven activates by `<jdk>` or by `<activeByDefault>`. An unclosed `<jdk>` range such as `[9,`
   or `[9` reads as `[9,)`; a range that is none leaves the profile of a fetched POM inactive and fails the
   build in the project's own.
 - **Ignored:** `<build><plugins>` and `<pluginManagement>`, a profile activated by a property, the operating
@@ -137,7 +137,8 @@ checkstyle/maven/com.puppycrawl.tools/checkstyle 10.18.2
 -->
 ```
 
-A module inherits these comments from its local parent, never from a POM that only lists it under
+That comment is the module's own, which `pin` writes into every module's POM, and a parent's is not inherited.
+A `<!--jenesis.plugin-->` comment is, from a local parent but never from a POM that only lists the module under
 `<modules>`.
 
 In a process file, a flag given more than once, as `--add-opens` is, takes one argument per line of its value,
