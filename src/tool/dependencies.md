@@ -24,6 +24,9 @@ place depends on your layout (see *[Core concepts](/tool/core-concepts/)*):
   </dependency>
   ```
 
+  A dependency listed twice in one `<dependencies>` of the project's own POMs prints a `[DUPLICATE]` line naming
+  both versions, and the second declaration replaces the first, as in Maven.
+
 - A **modular** project (`module-info.java`) declares a `requires`, and nothing else - the module name *is*
   the dependency:
 
@@ -52,7 +55,8 @@ module demo.app {
 The tag takes the module name and the version. In the `modular` layout it applies wherever that module
 turns up in the closure, directly or through another module; in the `modular_to_maven` layout it fixes the
 module a `requires` names, and a module that arrives through that module's POM is pinned by its Maven
-coordinate instead. Jenesis can also write these tags for you, fixing each dependency at the version it
+coordinate instead. A pin by module name never reaches such a module: where it names another version than the
+one resolved, the build fails and names the coordinate pin to write. Jenesis can also write these tags for you, fixing each dependency at the version it
 resolved, as *[Recording the pins](/tool/pinning/#recording-the-pins)* in the next chapter describes.
 
 ## The two repositories
@@ -107,7 +111,11 @@ the variable of the same name:
   redirect to a different host, so it never leaks to a redirect target.
 </div>
 
-{% demos 67 %}
+A repository that answers `429 Too Many Requests` limits how often your machine asks. The build waits and
+retries, and when the answer stays the same it fails, naming the remedy: build again later, or configure a
+mirror of that repository in its place - for the Maven remotes in `jenesis.maven.uri` or `MAVEN_REPOSITORY_URI`.
+
+{% demos 68 %}
 
 ### What the build tells the module index
 
@@ -142,6 +150,8 @@ The `dependencies` selector prints each module's resolved tree, the way `mvn dep
 java build/jenesis/Make.java dependencies
 ```
 
+Named alone, it still compiles the modules but runs no tests, unless `-Djenesis.test.skip=false` asks for them.
+
 Each module gets one tree, starting from the module itself and written like any other node: the coordinate it
 is published under, its version, the scopes it resolves and its module name, tagged `local` with the folder it
 is built from (`maven/greeter/greeter 0-SNAPSHOT [compile, runtime] (module greeter, local ./sources)`). A
@@ -169,19 +179,31 @@ When the whole closure is more than you want to read, `-Djenesis.tree.format` na
 the test modules (see *[Building and running](/tool/building-and-running/)*), which are not part of what the
 project releases, so neither the trees nor the licence summary count what only a test run pulls in.
 
+The tools a module resolves for its build rather than for itself - a linter, a formatter, a plugin, an
+annotation processor - each resolve in a group of their own and are no dependency of the module, so the trees
+leave them out. `-Djenesis.tree.tools=true` prints each such group apart, under a heading naming it, as
+`Group checkstyle, resolved to build maven/demo.quality/demo.quality 0-SNAPSHOT:`, and counts it in the licence
+summary.
+
 ## Version negotiation
 
 When two paths through the graph ask for different versions of the same library, Jenesis picks one. By
 default, the rule matches the repository:
 
 - **Maven** coordinates use Maven's own **nearest-wins** conflict resolution, and understand version ranges
-  and the `LATEST`/`RELEASE` selectors - the same behaviour `mvn` gives you.
+  and the `LATEST`/`RELEASE` selectors - the same behaviour `mvn` gives you. `RELEASE` passes over a version
+  with a pre-release qualifier, such as `-rc-1` or `-M2`, while a version without one is published.
 - **Module** names use **first-parent-wins**: the first requirer reached in the resolution walk fixes the
   version, and a later, deeper requirer asking for a different version is ignored.
 
 To override the negotiated result, declare the version you want directly: a `<version>` (or a
 `<dependencyManagement>` entry) in Maven, or a [`@jenesis.pin`](#declaring-a-dependency) tag in a modular
 project. A declared version always beats what negotiation would have chosen.
+
+A Maven coordinate whose POM declares a relocation is resolved at the coordinate it names, and a `[RELOCATED]`
+line says so. A `-SNAPSHOT` version resolves from the local Maven repository, or else as the newest
+timestamped file the remote repository's `maven-metadata.xml` names. A parent POM that cannot be fetched fails
+the build, naming the parent.
 
 ### Choosing a different strategy
 
@@ -323,8 +345,23 @@ The tag maps a module name onto a `<groupId>/<artifactId>` the resolved closure 
 is then a module name like any other; the `opens` above is what lets args4j set the annotated fields by
 reflection. Nothing is synthesised and no jar is rewritten.
 
-Aliases are a `modular_to_maven` feature: they reach an artifact by its Maven coordinate, which the strict
-`modular` layout does not use.
+The alias travels with the jar: its manifest records it as `Jenesis-Aliases`, so a module that depends on
+`demo.cli` inherits the name without declaring it again. An alias for the target of a `requires static`
+applies only where that target is resolved, so a downstream module that never pulls the optional dependency
+in ignores it.
+
+Aliases reach an artifact by its Maven coordinate, which the strict `modular` layout does not use. A
+`pom.xml` project declares the same lines in a `<!--jenesis.alias ... -->` comment of the POM, one per line,
+and a module inherits those of a local parent. That is how the `module-info.java` a `pom.xml` build compiles in
+a multi-release overlay requires a jar that declares no module name:
+
+```xml
+<!--jenesis.alias
+jline jline/jline
+-->
+```
+
+A line naming a dependency of `test` scope reaches the tests alone, as the main code never resolves it.
 
 {% demos 21 %}
 

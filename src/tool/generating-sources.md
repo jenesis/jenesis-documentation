@@ -62,7 +62,10 @@ folders=schemas
 Now `schemas/user.avsc` is read by the generator *and* packaged, for code that also reads the schema at run
 time. A JAX-WS client is the common case among the other generators, since it reads its WSDL when the
 service class is constructed. `folders` takes a comma-separated list, and each entry is searched under both
-sources and resources.
+sources and resources. In a `module-info.java` project a folder beside the sources ships as it stands, as
+`soap/wsdl/` does in the service-contracts demo. In a `pom.xml` project the folder has to be in a resource
+directory to ship: as with Maven, only what a compiler reads - `.java`, `.kt`, `.scala`, `.groovy` - is taken
+from a source directory, and every other file there stays out of the jar.
 
 <div class="note">
   Moving a contract between folders does not re-run the generator. The build links each file under the name
@@ -92,12 +95,23 @@ plugins=grpc-java=io.grpc/protoc-gen-grpc-java
 ```
 
 Every `.proto` in the folders is compiled, and the folders themselves are the include path, so an `import`
-resolves as it is written.
+resolves as it is written. Every `.proto` that a compile dependency carries is on the include path as well.
+The `protoc` executable from Maven Central ships without the well-known types, but `protobuf-java`, which the
+generated code needs anyway, carries them, so `import "google/protobuf/timestamp.proto";` resolves without
+copying the file into the project.
 
 protoc is a native executable rather than a jar, resolved per operating system and chipset from a Maven
 classifier. **Each platform therefore needs its own checksum pin**, guarded by platform token - a build on
 Linux and a build on macOS fetch different bytes. `plugins=<name>=<groupId>/<artifactId>` resolves a protoc
 plugin the same way, in its own `protoc-<name>` group; `classifier=<value>` overrides the detected platform.
+
+`pin` refreshes only the line of the platform it runs on. To add another platform from one machine, write its
+line yourself, guarded by that platform's tokens, with the SHA-256 of the executable Maven Central publishes
+for its classifier, `protoc-<version>-<classifier>.exe`:
+
+```text
+@jenesis.pin protoc/maven/com.google.protobuf/protoc/exe/osx-aarch_64 <version> SHA-256/<hash> (macos,aarch64)
+```
 
 ### Avro
 
@@ -110,7 +124,7 @@ Schemas and protocols compile in separate steps, so a module may carry either or
 ### WSDL
 
 ```properties
-# soap/build.jenesis/wsimport.properties
+# soap/META-INF/build.jenesis/wsimport.properties
 package=demo.greeter
 folders=wsdl
 location=/wsdl/greeter.wsdl
@@ -123,7 +137,7 @@ build happened to read the file from into the artifact, which then fails on any 
 ### OpenAPI
 
 ```properties
-# rest/build.jenesis/openapi.properties
+# rest/META-INF/build.jenesis/openapi.properties
 package=demo.greeting
 arguments=--library native --additional-properties useJakartaEe=true
 ```

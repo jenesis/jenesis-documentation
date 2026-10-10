@@ -43,7 +43,7 @@ Both run the same program and take the same arguments. The examples in this sect
 The same three steps - resolve, install, launch - are also a public API, so a program of your own can run a
 published module too.
 
-{% demos 72 %}
+{% demos 73 %}
 
 ## What's in this section
 

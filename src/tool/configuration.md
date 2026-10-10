@@ -31,6 +31,10 @@ overrides a file entry, so you can still override the project's baseline for a s
 java -Djenesis.project.sources=false build/jenesis/Make.java
 ```
 
+A key in the file is written in full, `jenesis.` prefix included, exactly as the `configuration` selector prints
+it. A key without the prefix, such as `test.skip=true`, is no setting: the build refuses it and names the key to
+write instead, `jenesis.test.skip`.
+
 `jenesis.make.root` belongs on the command line only, because the root is what locates the file in the first
 place. Setting it in a file is reported as an error.
 
@@ -111,6 +115,10 @@ runs from the most specific per-module location to the project-wide fallback:
 | `src/main/build.jenesis/` or `src/test/build.jenesis/` under the pom root | `maven` | the pom's main or test module alone |
 | `build.jenesis/` next to the `pom.xml` | `maven` | both of the pom's modules |
 | the `jenesis.project.configuration` folders (default `build.jenesis/` at the project root) | all | project-wide |
+
+The first file found configures the tool alone, and nothing merges. A module's `process-javac.properties`
+therefore replaces the project-wide one rather than adding to it, and repeats the lines of it the module still
+needs. Nothing below `META-INF/build.jenesis/` reaches a jar the module packs, the sources jar included.
 
 What these folders can hold - presence activates, contents configure:
 

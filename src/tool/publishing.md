@@ -1,13 +1,14 @@
 ---
 order: 14
 title: Publishing
-description: Publishing locally with export, staging a correct release bundle with the metadata a repository demands, publishing a bill of materials, releasing into a Jenesis module repository, and driving a release tool from the build.
+description: Publishing locally with export, staging a correct release bundle with the metadata a repository demands, publishing a bill of materials, releasing into a Jenesis module repository or a Maven repository of your own, and driving a release tool from the build.
 ---
 
 A build ends at artifacts under `target/`. **Publishing** is what makes them available to somebody else: the
 artifacts laid out as a repository, carrying the metadata a repository demands, and finally uploaded and
 signed. Publishing to Maven Central is really two jobs - **produce a correct, complete bundle** and **upload
-it** - and Jenesis owns the first while deliberately leaving the signed upload to a dedicated release tool.
+it** - and Jenesis owns the first while deliberately leaving the signed upload to a dedicated release tool. A
+repository of your own, which takes an unsigned upload, Jenesis releases into by itself.
 
 ## Publishing locally with `export`
 
@@ -32,7 +33,7 @@ requires the module by name, and the local repositories are read before any remo
 the latest export, with a pinned version that version's build. A consumer does not notice a new export on its
 own; it takes one when it is rebuilt with `-Djenesis.executor.rebuild=true`.
 
-{% demos 65 %}
+{% demos 66 %}
 
 ## Staging the release tree
 
@@ -47,9 +48,26 @@ java -Djenesis.project.version=1.0.0 \
      build/jenesis/Make.java stage
 ```
 
+`javac` stamps the version into what it compiles as the module version, so it must be one: a version that starts
+with a digit, as `1.2.0` or `1.2.0-3-gbd7698f`. Any other value, such as `v1.2.0`, is refused before the
+build starts, and so is an empty one: an unversioned build leaves the setting out. A project built from `module-info.java` may keep its version as `version=<version>` in
+`project.properties` at the root instead, and the setting overrides it for a release.
+
 Central requires the `-javadoc.jar` but not that it documents anything, and rendered documentation can make
 up most of a release's size. With `-Djenesis.documentation.empty=true`, the jar is still staged but holds
 nothing but a file named `INTENTIONALLY_EMPTY`, and no documentation tool runs.
+
+A module that holds nothing to publish, such as one of integration tests, says so in the `packaging.properties`
+of its own configuration folder:
+
+```properties
+# build.jenesis/packaging.properties of that module
+stage=false
+```
+
+It is built and tested, but neither its jar nor its POM, sources or documentation is staged, so neither `export`
+nor `release` ships it. The line works in every layout. A `pom.xml` module's `maven.deploy.skip` and
+`maven.install.skip` are not read, so a module that sets them states the same with this line.
 
 Central also requires the POM to carry `name`, `description`, `url`, `<licenses>`, `<developers>`, and
 `<scm>`. Jenesis folds two channels into each POM. Everything it can derive from the source comes first: the
@@ -90,6 +108,39 @@ an installer, and no year is added to it. `manufacturer.name`, `manufacturer.url
 in a POM either and are recorded in the SBOM alone. Every one of these keys is optional, and nothing is recorded
 for a key the project does not declare.
 
+A developer is published with its key as the POM's `<id>`, `raphw` above. `developer.<key>.id` names another
+id, or none when it is empty. A source `pom.xml` developer that declares no `<id>` is published without one,
+and one that declares nothing but its `<id>` is kept as well.
+
+`inceptionYear` becomes the POM's `<inceptionYear>`, and `license.<id>.distribution` the `<distribution>` of
+that licence, as `repo` or `manual`.
+
+A developer may also carry `developer.<key>.url`, `organization`, `organizationUrl`, `timezone` and `roles`, the
+roles comma-separated, and the POM's `<issueManagement>` and `<ciManagement>` come from `issueManagement.system`
+and `issueManagement.url`, and `ciManagement.system` and `ciManagement.url`:
+
+```properties
+developer.raphw.roles=maintainer
+issueManagement.system=GitHub
+issueManagement.url=https://github.com/jenesis/jenesis/issues
+```
+
+A source `pom.xml` supplies all of these from its own elements, and from its parents where it declares none.
+
+In a `pom.xml` project, a module inherits its description, URL, inception year, licences, developers,
+organisation, SCM, issue management and CI management from its parents, local or fetched, as Maven's model does. The URL and the SCM locations get the module's
+artifact ID appended, unless the parent sets `child.project.url.inherit.append.path="false"` on its
+`<project>`, or the matching `child.scm.*.inherit.append.path` on its `<scm>`; licences and developers are
+inherited only as a whole. What a module declares or inherits wins, and `project.properties` fills in only what
+the POMs leave out. The version, tag, revision and tree given as settings win over both.
+
+In a project built from `module-info.java`, the coordinate follows from the module name: its first two
+segments form the group ID (`jenesis.maven.segments`) and the whole name is the artifact ID. `project=<groupId>`
+and `artifact=<artifactId>` in `project.properties` replace them for every module. A module that must keep a
+coordinate of its own, such as one it was published under before, declares it in a `project.properties` of its
+own, in the `META-INF/build.jenesis/` folder beside its sources. That file is layered over the root one and
+wins for every key it names, the metadata above included.
+
 The jar carries the POM it is published with as well, at `META-INF/maven/<groupId>/<artifactId>/pom.xml`, beside a
 `pom.properties` that holds its `groupId`, `artifactId` and `version` - where Maven places them in every jar it
 builds. Tools that find a jar inside an image or an archive identify it by these files: a scanner such as Syft,
@@ -105,14 +156,42 @@ same one, and a module under the `modular` layout, which has no Maven coordinate
   <code>Created-By</code> and it is kept.
 </div>
 
-<div class="note">
-  A POM generated from a module declaration lists the <em>resolved closure</em>: every artifact the module was
-  built and tested against, at the version it resolved to, each a direct dependency of its own. Because the
-  list is already complete, every entry also excludes everything beneath it - so a consumer inherits exactly
-  what this build verified rather than re-deriving those subtrees from today's POMs. Nothing is hidden by
-  that: each artifact is a first-class dependency, so dependency management and version overrides still reach
-  it.
-</div>
+### What the published POM names
+
+A published POM names either what the module declares or its whole resolved closure. The `flatten` key of the
+module's `packaging.properties` chooses, and its default follows the build declaration:
+
+| Build declaration | Default | The published POM names |
+| --- | --- | --- |
+| `pom.xml` | `flatten=false` | the dependencies the module declares |
+| `module-info.java` | `flatten=true` | the resolved closure |
+
+```properties
+# app/META-INF/build.jenesis/packaging.properties - publish what app requires, not its closure
+flatten=false
+```
+
+With `flatten=true`, the POM lists every artifact the module compiles and runs against, at the version it
+resolved to, each a direct dependency of its own. Because the list is already complete, every entry also
+excludes everything beneath it, as `*:*`, so a consumer inherits exactly what this build verified rather than
+re-deriving those subtrees from today's POMs. Nothing is hidden by that: each artifact is a first-class
+dependency, so dependency management and version overrides still reach it. What only an optional dependency
+brings is left out, as Maven leaves it to a consumer that declares that dependency itself, and an optional
+dependency that a required one also brings at run time is published as required.
+
+With `flatten=false`, the POM lists what the module declares, each at the version the build resolved, and a
+consumer finds the rest through those dependencies' own POMs. A `pom.xml` module publishes every dependency
+it declares but those of `test` scope, with their `<optional>` and `<exclusions>`. A module declaration publishes each module it
+requires as the Maven artifact that module resolved to, a sibling module as its published coordinate:
+
+| In `module-info.java` | In the published POM |
+| --- | --- |
+| `requires` | a dependency of `compile` scope |
+| `requires static` | a dependency of `provided` scope |
+| `@jenesis.exclude` | the `<exclusions>` of the dependency it names |
+
+Nothing is published as optional. A `requires` that resolved to no Maven artifact has nothing to be named by,
+so the build fails and names `flatten=true` as the remedy.
 
 ### Pointing a release at its sources
 
@@ -158,7 +237,7 @@ that is not a 40-character Git tree id fails the build. When
 notation SPDX uses for a download location: `git+https://github.com/jenesis/jenesis.git@<revision>`. A tag of
 `HEAD`, which a `pom.xml` declares for the root of its repository, counts as no tag there.
 
-{% demos 66 %}
+{% demos 67 %}
 
 ## Publishing a bill of materials
 
@@ -177,7 +256,23 @@ into the local module repository beside the module jar:
 Another project consumes it with `@jenesis.bom demo.bom`, exactly the way it consumes a hand-written file. The
 BOM travels through the module layout only; the Maven export never carries it.
 
-{% demos 20 %}
+### A Maven BOM from a pom.xml
+
+In a `pom.xml` project, a bill of materials is a module of `<packaging>pom</packaging>` that lists no modules
+but declares a `<dependencyManagement>`, as a library's `-bom` does. Nothing is compiled for it, and `stage`
+publishes it as its POM alone, beside the jars:
+
+```text
+target/stage/maven/output/build/jenesis/demo/bom/1.0.0/bom-1.0.0.pom
+```
+
+The staged POM carries the BOM's coordinate, packaging and metadata, and its own `<dependencyManagement>` with
+every `${...}` resolved. It names no parent and leaves out the parent's managed versions, since an aggregator
+is not published. `export` installs it and `release` publishes it like any staged POM, unless `stage=false` in a
+`packaging.properties` of its own configuration folder, such as `bom/build.jenesis/`, keeps it out of the staged
+repositories, as it keeps a module's jar.
+
+{% demos 20, 3 %}
 
 ## Signing the jar itself
 
@@ -242,11 +337,11 @@ detached signature made afterwards covers the signed bytes.
   delete <code>target/</code> after a key rotation.
 </div>
 
-{% demos 64 %}
+{% demos 65 %}
 
 ## Releasing into a Jenesis module repository
 
-One destination the tool publishes to by itself: a Jenesis module repository, the layout a modular build
+A destination the tool publishes to by itself is a Jenesis module repository, the layout a modular build
 resolves module names from. `export` reaches one machine; once `jenesis.release.uri` names a repository,
 `release` puts each staged module there as its `release/jenesis` step, for every machine that resolves
 from it. A `jenesis` repository of a [Jenesis Repository](/repository/) takes that release and serves the layout, at
@@ -279,14 +374,66 @@ address in `jenesis.properties` releases without a key. A plaintext `http:` addr
 
 A project that publishes to Maven does not need this step to reach module consumers: a `java` repository of a
 Jenesis Repository takes Maven publishes only, and makes a module available from one. A modular jar deployed to its
-Maven layout, by JReleaser, `mvn deploy` or any other tool, is served by its module name as well.
+Maven layout, by the release the next section describes, JReleaser, `mvn deploy` or any other tool, is served by
+its module name as well.
+
+## Releasing into a Maven repository of your own
+
+An internal Maven repository - a Nexus, an Artifactory, a `java` repository of a Jenesis Repository - takes the
+staged Maven tree from `release` itself. Once `jenesis.release.maven.uri` names it, `release` puts the tree there
+as its `release/maven` step, which is what `maven-deploy-plugin` does with a `<distributionManagement>`
+repository, or Gradle's `maven-publish` with a repository of its own:
+
+```bash
+java -Djenesis.project.version=1.0.0 \
+     -Djenesis.release.maven.uri=https://repo.example.com/repository/maven-releases/ \
+     -Djenesis.release.maven.token="Basic <credentials>" \
+     build/jenesis/Make.java release
+```
+
+```text
+[RELEASED]  https://repo.example.com/.../com/example/library/1.0.0/library-1.0.0.jar
+[RELEASED]  https://repo.example.com/.../com/example/library/1.0.0/library-1.0.0.pom
+```
+
+Every staged file is put at `<group path>/<artifactId>/<version>/<file>`, each beside the `.md5`, `.sha1`,
+`.sha256` and `.sha512` checksums a Maven client verifies. Then the artifact's `maven-metadata.xml` is read from
+the repository and the release merged into it, so it lists every version released so far, the newest as
+`<latest>` and the newest without `-SNAPSHOT` as `<release>`. Nothing is signed.
+
+A `-SNAPSHOT` version is released as Maven deploys one. Each file is put under a name of its own, stamped with
+the time and a build number that counts on from the one the repository holds, as
+`library-1.0.0-20261010.120053-1.jar`, beside a `maven-metadata.xml` in the version's folder that names them,
+so a Maven or Gradle build that requires `1.0.0-SNAPSHOT` resolves the newest. A project that sets no version
+releases the `0-SNAPSHOT` its POM carries.
+
+The token is sent as the `Authorization` header exactly as given, so it names its scheme: `Basic` and the
+Base64 of `<user>:<password>`, or `Bearer <token>` where the repository hands out tokens. Where the settings are
+not given, a release reads the `MAVEN_RELEASE_URI` and `MAVEN_RELEASE_TOKEN` environment variables - never
+`MAVEN_REPOSITORY_URI` and `MAVEN_REPOSITORY_TOKEN`, which name where a build resolves from. Like the key of a
+Jenesis module repository, the token may come only from the command line, `~/.jenesis/jenesis.properties` or the
+environment, and is never sent to a repository a file of the project named.
+
+`release` does this in the `maven` and `modular_to_maven` layouts, and refuses to run in the `modular` layout,
+which stages no Maven tree. A plaintext `http:` address is refused unless `-Djenesis.repository.insecure=true`
+allows it, and so is a release while `jenesis.repository.offline` is set. A repository that refuses the key
+fails the release naming the setting, one that already holds other content at a path asks for a new version,
+and any other answer than success stops it, naming the address and the status.
+
+<div class="warning">
+  Maven Central is refused by name: it takes a release signed and through its own publishing service, which is
+  what a <code>jreleaser.yml</code> describes, as the next section shows. <code>jenesis.release.maven.uri</code>
+  names a repository of your own.
+</div>
+
+{% demos 67 %}
 
 ## The last mile: signing and uploading
 
-For Maven Central, and for every other publication beyond a Jenesis module repository, the remote upload and
-GPG signing are not Jenesis's job. Point **[JReleaser](https://jreleaser.org/)** at
-`target/stage/maven/output/` and it signs every artifact and uploads the bundle to Central. Jenesis stops at
-the unsigned, validated bundle, so credentials and signing keys never enter the build.
+For Maven Central, the remote upload and GPG signing are not Jenesis's job. Point
+**[JReleaser](https://jreleaser.org/)** at `target/stage/maven/output/` and it signs every artifact and uploads
+the bundle to Central. For Central, Jenesis stops at the unsigned, validated bundle, so signing keys never enter
+the build.
 
 This split is deliberate. Most people building a project never release it: releasing is a rare, tightly
 controlled job for CI or a hardened environment that holds the keys. And the way you release evolves
@@ -308,8 +455,10 @@ rather than the usual per-module configuration folder, because JReleaser resolve
 configuration against one base directory. `-Djenesis.jreleaser.config=<path>` names a different file.
 
 It contributes two steps. The first writes a `jreleaser.properties` holding `JRELEASER_PROJECT_VERSION`, the
-version this build stamped, so the version is stated once rather than passed to two tools that can then
-disagree. Point a configuration at it with
+version `jenesis.project.version` names. The version is thereby stated once rather than passed to two tools
+that can then disagree. The build reads no version off what it staged, the `<version>` of a `pom.xml` and the
+`version` of `project.properties` included, so a release whose JReleaser configuration names none sets
+`-Djenesis.project.version`. Point a configuration at it with
 `environment: { variables: target/release/jreleaser/environment/output/jreleaser.properties }`. The second runs
 the `jreleaser` executable found in the environment, forwarding the process environment unchanged. Every
 `JRELEASER_*` credential is therefore read by JReleaser itself and never touched, logged, or stored by the

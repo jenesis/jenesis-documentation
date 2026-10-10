@@ -36,24 +36,62 @@ kept apart from your project's own dependencies), floats a `RELEASE` version unt
 forked JVM. A tool whose language is not present skips itself: a stray `detekt.yml` in a pure-Java
 project does nothing.
 
-### Report-only by default
+### Report, strict or ignore
 
-By default every linter is **report-only**: it records its findings but never fails the build. That makes it
-safe to turn a tool on across an existing codebase without an immediate red build. A build can also wire a
-tool in strict mode, where a non-zero tool exit fails the build; that takes a few lines of build code, which
-*Extending the build* introduces.
+Each linter has one setting that says what its findings do: `jenesis.source.<tool>` for the source linters and
+`jenesis.validator.spotbugs` for SpotBugs, set on the command line or in `jenesis.properties`.
+
+| Value | The linter |
+| --- | --- |
+| `report` *(the default)* | runs and records its findings, but never fails the build |
+| `strict` | runs and fails the build on its findings |
+| `ignore` | does not run, though its configuration file is in place |
+
+Any other value is refused, naming these three. Reporting by default makes it safe to turn a tool on across an
+existing codebase without an immediate red build. A linter that found something says so in one line, with the
+number of findings and where its report is:
+
+```text
+[FINDINGS]  checkstyle found 2 findings, reported in target/build/.../reports/checkstyle/checkstyle-report.xml
+```
+
+`-Djenesis.print.findings=false` leaves that line out, whatever the linter's setting. Under `strict`, as
+`-Djenesis.source.checkstyle=strict`, Checkstyle, PMD, detekt, ktlint, Scalastyle and scalafmt fail as their own
+exit code decides, so a Checkstyle finding at severity `warning` is reported but does not fail the build.
+SpotBugs and CodeNarc fail on any finding their report holds.
+
+Reporting covers findings, not a tool that never ran. A linter that fails on its own configuration, and so
+writes no complete report, fails its step either way.
+
+Checkstyle reads `${config_loc}` as the folder of `checkstyle.xml`, as the Maven and Gradle plugins define
+it. A file the configuration names as `${config_loc}/<path>`, such as a suppressions file beside it, is handed
+to Checkstyle with it, and changing that file runs the check again. A path that leaves the folder of
+`checkstyle.xml` is refused.
+
+Every other `${<property>}` the configuration names is a line of a `checkstyle.properties` beside it, which
+takes the place of the Maven plugin's `propertyExpansion` and Gradle's `configProperties`. Without the line,
+Checkstyle fails to load the configuration. `config_loc` is the one property the file cannot set:
+
+```properties
+# build.jenesis/checkstyle.properties  →  read by <property name="severity" value="${checkstyle.severity}"/>
+checkstyle.severity=warning
+```
+
+PMD runs the rules of every priority in `pmd.xml`. `jenesis.source.pmd.priority` names the lowest priority it
+runs, from `1`, the highest, to `5`, the default, as the Maven plugin's `minimumPriority` does; any other
+value is refused.
 
 ### Switching a tool off
 
-To skip a discovered tool without deleting its configuration file, set its property to `false`. Every property
-defaults to `true`, so file discovery alone normally decides; the property is an opt-out:
+File discovery alone decides which linters run until a setting says otherwise. `ignore` skips one without
+deleting its configuration file:
 
 | Property | Covers |
 | --- | --- |
-| `jenesis.source.<tool>` | Checkstyle, PMD, detekt, ktlint, Scalastyle, scalafmt, CodeNarc |
+| `jenesis.source.<tool>` | `checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc` |
 | `jenesis.validator.spotbugs` | SpotBugs |
 
-For example, `-Djenesis.source.checkstyle=false` keeps `checkstyle.xml` in place but skips Checkstyle, while
+For example, `-Djenesis.source.checkstyle=ignore` keeps `checkstyle.xml` in place but skips Checkstyle, while
 PMD and SpotBugs still run.
 
 {% demos 34, 42, 45, 47 %}
@@ -79,7 +117,8 @@ module demo.errorprone {
 
 `@jenesis.plugin <compiler> <coordinate>` resolves into the `plugin` scope of that compiler's own group, the
 same shape a Kotlin compiler plugin uses, and `javac` reads that group into its processor path. An Error
-Prone plugin such as NullAway is another line of exactly the same form.
+Prone plugin such as NullAway is another line of exactly the same form. A coordinate written without a
+version, as here, takes the newest release until `pin` records one.
 
 An `errorprone.properties` in the configuration folder is what turns the plugin on, and carries its flags:
 
@@ -95,7 +134,9 @@ warnings and a handful are errors.
 
 The two halves are independent on purpose, and each fails loudly without the other: with the tag but no
 configuration file the plugin resolves and sits unused, because `javac` runs a plugin only when it is named;
-with the file but no tag the build stops and names the `@jenesis.plugin` line that is missing.
+with the file but no tag the build stops and names the `@jenesis.plugin` line that is missing. A `pom.xml`
+project declares the plugin as a `<!--jenesis.plugin javac maven/com.google.errorprone/error_prone_core-->`
+comment, in the module's POM or in a parent POM in the project, and the build names that comment instead.
 
 <div class="note">
   Error Prone reads <code>com.sun.tools.javac</code> internals that <code>jdk.compiler</code> does not
@@ -170,8 +211,12 @@ works for every layout; a `pom.xml` project can also scope it to its tests with 
 
 With the file present, the test step is launched with the JaCoCo agent attached as a `-javaagent`. It
 instruments the run without touching your sources and writes its execution data (`jacoco.exec`); a downstream
-report step renders an HTML and XML report under `reports/jacoco/`. Open the `index.html` to browse coverage
+report step renders an HTML and XML report under `reports/jacoco/`, over the classes of the code under test,
+never the compiled tests themselves. Open the `index.html` to browse coverage
 line by line. JaCoCo, like every tool here, resolves in its own group (`jacoco`) apart from your dependencies.
+The agent writes the data the CLI reads, so it follows the release the group pins for the CLI: a pin of
+`jacoco/maven/org.jacoco/org.jacoco.cli` alone runs the tests under that version's agent as well, until `pin`
+records both.
 
 <div class="note">
   Coverage is <strong>reported, not enforced</strong>. A method your tests never reach shows up as uncovered
@@ -213,7 +258,11 @@ java -Djenesis.test.tag=fast+-slow,io+-slow build/jenesis/Make.java
 ```
 
 `jenesis.test.filter` takes a comma-separated list of `<classRegex>[#<method>]` entries and runs only what
-matches. `jenesis.test.tag` selects by tag, in a syntax of its own described below.
+matches. The expression matches the whole class name and takes the place of the default naming (`*Test`,
+`*IT` and the rest), so `.*Check` runs classes that the naming would leave out. It also takes the place of the
+naming's JUnit 4 check that a class holds tests, so under JUnit 4 every class it matches runs, a nested helper
+included; where the default naming fits, leave classes out with `jenesis.test.exclude` instead, which keeps the
+check. `jenesis.test.tag` selects by tag, in a syntax of its own described below.
 
 An entry applies to every test module, and a test module where it matches no test fails the build. In a
 project with several test modules, lead the entry with a module's folder and a `/` to keep it to that module's
@@ -224,8 +273,19 @@ java -Djenesis.test.filter='greeter-test/.*GreeterTest#prefix_is_a_greeting' bui
 ```
 
 The folder is the one a `+<module>` selector names, and a nested folder such as `libs/core/.*Test` works too.
+In a `pom.xml` project it is the folder of the module's `pom.xml` relative to the root, so the root module's
+entry is written `/<classRegex>`, with nothing before the slash.
 A test module that no entry reaches runs no tests rather than failing, while one an entry does reach still
 fails when nothing there matches.
+
+`jenesis.test.exclude` leaves classes out instead. It takes the same entries without a `#<method>`, and the
+default naming or the filter stays in force for everything else:
+
+```bash
+java -Djenesis.test.exclude='.*IntegrationTest' build/jenesis/Make.java
+```
+
+A test module whose every selected class is left out runs no tests.
 
 ### Selecting tests by tag
 
@@ -276,8 +336,8 @@ A narrowed run is still the same step, so its result is remembered together with
 later run adds to that memory until the tests or what they test change. A request runs only what no remembered
 run covered: after `fast`, asking for `fast,io` runs the tests tagged `io` that are not tagged `fast`, asking for
 `fast` again runs nothing, a run of `fast` covers a request for `fast+io`, and a run of every test covers any
-request. A run that left tests out covers only an alternative that leaves them out too. The filter is compared as it is written, so a different filter runs the tests
-again and starts a new memory.
+request. A run that left tests out covers only an alternative that leaves them out too. The filter and the exclusion are compared as they are written, so a different
+one runs the tests again and starts a new memory.
 
 <div class="tip">
   To run the tests when nothing at all has changed - a flaky test, a debugging session - pass
@@ -301,7 +361,8 @@ java -Djenesis.project.watch=true -Djenesis.test.incremental build/jenesis/Make.
 
 `true`, or the setting named with no value, detects changes with `MD5`; the name of another message digest
 the JDK provides detects them with that one, and `false` or leaving it unset disables selection. Any other value
-fails the build with the valid ones listed. On each run the test step builds a class-to-test dependency graph from the
+fails the build with the valid ones listed. A filter, an exclusion and a tag selection each switch it off, so
+such a run runs every test it selects rather than only those a change reaches. On each run the test step builds a class-to-test dependency graph from the
 compiled bytecode and records a per-class content hash. On the next run it diffs the hashes, takes the classes
 whose bytecode changed, walks the graph to the tests that reach them, and passes only those to the runner. A
 change that reaches no test runs nothing; any non-class change (a resource, a dependency) falls back to the
@@ -364,7 +425,8 @@ baseline=modular/com.example/library/1.2.3             # served from a named rep
 A module with no Maven coordinate has nothing to default to and says so. The file is read per module, so a
 project-wide `japicmp.properties` without a `baseline` gives every module its own coordinate - a `baseline`
 there would point them all at one artifact, so a per-module baseline belongs in that module's own
-configuration folder.
+configuration folder. A test module, such as the tests of a `pom.xml` project, has no release of its own and is
+never compared.
 
 The remaining keys map onto japicmp's own options:
 
@@ -384,7 +446,7 @@ The remaining keys map onto japicmp's own options:
 An unknown key fails the build and lists the ones that exist; anything japicmp accepts that the file does not
 model can be appended with a `process-japicmp.properties`, like for every other forked tool.
 
-Like the linters, the check is **report-only** by default: it writes `reports/japicmp/japicmp-report.xml` and
+Like the linters, the check only **reports** by default: it writes `reports/japicmp/japicmp-report.xml` and
 keeps the build green, so you see what changed before you decide to enforce it. Turning on a gate makes the
 failure name the change that caused it:
 

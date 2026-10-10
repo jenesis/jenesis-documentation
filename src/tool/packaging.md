@@ -47,7 +47,9 @@ module demo.modular.executable {
 ```
 
 Every packaging step keys off that one declaration and skips a module that has none. A library needs no
-packaging configuration to be left alone, and an application needs no packaging-specific entry point.
+packaging configuration to be left alone, and an application needs no packaging-specific entry point. Where
+`launcher=true` or `bundle=true` reaches a module without one, a `[SKIPPED]` line names the module and how to
+declare its main class.
 
 ## The application image
 
@@ -286,6 +288,11 @@ to launch. The [module layers](/tool/dependencies/#keeping-a-dependency-private)
 there too, each as a `-Djlayer.modulepath.<layer>`. There are two files because the path separator is the one
 part of a launch a bundle cannot know in advance. Dropped onto a `-jre` base it needs no JDK and no jpackage.
 
+What a `process-java.properties` gives the module's JVM - an `--add-reads` its module path needs, a system
+property - leads both argument files, as it leads the JVM `Execute` starts, so the launch the bundle carries is
+the one the build ran. `stage` collects the zip into `stage/packages/` as `<artifact>.zip`, beside what
+jpackage writes there, so `export` and `release` ship it like any other package.
+
 The trade against an app-image is the classic one. An app-image is self-contained but duplicates the JVM per
 service. A bundle is tiny and shares one JVM layer across every image built on the same base - leaner in
 aggregate for many services, at the cost of coupling to that base's JVM version.
@@ -441,14 +448,21 @@ when it does. A type both name is built once:
 
 `launcher=true` produces a **single executable jar** you run with `java -jar app.jar`, without flattening
 dependencies into a fat jar. The build shades the published Jenesis Launcher into the jar as its `Main-Class`
-and explodes each dependency into its own `jars/<jar>/` subfolder, with an `application.properties` naming
-which of them each path holds. At run time the launcher rebuilds the module graph from those subfolders in
+and explodes each dependency into its own `jars/<jar>/` subfolder, with a descriptor,
+`META-INF/jenesis/application.properties`, naming which of them each path holds. The application sees those
+paths and nothing else of the jar, so an `application.properties` of its own is the one it finds. At run time the launcher rebuilds the module graph from those subfolders in
 process, so `module-info`s and `META-INF/services` never collide.
 
 Unlike jpackage and bundle, this carries no JVM and no `jlink` runtime. It is a plain jar that runs on any
 JDK 25 or newer, and unlike a bundle it needs no launch script. The shaded launcher is
 [pinned](/tool/pinning/) like any other dependency, in its own `launcher` group, so the exact bytes are
-verified and the build stays reproducible.
+verified and the build stays reproducible. Like every archive the build writes, the jar records one date on
+every entry, the one `jenesis.archive.timestamp` names where it is set.
+
+`stage` collects the jar into `stage/packages/` as `<artifact>.jar`, so `export` and `release` ship it like any
+other package. Every jar it stores keeps its directory entries, so a scan of a package on the class path finds
+them as it would in the original jar. A JVM option of `process-java.properties` does not travel with it,
+because `java -jar` reads none from the jar it runs: an application that needs one ships as a bundle.
 
 <div class="tip">
   The launcher jar has its own section - see
@@ -521,7 +535,7 @@ directory to maintain.
   inside every jar - the way to vet exactly what reflection is baked into a published artifact.
 </div>
 
-{% demos 71 %}
+{% demos 72 %}
 
 ### native-image or jpackage?
 
@@ -567,4 +581,4 @@ takes the whole folder below it.
   adds nothing to <code>legal/</code>, so check its licence before shipping it.
 </div>
 
-{% demos 9, 21, 71 %}
+{% demos 9, 21, 72 %}

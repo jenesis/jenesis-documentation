@@ -16,9 +16,12 @@ For each module, the inferred build wires the same short chain of steps: **compi
 `build` (or just `java build/jenesis/Make.java` with no selector) walks that chain for every discovered
 module in dependency order. Steps that do not depend on each other run at the same time; on a machine where
 that is too much - a laptop on battery, a small CI runner - `-Djenesis.executor.concurrency=<n>` caps how
-many run at once (`0`, the default, is no limit). `-Djenesis.executor.concurrency` counts every kind of step;
-when it is the tools themselves that are heavy, `-Djenesis.process.concurrency=<n>` caps how many `javac`,
-`jar`, `javadoc` and the like run at once, underneath whatever step limit is in force.
+many run at once (`0`, the default, is no limit). `-Djenesis.executor.concurrency` counts every kind of step.
+The tools the steps run - a compiler, a JDK tool such as `jar` or `javadoc`, a forked JVM such as a test run -
+are bounded apart from it, underneath whatever step limit is in force: by default to as many at once as the
+machine has processors. `-Djenesis.process.concurrency=<n>` sets another bound, and `0` lifts it. A project
+with many test modules on a machine with little memory runs fewer at once with a low value, beside an `-Xmx` for
+the test JVM in `process-test.properties`.
 
 - **Compile** runs `javac` over the module's sources, resolving its dependencies onto the class or module
   path, and writes the `.class` files. Other-language compiles (Kotlin, Scala, Groovy) slot into the same
@@ -29,8 +32,8 @@ when it is the tools themselves that are heavy, `-Djenesis.process.concurrency=<
 - **Test** compiles and runs the module's tests. Jenesis **auto-detects the test framework** from the test
   dependencies you already declare - JUnit Platform (JUnit 5 and later), JUnit 4, or TestNG - and resolves the
   matching console runner for you, so you never add it as an explicit dependency. A module can also state its
-  engine: a `test.properties` in its configuration folder holding `engine=junit-platform`, `junit4` or
-  `testng` decides it, the same in every checkout and every CI run. In the modular layouts the tests live in
+  framework: a `test.properties` in its configuration folder holding `framework=junit-platform`, `junit4`
+  or `testng` decides it, the same in every checkout and every CI run. In the modular layouts the tests live in
   their own test module, built after the module under test (next section).
 
 <div class="note">
@@ -82,7 +85,35 @@ A file without that last line belongs to a build that is still running or was ki
 A failed step keeps what it wrote. Its `folder` ends in `~` and holds the step's `output/` and, for a tool the
 build ran, the command, the tool's output and its reports under `supplement/`, beside an empty
 `.jenesis.failed` marker. The folder stays until the step comes up again in a later build. A failure that says
-to execute a command names paths relative to the `directory` of the `started` line.
+to execute a command names paths relative to the `directory` of the `started` line. That command is the one
+that ran, quoted for a POSIX shell, so the line is pasted into a shell as it stands. `java`, `javac` and
+`javadoc` are handed every argument the build composes in an argument file under `supplement/`, which the
+command names.
+
+The failure quotes the last lines of the tool's output and of its error, 200 by default, saying how many of how
+many it printed and naming the file under `supplement/` that holds all of them:
+
+```text
+Output, the last 200 out of 4182 lines - target/build/.../supplement/output holds all of them:
+```
+
+`-Djenesis.process.tail` sets how many lines, and `0` prints every one. What a tool prints is kept there as
+UTF-8. A JVM the build forks is told to print in UTF-8, by `-Dstdout.encoding` and `-Dstderr.encoding`, unless
+its `process-<tool>.properties` names another, as a `-Dstdout.encoding\=<charset>=` line does for `java`
+and `-J-Dstdout.encoding\=<charset>=` for a JDK tool. Any other program is read in the platform's encoding.
+
+A forked process that ends with exit code 137 was killed with `SIGKILL`, possibly by the kernel's out-of-memory
+killer, and the failure says so. Fewer tools at once, with a lower `jenesis.process.concurrency`, or a smaller
+heap for the JVM it ran, as an `-Xmx` in `process-test.properties` for the tests, makes it need less memory.
+
+A failed test run first names its failed tests, up to twenty, read from the reports every run writes -
+under `supplement/reports/`, or in the module's `reports/tests/` with `-Djenesis.test.reporting=true` -
+whatever reached the console:
+
+```text
+1 test failed, as reported in target/build/.../test/executed~/supplement/reports:
+  demo.BrokenTest#fails()
+```
 
 The progress lines, the dependency tree and every other line the build prints are coloured with ANSI escape
 sequences. To read them as plain text, from a file or a pipe, pass `-Djenesis.palette.colors=none`.
@@ -92,7 +123,8 @@ sequences. To read them as plain text, from a file or a pipe, pass `-Djenesis.pa
 Where tests live depends on the layout, and in both cases it is what you would write anyway.
 
 A **`pom.xml`** project keeps its tests under `src/test/java` (or the `<testSourceDirectory>` the POM
-names), with the test framework as a normal test-scoped dependency:
+names, or a local parent POM names where the module names none), Kotlin and Groovy tests also under
+`src/test/kotlin` and `src/test/groovy`, with the test framework as a normal test-scoped dependency:
 
 ```xml
 <dependency>
@@ -149,6 +181,34 @@ modules require it. It can be tested like any other module: a module tagged `@je
 is run as the other test modules are, and staged as the test variant of `demo.greeter.testing`. Since `abstract`
 is a Java keyword it can never be a module name, so the two forms of the tag never collide.
 
+In every layout a test class is found by Maven's naming: a class named `Test*`, `*Test`, `*Tests`,
+`*TestCase`, `IT*`, `*IT` or `*ITCase` runs, in a named package or in the default one. An abstract class, a
+nested class, the module descriptor and a class of a multi-release overlay are never run. Under JUnit 4, as in
+Surefire, a class so named runs only where it or a superclass declares an `@Test` method, a `@RunWith` or a
+`suite()` method, or where it extends `TestCase`.
+
+On the JUnit Platform every engine on the test path discovers tests, including one that a library or the test
+resources register for a test of their own. The `engines` key of a module's `test.properties` names the engines
+its tests run on by their ids, and a leading `-` leaves one out, so `engines=-junit-vintage` runs the Jupiter
+tests alone. Which engines a module's tests need does not change from one run to the next, so the choice is a
+file of the module rather than a setting. JUnit 4 and TestNG run no platform engine, so they refuse the key. The JUnit Platform's console launcher must be
+1.5 or newer; an older one is refused, naming the versions to raise.
+
+### Tests that read their resources as files
+
+The tests run against the packaged test jar, so a resource a test loads with `getResource` is an entry
+inside a jar. A test that turns its URL into a `java.io.File` fails there with
+"URI is not hierarchical". `-Djenesis.test.jars=false` runs the tests against the module's classes and
+resources folders instead, as Maven and Gradle do, while the modules they depend on stay jars. Each class is
+then on the test path once, so a scan of the class path finds it once:
+
+```bash
+java -Djenesis.test.jars=false build/jenesis/Make.java
+```
+
+A module whose tests run on the module path refuses the setting, because a folder of resources is no part of a
+module there.
+
 {% demos 3, 4, 35 %}
 
 ### Skipping the tests
@@ -177,11 +237,26 @@ module demo.app {
 }
 ```
 
+A module that declares no release compiles for the JDK running the build, and every build says so in a line,
+which the tag silences:
+
+```text
+[RELEASE]   demo.app compiles for release 25, the JDK the build runs on, as sources/module-info.java declares no @jenesis.release - @jenesis.release sets it
+```
+
 A `pom.xml` project sets the same thing through the `maven.compiler.release` property in its
-`<properties>` block.
+`<properties>` block, and `maven.compiler.testRelease`, where it names one, is the release its tests compile
+for. Without a release, `maven.compiler.target` or else `maven.compiler.source` names it, with `1.8` read as
+`8`, and these are read from a profile the POM activates as well. A POM that names none of them compiles for
+the JDK running the build, and a line says so as well:
+
+```text
+[RELEASE]   com.example:mig compiles for release 25, the JDK the build runs on, as pom.xml sets neither maven.compiler.release nor its target or source - maven.compiler.release sets it
+```
 
 Without either, the module compiles for the release of the JDK running the build: `--release 25` on any JDK
-25, and Kotlin and Scala sources target the same release. That keeps the output the same across updates and
+25, and Kotlin and Scala sources target the same release, a release of 8 or lower reaching `kotlinc` in the
+`1.8` form it accepts. That keeps the output the same across updates and
 vendors of one JDK. Which JDK runs the build can be named as well, as described under
 [The JDK a build runs on](#the-jdk-a-build-runs-on).
 
@@ -234,7 +309,18 @@ sources/
 
 The jar that comes out runs the baseline on a Java 21 runtime and the override on Java 25 - one artifact, two
 implementations, selected by the JVM. Nothing else is needed: producing an overlay is what marks the jar
-`Multi-Release: true`, the flag that tells the JVM to look in the versioned directory at all.
+`Multi-Release: true`, the flag that tells the JVM to look in the versioned directory at all. Each overlay
+compiles for its own release alone, whatever release the module's declaration names.
+
+An overlay may also carry the `module-info.java` itself. That is how a library whose main code targets Java 8,
+which predates the Java Module System, declares a module: the descriptor sits in `META-INF/versions/9/`, is
+compiled against the module path with the main classes as part of the module, and may `requires` library
+modules. On Java 9 and later the jar is a named module, while Java 8 reads it from the class path as before.
+A `module-info.java` at the root of sources compiled below release 9 is refused, naming
+`META-INF/versions/9/` as its place, since `javac` cannot compile a descriptor there. In a `pom.xml` project
+with `maven.compiler.release` at `8`, the descriptor lives in `src/main/java/META-INF/versions/9/` and is compiled against the dependencies that carry a module name; a jar
+that declares none is given its module name by a `<!--jenesis.alias <module> <groupId>/<artifactId>-->`
+comment in the POM.
 
 {% demos 11 %}
 
@@ -250,11 +336,21 @@ java -Djenesis.project.sources=true \
 ```
 
 `jenesis.project.sources` adds a per-module `-sources.jar`, and `jenesis.project.documentation` runs the
-documentation tool (`javadoc` for Java) and adds a `-javadoc.jar`. Both are off by default because they cost
+documentation tool (`javadoc` for Java) and adds a `-javadoc.jar`. A test module is documented only where
+`jenesis.stage.tests` stages it. Both are off by default because they cost
 build time you do not want on every inner-loop run. Turn them on for a release, or record them in a profile
 (see *[Configuration](/tool/configuration/)*).
 
-{% demos 66 %}
+A module declared by a `module-info.java` is documented as that module, as the maven-javadoc-plugin and Gradle
+document one: the javadoc jar holds a `module-summary.html`, and its packages' pages sit in a folder named
+after the module.
+
+Both jars cover the sources a generator or a plugin added to the module as well as your own: `javadoc`
+documents the generated classes, and the sources jar carries their source files beside the schema they follow
+from, as Maven's does. The sources jar also holds the module's resources, those `jenesis.project.resources`
+places among them included, as Maven's and Gradle's sources jars do.
+
+{% demos 67 %}
 
 ### Reproducible archives
 
@@ -281,7 +377,7 @@ fixes the line endings of every file Git treats as text, whatever machine checks
 * text=auto eol=lf
 ```
 
-{% demos 70 %}
+{% demos 71 %}
 
 ## Passing extra arguments to a tool
 
@@ -298,14 +394,52 @@ flag with its argument:
 
 Each key is a flag and its value the flag's argument, so the second line passes `-Xmaxwarns 500`. A key with
 **no value emits a bare flag**, as the first line does; a value with embedded newlines repeats the flag once
-per line. The file merges over the arguments Jenesis already generates - so `javac` here receives both the
-build's own `--release` and your two flags.
+per line, and a tab (`\t`) parts the arguments of a flag that takes several, as
+`-linkoffline=https\://example.com/api/\toffline/api` hands `javadoc` a URL and a folder. The file merges over
+the arguments Jenesis already generates - so `javac` here receives both the
+build's own `--release` and your two flags. A properties file splits a line at the first `:` or `=`, so a
+flag that holds one escapes it, as `-Xlint\:all` does.
 
-The same mechanism works for every tool the build forks: `javac`, `kotlinc`, `scalac`, `jar`, `jmod`, `jlink`,
-`jpackage`, and `native-image`. Two names address the forked JVMs specifically: **`process-java.properties`**
+A flag the module's declaration already hands the tool cannot be set here. A `--release` or
+`--enable-preview` line in `process-javac.properties` fails the build and names where the release is
+declared instead: `@jenesis.release` in `module-info.java`, or `maven.compiler.release` and
+`maven.compiler.testRelease` in a `pom.xml`. Declared there, it reaches every tool that reads it.
+
+The file decides how `javac` applies the release, though. A `--source=<release>` or `--target=<release>` line
+has the release passed as `--source` and `--target` instead of `--release`, the release filling whichever the
+file does not name. That is how Maven compiles a `pom.xml` that sets `maven.compiler.source` and `target`
+without a release, and what code needs that calls a newer API behind a check of the running version.
+
+`javac` refuses `--release` beside an `--add-exports`, `--add-reads` or `--patch-module` that names a JDK
+module, as `--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED` does. With such a line, the build
+passes the release as `--source` and `--target` too. Either way, the code is compiled against the API of the
+JDK the build runs on rather than that of its release, so a call to an API newer than the release is not
+caught.
+
+The same mechanism works for every tool the build forks: `javac`, `javadoc`, `kotlinc`, `scalac`, `jar`, `jmod`,
+`jlink`, `jpackage`, and `native-image`. Two names address the forked JVMs specifically: **`process-java.properties`**
 applies to *every* forked `java` process, the program `Execute` runs included, while
 **`process-test.properties`** targets only the test JVM
 (merged over the `java` file, with test keys winning).
+
+`javac` and `jar` run inside the build's own JVM unless `jenesis.process.factory=fork` is set, on the command
+line or in `jenesis.properties`. A `-J` option for the compiler's JVM, written as `-J-Xmx2g=` in
+`process-javac.properties`, needs that setting: only a forked `javac` has a JVM of its own to hand it to, and
+an in-process one refuses the flag.
+
+`javadoc` runs with `-Xdoclint:none`, so a missing comment or tag is not reported. An `-Xdoclint` flag in
+`process-javadoc.properties` replaces that default, and `-Werror=` makes a warning fail the build:
+
+```properties
+# process-javadoc.properties  →  report every doclint finding, and fail on it
+-Xdoclint\:all=
+-Werror=
+```
+
+An error fails the build either way. A module whose sources declare no public type has nothing to
+document and is skipped, unless `process-javadoc.properties` asks for more with `-package` or `-private`. An
+`-exclude` line there, as `-exclude=com.example.internal`, leaves those packages and their subpackages out of
+the documentation, several of them separated by `:`, as Maven's `excludePackageNames` does.
 
 <div class="tip">
   Because the file lives in a configuration folder, it is profile-aware and resolved by first match. A
@@ -314,6 +448,24 @@ applies to *every* forked `java` process, the program `Execute` runs included, w
   extra <code>javac</code> flags.
 </div>
 
+### Attributes of the jar's manifest
+
+The build writes the jar's manifest itself, so `process-jar.properties` cannot name one: a `--manifest` line
+there fails the build. A `META-INF/MANIFEST.MF` among the module's resources is the basis of the manifest
+instead - beside the sources of a module, or under `src/main/resources/` in a Maven project:
+
+```text
+Manifest-Version: 1.0
+Implementation-Title: Compiler arguments demo
+Implementation-Vendor: Example Corp
+```
+
+The jar's manifest holds these lines and, merged over them, the ones the build writes, such as the location of
+the bill of materials. This is where Maven's `<manifestEntries>` or Gradle's
+`jar.manifest.attributes` go, an `Automatic-Module-Name` among them. Resources are not filtered, so a value
+is written as it stands. An attribute the build writes with a different value fails the build rather than
+being replaced.
+
 {% demos 12 %}
 
 ## Handing a program environment variables
@@ -321,7 +473,9 @@ applies to *every* forked `java` process, the program `Execute` runs included, w
 A test run, or any other program the build forks, sees only the platform's own environment variables:
 `PATH`, `HOME`, `LANG`, `LC_*` and `TMPDIR`, and on Windows `SystemRoot`, `TEMP`, `USERPROFILE` and the like.
 Nothing else of your shell reaches it. A variable is no input of the build, so a test result never depends on
-one the build cannot see, and no tool reads a secret it was not handed.
+one the build cannot see, and no tool reads a secret it was not handed. A program forked as a step also sees
+`TERM=dumb`, `COLUMNS=80` and `LINES=24` where the variables it is handed name none of them, and its standard
+input is closed, so a program that would ask a question or draw for a terminal reads that none is there.
 
 To hand a program more, add an **`environment-<command>.properties`** file to a configuration folder, named
 like a `process-<command>.properties`:
@@ -390,7 +544,13 @@ module demo.annotations {
 ```
 
 Jenesis resolves the processor, places it on `javac`'s **processor path** (`--processor-module-path`), and the
-compiler runs it.
+compiler runs it. The sources a processor generates are written to a `generated/` folder beside the compiled
+classes rather than among them, so the jar holds the classes compiled from them and not the sources.
+
+A `pom.xml` project declares a processor as a dependency of `<type>processor</type>`. It reaches the processor
+path of the half whose scope declares it - the main code, or with `<scope>test</scope>` the tests alone - and
+never the closure of a module that depends on this one. Its `<exclusions>` prune its closure on the processor
+path, as they prune a dependency's.
 
 <div class="warning">
   Processors are run <strong>only from what you declare</strong>. A dependency that happens to bundle a
@@ -666,7 +826,13 @@ whatever name you picked there.
 
 A module's classpath holds what the module declares. The tools the build resolves for itself - Checkstyle, PMD,
 SpotBugs, a formatter - stay out of it. A test module is marked as test sources, and an `@jenesis.test abstract`
-module as ordinary sources, since other modules compile against it.
+module as ordinary sources, since other modules compile against it. A `pom.xml` module is one IDE module, its
+tests among its test sources and the libraries only they need in the test scope.
+
+Where a module's folder is its source folder, as in a `module-info.java` project, the IDE files land among the
+sources. The build leaves them out of every jar: an `.iml`, a `.classpath` or a `.project` file, and a
+`.settings/`, `.factorypath` or `.eclipse/` entry at the root of a source or resource folder never reach the
+module's artifacts.
 
 Run `ide` again after changing a dependency or adding a module: the files name the resolved jars by their path, so
 a stale file points at a jar the build no longer produces.

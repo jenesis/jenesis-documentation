@@ -1,5 +1,5 @@
 ---
-order: 18
+order: 20
 title: Reference
 description: A lookup for the command line - targets and selectors - a grouped table of every configuration key with its default, and the built-in steps a selector can name.
 ---
@@ -48,13 +48,14 @@ property). The top-level targets the shipped layouts register:
 | `build` | Compile, check, test, and package every module (the default). |
 | `stage` | Materialise the release tree under `target/stage/…` (see *[Publishing](/tool/publishing/)*). |
 | `export` | Publish the staged tree - into the local Maven repository (`~/.m2`), the local module repository (`~/.jenesis`), or both, depending on the layout. |
-| `release` | Hand the staged tree to a configured release tool; a dry run unless told otherwise (see *[Publishing](/tool/publishing/)*). |
+| `release` | Put the staged trees into the repositories `jenesis.release.uri` and `jenesis.release.maven.uri` name, and hand them to a release tool a `jreleaser.yml` configures, as a dry run unless told otherwise (see *[Publishing](/tool/publishing/)*). |
 | `plugin/<name>` | Run a plugin the project names under the hook point `plugin`, which runs only when named (see *[Extending the build](/tool/extending-the-build/#plugins-for-the-whole-project)*). |
 | `pin` | Rewrite every `pom.xml` / `module-info.java` so the transitive closure is pinned at source (see *[Pinning &amp; bills of materials](/tool/pinning/)*). |
-| `dependencies` | Print each module's resolved dependency graph with licences. |
+| `dependencies` | Print each module's resolved dependency graph with licences; named alone, it runs no tests unless `-Djenesis.test.skip=false` asks. |
 | `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata at the project root (see *[Building &amp; running](/tool/building-and-running/#opening-the-project-in-an-ide)*). |
 | `help` | Print a one-screen orientation: how to start, the selectors, and how to make a step verbose. |
 | `skill` | Print the briefing a coding agent works from, every page of it; `skill/start` prints the overview, which names the pages, and `skill/<page>` one page. |
+| `prompt` | Print a task to hand a coding agent, without the build's progress lines; `prompt/migrate` is the move of a Maven or Gradle build (see *[Migrating a Maven or Gradle build](/tool/migrating/#migrating-with-a-coding-agent)*). |
 | `metadata` | Refresh the metadata module outputs without building artifacts. |
 | `configuration` | Print every setting with the value in force, one per line: `jenesis.<key>=<value> [set\|default\|unset] <what it does>`. Built to grep, and the tool's own property reference. |
 | `properties` | Print every `jenesis.*` setting in force for this run - from the command line, `jenesis.properties` or a profile alike - sorted by key. |
@@ -118,13 +119,13 @@ in one step.
 | --- | --- | --- |
 | `jenesis.project.layout` | `auto` | The layout: `auto`, `maven`, `modular`, `modular_to_maven`. |
 | `jenesis.project.target` | `target` | The per-build output folder. Safe to delete for a clean build. A project's own file names only a folder inside the project. |
-| `jenesis.project.version` | *(unset)* | Stamps this version onto every artifact the build produces. Unset, a module stays unversioned - no version in its descriptor and none in its path in the modular tree - and its generated POM, which cannot omit one, carries `0-SNAPSHOT`. |
+| `jenesis.project.version` | *(unset)* | Stamps this version onto every artifact the build produces. It must be a module version, starting with a digit, as `1.2.0`; any other value is refused, an empty one included. In a `pom.xml` project it replaces the version of every module, and a dependency on a sibling module takes it as well. Unset, a module stays unversioned - no version in its descriptor and none in its path in the modular tree - and its generated POM, which cannot omit one, carries `0-SNAPSHOT`. |
 | `jenesis.project.tag` | *(unset)* | The source control tag recorded in the generated POM's `<scm>` and in the SBOM; empty records none, even over a declared `scm.tag` (see *[Publishing](/tool/publishing/#pointing-a-release-at-its-sources)*). |
 | `jenesis.project.revision` | *(unset)* | The source revision, for Git the commit id, recorded in the SBOM; empty records none, even over a declared `scm.revision`. |
 | `jenesis.project.tree` | *(unset)* | The Git tree id of the release, as `git rev-parse HEAD^{tree}` prints it, recorded in the SBOM as a SWHID; empty records none, even over a declared `scm.tree`. |
 | `jenesis.project.metadata` | *(unset)* | Comma-separated project-level metadata files for the POM and the SBOM. Unset reads `project.properties` at the project root when it exists; an empty value reads none. |
 | `jenesis.project.sources` | `false` | Also assemble a per-module sources jar. |
-| `jenesis.project.documentation` | `false` | Also assemble a per-module javadoc jar. |
+| `jenesis.project.documentation` | `false` | Also assemble a per-module javadoc jar, for a test module only where `jenesis.stage.tests` stages it. |
 | `jenesis.documentation.empty` | `false` | Archive that javadoc jar with nothing but an `INTENTIONALLY_EMPTY` file in it instead of rendering the documentation, for a repository such as Maven Central that requires the jar but not its content (see *[Publishing](/tool/publishing/#staging-the-release-tree)*). |
 | `jenesis.project.resources` | *(unset)* | Comma-separated `<path>:<target>` pairs of project files or folders placed among the resources of every module, as `LICENSE:META-INF/LICENSE,NOTICE:META-INF/NOTICE` (see *[Supply-chain features](/tool/supply-chain/#the-licence-text-in-the-jar)*). |
 | `jenesis.project.watch` | `false` | Keep the process alive and rebuild on every source change (see *[Building &amp; running](/tool/building-and-running/)*). |
@@ -179,7 +180,7 @@ runs inside another program's JVM, refuses it.
 
 The engine and the JVM a cache was trained for are hashed into its name, as `engine-<hex>.aot`, so a changed
 engine or an upgraded JDK trains a new one and the one that no longer fits is removed. `help`, `skill`,
-`configuration` and `properties` only print, so they neither train nor use a cache. The daemon keeps a warm JIT
+`prompt`, `configuration` and `properties` only print, so they neither train nor use a cache. The daemon keeps a warm JIT
 the cache does not, so it stays ahead in a tight edit-build loop on a large project; where builds are frequent
 and small, or a machine builds many projects now and then, the cache is the better trade.
 
@@ -203,11 +204,13 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | Key | Default | Effect |
 | --- | --- | --- |
 | `jenesis.test.skip` | `false` | Register no test steps, so no tests run. Naming the key with no value is `true`; `=false` runs the tests. |
-| `jenesis.test.filter` | *(unset)* | Comma-separated `[<module>/]<classRegex>[#<method>]` list; runs only matching tests. An entry naming a module's folder applies to that module's tests alone, and a test module no entry reaches runs none. |
+| `jenesis.test.filter` | *(unset)* | Comma-separated `[<module>/]<classRegex>[#<method>]` list; runs only matching tests, in place of the default naming and of its JUnit 4 check that a class holds tests. An entry naming a module's folder applies to that module's tests alone, and a test module no entry reaches runs none. |
+| `jenesis.test.exclude` | *(unset)* | Comma-separated `[<module>/]<classRegex>` list, each matched against the whole class name; leaves the matching classes out of what the default naming or `jenesis.test.filter` selects. A test module whose every selected class is left out runs none. |
 | `jenesis.test.tag` | *(unset)* | Tests to run by tag, in a framework-neutral syntax that needs no quoting on a command line: comma-separated alternatives, a test running where it matches any of them, each a tag, several joined by `+` for the tests carrying all of them, and `-<tag>` for the tests not carrying it; translated for the test framework. A run remembers what it covered until the tests' inputs change, so a later selection runs only what no earlier run did (see *[Code quality & testing](/tool/code-quality-and-testing/#selecting-tests-by-tag)*). |
 | `jenesis.test.parallel` | `false` | Run tests in parallel where the framework supports it. |
-| `jenesis.test.reporting` | `false` | Emit test reports under `reports/tests/`: legacy JUnit XML and Open Test Reporting XML for `junit-platform`, TestNG's own report for `testng`. |
-| `jenesis.test.incremental` | *(off)* | Run only the tests a change can reach: `true` detects changes with MD5, the name of another message digest with that one, `false` runs every test. |
+| `jenesis.test.reporting` | `false` | Keep the reports every test run writes in the module's `reports/tests/` rather than under the step's `supplement/`: the legacy JUnit XML and the Open Test Reporting XML for `junit-platform`, TestNG's own report for `testng`. |
+| `jenesis.test.incremental` | *(off)* | Run only the tests a change can reach: `true` detects changes with MD5, the name of another message digest with that one, `false` runs every test. A `jenesis.test.filter`, `jenesis.test.exclude` or `jenesis.test.tag` switches it off. |
+| `jenesis.test.jars` | `true` | Run the tests against the packaged test jar; `false` runs them against the module's classes and resources folders instead, each named once, so a test can read its own resources as files, while the modules it depends on stay jars. A module tested on the module path refuses `false`. |
 | `jenesis.test.force` | `false` | `true` runs the tests even when nothing changed and the recorded scope already covers the request. |
 | `jenesis.archive.timestamp` | `1980-02-01T00:00:00Z` | The date and time recorded on every entry of the jars, jmods and zips the build produces; an ISO-8601 date-time with an offset between `1980-01-01T00:00:02Z` and `2099-12-31T23:59:59Z`. Empty turns the fixed time off, which is discouraged (see *[Building &amp; running](/tool/building-and-running/#reproducible-archives)*). Set explicitly, it is also the `created` label of a generated `Dockerfile` (see *[Packaging](/tool/packaging/#labels)*). |
 | `jenesis.stage.tests` | `false` | Include test-variant artifacts when staging, and the modules tagged `@jenesis.test abstract` that they require. |
@@ -215,8 +218,9 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.graalvm.license` | *(unset)* | Licence the SBOM beside a native image records for the GraalVM that compiled it, as an SPDX identifier or a name; unset records none (see *[Supply-chain features](/tool/supply-chain/)*). |
 | `jenesis.legal.notices` | `META-INF/NOTICE,META-INF/LICENSE,META-INF/license/,META-INF/licenses/,LICENSE,about.html` | Comma-separated jar entries taken as legal notices into a `.jmod`, a linked or packaged image and beside a native image, from the module's jar and from each runtime dependency's jar; names match regardless of case and also with an extension, and an entry ending in `/` takes the folder below it (see *[Packaging](/tool/packaging/#licences-in-each-form)*). |
 | `jenesis.compliance` | `true` | Run the licence and vulnerability checks; `false` skips both. |
-| `jenesis.source.<tool>` | `true` | Per-linter switch (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`). |
-| `jenesis.validator.spotbugs` | `true` | Run SpotBugs when its filter file is present. |
+| `jenesis.source.<tool>` | `report` | What a linter's findings do (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`): `report` records them, `strict` fails the build on them, as the linter's own exit code decides - scalafmt on a source it would format differently, CodeNarc on any finding - and `ignore` skips the linter. Any other value is refused. |
+| `jenesis.source.pmd.priority` | `5` | The lowest rule priority PMD runs, from `1`, the highest, to `5`, the lowest, as maven-pmd-plugin's `minimumPriority`; any other value is refused. |
+| `jenesis.validator.spotbugs` | `report` | What SpotBugs does when its filter file is present: `report` records its findings, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.format.java` / `.ktlint` / `.scalafmt` | `true` | Per-formatter switch. |
 | `jenesis.format.rewrite` | `false` | Rewrite sources in place instead of verifying. |
 | `jenesis.observe.jacoco` | `true` | Run JaCoCo coverage when its file is present. |
@@ -269,7 +273,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.maven.embed` | `true` | Carry the POM and a `pom.properties` in the jar under `META-INF/maven/<groupId>/<artifactId>/`, as Maven does, where the layout publishes to Maven (see *[Publishing](/tool/publishing/)*). |
 | `jenesis.maven.segments` | `2` | How many leading dot-separated segments of a module name form its Maven group ID when a module is published or resolved by the coordinate convention; a name with fewer becomes the group ID whole. A `maven:<segments>:<uri>` entry of `jenesis.module.uri` sets it for that remote alone. |
 | `jenesis.module.uri` (`JENESIS_REPOSITORY_URI`) | `https://repo.jenesis.build/` | The Jenesis Module Index URL(s) module names resolve through; same list/filter/`@` grammar. An entry may name how it is read: `maven:[<segments>:]<uri>` reads a Maven repository by the publishing convention, and `mapped:<uri or @>:<list>[;<list>...]` reads the modules that `.properties` lists, each a URI or an absolute path, map to `<groupId>/<artifactId>[/<type>[/<classifier>]]`, from the Maven repository at that URI or, for `@`, from the one `jenesis.maven.uri` configures. A project's own file may name them, and `jenesis.module.token` is then not sent. An empty value names no index at all, so only *[Discovery](/tool/discovery/)*, the local module repository (`~/.jenesis`) and the artifacts a build stored answer. |
-| `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | `~/.jenesis` | The local module repository, read first and written by `export`. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | `~/.jenesis` | The local module repository, read first and written by `export`; it also keeps the answers of discovery under `well-known/`. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.module.source` | `service` | Who resolves a module name: `service` asks the index at `jenesis.module.uri`, `git` reads its published data itself and fetches from `jenesis.maven.uri`. |
 | `jenesis.module.index` (`JENESIS_INDEX_URI`) | `data/modules/` in [`jenesis/jenesis-modules`](https://github.com/jenesis/jenesis-modules/tree/main/data/modules) | Where `git` reads that data from - a fork or mirror of the index's per-module files. |
 | `jenesis.module.prerelease` | *(unset)* | Whether a module asked for without a version may resolve to a pre-release. Unset states no preference: the newest release is served, and a module that has only pre-releases resolves to nothing. |
@@ -283,7 +287,9 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.repository.connect.timeout` | `10000` | Connect timeout for a repository fetch, in milliseconds. |
 | `jenesis.repository.read.timeout` | `30000` | Read timeout for a repository fetch, in milliseconds. |
 | `jenesis.repository.discovery` | `false` | Before the module and Maven repositories, read `https://<domain>/.well-known/java-repository.properties` of the domain a module or Maven group is named after - see *[Discovery](/tool/discovery/)*. |
-| `jenesis.repository.offline` | `false` | Download nothing. Modules, artifacts, checksums and keys come from `.jenesis/artifacts`, the local Maven repository or a local module folder, and Maven metadata an earlier resolution stored answers a version range at the versions it named then. A fetch that would need the network fails the build with its URL named. The remote build cache is skipped, and a vulnerability lookup or a release fails the build. |
+| `jenesis.repository.discovery.timeout` | `5000` | Connect and read timeout, in milliseconds, for a domain's discovery file, which is asked once rather than with the retries of `jenesis.repository.retries`; a domain that does not answer in time counts as publishing none for this build. A value that is not positive is refused. |
+| `jenesis.repository.discovery.ttl` | `24` | Hours a domain's discovery answer - its file, or a `404` or `410` for none - is kept under `well-known/` in the local module repository, so a later build reads it rather than asking again; `0` keeps nothing. Delete `well-known/` to ask sooner. A local module repository that cannot be written is read alone. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.repository.offline` | `false` | Download nothing. Modules, artifacts, checksums and keys come from `.jenesis/artifacts`, the local Maven repository or a local module folder, and Maven metadata an earlier resolution stored answers a version range at the versions it named then. A fetch that would need the network fails the build with its URL named. No domain is asked for its discovery file, and what an earlier build kept of one is read whatever its age. The remote build cache is skipped, and a vulnerability lookup or a release fails the build. |
 
 ### Caching
 
@@ -319,6 +325,8 @@ Read by the `release` target - see *[Publishing](/tool/publishing/)*.
 | --- | --- | --- |
 | `jenesis.release.uri` (`JENESIS_RELEASE_URI`) | *(unset)* | The Jenesis module repository `release` puts each staged module into, with one put of its jar at `module/<module>/<version>/<module>.jar`, so every module needs a version: the `https:` address of a `jenesis` repository of a Jenesis Repository, the one `jenesis.module.uri` names; a `java` repository takes Maven publishes only and refuses the put. Unset, `release` puts nothing there. Its environment variable is not the one a build resolves through. |
 | `jenesis.release.token` (`JENESIS_RELEASE_TOKEN`) | *(unset)* | `Authorization` header sent to that repository, as given. Command line, `~/.jenesis/jenesis.properties` or the environment only. It travels only to a `jenesis.release.uri` named in the environment, on the command line or there, never to one a project's own file named. Its environment variable is not the one sent to the resolving repositories. |
+| `jenesis.release.maven.uri` (`MAVEN_RELEASE_URI`) | *(unset)* | The Maven repository `release` puts the staged Maven tree into, every file at `<group path>/<artifactId>/<version>/<file>` with its `.md5`, `.sha1`, `.sha256` and `.sha512`, then each artifact's `maven-metadata.xml` merged with the one the repository holds; a `-SNAPSHOT` version under a unique timestamped name beside its own `maven-metadata.xml`, as Maven deploys one. Nothing is signed, and Maven Central is refused, as a `jreleaser.yml` releases there. Unset, `release` puts nothing there. Its environment variable is not the one a build resolves through. |
+| `jenesis.release.maven.token` (`MAVEN_RELEASE_TOKEN`) | *(unset)* | `Authorization` header sent to that repository, as given, so it names its scheme, as `Basic <credentials>` or `Bearer <token>`. Command line, `~/.jenesis/jenesis.properties` or the environment only. It travels only to a `jenesis.release.maven.uri` named in the environment, on the command line or there, never to one a project's own file named. |
 | `jenesis.jreleaser.config` | *(discovered)* | The release-tool configuration file; must exist when named. |
 | `jenesis.jreleaser.dry` | `true` | Perform every local phase and skip every remote one; `false` publishes. |
 | `jenesis.jreleaser.executable` | `jreleaser` | The executable to locate. Command line or `~/.jenesis/jenesis.properties` only. |
@@ -348,6 +356,7 @@ password location is missing.
 | `jenesis.print.command` | `false` | Print each external tool's command line. |
 | `jenesis.print.process` | `false` | Stream every external tool's output; `jenesis.print.<command>` targets one tool. |
 | `jenesis.print.tests` | `false` | Stream the test JVM's command and output. |
+| `jenesis.print.findings` | `true` | Print a `[FINDINGS]` line for each linter that found something, with the number of findings and where its report is. |
 | `jenesis.print.fetch` | `false` | Print a `[FETCHED]` line per downloaded artifact. |
 | `jenesis.print.cache` | `false` | Print `[LOADED]`/`[STORED]` lines for the build cache, local and shared. |
 | `jenesis.print.signatures` | `false` | Print a `[VERIFIED]` line per checked dependency with the key or the identity that signed it, `[EXPIRED]` with both dates where the key has since expired, and `[UNDECLARED]`/`[UNSIGNED]` for the ones no declaration covers. |
@@ -359,15 +368,17 @@ password location is missing.
 | `jenesis.tree.format` | `full` | The `dependencies` tree rendering: `full` or `compact`. |
 | `jenesis.tree.merge` | `true` | Print one `dependencies` tree per module whose every node names the scopes it is resolved in; `false` prints one tree per module and scope. |
 | `jenesis.tree.internal` | `false` | List the project's own modules among the resolved dependencies of the `dependencies` trees and count them in the licence and module summary. |
+| `jenesis.tree.tools` | `false` | Show apart, under a heading naming each, the groups a module resolves for its build rather than for itself - a linter, a formatter, a plugin, an annotation processor - and count them in the licence summary. |
 | `jenesis.tree.tests` | `true` | Include the test modules in the `dependencies` trees and their licence summary. |
 | `jenesis.executor.digest` | `MD5` | Digest for the per-file content and per-step config hashes. |
 | `jenesis.executor.timeout` | `PT0S` | ISO-8601 per-step timeout; `PT0S` disables it. |
 | `jenesis.executor.rebuild` | `false` | Delete `target/` first, forcing a full rebuild. |
 | `jenesis.executor.aggregate` | `false` | Let independent step failures aggregate into one report instead of failing at the first. |
 | `jenesis.executor.events` | `true` | Write each step's outcome of the latest build to `target/.jenesis.events.jsonl`, one JSON object per line (see *[Building &amp; running](/tool/building-and-running/#reading-a-build-s-outcome)*). |
-| `jenesis.executor.concurrency` | `0` | The most build steps that run at once across the whole build; `0` means no limit. |
-| `jenesis.process.factory` | `tool` | How JDK tool steps launch: `tool` (in-process) or `fork`. |
-| `jenesis.process.concurrency` | `0` | The most JDK tool runs that happen at once across the whole build; `0` means no limit. |
+| `jenesis.executor.concurrency` | `0` | The most build steps that run at once across the whole build; `0` means no limit, while `jenesis.process.concurrency` still bounds the tools they run. |
+| `jenesis.process.factory` | `tool` | How JDK tool steps launch: `tool` (in-process) or `fork`, which a `-J` option in `process-javac.properties` needs. |
+| `jenesis.process.tail` | `200` | How many of the last lines of a failed tool's output and of its error the failure prints, beside how many there were and the file under `supplement/` that holds all of them; `0` prints every line. |
+| `jenesis.process.concurrency` | *(processor count)* | The most tool runs - a compiler, a JDK tool, a forked JVM such as a test run - that happen at once across the whole build; `0` means no limit. |
 | `JAVA_HOME` (env) | *(from `java.home`)* | Locates the JDK binaries when the runtime is not a JDK. |
 
 ## Built-in steps
@@ -436,7 +447,7 @@ already uses. This is the whole vocabulary:
 
 | Tag | Declares | Chapter |
 | --- | --- | --- |
-| `@jenesis.release <N>` | The Java release to compile against (`maven.compiler.release` in a POM); the running JDK's release when absent. `<N>-preview` also enables the preview features of that release, to compile and to run (`maven.compiler.enablePreview` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
+| `@jenesis.release <N>` | The Java release to compile against (`maven.compiler.release` in a POM, and `maven.compiler.testRelease` for its tests where it names one); the running JDK's release when absent. `<N>-preview` also enables the preview features of that release, to compile and to run (`maven.compiler.enablePreview` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
 | `@jenesis.main <class>` | The module's entry point (`<mainClass>` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
 | `@jenesis.test [<module>\|abstract]` | Marks this module as the test module of another, or as test infrastructure that declares no tests of its own (`abstract`). | *[Building &amp; running](/tool/building-and-running/)* |
 | `@jenesis.plugin [<compiler>] <token>` | An annotation processor, or a compiler plugin for a named compiler. | *[Other JVM languages](/tool/other-jvm-languages/)* |

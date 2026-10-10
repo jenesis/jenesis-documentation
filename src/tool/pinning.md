@@ -23,7 +23,13 @@ java build/jenesis/Make.java pin
 It is opt-in - not part of `build` - and it writes into your project tree rather than under `target/`: a
 `@jenesis.pin` tag per dependency in a **modular** project, a `<dependencyManagement>` block with a
 `<!--Checksum/…-->` comment per entry in a **`pom.xml`** project. Commit the result and the pin set travels
-with the project.
+with the project. `pin` runs the build it pins, so whatever the changed versions reach is built again, a
+module's tests included; `-Djenesis.test.skip=true` leaves the tests to the next build. A managed entry that `pin` rewrites keeps its `<exclusions>`, those an imported bill of
+materials declares for it included. The main code and the tests of a `pom.xml` share its one
+`<dependencyManagement>`, so where they resolve a coordinate at different versions, its entry takes the version
+the POM declares itself, which the other half then resolves as well. A module of a `pom.xml` project inherits the `<!--jenesis.plugin-->` comments
+of a parent POM within the project, but its `<!--jenesis.pin-->` comment is its own: `pin` writes one into every
+module's POM, and a parent's is not read for it.
 
 `pin` is project-wide, and a `+<module>` selector beside it narrows `build` rather than the pin. To pin one
 module, name its step - `<path>` is the module's folder with `+` in place of `/`, as the step's folder under
@@ -77,6 +83,12 @@ module demo.app {
 
 commons-text's POM asks for commons-lang3 3.14.0; the coordinate line overrides it wherever the closure
 reaches it, and the next `pin` records the checksum of the version you chose.
+
+A coordinate with a type or a classifier is longer than `<groupId>/<artifactId>`, so it is written with its
+repository in front, as `maven/<groupId>/<artifactId>/jar/<classifier>` names the type `jar` and a
+classifier.
+Without the `maven/`, the group ID would read as a dependency group, and the build refuses such a token,
+naming the spelling to write.
 
 A refresh rewrites every line of the closure it resolved and removes every other line, except those of a
 group this run resolved no closure for: the documentation tool's pins, in a group of their own that only
@@ -173,6 +185,13 @@ The default already validates every checksum you have recorded; a mismatch alway
 mode goes further and refuses to build at all until *nothing* is left unpinned, which is what you want in CI
 once a project is fully pinned. Run `pin`, commit, then build under `-Djenesis.dependency.pin=strict` so no
 new un-vetted artifact can slip in unnoticed.
+
+Strict pinning is checked in a step of its own, `pinned`, over what the resolution recorded as unpinned, so
+switching it on or off resolves nothing again. The step names the first coordinate without a checksum:
+
+```text
+[FAILED]   build/maven/compose/module/module-/dependencies/artifacts/pinned: java.lang.IllegalStateException: No checksum pinned for maven/org.apache.commons/commons-lang3/3.14.0 (strict pinning is enabled)
+```
 
 Strict mode pairs well with the `managed` resolution strategy from
 *[Dependencies](/tool/dependencies/#letting-nothing-in-that-you-did-not-name)*. Because `pin` writes the whole
