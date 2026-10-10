@@ -25,7 +25,9 @@ It is opt-in - not part of `build` - and it writes into your project tree rather
 `<!--Checksum/…-->` comment per entry in a **`pom.xml`** project. Commit the result and the pin set travels
 with the project. `pin` runs the build it pins, so whatever the changed versions reach is built again, a
 module's tests included; `-Djenesis.test.skip=true` leaves the tests to the next build. A managed entry that `pin` rewrites keeps its `<exclusions>`, those an imported bill of
-materials declares for it included. A module of a `pom.xml` project inherits the `<!--jenesis.plugin-->` comments
+materials declares for it included. The main code and the tests of a `pom.xml` share its one
+`<dependencyManagement>`, so where they resolve a coordinate at different versions, its entry takes the version
+the POM declares itself, which the other half then resolves as well. A module of a `pom.xml` project inherits the `<!--jenesis.plugin-->` comments
 of a parent POM within the project, but its `<!--jenesis.pin-->` comment is its own: `pin` writes one into every
 module's POM, and a parent's is not read for it.
 
