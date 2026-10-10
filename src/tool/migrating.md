@@ -150,9 +150,11 @@ Checkstyle reads a copy of the sources below `target/build/`, so a suppression k
 `src/test/java`, matches nothing. Key it on the package's folders instead, as `[/\\]example[/\\]test[/\\]`.
 
 The tests run a little differently, too. `jenesis.test.filter` replaces the default naming rather than
-narrowing it, and the root module's entry is written `/<classRegex>`. The tests run against the module's jar,
-so one that turns `getResource` into a `java.io.File` needs `-Djenesis.test.jars=false`. A build prints no
-test totals; `-Djenesis.print.tests` streams the runner's summary.
+narrowing it, and the root module's entry is written `/<classRegex>`. As with Surefire, they run in the
+module's folder with the `basedir` system property set to it, so a relative `src/test/...` path finds the
+module's file. They run against the module's jar, so one that turns `getResource` into a `java.io.File` needs
+`-Djenesis.test.jars=false`. A build prints no test totals; `-Djenesis.print.tests` streams the runner's
+summary.
 
 ### Shading
 
