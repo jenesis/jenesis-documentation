@@ -11,8 +11,9 @@ a code-generation step, a bespoke packaging step, an unusual dependency wiring.
 
 Almost always, the answer is a **plugin**: a build module, named in one line of a properties file, that joins a
 module of the stock build and adds to it, or runs once over everything the build produced. A plugin never
-replaces what the stock build does; a build that must - one that redirects what the compiler reads, or wires a
-step between two stock ones - is an entry point of its own, and that comes last.
+replaces what the stock build does, save the compiled classes a bytecode enhancer rewrites; a build that must -
+one that redirects what the compiler reads, or wires a step between two stock ones - is an entry point of its
+own, and that comes last.
 
 ## Adding plugins to the stock build
 
@@ -65,6 +66,7 @@ point runs as `custom/<name>`, in the module build itself:
 | `compliance` | Beside the licence and vulnerability checks, handed the manifests and the resolved dependencies. |
 | `binary/generated` | Before compilation, beside the stock generators; a `sources/` tree it writes is compiled with the module. |
 | `binary/compiled` | Beside the stock compilers, handed what they compile; what it writes below `classes/` joins the module's jar, and a class that two compilers or plugins both write fails the build, naming both. |
+| `binary/transform` | After the compilers, handed the module's compiled classes first and the module's inputs after them; what it writes below `classes/` replaces the class of that name. Several plugins run in the order the file names them, each handed what the one before wrote. |
 | `binary/validate` | After compilation, beside the bytecode checks, handed the compiled classes. |
 | `binary` | Within the module's compile toolchain, handed what the toolchain reads. |
 | `artifact` | Once the module's jar is built, handed it with the module's dependencies. |
@@ -420,7 +422,9 @@ point is handed the module's `metadata.properties`, with its version, name and t
 to one of them returns early on the other. The resolved dependencies arrive as a folder too, read with
 `build.jenesis.step.Dependencies`: `Dependencies.select(folder, "main", "compile")` lists the jars of one group and scope, and
 `Dependencies.all(folder)` every one. What a step in `binary/compiled` writes as `classes/` and as a
-`manifest.mf` is merged into the module's jar.
+`manifest.mf` is merged into the module's jar. A step in `binary/transform` finds the compiled classes in the
+first of its arguments, and what it writes below `classes/` or as a `manifest.mf` replaces the file of that name,
+while every file it does not write passes on as it was.
 
 A plugin compiled from source lives in a project folder of its own, which carries an empty **`.jenesis.skip`**
 marker so the project's module discovery does not mistake it for a second project module. A published plugin
@@ -441,17 +445,18 @@ module index does not serve, as one named by an `Automatic-Module-Name` alone, i
 module of its own, so a jar that declares no module name at all, or two jars that share a package, cannot load:
 exclude it, or pin a version of it that names its module.
 
-### A worked example: classes generated with Byte Buddy
+### A worked example: classes rewritten with Byte Buddy
 
-A plugin is written against a library's own Java API. This one uses [Byte Buddy](https://bytebuddy.net) to
-generate `sample.Greeting`, a `java.util.function.Supplier` that returns a configured text, and adds it to the
-module's jar beside the classes `javac` compiled. The class has no source anywhere in the project.
+A plugin is written against a library's own Java API. This one runs [Byte Buddy](https://bytebuddy.net)'s
+`Plugin.Engine` over the classes `javac` compiled, as Byte Buddy's Maven and Gradle plugins do, with two Byte
+Buddy plugins: `ToStringPlugin`, which Byte Buddy ships, and one written for the project. What it writes
+replaces the classes it was handed, so the jar, the tests and every later step see the rewritten ones.
 
 The project names the plugin, the hook point it joins and the folder it is compiled from:
 
 ```properties
 # jenesis.plugins.properties
-greeter+binary/compiled=./plugin
+enhance+binary/transform=./plugin
 ```
 
 `plugin/` holds the plugin module, with an empty `.jenesis.skip` beside its declaration. It requires the
@@ -461,95 +466,112 @@ build API and Byte Buddy, and provides its build module:
 module demo.plugin {
     requires build.jenesis;
     requires net.bytebuddy;
-    provides build.jenesis.BuildExecutorModule with demo.plugin.GreeterModule;
+    provides build.jenesis.BuildExecutorModule with demo.plugin.EnhanceModule;
 }
 ```
 
-The plugin runs in a module where `plugin-greeter.properties` is found:
+The plugin runs in a module where `plugin-enhance.properties` is found:
 
 ```properties
-# build.jenesis/plugin-greeter.properties
-implementation=sample.Greeting
-greeting=Hello from a class that Byte Buddy generated in a build plugin!
+# build.jenesis/plugin-enhance.properties
+type=sample.Greeting
+greeting=Hello from a method that Byte Buddy rewrote in a build plugin!
 ```
 
 Its values reach the provider's constructor as a `SequencedMap<String, String>`, in the file's order. The
 provider keeps what it needs, and its `accept(BuildExecutor, SequencedMap<String, Path>)` adds one step, a
-record of those two values:
+record of those two values, handed everything the hook point reads:
 
 ```java
-public GreeterModule(SequencedMap<String, String> properties) {
-    implementation = properties.getOrDefault("implementation", "sample.Greeting");
-    greeting = properties.getOrDefault("greeting", "Hello from a generated class!");
+public EnhanceModule(SequencedMap<String, String> properties) {
+    type = properties.getOrDefault("type", "sample.Greeting");
+    greeting = properties.getOrDefault("greeting", "Hello from a rewritten method!");
 }
 
 @Override
 public void accept(BuildExecutor executor, SequencedMap<String, Path> inherited) {
-    executor.addStep("generate", new Generate(implementation, greeting));
+    executor.addStep("enhance", new Enhance(type, greeting), inherited.sequencedKeySet());
 }
 ```
 
-The step's `apply(Executor, BuildStepContext, SequencedMap<String, BuildStepArgument>)` describes the class
-with Byte Buddy and saves it below `classes/` in its own output folder, `context.next()`:
+The step's `apply(Executor, BuildStepContext, SequencedMap<String, BuildStepArgument>)` collects the jars the
+module compiles against as Byte Buddy's class path, and runs the engine from the classes in its first argument
+into `classes/` of its own output folder, `context.next()`:
 
 ```java
-private record Generate(String implementation, String greeting) implements BuildStep {
-
-    @Override
-    public CompletionStage<BuildStepResult> apply(Executor executor,
-                                                  BuildStepContext context,
-                                                  SequencedMap<String, BuildStepArgument> arguments)
-            throws IOException {
-        new ByteBuddy()
-                .subclass(Object.class)
-                .name(implementation)
-                .implement(Supplier.class)
-                .method(named("get"))
-                .intercept(FixedValue.value(greeting))
-                .make()
-                .saveIn(Files.createDirectories(context.next().resolve(BuildStep.CLASSES)).toFile());
-        return CompletableFuture.completedStage(new BuildStepResult(true));
+List<ClassFileLocator> classPath = new ArrayList<>();
+for (BuildStepArgument argument : arguments.values()) {
+    if (!argument.removed()) {
+        for (Path jar : Dependencies.select(argument.folder(), "main", "compile")) {
+            classPath.add(ClassFileLocator.ForJarFile.of(jar.toFile()));
+        }
     }
+}
+try (ClassFileLocator locator = new ClassFileLocator.Compound(classPath)) {
+    new Plugin.Engine.Default()
+            .with(locator)
+            .apply(arguments.firstEntry().getValue().folder().resolve(BuildStep.CLASSES).toFile(),
+                    Files.createDirectories(context.next().resolve(BuildStep.CLASSES)).toFile(),
+                    new Plugin.Factory.Simple(new ToStringPlugin()),
+                    new Plugin.Factory.Simple(new Greeting(type, greeting)));
+}
+return CompletableFuture.completedStage(new BuildStepResult(true));
+```
+
+The class path is what lets Byte Buddy read the types a class refers to beyond the JDK. The module's own
+`sample.Greeting` carries `@ToStringPlugin.Enhance`, from a `requires static net.bytebuddy`; without the
+module's jars, Byte Buddy cannot resolve the annotation, and `ToStringPlugin` matches nothing. The second
+plugin, `Greeting`, is a `net.bytebuddy.build.Plugin` of the project's own that matches the type its properties
+name and rewrites its `get()` to return the configured text:
+
+```java
+public boolean matches(TypeDescription target) {
+    return target.getName().equals(type);
+}
+
+public DynamicType.Builder<?> apply(DynamicType.Builder<?> builder,
+                                    TypeDescription typeDescription,
+                                    ClassFileLocator classFileLocator) {
+    return builder.method(named("get")).intercept(FixedValue.value(greeting));
 }
 ```
 
-The two values are the step's serialised state, so changing either in `plugin-greeter.properties` runs the
-step again, and nothing else does. What it writes below `classes/` is merged into the module's jar, and the
-tests and every later step see `sample.Greeting` as one of the module's classes.
+The two values are the step's serialised state, so changing either in `plugin-enhance.properties` runs the
+step again, and so does a change to the classes it is handed. The application then prints what the rewritten
+classes return:
+
+```text
+Hello from a method that Byte Buddy rewrote in a build plugin!
+Greeting{audience=the build}
+```
 
 Byte Buddy is configured in code here rather than discovered. Its Maven and Gradle plugins run the Byte Buddy
 plugins they find in `META-INF/net.bytebuddy/build.plugins` or that the build file names, configured in XML
-or the build's DSL. The provider above builds what Byte Buddy does in Java instead, from the values of its own
-properties file, and runs nothing it did not name.
+or the build's DSL. The provider above constructs the plugins it runs in Java instead, from the values of its
+own properties file, and runs nothing it did not name.
 
-Byte Buddy resolves into the plugin's own module layer and never reaches the application. `pin` records the
-plugin's closure in the project's `module-info.java`, in the group named after the plugin:
+Byte Buddy resolves into the plugin's own module layer, and what the plugin rewrote refers to nothing but
+`java.base`, so it never reaches the running application. `pin` records the plugin's closure in the project's
+`module-info.java`, in the group named after the plugin:
 
 ```java
 /**
- * @jenesis.pin plugin-greeter/module/build.jenesis <version> SHA-256/...
- * @jenesis.pin plugin-greeter/module/net.bytebuddy <version> SHA-256/...
+ * @jenesis.pin plugin-enhance/module/build.jenesis <version> SHA-256/...
+ * @jenesis.pin plugin-enhance/module/net.bytebuddy <version> SHA-256/...
  */
 ```
-
-<div class="warning">
-  A plugin at <code>binary/compiled</code> adds classes; it cannot rewrite the classes <code>javac</code>
-  compiled. No hook point hands a plugin the compiled classes to change, and a class that the plugin and
-  <code>javac</code> both write fails the build. An enhancement in the sense of Byte Buddy's Maven plugin,
-  which transforms compiled classes in place, therefore has no place in the stock build.
-</div>
 
 {% demos 59 %}
 
 ### Forking a tool that cannot be a module
 
-A tool that cannot be a module at all, as JavaCC 8 with a class in the unnamed package, cannot load in the
+A tool that cannot be a module at all, as one with a class in the unnamed package, cannot load in the
 plugin's layer. The plugin's step forks it instead, and the project resolves it rather than the plugin. A
-module names it in a group of its own with `@jenesis.plugin javacc maven/<groupId>/<artifactId>` in its
-`module-info.java`, or a `<!--jenesis.plugin javacc maven/<groupId>/<artifactId>-->` comment in its
-`pom.xml`, and pins it as `javacc/maven/<groupId>/<artifactId>`. A module hook point such as
+module names it in a group of its own with `@jenesis.plugin <group> maven/<groupId>/<artifactId>` in its
+`module-info.java`, or a `<!--jenesis.plugin <group> maven/<groupId>/<artifactId>-->` comment in its
+`pom.xml`, and pins it as `<group>/maven/<groupId>/<artifactId>`. A module hook point such as
 `binary/generated` hands the jars over among the resolved dependencies, the input whose key ends in
-`/dependencies/artifacts`, where `Dependencies.select(folder, "javacc", "plugin")` lists them for the
+`/dependencies/artifacts`, where `Dependencies.select(folder, "<group>", "plugin")` lists them for the
 `java -cp` the step runs.
 
 Hand such a step only the inputs it reads, `executor.addStep(name, step, inputs)` naming them among the keys of

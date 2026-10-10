@@ -124,7 +124,7 @@ export default {
         { slug: "demo-56-custom-jmod", name: "jlink & jpackage", blurb: "A custom .jmod carrying extra content, linked into a runtime and packaged into an app." },
         { slug: "demo-57-internal-module", name: "Internal build module", blurb: "A plugin named in jenesis.plugins.properties, compiled from local source and configured by its own properties file." },
         { slug: "demo-58-external-module", name: "External build module", blurb: "The same plugin resolved by its module name from a repository." },
-        { slug: "demo-59-byte-buddy", name: "A plugin on Byte Buddy", blurb: "A plugin written against Byte Buddy's API generates a class at binary/compiled, configured in code from its own properties file, and the class joins the module's jar." },
+        { slug: "demo-59-byte-buddy", name: "A plugin on Byte Buddy", blurb: "A plugin at binary/transform runs Byte Buddy's ToStringPlugin and a plugin of the project's own over the compiled classes, with the module's class path, and what it writes replaces them." },
         { slug: "demo-60-project-plugins", name: "Project plugins", blurb: "Plugins hooked into the build of the whole project: a licence check before anything compiles, a notice attached to every module and checked before staging, a distribution zip beside the stock packages, checksums added to the staged trees and checked before export, an exporter that delivers them, and a line count run on demand without a build." },
         { slug: "demo-61-custom-maven", name: "Custom Maven build", blurb: "Driving a multi-module Maven-layout build from your own entry point with the convenience factory." },
         { slug: "demo-62-custom-modular", name: "Custom modular build", blurb: "The same for a modular project." },
