@@ -76,7 +76,7 @@ into the module declaration and the files beside it:
 | In the POM | In a module-info.java build |
 | --- | --- |
 | A dependency | `requires <module>`, or `requires static` where it is only compiled against. A jar without a module name resolves by the name the Jenesis Module Index gives it, or by `@jenesis.alias`. |
-| A version | `@jenesis.pin`, which `pin` writes; `@jenesis.bom` for a BOM. |
+| A version | `@jenesis.pin <module> <version>` for a required module, `<groupId>/<artifactId>` for one a POM brings in, which `pin` writes; `@jenesis.bom` for a BOM. |
 | The release | `@jenesis.release <N>`. |
 | An annotation processor | `@jenesis.plugin maven/<groupId>/<artifactId>`. |
 | The main class | `@jenesis.main <class>`. |
@@ -102,8 +102,11 @@ the setting, what is staged is unversioned and its POM carries `0-SNAPSHOT`.
 ## Pinning again
 
 The pins `pin` wrote into a `pom.xml` do not carry over: until `pin` runs again, the module build resolves the
-newest versions. Write a bare `@jenesis.pin <module> <version>` for each version to keep, then run `pin`, which
-adds the checksums and the closure.
+newest versions. Write a bare `@jenesis.pin <module> <version>` for each required module whose version to
+keep, and `@jenesis.pin <groupId>/<artifactId> <version>` for one only a dependency's POM brings in, since a
+module name reaches only a module that is required by it. A module name that would move such a module to
+another version fails the build, naming the coordinate pin. Then run `pin`, which adds the checksums and the
+closure.
 
 ## While the old build remains
 
