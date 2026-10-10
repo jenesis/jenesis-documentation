@@ -316,6 +316,10 @@ documentation tool (`javadoc` for Java) and adds a `-javadoc.jar`. A test module
 build time you do not want on every inner-loop run. Turn them on for a release, or record them in a profile
 (see *[Configuration](/tool/configuration/)*).
 
+A module declared by a `module-info.java` is documented as that module, as the maven-javadoc-plugin and Gradle
+document one: the javadoc jar holds a `module-summary.html`, and its packages' pages sit in a folder named
+after the module.
+
 Both jars cover the sources a generator or a plugin added to the module as well as your own: `javadoc`
 documents the generated classes, and the sources jar carries their source files beside the schema they follow
 from, as Maven's does.
