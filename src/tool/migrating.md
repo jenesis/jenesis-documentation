@@ -78,11 +78,13 @@ A `pom.xml` is read for what it declares, not for how Maven builds it:
   project's own.
 - **Ignored:** `<build><plugins>` and `<pluginManagement>`, a profile activated by a property, the operating
   system, a file or `-P`, `<repositories>` and `settings.xml`, a resource's includes, excludes, `targetPath`
-  and filtering, and every packaging but `jar`. A `jar` module with neither sources nor resources is built only where its `src/main/build.jenesis/` or
-  `build.jenesis/` configures a plugin, which may generate them; otherwise a `[SKIPPED]` line names it. A
-  `pom` aggregator is followed for its modules, a `pom` module
-  with a `<dependencyManagement>` and no modules is published as a
-  [bill of materials](/tool/publishing/#a-maven-bom-from-a-pom-xml), and a `war` is not built.
+  and filtering, and every packaging but `jar` and `bundle`. A `bundle`, the maven-bundle-plugin's packaging,
+  builds a jar whose OSGi headers come from a `META-INF/MANIFEST.MF` among the resources or from a plugin. A
+  `jar` module with neither sources nor resources is built only where its `src/main/build.jenesis/` or
+  `build.jenesis/` configures a plugin, which may generate them; otherwise a `[SKIPPED]` line names it. A `pom` aggregator is followed for its modules,
+  and a `pom` module with a `<dependencyManagement>` and no modules is published as a
+  [bill of materials](/tool/publishing/#a-maven-bom-from-a-pom-xml). Any other packaging, a `war` among them,
+  is not built, and a `[SKIPPED]` line names its module.
 
 A version that a Maven extension supplies, as nisse or jgitver do, is not read: a version naming a property no
 `pom.xml` defines is refused. Set `jenesis.project.version` instead, which the dependencies between the
