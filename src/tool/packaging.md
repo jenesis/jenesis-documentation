@@ -286,6 +286,11 @@ to launch. The [module layers](/tool/dependencies/#keeping-a-dependency-private)
 there too, each as a `-Djlayer.modulepath.<layer>`. There are two files because the path separator is the one
 part of a launch a bundle cannot know in advance. Dropped onto a `-jre` base it needs no JDK and no jpackage.
 
+What a `process-java.properties` gives the module's JVM - an `--add-reads` its module path needs, a system
+property - leads both argument files, as it leads the JVM `Execute` starts, so the launch the bundle carries is
+the one the build ran. `stage` collects the zip into `stage/packages/` as `<artifact>.zip`, beside what
+jpackage writes there, so `export` and `release` ship it like any other package.
+
 The trade against an app-image is the classic one. An app-image is self-contained but duplicates the JVM per
 service. A bundle is tiny and shares one JVM layer across every image built on the same base - leaner in
 aggregate for many services, at the cost of coupling to that base's JVM version.
@@ -449,6 +454,11 @@ Unlike jpackage and bundle, this carries no JVM and no `jlink` runtime. It is a 
 JDK 25 or newer, and unlike a bundle it needs no launch script. The shaded launcher is
 [pinned](/tool/pinning/) like any other dependency, in its own `launcher` group, so the exact bytes are
 verified and the build stays reproducible.
+
+`stage` collects the jar into `stage/packages/` as `<artifact>.jar`, so `export` and `release` ship it like any
+other package. Every jar it stores keeps its directory entries, so a scan of a package on the class path finds
+them as it would in the original jar. A JVM option of `process-java.properties` does not travel with it,
+because `java -jar` reads none from the jar it runs: an application that needs one ships as a bundle.
 
 <div class="tip">
   The launcher jar has its own section - see
