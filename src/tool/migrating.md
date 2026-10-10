@@ -125,7 +125,7 @@ found is the whole configuration. What lived inside a plugin's own configuration
 | `<repositories>`, `settings.xml` | `-Djenesis.maven.uri` or `MAVEN_REPOSITORY_URI` |
 | A toolchain | `-Djenesis.toolchain.version` |
 | A `-tests` jar | `-Djenesis.stage.tests=true` |
-| `maven.deploy.skip`, `maven.install.skip` | Read from the POM's properties as Maven's plugins read them |
+| `maven.deploy.skip`, `maven.install.skip` | `stage=false` in the module's `packaging.properties`, which keeps it out of `export` and `release` alike |
 
 A tool resolves in a group named after it, such as `checkstyle` or `jacoco`, once per module. A `pom.xml` pins
 it with a `<!--jenesis.pin-->` comment, a child of `<project>` with one coordinate per line, which `pin`

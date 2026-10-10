@@ -28,9 +28,6 @@ java build/jenesis/Make.java export
   of any build tool through the local Maven repository, and by a Jenesis project that requires the module by
   name through the local module repository.
 
-A `pom.xml` module whose properties set `maven.install.skip` to `true` is staged as usual, but `export` leaves
-it out of the local repository, as Maven's install plugin does.
-
 A project that sets no version exports an unversioned module, whose POM carries `0-SNAPSHOT`. Another project
 requires the module by name, and the local repositories are read before any remote: without a pin it takes
 the latest export, with a pinned version that version's build. A consumer does not notice a new export on its
@@ -60,10 +57,17 @@ Central requires the `-javadoc.jar` but not that it documents anything, and rend
 up most of a release's size. With `-Djenesis.documentation.empty=true`, the jar is still staged but holds
 nothing but a file named `INTENTIONALLY_EMPTY`, and no documentation tool runs.
 
-A `pom.xml` module whose properties set `maven.deploy.skip` is built and tested but never staged, so it is
-neither released nor exported. The values are those Maven's deploy plugin reads: `true` skips every version,
-`releases` a version without `-SNAPSHOT`, `snapshots` one with it, and `false` none; any other value is
-refused.
+A module that holds nothing to publish, such as one of integration tests, says so in the `packaging.properties`
+of its own configuration folder:
+
+```properties
+# build.jenesis/packaging.properties of that module
+stage=false
+```
+
+It is built and tested, but neither its jar nor its POM, sources or documentation is staged, so neither `export`
+nor `release` ships it. The line works in every layout. A `pom.xml` module's `maven.deploy.skip` and
+`maven.install.skip` are not read, so a module that sets them states the same with this line.
 
 Central also requires the POM to carry `name`, `description`, `url`, `<licenses>`, `<developers>`, and
 `<scm>`. Jenesis folds two channels into each POM. Everything it can derive from the source comes first: the
