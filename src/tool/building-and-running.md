@@ -501,7 +501,8 @@ module demo.annotations {
 ```
 
 Jenesis resolves the processor, places it on `javac`'s **processor path** (`--processor-module-path`), and the
-compiler runs it.
+compiler runs it. The sources a processor generates are written to a `generated/` folder beside the compiled
+classes rather than among them, so the jar holds the classes compiled from them and not the sources.
 
 A `pom.xml` project declares a processor as a dependency of `<type>processor</type>`. It reaches the processor
 path of the half whose scope declares it - the main code, or with `<scope>test</scope>` the tests alone - and
