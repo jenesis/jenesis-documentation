@@ -53,7 +53,7 @@ java -Djenesis.project.version=1.0.0 \
 
 `javac` stamps the version into what it compiles as the module version, so it must be one: a version that starts
 with a digit, as `1.2.0` or `1.2.0-3-gbd7698f`. Any other value, such as `v1.2.0`, is refused before the
-build starts. A project built from `module-info.java` may keep its version as `version=<version>` in
+build starts, and so is an empty one: an unversioned build leaves the setting out. A project built from `module-info.java` may keep its version as `version=<version>` in
 `project.properties` at the root instead, and the setting overrides it for a release.
 
 Central requires the `-javadoc.jar` but not that it documents anything, and rendered documentation can make
@@ -421,9 +421,10 @@ rather than the usual per-module configuration folder, because JReleaser resolve
 configuration against one base directory. `-Djenesis.jreleaser.config=<path>` names a different file.
 
 It contributes two steps. The first writes a `jreleaser.properties` holding `JRELEASER_PROJECT_VERSION`, the
-version this build stamped: `jenesis.project.version`, or where it is not set the version every staged POM
-carries, as a `pom.xml` declares it in `<version>`. The version is thereby stated once rather than passed to
-two tools that can then disagree. Point a configuration at it with
+version `jenesis.project.version` names. The version is thereby stated once rather than passed to two tools
+that can then disagree. The build reads no version off what it staged, the `<version>` of a `pom.xml` and the
+`version` of `project.properties` included, so a release whose JReleaser configuration names none sets
+`-Djenesis.project.version`. Point a configuration at it with
 `environment: { variables: target/release/jreleaser/environment/output/jreleaser.properties }`. The second runs
 the `jreleaser` executable found in the environment, forwarding the process environment unchanged. Every
 `JRELEASER_*` credential is therefore read by JReleaser itself and never touched, logged, or stored by the
