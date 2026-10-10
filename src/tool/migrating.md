@@ -76,7 +76,9 @@ A `pom.xml` is read for what it declares, not for how Maven builds it:
   project's own.
 - **Ignored:** `<build><plugins>` and `<pluginManagement>`, a profile activated by a property, the operating
   system, a file or `-P`, `<repositories>` and `settings.xml`, a resource's includes, excludes, `targetPath`
-  and filtering, and every packaging but `jar`. A `pom` aggregator is followed for its modules, a `pom` module
+  and filtering, and every packaging but `jar`. A `jar` module with neither sources nor resources is built only where its `src/main/build.jenesis/` or
+  `build.jenesis/` configures a plugin, which may generate them; otherwise a `[SKIPPED]` line names it. A
+  `pom` aggregator is followed for its modules, a `pom` module
   with a `<dependencyManagement>` and no modules is published as a
   [bill of materials](/tool/publishing/#a-maven-bom-from-a-pom-xml), and a `war` is not built.
 
