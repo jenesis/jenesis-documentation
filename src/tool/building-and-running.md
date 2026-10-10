@@ -322,7 +322,8 @@ after the module.
 
 Both jars cover the sources a generator or a plugin added to the module as well as your own: `javadoc`
 documents the generated classes, and the sources jar carries their source files beside the schema they follow
-from, as Maven's does.
+from, as Maven's does. The sources jar also holds the module's resources, those `jenesis.project.resources`
+places among them included, as Maven's and Gradle's sources jars do.
 
 {% demos 66 %}
 
