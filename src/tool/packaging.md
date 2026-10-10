@@ -152,8 +152,9 @@ rather than a directory to launch in place. The value is passed straight to `jpa
 | `dmg`, `pkg` | macOS |
 
 An installer carries the whole bundled runtime, so it is tens of megabytes. Producing one needs the platform's
-own packaging tooling on the `PATH`: `dpkg-deb`/`fakeroot` for `deb` and `rpmbuild` for `rpm` on Linux, the
-WiX Toolset on Windows, the bundled `productbuild`/`hdiutil` on macOS. For that reason an installer is usually
+own packaging tooling on the `PATH`: `dpkg-deb` for `deb` and `rpmbuild` for `rpm` on Linux, the WiX Toolset
+on Windows, the bundled `productbuild`/`hdiutil` on macOS. A `deb` needs no `fakeroot`: the build has `dpkg-deb`
+record every file as owned by `root` itself. For that reason an installer is usually
 built locally, while the tooling-free `app-image` covers the packaging path in CI.
 
 ### Several types in one build
