@@ -80,6 +80,10 @@ A `pom.xml` is read for what it declares, not for how Maven builds it:
   with a `<dependencyManagement>` and no modules is published as a
   [bill of materials](/tool/publishing/#a-maven-bom-from-a-pom-xml), and a `war` is not built.
 
+A version that a Maven extension supplies, as nisse or jgitver do, is not read: a version naming a property no
+`pom.xml` defines is refused. Set `jenesis.project.version` instead, which the dependencies between the
+project's own modules take as well.
+
 Nothing ignored is reported, so list the old build's plugins, profiles and repositories before deleting
 anything. A source directory gives the jar only what its compilers read, as Maven's does, so a file that must
 ship moves to a resource directory. A resource directory is copied whole; one that holds `target/` or
