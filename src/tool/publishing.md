@@ -35,7 +35,7 @@ requires the module by name, and the local repositories are read before any remo
 the latest export, with a pinned version that version's build. A consumer does not notice a new export on its
 own; it takes one when it is rebuilt with `-Djenesis.executor.rebuild=true`.
 
-{% demos 65 %}
+{% demos 66 %}
 
 ## Staging the release tree
 
@@ -204,7 +204,7 @@ that is not a 40-character Git tree id fails the build. When
 notation SPDX uses for a download location: `git+https://github.com/jenesis/jenesis.git@<revision>`. A tag of
 `HEAD`, which a `pom.xml` declares for the root of its repository, counts as no tag there.
 
-{% demos 66 %}
+{% demos 67 %}
 
 ## Publishing a bill of materials
 
@@ -302,7 +302,7 @@ detached signature made afterwards covers the signed bytes.
   delete <code>target/</code> after a key rotation.
 </div>
 
-{% demos 64 %}
+{% demos 65 %}
 
 ## Releasing into a Jenesis module repository
 

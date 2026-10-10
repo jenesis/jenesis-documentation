@@ -112,7 +112,7 @@ A repository that answers `429 Too Many Requests` limits how often your machine 
 retries, and when the answer stays the same it fails, naming the remedy: build again later, or resolve through
 a mirror named with `jenesis.maven.uri` or `MAVEN_REPOSITORY_URI`.
 
-{% demos 67 %}
+{% demos 68 %}
 
 ### What the build tells the module index
 

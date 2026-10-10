@@ -325,7 +325,7 @@ documents the generated classes, and the sources jar carries their source files 
 from, as Maven's does. The sources jar also holds the module's resources, those `jenesis.project.resources`
 places among them included, as Maven's and Gradle's sources jars do.
 
-{% demos 66 %}
+{% demos 67 %}
 
 ### Reproducible archives
 
@@ -352,7 +352,7 @@ fixes the line endings of every file Git treats as text, whatever machine checks
 * text=auto eol=lf
 ```
 
-{% demos 70 %}
+{% demos 71 %}
 
 ## Passing extra arguments to a tool
 
