@@ -188,8 +188,12 @@ resolved higher in `<dependencyManagement>`.
 ## Retiring the old build
 
 Remove what Jenesis now replaces - the plugin configuration, the Maven or Gradle wrapper, and the CI steps that
-called them - and let the `ide` selector write the IntelliJ IDEA, VS Code or Eclipse project. A project in the
-`maven` layout keeps its `pom.xml` files, which are now its build declaration.
+called them. A CI job that built now builds under strict pinning. One that published runs the
+[`release`](/tool/publishing/#driving-the-release-tool-from-the-build) selector with
+`-Djenesis.jreleaser.dry=false` and the version as `-Djenesis.project.version`, on a runner with JReleaser
+installed; its credentials become the `JRELEASER_*` variables JReleaser reads. Then let the `ide` selector
+write the IntelliJ IDEA, VS Code or Eclipse project. A project in the `maven` layout keeps its `pom.xml` files,
+which are now its build declaration.
 
 ## Migrating with a coding agent
 
