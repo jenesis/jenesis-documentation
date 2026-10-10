@@ -141,6 +141,7 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | A toolchain | `-Djenesis.toolchain.version` |
 | A `-tests` jar | `-Djenesis.stage.tests=true` |
 | `maven.deploy.skip`, `maven.install.skip` | `stage=false` in the module's `packaging.properties`, which keeps it out of `export` and `release` alike |
+| The flatten-maven-plugin's `flattenDependencyMode=all` | `flatten=true` in the module's [`packaging.properties`](/tool/publishing/#what-the-published-pom-names) |
 
 A tool resolves in a group named after it, such as `checkstyle` or `jacoco`, once per module. A `pom.xml` pins
 it with a `<!--jenesis.pin-->` comment, a child of `<project>` with one coordinate per line, which `pin`
@@ -196,7 +197,7 @@ entries `pin` wrote and pin again. Then build with `-Djenesis.dependency.pin=str
 
 Before retiring the old build, compare what both produce: the contents of each jar, the dependency tree
 (`dependencies` against `mvn dependency:tree` or `gradle dependencies`), the number of tests run, and the POM a
-consumer receives, which is generated and flattened rather than copied from yours. A `pom.xml` resolves a
+consumer receives, which is generated rather than copied from yours. A `pom.xml` resolves a
 conflict as Maven does, the nearest version winning, where Gradle takes the highest; manage each version Gradle
 resolved higher in `<dependencyManagement>`.
 

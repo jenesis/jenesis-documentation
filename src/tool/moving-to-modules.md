@@ -108,6 +108,7 @@ into the module declaration and the files beside it:
 | The coordinate | Derived from the module name; `project` and `artifact` in `project.properties` keep a published one. |
 | URL, licences, developers, SCM | `project.properties`. |
 | The version | `version=<version>` in `project.properties` at the root, which `-Djenesis.project.version` overrides. |
+| The published dependencies | The resolved closure, each entry excluding what it brings; `flatten=false` in the module's `packaging.properties` publishes what it requires instead (see *[Publishing](/tool/publishing/#what-the-published-pom-names)*). |
 
 ### Keeping published coordinates
 
