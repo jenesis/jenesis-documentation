@@ -446,8 +446,9 @@ when it does. A type both name is built once:
 
 `launcher=true` produces a **single executable jar** you run with `java -jar app.jar`, without flattening
 dependencies into a fat jar. The build shades the published Jenesis Launcher into the jar as its `Main-Class`
-and explodes each dependency into its own `jars/<jar>/` subfolder, with an `application.properties` naming
-which of them each path holds. At run time the launcher rebuilds the module graph from those subfolders in
+and explodes each dependency into its own `jars/<jar>/` subfolder, with a descriptor,
+`META-INF/jenesis/application.properties`, naming which of them each path holds. The application sees those
+paths and nothing else of the jar, so an `application.properties` of its own is the one it finds. At run time the launcher rebuilds the module graph from those subfolders in
 process, so `module-info`s and `META-INF/services` never collide.
 
 Unlike jpackage and bundle, this carries no JVM and no `jlink` runtime. It is a plain jar that runs on any

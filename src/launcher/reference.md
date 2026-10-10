@@ -1,10 +1,10 @@
 ---
 order: 6
 title: Reference
-description: Every application.properties key and manifest attribute the launcher reads, which of them the build tool writes, and the embedding API - in one place.
+description: Every descriptor key and manifest attribute the launcher reads, which of them the build tool writes, and the embedding API - in one place.
 ---
 
-Two files drive a launcher jar: the `application.properties` **descriptor** that tells the launcher what to
+Two files drive a launcher jar: the **descriptor** at `META-INF/jenesis/application.properties` that tells the launcher what to
 run, and the jar **manifest** that tells the JVM to start the launcher. When the build tool
 [produces the jar](/launcher/producing-a-launcher-jar/), it writes `mainClass`, `mainModule`, `classpath`,
 `modulepath` and the keys of each [module layer](#module-layers) into the descriptor, and `Main-Class` into
@@ -12,9 +12,10 @@ the manifest - nothing else. Everything else on this page is what
 the launcher itself understands, for a jar you assemble yourself with the same layout: by hand, with a
 script, or with another tool.
 
-## The descriptor: `application.properties`
+## The descriptor: `META-INF/jenesis/application.properties`
 
-A plain `key=value` properties file at the jar root. Every key is optional; a descriptor without `mainClass`
+A plain `key=value` properties file below the jar's `META-INF/jenesis/` folder, never at its root, where it
+would take the name of an `application.properties` the application carries itself. Every key is optional; a descriptor without `mainClass`
 describes a [Java agent](#bundled-java-agents) rather than an application.
 
 | Key | Value | Written by the build tool |
@@ -123,7 +124,8 @@ java -javaagent:foo.jar=args -jar your-app.jar
 
 The launcher builds the jar's own loader and runs its `agentClass` agents against the host's
 `Instrumentation`, so the agent and its dependencies stay in their own isolated loader, off the host's class
-path. The `=args` from the command line reach each agent that declares no `=<arguments>` of its own.
+path. That loader is parented on the system class loader, which the agents share with their host as any
+`-javaagent` agent does, so they reach the host's classes. The `=args` from the command line reach each agent that declares no `=<arguments>` of its own.
 
 <div class="note">
   <strong>Several agent jars in one JVM.</strong> The JVM loads a <code>Premain-Class</code> by binary name
