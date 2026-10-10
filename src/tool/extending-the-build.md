@@ -434,6 +434,13 @@ is built and exported like any other module, and resolved by its module name.
   <em>dependencies</em> need not be, since a module layer admits automatic modules too.
 </div>
 
+A plugin compiled from source resolves its `requires` as a project's `module-info.java` does. A tool the
+module index does not serve, as one named by an `Automatic-Module-Name` alone, is required through an
+`@jenesis.alias <module> <groupId>/<artifactId>` line on the plugin's declaration, and `@jenesis.exclude` and
+`@jenesis.pin` lines apply to the plugin's dependencies as in a project. Every jar of the plugin's layer is a
+module of its own, so a jar that declares no module name at all, or two jars that share a package, cannot load:
+exclude it, or pin a version of it that names its module.
+
 ### A worked example: classes generated with Byte Buddy
 
 A plugin is written against a library's own Java API. This one uses [Byte Buddy](https://bytebuddy.net) to
