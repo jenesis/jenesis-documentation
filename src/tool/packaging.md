@@ -342,7 +342,8 @@ ENTRYPOINT ["java", "@/app/application.args"]
 The entry point is the same one every other packaging form reads, so a container can never drift from what
 the app image or the launcher jar starts, and it stays this size however many jars the application resolves.
 When the module graph is not self-contained, the argument file carries the same
-`--add-modules=ALL-MODULE-PATH,ALL-DEFAULT` correction.
+`--add-modules=ALL-MODULE-PATH,ALL-DEFAULT` correction, and it opens with what `process-java.properties` gives
+the module's JVM, as a bundle's argument files do.
 
 The base image and the labels are the only knobs, and deliberately so: `ENV`, `USER`, `EXPOSE` and the rest
 are inherited from the base, so image environment belongs in a base image rather than in build configuration.

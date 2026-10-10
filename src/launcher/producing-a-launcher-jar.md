@@ -86,13 +86,15 @@ runs the jar.
 ## The launcher is pinned like any dependency
 
 The build resolves the launcher as a normal dependency, in its own `launcher` group, kept apart from your
-application's dependencies. Until you pin it, it floats to the latest release. Run `pin` and the build records
+application's dependencies. Until you pin it, it floats to the latest release. The build needs launcher 0.6.0
+or later, the first to read the descriptor from `META-INF/jenesis/`, and refuses an older one, naming the version
+it found and the pin that fixes it. Run `pin` and the build records
 the exact version and checksum next to your other pins - in a modular project:
 
 ```java
 /**
  * @jenesis.main sample.Sample
- * @jenesis.pin launcher/maven/build.jenesis/build.jenesis.launcher 0.4.0 SHA-256/e56603eb…
+ * @jenesis.pin launcher/maven/build.jenesis/build.jenesis.launcher 0.6.0 SHA-256/38a0381e…
  */
 module demo.modular.executable {
     requires org.slf4j;
