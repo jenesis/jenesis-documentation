@@ -207,7 +207,7 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.test.exclude` | *(unset)* | Comma-separated `[<module>/]<classRegex>` list, each matched against the whole class name; leaves the matching classes out of what the default naming or `jenesis.test.filter` selects. A test module whose every selected class is left out runs none. |
 | `jenesis.test.tag` | *(unset)* | Tests to run by tag, in a framework-neutral syntax that needs no quoting on a command line: comma-separated alternatives, a test running where it matches any of them, each a tag, several joined by `+` for the tests carrying all of them, and `-<tag>` for the tests not carrying it; translated for the test framework. A run remembers what it covered until the tests' inputs change, so a later selection runs only what no earlier run did (see *[Code quality & testing](/tool/code-quality-and-testing/#selecting-tests-by-tag)*). |
 | `jenesis.test.parallel` | `false` | Run tests in parallel where the framework supports it. |
-| `jenesis.test.reporting` | `false` | Emit test reports under `reports/tests/`: legacy JUnit XML and Open Test Reporting XML for `junit-platform`, TestNG's own report for `testng`. |
+| `jenesis.test.reporting` | `false` | Keep the reports every test run writes in the module's `reports/tests/` rather than under the step's `supplement/`: the legacy JUnit XML and the Open Test Reporting XML for `junit-platform`, TestNG's own report for `testng`. |
 | `jenesis.test.incremental` | *(off)* | Run only the tests a change can reach: `true` detects changes with MD5, the name of another message digest with that one, `false` runs every test. |
 | `jenesis.test.jars` | `true` | Run the tests against the packaged test jar; `false` runs them against the module's classes and resources folders, so a test can read its own resources as files, while the modules it depends on stay jars. A module tested on the module path refuses `false`. |
 | `jenesis.test.force` | `false` | `true` runs the tests even when nothing changed and the recorded scope already covers the request. |
@@ -374,6 +374,7 @@ password location is missing.
 | `jenesis.executor.events` | `true` | Write each step's outcome of the latest build to `target/.jenesis.events.jsonl`, one JSON object per line (see *[Building &amp; running](/tool/building-and-running/#reading-a-build-s-outcome)*). |
 | `jenesis.executor.concurrency` | `0` | The most build steps that run at once across the whole build; `0` means no limit, while `jenesis.process.concurrency` still bounds the tools they run. |
 | `jenesis.process.factory` | `tool` | How JDK tool steps launch: `tool` (in-process) or `fork`, which a `-J` option in `process-javac.properties` needs. |
+| `jenesis.process.tail` | `200` | How many of the last lines of a failed tool's output and of its error the failure prints, beside how many there were and the file under `supplement/` that holds all of them; `0` prints every line. |
 | `jenesis.process.concurrency` | *(processor count)* | The most tool runs - a compiler, a JDK tool, a forked JVM such as a test run - that happen at once across the whole build; `0` means no limit. |
 | `JAVA_HOME` (env) | *(from `java.home`)* | Locates the JDK binaries when the runtime is not a JDK. |
 
