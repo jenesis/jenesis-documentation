@@ -47,7 +47,9 @@ module demo.modular.executable {
 ```
 
 Every packaging step keys off that one declaration and skips a module that has none. A library needs no
-packaging configuration to be left alone, and an application needs no packaging-specific entry point.
+packaging configuration to be left alone, and an application needs no packaging-specific entry point. Where
+`launcher=true` or `bundle=true` reaches a module without one, a `[SKIPPED]` line names the module and how to
+declare its main class.
 
 ## The application image
 
@@ -454,7 +456,8 @@ process, so `module-info`s and `META-INF/services` never collide.
 Unlike jpackage and bundle, this carries no JVM and no `jlink` runtime. It is a plain jar that runs on any
 JDK 25 or newer, and unlike a bundle it needs no launch script. The shaded launcher is
 [pinned](/tool/pinning/) like any other dependency, in its own `launcher` group, so the exact bytes are
-verified and the build stays reproducible.
+verified and the build stays reproducible. Like every archive the build writes, the jar records one date on
+every entry, the one `jenesis.archive.timestamp` names where it is set.
 
 `stage` collects the jar into `stage/packages/` as `<artifact>.jar`, so `export` and `release` ship it like any
 other package. Every jar it stores keeps its directory entries, so a scan of a package on the class path finds

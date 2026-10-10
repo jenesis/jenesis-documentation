@@ -135,6 +135,7 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | The environment of the tests | `environment-test.properties` |
 | Checkstyle's `propertyExpansion`, `configProperties` | A `checkstyle.properties` beside `checkstyle.xml` |
 | PMD's `minimumPriority`, `rulesMinimumPriority` | `-Djenesis.source.pmd.priority` |
+| The `mainClass` of the jar, shade or exec plugin | A `<mainClass>` property, which `launcher=true` and `bundle=true` need |
 | `manifestEntries`, `jar.manifest.attributes` | A `META-INF/MANIFEST.MF` among the resources |
 | A resource with a `targetPath` | `-Djenesis.project.resources=<file>:<path in the jar>` |
 | A `<profile>` chosen with `-P`, Gradle properties | A `jenesis-<profile>.properties`, selected with `-Djenesis.make.profiles` |
