@@ -109,8 +109,8 @@ the variable of the same name:
 </div>
 
 A repository that answers `429 Too Many Requests` limits how often your machine asks. The build waits and
-retries, and when the answer stays the same it fails, naming the remedy: build again later, or resolve through
-a mirror named with `jenesis.maven.uri` or `MAVEN_REPOSITORY_URI`.
+retries, and when the answer stays the same it fails, naming the remedy: build again later, or configure a
+mirror of that repository in its place - for the Maven remotes in `jenesis.maven.uri` or `MAVEN_REPOSITORY_URI`.
 
 {% demos 68 %}
 
