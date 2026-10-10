@@ -543,7 +543,8 @@ classes rather than among them, so the jar holds the classes compiled from them 
 
 A `pom.xml` project declares a processor as a dependency of `<type>processor</type>`. It reaches the processor
 path of the half whose scope declares it - the main code, or with `<scope>test</scope>` the tests alone - and
-never the closure of a module that depends on this one.
+never the closure of a module that depends on this one. Its `<exclusions>` prune its closure on the processor
+path, as they prune a dependency's.
 
 <div class="warning">
   Processors are run <strong>only from what you declare</strong>. A dependency that happens to bundle a
