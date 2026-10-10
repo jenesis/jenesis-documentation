@@ -52,7 +52,8 @@ java -Djenesis.project.version=1.0.0 \
 
 `javac` stamps the version into what it compiles as the module version, so it must be one: a version that starts
 with a digit, as `1.2.0` or `1.2.0-3-gbd7698f`. Any other value, such as `v1.2.0`, is refused before the
-build starts.
+build starts. A project built from `module-info.java` may keep its version as `version=<version>` in
+`project.properties` at the root instead, and the setting overrides it for a release.
 
 Central requires the `-javadoc.jar` but not that it documents anything, and rendered documentation can make
 up most of a release's size. With `-Djenesis.documentation.empty=true`, the jar is still staged but holds
