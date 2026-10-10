@@ -454,13 +454,14 @@ The target exists whether or not anything is configured; the *tool* is what a fi
 rather than the usual per-module configuration folder, because JReleaser resolves every path in its
 configuration against one base directory. `-Djenesis.jreleaser.config=<path>` names a different file.
 
-It contributes two steps. The first writes a `jreleaser.properties` holding `JRELEASER_PROJECT_VERSION`, the
-version `jenesis.project.version` names. The version is thereby stated once rather than passed to two tools
+It contributes two steps. The first writes an `environment/jreleaser.properties` holding
+`JRELEASER_PROJECT_VERSION`, the version `jenesis.project.version` names, and the second hands that variable to
+the JReleaser process it starts. The version is thereby stated once rather than passed to two tools
 that can then disagree. The build reads no version off what it staged, the `<version>` of a `pom.xml` and the
 `version` of `project.properties` included, so a release whose JReleaser configuration names none sets
-`-Djenesis.project.version`. Point a configuration at it with
-`environment: { variables: target/release/jreleaser/environment/output/jreleaser.properties }`. The second runs
-the `jreleaser` executable found in the environment, forwarding the process environment unchanged. Every
+`-Djenesis.project.version`. A CI job that hands off to a release action of its own reads the version from
+`target/release/jreleaser/environment/output/environment/jreleaser.properties`. The second step runs the
+`jreleaser` executable found in the environment, forwarding the process environment as well. Every
 `JRELEASER_*` credential is therefore read by JReleaser itself and never touched, logged, or stored by the
 build.
 
