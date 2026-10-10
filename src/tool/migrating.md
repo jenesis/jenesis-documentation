@@ -87,8 +87,8 @@ A `pom.xml` is read for what it declares, not for how Maven builds it:
   `<modules>`; properties; dependencies of every scope but `system`, with `<optional>`, `<exclusions>`,
   `<type>` and `<classifier>`; `<dependencyManagement>` with imported BOMs; `maven.compiler.release`, or else
   `target` or `source`, with `testRelease` and `enablePreview`; the metadata of the module and its parents;
-  source and resource directories, a local parent's where the module names none, and `src/{main,test}/kotlin`
-  and `src/{main,test}/groovy` where they exist; the `<!--jenesis.plugin-->`
+  source and resource directories, a local parent's where the module names none, and
+  `src/{main,test}/{kotlin,groovy}` where they exist; the `<!--jenesis.plugin-->`
   and `<!--jenesis.alias-->` comments of the module and of a local parent, and its own `<!--jenesis.pin-->`;
   and a profile of any POM that Maven activates by `<jdk>` or by `<activeByDefault>`. An unclosed `<jdk>` range such as `[9,`
   or `[9` reads as `[9,)`; a range that is none leaves the profile of a fetched POM inactive and fails the
@@ -103,9 +103,9 @@ A `pom.xml` is read for what it declares, not for how Maven builds it:
   [bill of materials](/tool/publishing/#a-maven-bom-from-a-pom-xml). Any other packaging, a `war` among them,
   is not built, and a `[SKIPPED]` line names its module.
 
-A version that a Maven extension supplies, as nisse or jgitver do, is not read: a version naming a property no
-`pom.xml` defines is refused. Set `jenesis.project.version` instead, which the dependencies between the
-project's own modules take as well.
+A version a Maven extension supplies, as nisse or jgitver do, names a property no `pom.xml` defines and is
+refused. Set `jenesis.project.version` instead, which the dependencies between the project's own modules take
+as well.
 
 Nothing else ignored is reported, so list the old build's plugins, profiles and repositories before deleting
 anything. A source directory gives the jar only what its compilers read, as Maven's does. A resource directory is copied whole; one that holds `target/` or
@@ -135,7 +135,7 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | The environment of the tests | `environment-test.properties` |
 | Checkstyle's `propertyExpansion`, `configProperties` | A `checkstyle.properties` beside `checkstyle.xml` |
 | PMD's `minimumPriority`, `rulesMinimumPriority` | `-Djenesis.source.pmd.priority` |
-| The `mainClass` of the jar, shade or exec plugin | A `<mainClass>` property, which `launcher=true` and `bundle=true` need |
+| The `mainClass` of the jar, shade or exec plugin | A `<mainClass>` property |
 | `manifestEntries`, `jar.manifest.attributes` | A `META-INF/MANIFEST.MF` among the resources |
 | A resource with a `targetPath` | `-Djenesis.project.resources=<file>:<path in the jar>` |
 | A `<profile>` chosen with `-P`, Gradle properties | A `jenesis-<profile>.properties`, selected with `-Djenesis.make.profiles` |
@@ -178,8 +178,8 @@ module's file. They run against the module's jar, so one that turns `getResource
 ### Shading
 
 Shading is not supported: nothing is relocated, and no class file is rewritten. A shaded library sits in another
-jar under another name, where licence and compliance checks no longer find it and the usage detection an open
-source project's funding relies on no longer counts it. A layer or packaging keeps each library a jar of its own
+jar under another name, where neither licence checks nor the usage counts an open source project's funding
+relies on find it. A layer or packaging keeps each library a jar of its own
 under its own coordinate, pinned and reported like any other.
 
 A dependency kept private, whose version must not meet the consumer's, goes into a
