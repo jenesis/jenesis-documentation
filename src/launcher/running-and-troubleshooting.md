@@ -142,11 +142,16 @@ widen the flat `getResource` API. That is exactly how a real `java -p â€¦ -cp â€
 `.class` files are always served, as the JDK serves them, and so are resources in no package (top-level
 entries, anything under `META-INF/`) and class-path resources.
 
-### Directory entries are not resources
+### Package directories as resources
 
-Only file entries are indexed, so `getResource("com/foo/")` for a package or directory returns `null`, where
-a real exploded-directory class loader would hand back a directory URL. Class loading and file-resource
-lookups are unaffected - this only bites code that enumerates a directory URL.
+A class path scan, such as a framework's component scan, starts from `getResource("com/foo/")` for a package.
+The launcher answers it as the JDK does: with a `jar:` URL where the stored jar has a directory entry for the
+package, and with a `file:` URL for the folder of a launcher jar laid out as an exploded directory. The build
+tool keeps the directory entries of every jar it stores in a launcher jar.
+
+A jar built without directory entries answers `null` for its packages, exactly as the JDK answers for that jar
+on any class path, so a scan finds nothing in such a dependency. Class loading and file-resource lookups are
+unaffected; only code that starts from a directory URL notices.
 
 ### The jar stays open
 
