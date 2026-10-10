@@ -6,8 +6,6 @@ description: Moving an existing Maven or Gradle build to Jenesis one concern at 
 
 A Maven or Gradle build moves to Jenesis one concern at a time. After each step you build, so a failure always
 has a single cause, and the old build keeps working beside the new one until what both produce compares equal.
-This chapter walks through that move: the build declaration to choose, what a `pom.xml` brings along, where the
-configuration of each plugin goes, and how to tell that the two builds agree.
 
 ## Bringing the tool in
 
@@ -74,14 +72,14 @@ A `pom.xml` is read for what it declares, not for how Maven builds it:
   source and resource directories, a local parent's where the module names none; the `<!--jenesis.plugin-->`,
   `<!--jenesis.pin-->` and `<!--jenesis.alias-->` comments of the module and of a local parent; and a profile
   of any POM that Maven activates by `<jdk>` or by `<activeByDefault>`. An unclosed `<jdk>` range such as `[9,`
-  or `[9` reads as `[9,)`; a range that is none leaves the profile of a fetched POM inactive and fails the build in the
-  project's own.
+  or `[9` reads as `[9,)`; a range that is none leaves the profile of a fetched POM inactive and fails the
+  build in the project's own.
 - **Ignored:** `<build><plugins>` and `<pluginManagement>`, a profile activated by a property, the operating
   system, a file or `-P`, `<repositories>` and `settings.xml`, a resource's includes, excludes, `targetPath`
-  and filtering, and every packaging but `jar` and `bundle`. A `bundle`, the maven-bundle-plugin's packaging,
-  builds a jar whose OSGi headers come from a `META-INF/MANIFEST.MF` among the resources or from a plugin. A
-  `jar` module with neither sources nor resources is built only where its `src/main/build.jenesis/` or
-  `build.jenesis/` configures a plugin, which may generate them; otherwise a `[SKIPPED]` line names it. A `pom` aggregator is followed for its modules,
+  and filtering, and every packaging but `jar` and `bundle`. A `bundle` builds a jar whose OSGi headers a
+  `META-INF/MANIFEST.MF` among the resources or a plugin supplies. A `jar` module with neither sources nor
+  resources is built only where its `src/main/build.jenesis/` or `build.jenesis/` configures a plugin, which
+  may generate them; otherwise a `[SKIPPED]` line names it. A `pom` aggregator is followed for its modules,
   and a `pom` module with a `<dependencyManagement>` and no modules is published as a
   [bill of materials](/tool/publishing/#a-maven-bom-from-a-pom-xml). Any other packaging, a `war` among them,
   is not built, and a `[SKIPPED]` line names its module.
@@ -90,7 +88,7 @@ A version that a Maven extension supplies, as nisse or jgitver do, is not read: 
 `pom.xml` defines is refused. Set `jenesis.project.version` instead, which the dependencies between the
 project's own modules take as well.
 
-Nothing ignored is reported, so list the old build's plugins, profiles and repositories before deleting
+Nothing else ignored is reported, so list the old build's plugins, profiles and repositories before deleting
 anything. A source directory gives the jar only what its compilers read, as Maven's does, so a file that must
 ship moves to a resource directory. A resource directory is copied whole; one that holds `target/` or
 `.jenesis/`, as `./` does, fails the build and names the remedy, `-Djenesis.project.resources=<file>:<path in
@@ -145,11 +143,10 @@ A module inherits these comments from its local parent, never from a POM that on
 In a process file, a flag given more than once, as `--add-opens` is, takes one argument per line of its value,
 and a `--release` is refused, since `maven.compiler.release` declares it. A `source` and `target` without a
 release compile as `--release`, which also checks the API, so code calling a newer API behind a version check
-needs a `--source=<release>` line. `javac` runs without `-g`, so a test
-that reads parameter names needs `-g=` or `-parameters=` there. A plugin may pass flags its configuration never
-shows, as Palantir Baseline adds `-parameters`, so compare the old build's effective `javac` arguments:
-`mvn -X compile` prints them after "Command line options:", and `gradle compileJava --debug` on its "Compiler
-arguments:" line.
+needs a `--source=<release>` line. `javac` runs without `-g`, so a test that reads parameter names needs
+`-g=` or `-parameters=` there. A plugin may pass flags its configuration never shows, as Palantir Baseline adds
+`-parameters`, so compare the old build's effective `javac` arguments: `mvn -X compile` prints them after
+"Command line options:", and `gradle compileJava --debug` on its "Compiler arguments:" line.
 
 Checkstyle reads a copy of the sources below `target/build/`, so a suppression keyed on a source folder, as
 `src/test/java`, matches nothing. Key it on the package's folders instead, as `[/\\]example[/\\]test[/\\]`.
