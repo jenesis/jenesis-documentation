@@ -87,7 +87,8 @@ A `pom.xml` is read for what it declares, not for how Maven builds it:
   `<modules>`; properties; dependencies of every scope but `system`, with `<optional>`, `<exclusions>`,
   `<type>` and `<classifier>`; `<dependencyManagement>` with imported BOMs; `maven.compiler.release`, or else
   `target` or `source`, with `testRelease` and `enablePreview`; the metadata of the module and its parents;
-  source and resource directories, a local parent's where the module names none; the `<!--jenesis.plugin-->`
+  source and resource directories, a local parent's where the module names none, and `src/{main,test}/kotlin`
+  and `src/{main,test}/groovy` where they exist; the `<!--jenesis.plugin-->`
   and `<!--jenesis.alias-->` comments of the module and of a local parent, and its own `<!--jenesis.pin-->`;
   and a profile of any POM that Maven activates by `<jdk>` or by `<activeByDefault>`. An unclosed `<jdk>` range such as `[9,`
   or `[9` reads as `[9,)`; a range that is none leaves the profile of a fetched POM inactive and fails the

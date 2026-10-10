@@ -8,7 +8,9 @@ Jenesis is not a Java-only build tool. Drop `.kt`, `.scala` or `.groovy` sources
 the matching compiler and builds them, mixed freely with Java, into one modular jar and its generated POM, with
 **no build script to write**. You do not turn a language on. Jenesis detects it from the file extensions
 present and wires the right compiler into the same step graph *[Core concepts](/tool/core-concepts/)*
-described.
+described. A `pom.xml` project also reads `src/main/kotlin` and `src/main/groovy`, and `src/test/kotlin` and
+`src/test/groovy` for its tests, beside its source directories where they exist, as the Kotlin and GMavenPlus
+plugins do by default.
 
 This chapter covers what changes when a module holds more than Java: how two compilers share one module, the one
 rule that decides which packages you can export, the standard-library dependency each language needs, and how

@@ -119,8 +119,8 @@ sequences. To read them as plain text, from a file or a pipe, pass `-Djenesis.pa
 Where tests live depends on the layout, and in both cases it is what you would write anyway.
 
 A **`pom.xml`** project keeps its tests under `src/test/java` (or the `<testSourceDirectory>` the POM
-names, or a local parent POM names where the module names none), with the test framework as a normal
-test-scoped dependency:
+names, or a local parent POM names where the module names none), Kotlin and Groovy tests also under
+`src/test/kotlin` and `src/test/groovy`, with the test framework as a normal test-scoped dependency:
 
 ```xml
 <dependency>
