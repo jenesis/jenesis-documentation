@@ -277,7 +277,7 @@ any plugin:
 java -Djenesis.project.plugins=false build/jenesis/Make.java pin
 ```
 
-{% demos 59 %}
+{% demos 60 %}
 
 ## Writing a build step
 
@@ -539,7 +539,7 @@ plugin's closure in the project's `module-info.java`, in the group named after t
   which transforms compiled classes in place, therefore has no place in the stock build.
 </div>
 
-{% demos 73 %}
+{% demos 59 %}
 
 ### Forking a tool that cannot be a module
 
@@ -687,7 +687,7 @@ This is a middle ground: no layout, no goals, no `Project`, yet you did not wire
 no generated POM). For full control - a custom repository, strict pinning, a different digest, or emitting a
 POM as well - switch to the longer `make(...)` overload that `Project` itself uses.
 
-{% demos 60, 61 %}
+{% demos 61, 62 %}
 
 ### Wiring the graph by hand
 
@@ -711,7 +711,7 @@ cached outputs whose inputs are unchanged. The `generate` step above synthesises
 There is no phase lifecycle to fit into: a build is just steps wired to steps, and here you wire them
 yourself.
 
-{% demos 62 %}
+{% demos 63 %}
 
 ## Running a build inside another program
 
@@ -751,5 +751,5 @@ The tools are found by name when `build.jenesis` is a resolved module or a jar o
 mode registers no service, so a program there constructs `new MakeTool()`, `new ExecuteTool()` or
 `new JpxTool()` itself; the contract is the same.
 
-{% demos 63 %}
+{% demos 64 %}
 
