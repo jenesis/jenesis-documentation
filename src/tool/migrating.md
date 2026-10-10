@@ -74,7 +74,7 @@ A `pom.xml` is read for what it declares, not for how Maven builds it:
   source and resource directories, a local parent's where the module names none; the `<!--jenesis.plugin-->`,
   `<!--jenesis.pin-->` and `<!--jenesis.alias-->` comments of the module and of a local parent; and a profile
   of any POM that Maven activates by `<jdk>` or by `<activeByDefault>`. An unclosed `<jdk>` range such as `[9,`
-  reads as `[9,)`; a range that is none leaves the profile of a fetched POM inactive and fails the build in the
+  or `[9` reads as `[9,)`; a range that is none leaves the profile of a fetched POM inactive and fails the build in the
   project's own.
 - **Ignored:** `<build><plugins>` and `<pluginManagement>`, a profile activated by a property, the operating
   system, a file or `-P`, `<repositories>` and `settings.xml`, a resource's includes, excludes, `targetPath`
