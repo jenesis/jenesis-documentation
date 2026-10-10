@@ -541,6 +541,22 @@ plugin's closure in the project's `module-info.java`, in the group named after t
 
 {% demos 73 %}
 
+### Forking a tool that cannot be a module
+
+A tool that cannot be a module at all, as JavaCC 8 with a class in the unnamed package, cannot load in the
+plugin's layer. The plugin's step forks it instead, and the project resolves it rather than the plugin. A
+module names it in a group of its own with `@jenesis.plugin javacc maven/<groupId>/<artifactId>` in its
+`module-info.java`, or a `<!--jenesis.plugin javacc maven/<groupId>/<artifactId>-->` comment in its
+`pom.xml`, and pins it as `javacc/maven/<groupId>/<artifactId>`. A module hook point such as
+`binary/generated` hands the jars over among the resolved dependencies, the input whose key ends in
+`/dependencies/artifacts`, where `Dependencies.select(folder, "javacc", "plugin")` lists them for the
+`java -cp` the step runs.
+
+Hand such a step only the inputs it reads, `executor.addStep(name, step, inputs)` naming them among the keys of
+the map `accept` is handed, since each input is part of the step's key: a generator handed `sources/` runs
+again on every edit. The keys are relative paths, as `../../../../../../../dependencies/artifacts`, so pick an
+input by how its key ends.
+
 ## Writing an entry point of your own
 
 A build that plugins cannot express - one that changes what the stock steps do, several builds compared, one
