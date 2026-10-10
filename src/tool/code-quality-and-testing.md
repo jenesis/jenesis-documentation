@@ -259,7 +259,10 @@ java -Djenesis.test.tag=fast+-slow,io+-slow build/jenesis/Make.java
 
 `jenesis.test.filter` takes a comma-separated list of `<classRegex>[#<method>]` entries and runs only what
 matches. The expression matches the whole class name and takes the place of the default naming (`*Test`,
-`*IT` and the rest), so `.*Check` runs classes that the naming would leave out. `jenesis.test.tag` selects by tag, in a syntax of its own described below.
+`*IT` and the rest), so `.*Check` runs classes that the naming would leave out. It also takes the place of the
+naming's JUnit 4 check that a class holds tests, so under JUnit 4 every class it matches runs, a nested helper
+included; where the default naming fits, leave classes out with `jenesis.test.exclude` instead, which keeps the
+check. `jenesis.test.tag` selects by tag, in a syntax of its own described below.
 
 An entry applies to every test module, and a test module where it matches no test fails the build. In a
 project with several test modules, lead the entry with a module's folder and a `/` to keep it to that module's
@@ -358,7 +361,8 @@ java -Djenesis.project.watch=true -Djenesis.test.incremental build/jenesis/Make.
 
 `true`, or the setting named with no value, detects changes with `MD5`; the name of another message digest
 the JDK provides detects them with that one, and `false` or leaving it unset disables selection. Any other value
-fails the build with the valid ones listed. On each run the test step builds a class-to-test dependency graph from the
+fails the build with the valid ones listed. A filter, an exclusion and a tag selection each switch it off, so
+such a run runs every test it selects rather than only those a change reaches. On each run the test step builds a class-to-test dependency graph from the
 compiled bytecode and records a per-class content hash. On the next run it diffs the hashes, takes the classes
 whose bytecode changed, walks the graph to the tests that reach them, and passes only those to the runner. A
 change that reaches no test runs nothing; any non-class change (a resource, a dependency) falls back to the
