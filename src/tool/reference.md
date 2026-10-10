@@ -218,11 +218,9 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.graalvm.license` | *(unset)* | Licence the SBOM beside a native image records for the GraalVM that compiled it, as an SPDX identifier or a name; unset records none (see *[Supply-chain features](/tool/supply-chain/)*). |
 | `jenesis.legal.notices` | `META-INF/NOTICE,META-INF/LICENSE,META-INF/license/,META-INF/licenses/,LICENSE,about.html` | Comma-separated jar entries taken as legal notices into a `.jmod`, a linked or packaged image and beside a native image, from the module's jar and from each runtime dependency's jar; names match regardless of case and also with an extension, and an entry ending in `/` takes the folder below it (see *[Packaging](/tool/packaging/#licences-in-each-form)*). |
 | `jenesis.compliance` | `true` | Run the licence and vulnerability checks; `false` skips both. |
-| `jenesis.source.<tool>` | `true` | Per-linter switch (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`). |
-| `jenesis.source.<tool>.strict` | `false` | Fail the build on the findings of that linter instead of only reporting them, as its own exit code decides; scalafmt fails on a source it would format differently, CodeNarc on any finding. |
+| `jenesis.source.<tool>` | `report` | What a linter's findings do (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`): `report` records them, `strict` fails the build on them, as the linter's own exit code decides - scalafmt on a source it would format differently, CodeNarc on any finding - and `ignore` skips the linter. Any other value is refused. |
 | `jenesis.source.pmd.priority` | `5` | The lowest rule priority PMD runs, from `1`, the highest, to `5`, the lowest, as maven-pmd-plugin's `minimumPriority`; any other value is refused. |
-| `jenesis.validator.spotbugs` | `true` | Run SpotBugs when its filter file is present. |
-| `jenesis.validator.spotbugs.strict` | `false` | Fail the build on any finding SpotBugs reports instead of only reporting it. |
+| `jenesis.validator.spotbugs` | `report` | What SpotBugs does when its filter file is present: `report` records its findings, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.format.java` / `.ktlint` / `.scalafmt` | `true` | Per-formatter switch. |
 | `jenesis.format.rewrite` | `false` | Rewrite sources in place instead of verifying. |
 | `jenesis.observe.jacoco` | `true` | Run JaCoCo coverage when its file is present. |

@@ -36,23 +36,31 @@ kept apart from your project's own dependencies), floats a `RELEASE` version unt
 forked JVM. A tool whose language is not present skips itself: a stray `detekt.yml` in a pure-Java
 project does nothing.
 
-### Report-only by default
+### Report, strict or ignore
 
-By default every linter is **report-only**: it records its findings but never fails the build. That makes it
-safe to turn a tool on across an existing codebase without an immediate red build. A linter that found
-something says so in one line, with the number of findings and where its report is:
+Each linter has one setting that says what its findings do: `jenesis.source.<tool>` for the source linters and
+`jenesis.validator.spotbugs` for SpotBugs, set on the command line or in `jenesis.properties`.
+
+| Value | The linter |
+| --- | --- |
+| `report` *(the default)* | runs and records its findings, but never fails the build |
+| `strict` | runs and fails the build on its findings |
+| `ignore` | does not run, though its configuration file is in place |
+
+Any other value is refused, naming these three. Reporting by default makes it safe to turn a tool on across an
+existing codebase without an immediate red build. A linter that found something says so in one line, with the
+number of findings and where its report is:
 
 ```text
 [FINDINGS]  checkstyle found 2 findings, reported in target/build/.../reports/checkstyle/checkstyle-report.xml
 ```
 
-`-Djenesis.print.findings=false` leaves that line out. To make findings fail the build, set the tool's strict
-setting, on the command line or in `jenesis.properties`: `jenesis.source.<tool>.strict=true` for the source
-linters, `jenesis.validator.spotbugs.strict=true` for SpotBugs. Checkstyle, PMD, detekt, ktlint, Scalastyle and
-scalafmt fail as their own exit code decides, so a Checkstyle finding at severity `warning` is reported but
-does not fail the build. SpotBugs and CodeNarc fail on any finding their report holds.
+`-Djenesis.print.findings=false` leaves that line out, whatever the linter's setting. Under `strict`, as
+`-Djenesis.source.checkstyle=strict`, Checkstyle, PMD, detekt, ktlint, Scalastyle and scalafmt fail as their own
+exit code decides, so a Checkstyle finding at severity `warning` is reported but does not fail the build.
+SpotBugs and CodeNarc fail on any finding their report holds.
 
-Report-only covers findings, not a tool that never ran. A linter that fails on its own configuration, and so
+Reporting covers findings, not a tool that never ran. A linter that fails on its own configuration, and so
 writes no complete report, fails its step either way.
 
 Checkstyle reads `${config_loc}` as the folder of `checkstyle.xml`, as the Maven and Gradle plugins define
@@ -75,15 +83,15 @@ value is refused.
 
 ### Switching a tool off
 
-To skip a discovered tool without deleting its configuration file, set its property to `false`. Every property
-defaults to `true`, so file discovery alone normally decides; the property is an opt-out:
+File discovery alone decides which linters run until a setting says otherwise. `ignore` skips one without
+deleting its configuration file:
 
 | Property | Covers |
 | --- | --- |
-| `jenesis.source.<tool>` | Checkstyle, PMD, detekt, ktlint, Scalastyle, scalafmt, CodeNarc |
+| `jenesis.source.<tool>` | `checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc` |
 | `jenesis.validator.spotbugs` | SpotBugs |
 
-For example, `-Djenesis.source.checkstyle=false` keeps `checkstyle.xml` in place but skips Checkstyle, while
+For example, `-Djenesis.source.checkstyle=ignore` keeps `checkstyle.xml` in place but skips Checkstyle, while
 PMD and SpotBugs still run.
 
 {% demos 34, 42, 45, 47 %}
@@ -434,7 +442,7 @@ The remaining keys map onto japicmp's own options:
 An unknown key fails the build and lists the ones that exist; anything japicmp accepts that the file does not
 model can be appended with a `process-japicmp.properties`, like for every other forked tool.
 
-Like the linters, the check is **report-only** by default: it writes `reports/japicmp/japicmp-report.xml` and
+Like the linters, the check only **reports** by default: it writes `reports/japicmp/japicmp-report.xml` and
 keeps the build green, so you see what changed before you decide to enforce it. Turning on a gate makes the
 failure name the change that caused it:
 
