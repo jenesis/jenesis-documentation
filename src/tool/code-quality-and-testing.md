@@ -60,6 +60,15 @@ it. A file the configuration names as `${config_loc}/<path>`, such as a suppress
 to Checkstyle with it, and changing that file runs the check again. A path that leaves the folder of
 `checkstyle.xml` is refused.
 
+Every other `${<property>}` the configuration names is a line of a `checkstyle.properties` beside it, which
+takes the place of the Maven plugin's `propertyExpansion` and Gradle's `configProperties`. Without the line,
+Checkstyle fails to load the configuration. `config_loc` is the one property the file cannot set:
+
+```properties
+# build.jenesis/checkstyle.properties  →  read by <property name="severity" value="${checkstyle.severity}"/>
+checkstyle.severity=warning
+```
+
 ### Switching a tool off
 
 To skip a discovered tool without deleting its configuration file, set its property to `false`. Every property
