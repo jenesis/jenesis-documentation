@@ -95,7 +95,9 @@ fills in only what the POMs leave out.
 
 A test `module-info.java` that names the main module itself, the `--patch-module` idiom for white-box tests,
 is not supported. Move it out of the test sources to a folder the old build alone compiles, so the tests run on
-the class path against the main jar.
+the class path against the main jar. A test `module-info.java` that declares a module of its own is compiled as
+a module, but its tests run on the class path too, so tests of Java Module System behaviour stay with the old
+build until the project moves to `module-info.java`.
 
 ## Where plugin configuration goes
 
