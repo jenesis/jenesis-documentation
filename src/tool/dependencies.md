@@ -24,6 +24,9 @@ place depends on your layout (see *[Core concepts](/tool/core-concepts/)*):
   </dependency>
   ```
 
+  A dependency listed twice in one `<dependencies>` of the project's own POMs prints a `[DUPLICATE]` line naming
+  both versions, and the second declaration replaces the first, as in Maven.
+
 - A **modular** project (`module-info.java`) declares a `requires`, and nothing else - the module name *is*
   the dependency:
 
