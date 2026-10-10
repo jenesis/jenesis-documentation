@@ -373,10 +373,16 @@ A flag the module's declaration already hands the tool cannot be set here. A `--
 declared instead: `@jenesis.release` in `module-info.java`, or `maven.compiler.release` and
 `maven.compiler.testRelease` in a `pom.xml`. Declared there, it reaches every tool that reads it.
 
+The file decides how `javac` applies the release, though. A `--source=<release>` or `--target=<release>` line
+has the release passed as `--source` and `--target` instead of `--release`, the release filling whichever the
+file does not name. That is how Maven compiles a `pom.xml` that sets `maven.compiler.source` and `target`
+without a release, and what code needs that calls a newer API behind a check of the running version.
+
 `javac` refuses `--release` beside an `--add-exports`, `--add-reads` or `--patch-module` that names a JDK
 module, as `--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED` does. With such a line, the build
-passes the release as `--source` and `--target` instead. The code is then compiled against the API of the JDK
-the build runs on rather than that of its release, so a call to an API newer than the release is not caught.
+passes the release as `--source` and `--target` too. Either way, the code is compiled against the API of the
+JDK the build runs on rather than that of its release, so a call to an API newer than the release is not
+caught.
 
 The same mechanism works for every tool the build forks: `javac`, `javadoc`, `kotlinc`, `scalac`, `jar`, `jmod`,
 `jlink`, `jpackage`, and `native-image`. Two names address the forked JVMs specifically: **`process-java.properties`**
