@@ -343,7 +343,9 @@ module demo.cli {
 
 The tag maps a module name onto a `<groupId>/<artifactId>` the resolved closure already contains, and the name
 is then a module name like any other; the `opens` above is what lets args4j set the annotated fields by
-reflection. Nothing is synthesised and no jar is rewritten.
+reflection. Nothing is synthesised and no jar is rewritten. A `@jenesis.pin` may name the aliased module
+by its module name or by the coordinate; both pin the same artifact, and two pins at different versions are
+refused.
 
 The alias travels with the jar: its manifest records it as `Jenesis-Aliases`, so a module that depends on
 `demo.cli` inherits the name without declaring it again. An alias for the target of a `requires static`
