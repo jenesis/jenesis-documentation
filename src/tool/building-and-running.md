@@ -32,8 +32,8 @@ the test JVM in `process-test.properties`.
 - **Test** compiles and runs the module's tests. Jenesis **auto-detects the test framework** from the test
   dependencies you already declare - JUnit Platform (JUnit 5 and later), JUnit 4, or TestNG - and resolves the
   matching console runner for you, so you never add it as an explicit dependency. A module can also state its
-  engine: a `test.properties` in its configuration folder holding `engine=junit-platform`, `junit4` or
-  `testng` decides it, the same in every checkout and every CI run. In the modular layouts the tests live in
+  framework: a `test.properties` in its configuration folder holding `framework=junit-platform`, `junit4`
+  or `testng` decides it, the same in every checkout and every CI run. In the modular layouts the tests live in
   their own test module, built after the module under test (next section).
 
 <div class="note">
@@ -171,10 +171,10 @@ Surefire, a class so named runs only where it or a superclass declares an `@Test
 `suite()` method, or where it extends `TestCase`.
 
 On the JUnit Platform every engine on the test path discovers tests, including one that a library or the test
-resources register for a test of their own. `-Djenesis.test.engines` names the engines a run uses by their ids,
-and a leading `-` leaves one out, so `-Djenesis.test.engines=-junit-vintage` runs the Jupiter tests alone. An
-`engines` key in a module's `test.properties` takes the same list and replaces the setting for that module.
-JUnit 4 and TestNG run no platform engine, so they refuse it. The JUnit Platform's console launcher must be
+resources register for a test of their own. The `engines` key of a module's `test.properties` names the engines
+its tests run on by their ids, and a leading `-` leaves one out, so `engines=-junit-vintage` runs the Jupiter
+tests alone. Which engines a module's tests need does not change from one run to the next, so the choice is a
+file of the module rather than a setting. JUnit 4 and TestNG run no platform engine, so they refuse the key. The JUnit Platform's console launcher must be
 1.5 or newer; an older one is refused, naming the versions to raise.
 
 ### Tests that read their resources as files

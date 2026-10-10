@@ -275,8 +275,8 @@ entry is written `/<classRegex>`, with nothing before the slash.
 A test module that no entry reaches runs no tests rather than failing, while one an entry does reach still
 fails when nothing there matches.
 
-`jenesis.test.exclude` leaves classes out instead, as Surefire's `<excludes>` does. It takes the same entries
-without a `#<method>`, and the default naming or the filter stays in force for everything else:
+`jenesis.test.exclude` leaves classes out instead. It takes the same entries without a `#<method>`, and the
+default naming or the filter stays in force for everything else:
 
 ```bash
 java -Djenesis.test.exclude='.*IntegrationTest' build/jenesis/Make.java
@@ -333,8 +333,8 @@ A narrowed run is still the same step, so its result is remembered together with
 later run adds to that memory until the tests or what they test change. A request runs only what no remembered
 run covered: after `fast`, asking for `fast,io` runs the tests tagged `io` that are not tagged `fast`, asking for
 `fast` again runs nothing, a run of `fast` covers a request for `fast+io`, and a run of every test covers any
-request. A run that left tests out covers only an alternative that leaves them out too. The filter is compared as it is written, so a different filter runs the tests
-again and starts a new memory.
+request. A run that left tests out covers only an alternative that leaves them out too. The filter and the exclusion are compared as they are written, so a different
+one runs the tests again and starts a new memory.
 
 <div class="tip">
   To run the tests when nothing at all has changed - a flaky test, a debugging session - pass
