@@ -355,6 +355,8 @@ jline jline/jline
 -->
 ```
 
+A line naming a dependency of `test` scope reaches the tests alone, as the main code never resolves it.
+
 {% demos 21 %}
 
 ## Replacing a module another artifact already carries
