@@ -240,7 +240,9 @@ target/stage/maven/output/build/jenesis/demo/bom/1.0.0/bom-1.0.0.pom
 
 The staged POM carries the BOM's coordinate, packaging and metadata, and its own `<dependencyManagement>` with
 every `${...}` resolved. It names no parent and leaves out the parent's managed versions, since an aggregator
-is not published. `export` installs it and `release` publishes it like any staged POM.
+is not published. `export` installs it and `release` publishes it like any staged POM, unless `stage=false` in a
+`packaging.properties` of its own configuration folder, such as `bom/build.jenesis/`, keeps it out of the staged
+repositories, as it keeps a module's jar.
 
 {% demos 20, 3 %}
 
