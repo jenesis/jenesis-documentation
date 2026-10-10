@@ -291,8 +291,9 @@ An overlay may also carry the `module-info.java` itself. That is how a library w
 which predates the Java Module System, declares a module: the descriptor sits in `META-INF/versions/9/`, is
 compiled against the module path with the main classes as part of the module, and may `requires` library
 modules. On Java 9 and later the jar is a named module, while Java 8 reads it from the class path as before.
-In a `pom.xml` project with `maven.compiler.release` at `8`, the descriptor lives in
-`src/main/java/META-INF/versions/9/` and is compiled against the dependencies that carry a module name; a jar
+A `module-info.java` at the root of sources compiled below release 9 is refused, naming
+`META-INF/versions/9/` as its place, since `javac` cannot compile a descriptor there. In a `pom.xml` project
+with `maven.compiler.release` at `8`, the descriptor lives in `src/main/java/META-INF/versions/9/` and is compiled against the dependencies that carry a module name; a jar
 that declares none is given its module name by a `<!--jenesis.alias <module> <groupId>/<artifactId>-->`
 comment in the POM.
 
