@@ -23,7 +23,8 @@ java build/jenesis/Make.java pin
 It is opt-in - not part of `build` - and it writes into your project tree rather than under `target/`: a
 `@jenesis.pin` tag per dependency in a **modular** project, a `<dependencyManagement>` block with a
 `<!--Checksum/…-->` comment per entry in a **`pom.xml`** project. Commit the result and the pin set travels
-with the project. A managed entry that `pin` rewrites keeps its `<exclusions>`, those an imported bill of
+with the project. `pin` runs the build it pins, so whatever the changed versions reach is built again, a
+module's tests included; `-Djenesis.test.skip=true` leaves the tests to the next build. A managed entry that `pin` rewrites keeps its `<exclusions>`, those an imported bill of
 materials declares for it included. A module of a `pom.xml` project inherits the `<!--jenesis.pin-->` and `<!--jenesis.plugin-->`
 comments of a parent POM within the project, and its own pin wins where both name a coordinate.
 
