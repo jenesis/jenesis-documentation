@@ -85,13 +85,26 @@ A file without that last line belongs to a build that is still running or was ki
 A failed step keeps what it wrote. Its `folder` ends in `~` and holds the step's `output/` and, for a tool the
 build ran, the command, the tool's output and its reports under `supplement/`, beside an empty
 `.jenesis.failed` marker. The folder stays until the step comes up again in a later build. A failure that says
-to execute a command names paths relative to the `directory` of the `started` line. The command is quoted for a POSIX
-shell, and the arguments of a JDK tool such as `javac` or `javadoc` are moved into an argument file under
-`supplement/`, so the line is pasted into a shell as it stands.
+to execute a command names paths relative to the `directory` of the `started` line. That command is the one
+that ran, quoted for a POSIX shell, so the line is pasted into a shell as it stands. `java`, `javac` and
+`javadoc` are handed every argument the build composes in an argument file under `supplement/`, which the
+command names.
 
-The failure quotes the last 200 lines of the tool's output and of its error, naming the file under
-`supplement/` that holds all of it. A failed test run first names its failed tests, up to twenty, read from
-the reports the runner writes under `supplement/reports/` whatever reached the console:
+The failure quotes the last lines of the tool's output and of its error, 200 by default, saying how many of how
+many it printed and naming the file under `supplement/` that holds all of them:
+
+```text
+Output, the last 200 out of 4182 lines - target/build/.../supplement/output holds all of them:
+```
+
+`-Djenesis.process.tail` sets how many lines, and `0` prints every one. What a tool prints is kept there as
+UTF-8. A JVM the build forks is told to print in UTF-8, by `-Dstdout.encoding` and `-Dstderr.encoding`, unless
+its `process-<tool>.properties` names another, as a `-Dstdout.encoding\=<charset>=` line does for `java`
+and `-J-Dstdout.encoding\=<charset>=` for a JDK tool. Any other program is read in the platform's encoding.
+
+A failed test run first names its failed tests, up to twenty, read from the reports every run writes -
+under `supplement/reports/`, or in the module's `reports/tests/` with `-Djenesis.test.reporting=true` -
+whatever reached the console:
 
 ```text
 1 test failed, as reported in target/build/.../test/executed~/supplement/reports:
