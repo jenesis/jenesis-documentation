@@ -183,6 +183,13 @@ mode goes further and refuses to build at all until *nothing* is left unpinned, 
 once a project is fully pinned. Run `pin`, commit, then build under `-Djenesis.dependency.pin=strict` so no
 new un-vetted artifact can slip in unnoticed.
 
+Strict pinning is checked in a step of its own, `pinned`, over what the resolution recorded as unpinned, so
+switching it on or off resolves nothing again. The step names the first coordinate without a checksum:
+
+```text
+[FAILED]   build/maven/compose/module/module-/dependencies/artifacts/pinned: java.lang.IllegalStateException: No checksum pinned for maven/org.apache.commons/commons-lang3/3.14.0 (strict pinning is enabled)
+```
+
 Strict mode pairs well with the `managed` resolution strategy from
 *[Dependencies](/tool/dependencies/#letting-nothing-in-that-you-did-not-name)*. Because `pin` writes the whole
 resolved closure, a pinned project satisfies `managed` as it stands, and the strategy keeps it that way. The two
