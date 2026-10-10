@@ -22,14 +22,33 @@ package at a time, building after each:
 | A dependency | Excluding the jar that holds the package, or moving the project's classes out of it. |
 | Two dependencies | Excluding one of the jars, or dropping the test that needs both. |
 
-No module path holds a package two jars share. After a build of the `pom.xml`, this prints each package two
-jars of a test closure hold:
+No module path holds a package two jars share. After a build of the `pom.xml`, `java SharedPackages.java` at
+the root prints each package two jars of a test closure hold:
 
-```bash
-for jar in $(find target/build -path '*/test-module-*/resolved/*.jar'); do
-    unzip -Z1 "$jar" '*.class' 2>/dev/null | grep / | grep -v '^META-INF/' \
-        | sed "s|/[^/]*$| ${jar##*/}|"
-done | sort -u | cut -d' ' -f1 | uniq -d
+```java
+void main() throws IOException {
+    var holders = new TreeMap<String, Set<String>>();
+    try (var files = Files.walk(Path.of("target/build"))) {
+        for (var jar : files.filter(file -> file.toString().endsWith(".jar")
+                && file.getParent().endsWith("resolved")
+                && file.toString().contains("test-module-")).toList()) {
+            try (var zip = new ZipFile(jar.toFile())) {
+                zip.stream().map(ZipEntry::getName)
+                        .filter(name -> name.endsWith(".class") && name.contains("/")
+                                && !name.startsWith("META-INF/"))
+                        .forEach(name -> holders.computeIfAbsent(
+                                name.substring(0, name.lastIndexOf('/')),
+                                _ -> new TreeSet<>()).add(jar.getFileName().toString()));
+            } catch (ZipException _) {
+            }
+        }
+    }
+    holders.forEach((folder, jars) -> {
+        if (jars.size() > 1) {
+            IO.println(folder.replace('/', '.') + " " + jars);
+        }
+    });
+}
 ```
 
 ### What the test module reaches
@@ -64,8 +83,8 @@ The tests then run on the module path, which breaks what read the class path:
 | --- | --- |
 | A class in the unnamed package | A module holds none, so a test class there fails to load. Move it into a package; a test that needs such a class compiles it at run time. |
 | `javac` called by a test | compile-testing and `javax.tools` compile against `java.class.path`, which is empty now. Hand the compiler `-classpath` with `System.getProperty("jdk.module.path")`, or append that property to `java.class.path` before the tests run, from a `LauncherSessionListener` the test module provides. |
-| Mockito and a JDK interface | Mocking an interface of a JDK module, as `java.compiler`'s `Element`, needs `org.mockito` to read that module: `--add-reads=org.mockito=java.compiler` in `process-test.properties`. |
-| A jar that cannot be a module | A dependency with a class in the unnamed package, as JavaCC 8 has, fails the tests' module path with a `FindException`, and no dependency of a module stays on the class path alone. Move the tests that need it to a test source folder only the old build compiles. |
+| Mocking or proxying a JDK interface | A library that mocks or proxies an interface of a JDK module, as `java.compiler`'s `Element`, needs to read that module: `--add-reads=<library module>=java.compiler` in `process-test.properties`. |
+| A jar that cannot be a module | A dependency with a class in the unnamed package fails the tests' module path with a `FindException`, and no dependency of a module stays on the class path alone. Move the tests that need it to a test source folder only the old build compiles. |
 
 ## Declaring the build in module-info.java
 

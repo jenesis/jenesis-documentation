@@ -231,7 +231,7 @@ BOM travels through the module layout only; the Maven export never carries it.
 ### A Maven BOM from a pom.xml
 
 In a `pom.xml` project, a bill of materials is a module of `<packaging>pom</packaging>` that lists no modules
-but declares a `<dependencyManagement>`, as a `mockito-bom` does. Nothing is compiled for it, and `stage`
+but declares a `<dependencyManagement>`, as a library's `-bom` does. Nothing is compiled for it, and `stage`
 publishes it as its POM alone, beside the jars:
 
 ```text

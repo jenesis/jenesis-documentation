@@ -92,7 +92,7 @@ how their dependencies resolve, and what artifacts come out. The setting
 `auto` resolves to `maven` when it finds a root `pom.xml`, and otherwise to `modular_to_maven` when it finds a
 `module-info.java`. It never chooses `modular` for you - you ask for it explicitly.
 
-A project with neither file has nothing to build yet. `help` and `skill` still print there, so the engine can
+A project with neither file has nothing to build yet. `help`, `skill` and `prompt` still print there, so the engine can
 be vendored before a build declaration exists, and every other selector fails, naming `skill/migrate` as the
 way to move a Maven or Gradle build in.
 

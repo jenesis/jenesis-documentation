@@ -55,6 +55,7 @@ property). The top-level targets the shipped layouts register:
 | `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata at the project root (see *[Building &amp; running](/tool/building-and-running/#opening-the-project-in-an-ide)*). |
 | `help` | Print a one-screen orientation: how to start, the selectors, and how to make a step verbose. |
 | `skill` | Print the briefing a coding agent works from, every page of it; `skill/start` prints the overview, which names the pages, and `skill/<page>` one page. |
+| `prompt` | Print a task to hand a coding agent, without the build's progress lines; `prompt/migrate` is the move of a Maven or Gradle build (see *[Migrating a Maven or Gradle build](/tool/migrating/#migrating-with-a-coding-agent)*). |
 | `metadata` | Refresh the metadata module outputs without building artifacts. |
 | `configuration` | Print every setting with the value in force, one per line: `jenesis.<key>=<value> [set\|default\|unset] <what it does>`. Built to grep, and the tool's own property reference. |
 | `properties` | Print every `jenesis.*` setting in force for this run - from the command line, `jenesis.properties` or a profile alike - sorted by key. |
@@ -179,7 +180,7 @@ runs inside another program's JVM, refuses it.
 
 The engine and the JVM a cache was trained for are hashed into its name, as `engine-<hex>.aot`, so a changed
 engine or an upgraded JDK trains a new one and the one that no longer fits is removed. `help`, `skill`,
-`configuration` and `properties` only print, so they neither train nor use a cache. The daemon keeps a warm JIT
+`prompt`, `configuration` and `properties` only print, so they neither train nor use a cache. The daemon keeps a warm JIT
 the cache does not, so it stays ahead in a tight edit-build loop on a large project; where builds are frequent
 and small, or a machine builds many projects now and then, the cache is the better trade.
 
