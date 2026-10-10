@@ -429,7 +429,9 @@ being replaced.
 A test run, or any other program the build forks, sees only the platform's own environment variables:
 `PATH`, `HOME`, `LANG`, `LC_*` and `TMPDIR`, and on Windows `SystemRoot`, `TEMP`, `USERPROFILE` and the like.
 Nothing else of your shell reaches it. A variable is no input of the build, so a test result never depends on
-one the build cannot see, and no tool reads a secret it was not handed.
+one the build cannot see, and no tool reads a secret it was not handed. A program forked as a step also sees
+`TERM=dumb`, `COLUMNS=80` and `LINES=24` where the variables it is handed name none of them, and its standard
+input is closed, so a program that would ask a question or draw for a terminal reads that none is there.
 
 To hand a program more, add an **`environment-<command>.properties`** file to a configuration folder, named
 like a `process-<command>.properties`:
