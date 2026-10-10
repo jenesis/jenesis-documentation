@@ -85,7 +85,9 @@ A `pom.xml` is read for what it declares, not for how Maven builds it:
 
 - **Read:** coordinates; parents, local or fetched, a parent that cannot be fetched failing the build;
   `<modules>`; properties; dependencies of every scope but `system`, with `<optional>`, `<exclusions>`,
-  `<type>` and `<classifier>`; `<dependencyManagement>` with imported BOMs; `maven.compiler.release`, or else
+  `<type>` and `<classifier>`, a type other than `jar`, `test-jar`, `ejb`, `ejb-client`, `maven-plugin` and
+  `bundle` placed on no path, as Maven places it on none, and refused, `pom` aside, as a direct dependency of a
+  module the build builds; `<dependencyManagement>` with imported BOMs; `maven.compiler.release`, or else
   `target` or `source`, with `testRelease` and `enablePreview`; the metadata of the module and its parents;
   source and resource directories, a local parent's where the module names none, and
   `src/{main,test}/{kotlin,groovy}` where they exist; the `<!--jenesis.plugin-->`

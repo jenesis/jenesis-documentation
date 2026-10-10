@@ -77,6 +77,10 @@ Checkstyle fails to load the configuration. `config_loc` is the one property the
 checkstyle.severity=warning
 ```
 
+A jar of custom checks or filters, a dependency of the Checkstyle plugin in Maven, joins Checkstyle's class path
+when `@jenesis.plugin checkstyle maven/<groupId>/<artifactId>` names it in `module-info.java`, or
+`<!--jenesis.plugin checkstyle maven/<groupId>/<artifactId>-->` in a `pom.xml`.
+
 PMD runs the rules of every priority in `pmd.xml`. `jenesis.source.pmd.priority` names the lowest priority it
 runs, from `1`, the highest, to `5`, the default, as the Maven plugin's `minimumPriority` does; any other
 value is refused.
