@@ -112,6 +112,12 @@ the module uses as disabled there. `javadoc` takes no wildcard: `-tag jenesis.pi
 `tags("jenesis.pin:X")` among Gradle's javadoc options, or a
 `<tag><name>jenesis.pin</name><placement>X</placement></tag>` in the `<tags>` of the maven-javadoc-plugin.
 
+Maven's compiler plugin compiles a `src/test/java/module-info.java` whatever its `testExcludes` or
+`useModulePath` say, and fails on the modules it requires. Have Maven compile a copy of the tests instead: a
+`copy-resources` execution of the maven-resources-plugin at `generate-test-sources` copies the `*.java` files
+of `src/test/java`, all but `module-info.java`, into a folder of `target/`, which `default-testCompile` names as
+its only `compileSourceRoots`.
+
 ## What was shaded
 
 Layers are declared in `module-info.java`, so a dependency the old build shaded to keep it private, which the
