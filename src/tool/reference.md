@@ -51,7 +51,7 @@ property). The top-level targets the shipped layouts register:
 | `release` | Put the staged trees into the repositories `jenesis.release.uri` and `jenesis.release.maven.uri` name, and hand them to a release tool a `jreleaser.yml` configures, as a dry run unless told otherwise (see *[Publishing](/tool/publishing/)*). |
 | `plugin/<name>` | Run a plugin the project names under the hook point `plugin`, which runs only when named (see *[Extending the build](/tool/extending-the-build/#plugins-for-the-whole-project)*). |
 | `pin` | Rewrite every `pom.xml` / `module-info.java` so the transitive closure is pinned at source (see *[Pinning &amp; bills of materials](/tool/pinning/)*). |
-| `dependencies` | Print each module's resolved dependency graph with licences. |
+| `dependencies` | Print each module's resolved dependency graph with licences; named alone, it runs no tests unless `-Djenesis.test.skip=false` asks. |
 | `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata at the project root (see *[Building &amp; running](/tool/building-and-running/#opening-the-project-in-an-ide)*). |
 | `help` | Print a one-screen orientation: how to start, the selectors, and how to make a step verbose. |
 | `skill` | Print the briefing a coding agent works from, every page of it; `skill/start` prints the overview, which names the pages, and `skill/<page>` one page. |
