@@ -290,9 +290,23 @@ it serves, as its metadata - so a version range sees them too.
 ### Reading the files with Jenesis
 
 Jenesis reads the files where `jenesis.repository.discovery` is set, on the command line or in
-`jenesis.properties`. It asks about every Maven group before any configured repository, reads each domain's file
-once per build, and resolves what no file names as it always has. To rely on the files alone, empty the
-repositories beside them, so that nothing falls back:
+`jenesis.properties`. It asks about every Maven group before any configured repository, asks each domain once,
+however many modules and artifacts it serves, and resolves what no file names as it always has.
+
+What a domain answered - its file, or a `404` or `410` saying it publishes none - is kept in the local module
+repository, under `well-known/` in `~/.jenesis` or where `jenesis.module.local` points, for 24 hours, so the
+builds of that day ask it nothing. `jenesis.repository.discovery.ttl` sets the hours, and `0` keeps nothing. Only
+the command line or your own `~/.jenesis/jenesis.properties` may set it. No setting asks a domain again sooner:
+delete `well-known/` for that. A build with `jenesis.repository.offline=true` asks no domain and reads what is
+kept, however old.
+
+A domain is asked once, without the retries a repository is given, and has five seconds to connect and to
+answer each read, which `jenesis.repository.discovery.timeout` sets in milliseconds. A file that cannot be
+fetched counts as absent: a host that does not exist, one a proxy cannot reach, one that does not answer in
+time, or one that resets or refuses the TLS handshake. Such a failure is not kept, since the domain may answer
+the next build. A certificate that does not verify, or that names another host, fails the build instead.
+
+To rely on the files alone, empty the repositories beside them, so that nothing falls back:
 
 ```
 jenesis.repository.discovery=true
@@ -522,7 +536,8 @@ To find a key for a module name, or for a group ID and an artifact ID:
 2. Reverse the labels into domains, shortest first, from two labels to all of them: `net.bytebuddy.agent` gives
    `bytebuddy.net`, then `agent.bytebuddy.net`.
 3. Fetch each domain's file once per run, remembering an absent file as well as a present one. A file that cannot
-   be fetched - a `404`, an unknown host, a proxy that cannot reach it - is absent.
+   be fetched - a `404`, an unknown host, a proxy that cannot reach it, a TLS handshake that is reset or
+   refused - is absent. A tool may keep what a domain answered for longer than a run.
 4. Skip a domain without a file. In a file, take the key that selects the module name or artifact ID exactly,
    else the one whose selector is the longest prefix of it, else the key for all. That key becomes the answer,
    unless it is the key for all, its value a coordinate without placeholders, and the domain shorter than the
@@ -558,7 +573,7 @@ elsewhere or names no version, and a module jar that declares another name than 
 
 Every location is read over `https` once its placeholders are filled in, and a redirect is followed only to
 `http` or `https`, so no file can make a tool read a local `file:` or `jar:` URI. A certificate that does not
-verify fails the build. A domain answers only for names below it, and checking the name a downloaded module
+verify, or that names another host, fails the build. A domain answers only for names below it, and checking the name a downloaded module
 declares keeps it from answering for one of them with another module, which a coordinate in `moduletomaven` could
 otherwise name. The file only says where a file comes from: a pinned checksum or a declared signature
 still decides what is accepted. A domain that changes hands passes its file to the new owner, so for every
