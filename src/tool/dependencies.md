@@ -52,7 +52,8 @@ module demo.app {
 The tag takes the module name and the version. In the `modular` layout it applies wherever that module
 turns up in the closure, directly or through another module; in the `modular_to_maven` layout it fixes the
 module a `requires` names, and a module that arrives through that module's POM is pinned by its Maven
-coordinate instead. Jenesis can also write these tags for you, fixing each dependency at the version it
+coordinate instead. A pin by module name never reaches such a module: where it names another version than the
+one resolved, the build fails and names the coordinate pin to write. Jenesis can also write these tags for you, fixing each dependency at the version it
 resolved, as *[Recording the pins](/tool/pinning/#recording-the-pins)* in the next chapter describes.
 
 ## The two repositories
