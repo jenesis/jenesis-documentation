@@ -117,6 +117,7 @@ found is the whole configuration. What lived inside a plugin's own configuration
 | `argLine`, `jvmArgs` of the tests | `process-test.properties` |
 | The environment of the tests | `environment-test.properties` |
 | Checkstyle's `propertyExpansion`, `configProperties` | A `checkstyle.properties` beside `checkstyle.xml` |
+| PMD's `minimumPriority`, `rulesMinimumPriority` | `-Djenesis.source.pmd.priority` |
 | `manifestEntries`, `jar.manifest.attributes` | A `META-INF/MANIFEST.MF` among the resources |
 | A resource with a `targetPath` | `-Djenesis.project.resources=<file>:<path in the jar>` |
 | A `<profile>` chosen with `-P`, Gradle properties | A `jenesis-<profile>.properties`, selected with `-Djenesis.make.profiles` |
