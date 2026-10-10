@@ -1,7 +1,7 @@
 ---
 order: 6
 title: Proxying upstreams
-description: Serving what the repository does not hold yet from Maven Central, npm, Docker Hub or a private registry - format upstreams, a repository's routing with fallbacks and groups, upstream credentials, how a fetched artifact is checked and kept, how long an upstream's documents are remembered, and what a repository that both hosts and proxies answers.
+description: Serving what the repository does not hold yet from Maven Central, npm, Docker Hub or a private registry - format upstreams, a repository's routing with fallbacks and groups, upstreams a module's or group's own domain names, upstream credentials, how a fetched artifact is checked and kept, how long an upstream's documents are remembered, and what a repository that both hosts and proxies answers.
 ---
 
 A repository is most useful as a build's **single front door**: it serves your own packages and, on a miss,
@@ -112,6 +112,49 @@ Routing has no deployment-wide or tenant-wide default, since one would point eve
 What the deployment can hold instead is a **definition** of a repository name, under **Settings → Upstreams →
 Repository routing**, written the same way: it routes the repository of that name in every tenant, and a
 repository's own routing wins over it. A definition can also be a startup setting, `repositories.<name>`.
+
+## A discovered upstream
+
+A module name or a Maven group ID is a reversed domain, and a domain can say where its modules and artifacts are
+published: in a file at `https://<domain>/.well-known/java-repository.properties`, which the
+[discovery chapter](/tool/discovery/) of the build tool describes. A repository routed `fallback discovered` fetches
+each miss from where that file says, instead of from one upstream:
+
+```
+writable fallback discovered fallback https://repo1.maven.org/maven2/
+```
+
+serves what was published here, then what the domain of each name says, and then Maven Central for names whose
+domain publishes no file. `discovered` takes the options an upstream URL takes, and works in a Maven repository and
+in a `jenesis` module repository.
+
+What a domain's file names is fetched, checked, screened and kept as any upstream's files are:
+
+- **A file of a version** - a jar, a POM, a module's jar - is fetched from the location the file names and kept.
+  Where the file names a template, the file it fills in is checked against the strongest `.sha512`, `.sha256` or
+  `.sha1` published beside it, and a mismatch is neither kept nor served; under a root - a Maven repository or a
+  module service - a file is fetched as from any upstream of that kind.
+- **A module's own jar** must declare the module it is asked for, in its `module-info` or as its
+  `Automatic-Module-Name`, or it is neither kept nor served, so a domain cannot answer for one module with another.
+- **A version list** comes from a root itself, and for a template from what its latest link names - the versions a
+  `maven-metadata.xml` lists, or the one version a redirect names. A module's latest pointer is served as the domain
+  answers it now and never kept.
+- **A version the file does not serve** - one before its `.since`, or with a qualifier its `.suffixes` leave out -
+  and a name whose domain publishes no file are left to the next fallback.
+
+Each domain's file is read once an hour on each node, and an absent file is remembered as absent for as long;
+`discovery-ttl` changes the period. A file is only read over `https`, and only from a public address, as an
+upstream is: a domain that resolves to a private, loopback or cloud-metadata address is not asked, and a file
+naming such a location is refused, unless `proxy-allow-internal` permits it. A file that breaks the format's rules -
+a key without a value, a location that is not `https` - fails the requests it would answer with `502` and is
+logged, rather than being read as no file.
+
+To see what a name's domains say now, and where a request path would go, a super-admin asks under **Operations →
+Discovery**, or from the command line:
+
+```bash
+jenrepo discovery check build.jenesis --path /maven/build/jenesis/build.jenesis/0.15.5/build.jenesis-0.15.5.jar
+```
 
 ## Private upstreams
 
