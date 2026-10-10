@@ -348,9 +348,9 @@ by its module name or by the coordinate; both pin the same artifact, and two pin
 refused.
 
 The alias travels with the jar: its manifest records it as `Jenesis-Aliases`, so a module that depends on
-`demo.cli` inherits the name without declaring it again. An alias for the target of a `requires static`
-applies only where that target is resolved, so a downstream module that never pulls the optional dependency
-in ignores it.
+`demo.cli` inherits the name without declaring it again. An alias applies only where its target is resolved, so
+a downstream module that never pulls an optional dependency in, or excludes it, ignores it, and an alias a
+parent POM declares names its jar only in the modules that resolve it.
 
 Aliases reach an artifact by its Maven coordinate, which the strict `modular` layout does not use. A
 `pom.xml` project declares the same lines in a `<!--jenesis.alias ... -->` comment of the POM, one per line,

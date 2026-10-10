@@ -426,8 +426,9 @@ to one of them returns early on the other. The resolved dependencies arrive as a
 `build.jenesis.step.Dependencies`: `Dependencies.select(folder, "main", "compile")` lists the jars of one group and scope, and
 `Dependencies.all(folder)` every one. What a step in `binary/compiled` writes as `classes/` and as a
 `manifest.mf` is merged into the module's jar. A step in `binary/transform` finds the compiled classes in the
-first of its arguments, and what it writes below `classes/` or as a `manifest.mf` replaces the file of that name,
-while every file it does not write passes on as it was.
+first of its arguments, and what it writes below `classes/` replaces the file of that name, while every file it does not write passes on
+as it was. A `manifest.mf` it writes is merged into the module's manifest, its own value winning for an attribute
+both set.
 
 A plugin compiled from source lives in a project folder of its own, which carries an empty **`.jenesis.skip`**
 marker so the project's module discovery does not mistake it for a second project module. A published plugin
