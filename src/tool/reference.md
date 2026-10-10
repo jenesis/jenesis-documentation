@@ -220,6 +220,7 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.compliance` | `true` | Run the licence and vulnerability checks; `false` skips both. |
 | `jenesis.source.<tool>` | `true` | Per-linter switch (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`). |
 | `jenesis.source.<tool>.strict` | `false` | Fail the build on the findings of that linter instead of only reporting them, as its own exit code decides; scalafmt fails on a source it would format differently, CodeNarc on any finding. |
+| `jenesis.source.pmd.priority` | `5` | The lowest rule priority PMD runs, from `1`, the highest, to `5`, the lowest, as maven-pmd-plugin's `minimumPriority`; any other value is refused. |
 | `jenesis.validator.spotbugs` | `true` | Run SpotBugs when its filter file is present. |
 | `jenesis.validator.spotbugs.strict` | `false` | Fail the build on any finding SpotBugs reports instead of only reporting it. |
 | `jenesis.format.java` / `.ktlint` / `.scalafmt` | `true` | Per-formatter switch. |

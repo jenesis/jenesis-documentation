@@ -69,6 +69,10 @@ Checkstyle fails to load the configuration. `config_loc` is the one property the
 checkstyle.severity=warning
 ```
 
+PMD runs the rules of every priority in `pmd.xml`. `jenesis.source.pmd.priority` names the lowest priority it
+runs, from `1`, the highest, to `5`, the default, as the Maven plugin's `minimumPriority` does; any other
+value is refused.
+
 ### Switching a tool off
 
 To skip a discovered tool without deleting its configuration file, set its property to `false`. Every property
