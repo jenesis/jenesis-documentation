@@ -10,10 +10,11 @@ This chapter is for the build that needs something the stock pipeline *does not*
 a code-generation step, a bespoke packaging step, an unusual dependency wiring.
 
 Almost always, the answer is a **plugin**: a build module, named in one line of a properties file, that joins a
-module of the stock build and adds to it, or runs once over everything the build produced. A plugin never
-replaces what the stock build does, save the compiled classes a bytecode enhancer rewrites; a build that must -
-one that redirects what the compiler reads, or wires a step between two stock ones - is an entry point of its
-own, and that comes last.
+module of the stock build and adds to it, or runs once over everything the build produced. A plugin of every
+hook point adds to what the stock build produces, with one exception: a plugin of `binary/transform` rewrites the
+module's compiled classes, as a bytecode enhancer does. A build that must change anything else - one that
+redirects what the compiler reads, or wires a step between two stock ones - is an entry point of its own, and that
+comes last.
 
 ## Adding plugins to the stock build
 
@@ -48,7 +49,9 @@ as input, and where what it writes goes. A plugin never inspects the build aroun
 hook point hands it, and what it writes travels onwards by the same folder conventions the stock steps follow,
 so a `sources/` tree written in `binary/generated` is compiled, and a `maven/` folder written in
 `stage/transform` joins the staged Maven tree. Every hook point keeps its plugins in a namespace of its own -
-`custom/`, `transform/`, `inspect/` or `plugin/` - beside the stock steps, so a plugin may take any name.
+`custom/`, `transform/`, `inspect/` or `plugin/` - beside the stock steps, so a plugin may take any name. What a
+plugin writes is added to what the stock steps write, at every hook point but `binary/transform`, whose plugins
+rewrite the compiled classes.
 
 Hook points come in two kinds. A **module** hook point runs a plugin once in every module of the project that
 configures it; a **project** hook point runs it once for the whole project. `preprocess` runs before any module is
