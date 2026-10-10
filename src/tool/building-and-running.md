@@ -390,6 +390,11 @@ applies to *every* forked `java` process, the program `Execute` runs included, w
 **`process-test.properties`** targets only the test JVM
 (merged over the `java` file, with test keys winning).
 
+`javac` and `jar` run inside the build's own JVM unless `jenesis.process.factory=fork` is set, on the command
+line or in `jenesis.properties`. A `-J` option for the compiler's JVM, written as `-J-Xmx2g=` in
+`process-javac.properties`, needs that setting: only a forked `javac` has a JVM of its own to hand it to, and
+an in-process one refuses the flag.
+
 `javadoc` runs with `-Xdoclint:none`, so a missing comment or tag is not reported. An `-Xdoclint` flag in
 `process-javadoc.properties` replaces that default, and `-Werror=` makes a warning fail the build:
 
