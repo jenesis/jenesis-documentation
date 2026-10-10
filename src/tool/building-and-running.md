@@ -102,6 +102,10 @@ UTF-8. A JVM the build forks is told to print in UTF-8, by `-Dstdout.encoding` a
 its `process-<tool>.properties` names another, as a `-Dstdout.encoding\=<charset>=` line does for `java`
 and `-J-Dstdout.encoding\=<charset>=` for a JDK tool. Any other program is read in the platform's encoding.
 
+A forked process that ends with exit code 137 was killed with `SIGKILL`, possibly by the kernel's out-of-memory
+killer, and the failure says so. Fewer tools at once, with a lower `jenesis.process.concurrency`, or a smaller
+heap for the JVM it ran, as an `-Xmx` in `process-test.properties` for the tests, makes it need less memory.
+
 A failed test run first names its failed tests, up to twenty, read from the reports every run writes -
 under `supplement/reports/`, or in the module's `reports/tests/` with `-Djenesis.test.reporting=true` -
 whatever reached the console:
