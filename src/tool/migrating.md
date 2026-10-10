@@ -111,6 +111,7 @@ found is the whole configuration. What lived inside a plugin's own configuration
 | In Maven or Gradle | In Jenesis |
 | --- | --- |
 | `compilerArgs`, `options.compilerArgs` | `process-javac.properties` |
+| `fork` with `meminitial`, `maxmem` or `-J` options | `jenesis.process.factory=fork` in `jenesis.properties`, with `-J<option>=` in `process-javac.properties` |
 | `annotationProcessorPaths` | A dependency of `<type>processor</type>` |
 | Surefire includes and groups | `-Djenesis.test.filter`, `-Djenesis.test.tag` |
 | Surefire excludes | `-Djenesis.test.exclude`, as `.*IntegrationTest` |
