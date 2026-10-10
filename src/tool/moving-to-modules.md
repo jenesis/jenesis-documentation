@@ -109,7 +109,8 @@ newest versions. Write a bare `@jenesis.pin <module> <version>` for each require
 keep, and `@jenesis.pin <groupId>/<artifactId> <version>` for one only a dependency's POM brings in, since a
 module name reaches only a module that is required by it. A module name that would move such a module to
 another version fails the build, naming the coordinate pin. Then run `pin`, which adds the checksums and the
-closure.
+closure. The module build resolves a conflict as a `pom.xml` does, so a version Gradle resolved higher is
+pinned here as well.
 
 ## While the old build remains
 
