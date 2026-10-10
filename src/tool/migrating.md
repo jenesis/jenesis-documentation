@@ -39,6 +39,8 @@ says, cannot be a module: a `module-info.java` needs release 9. Such a project m
 there. A descriptor it ships for Java 9 and later lives in `src/main/java/META-INF/versions/9/`, compiled as a
 [multi-release overlay](/tool/building-and-running/#one-jar-several-java-versions), and a dependency without
 a module name gets the name it requires from a `<!--jenesis.alias <module> <groupId>/<artifactId>-->` comment.
+Where the descriptor moves there, the old build follows it: ModiTect's `moduleInfoFile`, and the
+maven-javadoc-plugin's `sourcepath` and `excludePackageNames`.
 
 Otherwise, a module cannot be declared while a package is split: held by the tests and the main code of one
 project, as white-box tests are, or by two projects of the build. Run the first command in each project, and
