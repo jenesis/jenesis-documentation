@@ -226,6 +226,14 @@ Explained in [Access](/repository/access/).
 | `console` | `true` | deployment | standard | on restart | Whether this deployment serves the admin console. |
 | `key-login` | `true` | deployment | essential | on restart | Whether the console accepts a pasted login key as a sign-in method - the way into a deployment before single sign-on is set up, on by default. |
 
+### Discovery
+
+Explained in [Proxying upstreams](/repository/proxying/#a-discovered-upstream).
+
+| Key | Default | Level | Tier | Applies | Effect |
+| --- | --- | --- | --- | --- | --- |
+| `discovery-ttl` | `PT1H` | deployment | advanced | at once | How long a node remembers what a domain's /.well-known/java-repository.properties said - or that it has none - before a discovered leg asks the domain again. Each domain is asked once per period however many requests name it, so a longer period costs the domains less and notices a changed file later. |
+
 ### First run
 
 Explained in [Settings](/repository/settings/#first-run-setup).
