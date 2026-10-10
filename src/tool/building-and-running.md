@@ -219,11 +219,18 @@ module demo.app {
 }
 ```
 
+A module that declares no release compiles for the JDK running the build, and every build says so in a line,
+which the tag silences:
+
+```text
+[RELEASE]   demo.app compiles for release 25, the JDK the build runs on, as sources/module-info.java declares no @jenesis.release - @jenesis.release sets it
+```
+
 A `pom.xml` project sets the same thing through the `maven.compiler.release` property in its
 `<properties>` block, and `maven.compiler.testRelease`, where it names one, is the release its tests compile
 for. Without a release, `maven.compiler.target` or else `maven.compiler.source` names it, with `1.8` read as
 `8`, and these are read from a profile the POM activates as well. A POM that names none of them compiles for
-the JDK running the build, and a line says so:
+the JDK running the build, and a line says so as well:
 
 ```text
 [RELEASE]   com.example:mig compiles for release 25, the JDK the build runs on, as pom.xml sets neither maven.compiler.release nor its target or source - maven.compiler.release sets it
