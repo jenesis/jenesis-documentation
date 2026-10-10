@@ -1,7 +1,7 @@
 ---
 order: 18
 title: Moving a build to modules
-description: Declaring a migrated build in module-info.java - taking split packages apart, exports and opens to a test module, what each part of a pom.xml becomes, keeping published coordinates, pinning again, and what the old build needs while it remains.
+description: Declaring a migrated build in module-info.java - taking split packages apart, what a test module reaches of the module it tests, what each part of a pom.xml becomes, keeping published coordinates, pinning again, and what the old build needs while it remains.
 ---
 
 A build that *[Migrating a Maven or Gradle build](/tool/migrating/)* moved to `pom.xml` can go one step
@@ -17,7 +17,7 @@ package at a time, building after each:
 
 | Split | Taken apart by |
 | --- | --- |
-| White-box tests | Moving them into packages of the test module's own, such as `<package>.test`, testing the public API where they can. What a test still needs becomes public in a package exported to the tests alone, `exports <package> to <test module>`, with `opens <package> to <test module>` where it reflects. |
+| White-box tests | Moving them into packages of the test module's own, such as `<package>.test`, testing the public API where they can, and reaching the rest as the next section shows. |
 | Two projects | Moving the classes so each package lives in one module, or merging the projects, with a qualified export for a package only a sibling uses. |
 | A dependency | Excluding the jar that holds the package, or moving the project's classes out of it. |
 | Two dependencies | Excluding one of the jars, or dropping the test that needs both. |
@@ -32,22 +32,25 @@ for jar in $(find target/build -path '*/test-module-*/resolved/*.jar'); do
 done | sort -u | cut -d' ' -f1 | uniq -d
 ```
 
-### Exports and opens to the test module
+### What the test module reaches
 
 White-box tests reach what they need through the module system's own means rather than through a shared
-package. A package the tests use is exported to the test module alone, and opened to it where the tests
-reflect over it:
+package. A package the module does not export is made readable to the tests by one line, in both the
+`process-javac.properties` and the `process-test.properties` of the test module:
 
-```java
-module demo.greeter {
-    exports demo.greeter;
-    exports demo.greeter.internal to demo.greeter.test;
-    opens demo.greeter.internal to demo.greeter.test;
-}
+```properties
+--add-exports=demo.greeter/demo.greeter.internal=demo.greeter.test
 ```
 
-When `javac` compiles the main module, it warns that the test module a qualified export names is not found.
-Under `-Werror`, a `-Xlint\:-module=` line in `process-javac.properties` beside it silences that warning.
+A test module reads only what the tested module exports, when it compiles and when its tests run, so with the
+line in the first file alone `javac` passes and the tests fail with an `IllegalAccessError`. The published
+`module-info.java` stays as it is. An `exports <package> to <test module>` there would publish the export, and
+`javac` would warn that the test module is not found when it compiles the main module.
+
+A package-private member of a package the module exports already is called by reflection rather than made
+public, which would widen the published API. JUnit's `ReflectionSupport` finds and invokes it, once
+`--add-opens=demo.greeter/demo.greeter=org.junit.platform.commons` in `process-test.properties` opens the
+package to the module that makes the member accessible.
 
 A test `module-info.java` that names the main module itself, the `--patch-module` idiom Maven and Gradle use
 for white-box tests, is not supported. The tests become a module of their own, as the table above takes them
