@@ -461,8 +461,11 @@ every entry, the one `jenesis.archive.timestamp` names where it is set.
 
 `stage` collects the jar into `stage/packages/` as `<artifact>.jar`, so `export` and `release` ship it like any
 other package. Every jar it stores keeps its directory entries, so a scan of a package on the class path finds
-them as it would in the original jar. A JVM option of `process-java.properties` does not travel with it,
-because `java -jar` reads none from the jar it runs: an application that needs one ships as a bundle.
+them as it would in the original jar. The `--add-reads`, `--add-exports`, `--add-opens` and
+`--enable-native-access` lines of `process-java.properties` travel with it, and the launcher applies them as it
+builds the module graph. Any other JVM option does not, because `java -jar` reads none from the jar it runs:
+the build names each one it leaves out, and an application that needs one passes it to `java -jar` or ships as
+a bundle.
 
 <div class="tip">
   The launcher jar has its own section - see
