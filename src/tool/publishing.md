@@ -1,13 +1,14 @@
 ---
 order: 14
 title: Publishing
-description: Publishing locally with export, staging a correct release bundle with the metadata a repository demands, publishing a bill of materials, releasing into a Jenesis module repository, and driving a release tool from the build.
+description: Publishing locally with export, staging a correct release bundle with the metadata a repository demands, publishing a bill of materials, releasing into a Jenesis module repository or a Maven repository of your own, and driving a release tool from the build.
 ---
 
 A build ends at artifacts under `target/`. **Publishing** is what makes them available to somebody else: the
 artifacts laid out as a repository, carrying the metadata a repository demands, and finally uploaded and
 signed. Publishing to Maven Central is really two jobs - **produce a correct, complete bundle** and **upload
-it** - and Jenesis owns the first while deliberately leaving the signed upload to a dedicated release tool.
+it** - and Jenesis owns the first while deliberately leaving the signed upload to a dedicated release tool. A
+repository of your own, which takes an unsigned upload, Jenesis releases into by itself.
 
 ## Publishing locally with `export`
 
@@ -306,7 +307,7 @@ detached signature made afterwards covers the signed bytes.
 
 ## Releasing into a Jenesis module repository
 
-One destination the tool publishes to by itself: a Jenesis module repository, the layout a modular build
+A destination the tool publishes to by itself is a Jenesis module repository, the layout a modular build
 resolves module names from. `export` reaches one machine; once `jenesis.release.uri` names a repository,
 `release` puts each staged module there as its `release/jenesis` step, for every machine that resolves
 from it. A `jenesis` repository of a [Jenesis Repository](/repository/) takes that release and serves the layout, at
@@ -339,14 +340,66 @@ address in `jenesis.properties` releases without a key. A plaintext `http:` addr
 
 A project that publishes to Maven does not need this step to reach module consumers: a `java` repository of a
 Jenesis Repository takes Maven publishes only, and makes a module available from one. A modular jar deployed to its
-Maven layout, by JReleaser, `mvn deploy` or any other tool, is served by its module name as well.
+Maven layout, by the release the next section describes, JReleaser, `mvn deploy` or any other tool, is served by
+its module name as well.
+
+## Releasing into a Maven repository of your own
+
+An internal Maven repository - a Nexus, an Artifactory, a `java` repository of a Jenesis Repository - takes the
+staged Maven tree from `release` itself. Once `jenesis.release.maven.uri` names it, `release` puts the tree there
+as its `release/maven` step, which is what `maven-deploy-plugin` does with a `<distributionManagement>`
+repository, or Gradle's `maven-publish` with a repository of its own:
+
+```bash
+java -Djenesis.project.version=1.0.0 \
+     -Djenesis.release.maven.uri=https://repo.example.com/repository/maven-releases/ \
+     -Djenesis.release.maven.token="Basic <credentials>" \
+     build/jenesis/Make.java release
+```
+
+```text
+[RELEASED]  https://repo.example.com/.../com/example/library/1.0.0/library-1.0.0.jar
+[RELEASED]  https://repo.example.com/.../com/example/library/1.0.0/library-1.0.0.pom
+```
+
+Every staged file is put at `<group path>/<artifactId>/<version>/<file>`, each beside the `.md5`, `.sha1`,
+`.sha256` and `.sha512` checksums a Maven client verifies. Then the artifact's `maven-metadata.xml` is read from
+the repository and the release merged into it, so it lists every version released so far, the newest as
+`<latest>` and the newest without `-SNAPSHOT` as `<release>`. Nothing is signed.
+
+A `-SNAPSHOT` version is released as Maven deploys one. Each file is put under a name of its own, stamped with
+the time and a build number that counts on from the one the repository holds, as
+`library-1.0.0-20261010.120053-1.jar`, beside a `maven-metadata.xml` in the version's folder that names them,
+so a Maven or Gradle build that requires `1.0.0-SNAPSHOT` resolves the newest. A project that sets no version
+releases the `0-SNAPSHOT` its POM carries.
+
+The token is sent as the `Authorization` header exactly as given, so it names its scheme: `Basic` and the
+Base64 of `<user>:<password>`, or `Bearer <token>` where the repository hands out tokens. Where the settings are
+not given, a release reads the `MAVEN_RELEASE_URI` and `MAVEN_RELEASE_TOKEN` environment variables - never
+`MAVEN_REPOSITORY_URI` and `MAVEN_REPOSITORY_TOKEN`, which name where a build resolves from. Like the key of a
+Jenesis module repository, the token may come only from the command line, `~/.jenesis/jenesis.properties` or the
+environment, and is never sent to a repository a file of the project named.
+
+`release` does this in the `maven` and `modular_to_maven` layouts, and refuses to run in the `modular` layout,
+which stages no Maven tree. A plaintext `http:` address is refused unless `-Djenesis.repository.insecure=true`
+allows it, and so is a release while `jenesis.repository.offline` is set. A repository that refuses the key
+fails the release naming the setting, one that already holds other content at a path asks for a new version,
+and any other answer than success stops it, naming the address and the status.
+
+<div class="warning">
+  Maven Central is refused by name: it takes a release signed and through its own publishing service, which is
+  what a <code>jreleaser.yml</code> describes, as the next section shows. <code>jenesis.release.maven.uri</code>
+  names a repository of your own.
+</div>
+
+{% demos 67 %}
 
 ## The last mile: signing and uploading
 
-For Maven Central, and for every other publication beyond a Jenesis module repository, the remote upload and
-GPG signing are not Jenesis's job. Point **[JReleaser](https://jreleaser.org/)** at
-`target/stage/maven/output/` and it signs every artifact and uploads the bundle to Central. Jenesis stops at
-the unsigned, validated bundle, so credentials and signing keys never enter the build.
+For Maven Central, the remote upload and GPG signing are not Jenesis's job. Point
+**[JReleaser](https://jreleaser.org/)** at `target/stage/maven/output/` and it signs every artifact and uploads
+the bundle to Central. For Central, Jenesis stops at the unsigned, validated bundle, so signing keys never enter
+the build.
 
 This split is deliberate. Most people building a project never release it: releasing is a rare, tightly
 controlled job for CI or a hardened environment that holds the keys. And the way you release evolves
