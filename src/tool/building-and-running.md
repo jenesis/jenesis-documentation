@@ -394,7 +394,9 @@ flag with its argument:
 
 Each key is a flag and its value the flag's argument, so the second line passes `-Xmaxwarns 500`. A key with
 **no value emits a bare flag**, as the first line does; a value with embedded newlines repeats the flag once
-per line. The file merges over the arguments Jenesis already generates - so `javac` here receives both the
+per line, and a tab (`\t`) parts the arguments of a flag that takes several, as
+`-linkoffline=https\://example.com/api/\toffline/api` hands `javadoc` a URL and a folder. The file merges over
+the arguments Jenesis already generates - so `javac` here receives both the
 build's own `--release` and your two flags. A properties file splits a line at the first `:` or `=`, so a
 flag that holds one escapes it, as `-Xlint\:all` does.
 
