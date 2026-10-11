@@ -146,6 +146,7 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | A `<profile>` chosen with `-P`, Gradle properties | A `jenesis-<profile>.properties`, selected with `-Djenesis.make.profiles` |
 | `<repositories>`, `settings.xml` | `-Djenesis.maven.uri` or `MAVEN_REPOSITORY_URI` |
 | A toolchain | `-Djenesis.toolchain.version` |
+| Tests on another JDK, Surefire's `jvm` or a `Test` task's `javaLauncher` | The whole build again with `-Djenesis.toolchain.version`, as a CI matrix leg |
 | A `-tests` jar | `-Djenesis.stage.tests=true` |
 | `maven.deploy.skip`, `maven.install.skip` | `stage=false` in the module's `packaging.properties`, which keeps it out of `export` and `release` alike |
 | The flatten-maven-plugin's `flattenDependencyMode=all` | `flatten=true` in the module's [`packaging.properties`](/tool/publishing/#what-the-published-pom-names) |
