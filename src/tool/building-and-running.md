@@ -332,6 +332,11 @@ implementations, selected by the JVM. Nothing else is needed: producing an overl
 `Multi-Release: true`, the flag that tells the JVM to look in the versioned directory at all. Each overlay
 compiles for its own release alone, whatever release the module's declaration names.
 
+A Kotlin source in the overlay is compiled the same way: `kotlinc` compiles a `.kt` below
+`sources/META-INF/versions/<N>/` for release `<N>` into the jar's `META-INF/versions/<N>/`, beside the base
+class of the same name, and a Java source of that overlay compiles against it. Dokka documents the base
+sources alone.
+
 An overlay may also carry the `module-info.java` itself. That is how a library whose main code targets Java 8,
 which predates the Java Module System, declares a module: the descriptor sits in `META-INF/versions/9/`, is
 compiled against the module path with the main classes as part of the module, and may `requires` library
@@ -342,7 +347,7 @@ with `maven.compiler.release` at `8`, the descriptor lives in `src/main/java/MET
 that declares none is given its module name by a `<!--jenesis.alias <module> <groupId>/<artifactId>-->`
 comment in the POM.
 
-{% demos 11 %}
+{% demos 11, 41 %}
 
 ### Source and API-documentation jars
 
