@@ -272,6 +272,23 @@ is not published. `export` installs it and `release` publishes it like any stage
 `packaging.properties` of its own configuration folder, such as `bom/build.jenesis/`, keeps it out of the staged
 repositories, as it keeps a module's jar.
 
+### Relocating a former coordinate
+
+When an artifact moves to another coordinate, a module at the old one can declare where it went, so builds that
+still depend on it are sent on:
+
+```xml
+<distributionManagement>
+  <relocation>
+    <artifactId>greeter</artifactId>
+  </relocation>
+</distributionManagement>
+```
+
+Such a module is published as its POM alone, the relocation kept, whatever its packaging. What the relocation
+leaves out - here the group ID and the version - stays that of the module itself, as Maven reads it. A module
+that relocates its artifact and also holds sources fails the build, since nothing would compile them.
+
 {% demos 20, 3 %}
 
 ## Signing the jar itself
