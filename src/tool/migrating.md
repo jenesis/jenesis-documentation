@@ -134,6 +134,8 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | Surefire includes and groups | `-Djenesis.test.filter`, `-Djenesis.test.tag` |
 | Surefire excludes | `-Djenesis.test.exclude`, as `.*IntegrationTest` |
 | `argLine`, `jvmArgs` of the tests | `process-test.properties` |
+| Surefire's `rerunFailingTestsCount`, Gradle's `test-retry` plugin | A retry of the test framework, such as JUnit Pioneer's `@RetryingTest` |
+| `forkCount` with `reuseForks=false`, `forkEvery` | A test module of its own, since each test module runs in a JVM of its own |
 | The environment of the tests | `environment-test.properties` |
 | Checkstyle's `propertyExpansion`, `configProperties` | A `checkstyle.properties` beside `checkstyle.xml` |
 | PMD's `minimumPriority`, `rulesMinimumPriority` | `-Djenesis.source.pmd.priority` |
