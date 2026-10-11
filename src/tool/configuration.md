@@ -126,7 +126,7 @@ What these folders can hold - presence activates, contents configure:
   `scalastyle-config.xml`, `errorprone.properties`.
 - **Generated sources**: `xjc.properties`, `protoc.properties`, `avro.properties`, `wsimport.properties`,
   `openapi.properties`, `antlr.properties`.
-- **Formatting**: `javaformat.properties`, `.editorconfig`, `.scalafmt.conf`.
+- **Formatting**: `javaformat.properties`, `.editorconfig`, `ktfmt.properties`, `.scalafmt.conf`, `license-header.txt`.
 - **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`.
 - **Compliance**: `licensing.properties`, `vulnerability.properties`, `spdx.properties`.
 - **Tests**: `test.properties`, naming the engine a module's tests run on.
