@@ -54,7 +54,7 @@ place here:
 4. **The manifest names the launcher** as `Main-Class: build.jenesis.launcher.Launcher`, so `java -jar` starts
    the launcher.
 5. **The jar gets a bill of materials of its own** when the module gets one (see
-   *[Supply-chain features](/tool/supply-chain/)*): a CycloneDX document at `META-INF/sbom/<artifact>.cdx.json`, which the
+   *[Supply-chain features](/tool/supply-chain/)*): a CycloneDX document at the module's own path in `META-INF/sbom/`, which the
    manifest names with `Sbom-Format` and `Sbom-Location`. It lists what the module's document lists and adds the
    launcher as a dependency of the project, which it describes as an `application`. The module's own document
    stays in the folder of the application's own jar.
