@@ -118,7 +118,9 @@ runs from the most specific per-module location to the project-wide fallback:
 
 The first file found configures the tool alone, and nothing merges. A module's `process-javac.properties`
 therefore replaces the project-wide one rather than adding to it, and repeats the lines of it the module still
-needs. Nothing below `META-INF/build.jenesis/` reaches a jar the module packs, the sources jar included.
+needs. The project-wide folder has no counterpart for the tests or the main code alone: a file that differs for
+the tests sits in each module's `src/test/build.jenesis/`, or in the folder of each test module. Nothing below
+`META-INF/build.jenesis/` reaches a jar the module packs, the sources jar included.
 
 What these folders can hold - presence activates, contents configure:
 
