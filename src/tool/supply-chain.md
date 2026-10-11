@@ -33,8 +33,11 @@ The SBOM is a supply-chain counterpart to the `dependencies` selector (see *[Dep
 where that *prints* the resolved graph, the SBOM *freezes* it into a publishable artifact. It lands in three
 places, one per consumer:
 
-- **Embedded in the jar**, at `META-INF/sbom/<artifact>.cdx.json`, so the bill of materials travels inside the
-  artifact. The jar's manifest records `Sbom-Format: CycloneDX` and an `Sbom-Location` header pointing at it.
+- **Embedded in the jar**, at `META-INF/sbom/<groupId>/<artifactId>.cdx.json`, or at `META-INF/sbom/<module>.cdx.json`
+  for a module without a group ID, so the bill of materials travels inside the artifact. The jar's manifest records
+  `Sbom-Format: CycloneDX` and an `Sbom-Location` header pointing at it. No two jars share the name, so every jar on
+  a class path or module path keeps its own. An application points a reader at its own document: Spring Boot's
+  actuator takes `management.endpoint.sbom.application.location=classpath:<path>`.
   An executable [launcher jar](/launcher/producing-a-launcher-jar/) carries a document of its own at the same
   place, which describes the project as an `application` and adds the launcher it shades as a dependency - once
   if the module already depends on the same version, beside it if on another. A [native image](/tool/packaging/)
