@@ -200,6 +200,26 @@ The file takes no other key. The header is taken exactly as it stands, a year in
 copyright or a licence, so a rewrite gives the same sources whenever it runs. Generated sources are not checked,
 and `jenesis.format.license=false` switches the check off.
 
+Without `text`, the header is derived from what the project declares: the one licence of its `pom.xml` or its
+`project.properties`, named by its SPDX identifier, and its `copyright` where one is declared. An empty
+`licenseheader.properties` beside a `project.properties` holding
+
+```properties
+license.apache_2_0.name=Apache License, Version 2.0
+license.apache_2_0.url=https://www.apache.org/licenses/LICENSE-2.0.txt
+copyright=2026 the original author or authors
+```
+
+starts every source with these two lines:
+
+```java
+// SPDX-FileCopyrightText: 2026 the original author or authors
+// SPDX-License-Identifier: Apache-2.0
+```
+
+A project that declares no licence, more than one, or one without a known SPDX identifier fails the build, naming
+what it found. An `alias/<licence name>=<id>` line in `spdx.properties` gives a licence its identifier.
+
 ### Verify mode, and how to reformat
 
 Every formatter runs in **verify mode** by default, so a normal build never touches your sources. Instead it
