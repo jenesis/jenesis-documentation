@@ -221,6 +221,7 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.source.<tool>` | `report` | What a linter's findings do (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`): `report` records them, `strict` fails the build on them, as the linter's own exit code decides - scalafmt on a source it would format differently, CodeNarc on any finding - and `ignore` skips the linter. Any other value is refused. |
 | `jenesis.source.pmd.priority` | `5` | The lowest rule priority PMD runs, from `1`, the highest, to `5`, the lowest, as maven-pmd-plugin's `minimumPriority`; any other value is refused. |
 | `jenesis.validator.spotbugs` | `report` | What SpotBugs does when its filter file is present: `report` records its findings, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
+| `jenesis.validator.forbiddenapis` | `report` | What forbiddenapis does when a `forbiddenapis.properties` is present: `report` records its findings, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.format.java` / `.ktlint` / `.ktfmt` / `.scalafmt` | `true` | Per-formatter switch. |
 | `jenesis.format.license` | `true` | The licence header check a `licenseheader.properties` activates, with its `text` or, without one, SPDX lines naming the declared licence and copyright. |
 | `jenesis.format.rewrite` | `false` | Rewrite sources in place instead of verifying. |
@@ -395,7 +396,7 @@ in the linked chapter.
 | `binary` | The Java toolchain for one module; its `compiled`, `classes`, `validate`, and `artifacts` steps sit beneath it. |
 | `compiled` | Compiled classes from sources and the compile class path (`javac`, or a language compiler). |
 | `classes` | The version-stamped classes exposed to downstream consumers. |
-| `validate` | Byte-code analysis (SpotBugs, as `validate/spotbugs`). |
+| `validate` | Byte-code analysis (SpotBugs and forbiddenapis, as `validate/spotbugs` and `validate/forbiddenapis`). |
 | `classpath` | The `META-INF/services` files and manifest attribute that let a modular jar run on the class path, when a `classpath.properties` is present (as `classpath/services`). |
 | `artifacts` | The packaged jar. |
 | `check` | Static-analysis findings (Checkstyle, PMD, detekt, …). |

@@ -24,6 +24,7 @@ build. Nothing else is needed - the file's presence is the switch, and its conte
 | `checkstyle.xml` | Checkstyle | source files |
 | `pmd.xml` | PMD | source files |
 | `spotbugs-exclude.xml` | SpotBugs | compiled classes |
+| `forbiddenapis.properties` | forbiddenapis | compiled classes |
 | `detekt.yml` | detekt (Kotlin) | source files |
 | `.editorconfig` | ktlint (Kotlin) | source files |
 | `scalastyle-config.xml` | Scalastyle | source files |
@@ -31,7 +32,7 @@ build. Nothing else is needed - the file's presence is the switch, and its conte
 | `codenarc.xml` | CodeNarc (Groovy) | source files |
 
 The source linters run **in parallel with compilation**, since they read sources rather than classes;
-SpotBugs runs once the classes exist. Each tool resolves in its own dependency group (named after the tool,
+SpotBugs and forbiddenapis run once the classes exist. Each tool resolves in its own dependency group (named after the tool,
 kept apart from your project's own dependencies), floats a `RELEASE` version until pinned, and runs in a
 forked JVM. A tool whose language is not present skips itself: a stray `detekt.yml` in a pure-Java
 project does nothing.
@@ -39,7 +40,7 @@ project does nothing.
 ### Report, strict or ignore
 
 Each linter has one setting that says what its findings do: `jenesis.source.<tool>` for the source linters and
-`jenesis.validator.spotbugs` for SpotBugs, set on the command line or in `jenesis.properties`.
+`jenesis.validator.<tool>` for SpotBugs and forbiddenapis, set on the command line or in `jenesis.properties`.
 
 | Value | The linter |
 | --- | --- |
@@ -58,7 +59,7 @@ number of findings and where its report is:
 `-Djenesis.print.findings=false` leaves that line out, whatever the linter's setting. Under `strict`, as
 `-Djenesis.source.checkstyle=strict`, Checkstyle, PMD, detekt, ktlint, Scalastyle and scalafmt fail as their own
 exit code decides, so a Checkstyle finding at severity `warning` is reported but does not fail the build.
-SpotBugs and CodeNarc fail on any finding their report holds.
+SpotBugs, CodeNarc and forbiddenapis fail on any finding their report holds.
 
 Reporting covers findings, not a tool that never ran. A linter that fails on its own configuration, and so
 writes no complete report, fails its step either way.
@@ -93,10 +94,45 @@ deleting its configuration file:
 | Property | Covers |
 | --- | --- |
 | `jenesis.source.<tool>` | `checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc` |
-| `jenesis.validator.spotbugs` | SpotBugs |
+| `jenesis.validator.<tool>` | `spotbugs`, `forbiddenapis` |
 
 For example, `-Djenesis.source.checkstyle=ignore` keeps `checkstyle.xml` in place but skips Checkstyle, while
 PMD and SpotBugs still run.
+
+### Forbidden API calls
+
+[forbiddenapis](https://github.com/policeman-tools/forbidden-apis) finds calls that the compiled classes, the
+tests' included, should not make: a method that depends on the default locale, a deprecated API, a JDK internal
+or a call the project rules out. A `forbiddenapis.properties` names the signatures to check:
+
+```properties
+bundled=jdk-unsafe,jdk-deprecated,jdk-non-portable,jdk-system-out
+signatures=forbidden-signatures.txt
+```
+
+`bundled` names signatures that forbiddenapis ships. `jdk-unsafe`, `jdk-deprecated` and `jdk-internal` are
+written for one Java release, as `jdk-unsafe-25`, and the build appends the release the classes are compiled
+for where the name leaves it out. `signatures` names files of the project's own signatures, beside or below the
+properties file, in the format forbiddenapis reads:
+
+```text
+@defaultMessage Name a thread: an unnamed one is hard to tell apart in a thread dump
+java.lang.Thread#<init>(java.lang.Runnable)
+```
+
+| Key | Maven plugin parameter | Meaning |
+| --- | --- | --- |
+| `bundled` | `bundledSignatures` | bundled signatures, comma-separated |
+| `signatures` | `signaturesFiles` | the project's own signature files, comma-separated |
+| `suppress` | `suppressAnnotations` | annotations that silence a finding, as `**.SuppressForbidden` |
+| `includes`, `excludes` | `includes`, `excludes` | patterns of the class files to check |
+| `warn` | `signaturesWithSeverityWarn` | signatures reported as a warning rather than a finding |
+| `allowmissingclasses` | `failOnMissingClasses=false` | `true` lets a class missing from the class path pass |
+| `ignoresignaturesofmissingclasses` | `ignoreSignaturesOfMissingClasses` | `true` skips a signature whose class is missing |
+
+Any other key fails the build, and so does a file named under `signatures` that is missing or outside the
+folder. The report, `reports/forbiddenapis/forbiddenapis.txt`, holds one line per finding: the call, the
+reason and where it was made.
 
 {% demos 34, 42, 45, 47 %}
 
@@ -246,7 +282,7 @@ After a rewrite, a plain build passes the verify gate again.
 ## Where the reports land
 
 Every tool writes its findings into a `reports/<kind>/` folder under its step's output, for example
-`reports/checkstyle/checkstyle-report.xml`, `reports/pmd/`, `reports/spotbugs/`. You rarely need the exact
+`reports/checkstyle/checkstyle-report.xml`, `reports/pmd/`, `reports/spotbugs/`, `reports/forbiddenapis/`. You rarely need the exact
 path, because a **`stage` build collects every report from every module into one place**, each kind in its own
 subfolder:
 
