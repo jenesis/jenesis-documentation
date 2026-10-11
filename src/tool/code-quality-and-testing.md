@@ -222,11 +222,25 @@ The agent writes the data the CLI reads, so it follows the release the group pin
 `jacoco/maven/org.jacoco/org.jacoco.cli` alone runs the tests under that version's agent as well, until `pin`
 records both.
 
-<div class="note">
-  Coverage is <strong>reported, not enforced</strong>. A method your tests never reach shows up as uncovered
-  in the report, but the build stays green - coverage tells you where you stand, it does not gate the build.
-  Set <code>-Djenesis.observe.jacoco=false</code> to suppress it even when the file is present.
-</div>
+An empty `jacoco.properties` only reports: a method your tests never reach shows up as uncovered, and the build
+stays green. Lines in the file set limits on the module's coverage, as the `check` goal of jacoco-maven-plugin
+does for a bundle:
+
+| Key | Limit |
+| --- | --- |
+| `minimum.<counter>` | the least covered ratio, from 0 to 1, such as `minimum.line=0.8` |
+| `maximum.missed.<counter>` | the most items left uncovered, such as `maximum.missed.class=0` |
+
+The counters are JaCoCo's: `instruction`, `branch`, `line`, `complexity`, `method` and `class`. A limit that is not
+met fails the build once the report is rendered, naming the limit and what the tests reached:
+
+```text
+minimum.method=0.9 is not met: 2 of 3 covered, a ratio of 0.6667
+```
+
+A counter with nothing to count, such as `branch` in code without a branch, meets every limit. An unknown key, or a
+value that is no ratio or count, fails the build naming the valid ones. Set `-Djenesis.observe.jacoco=false` to
+suppress coverage even when the file is present.
 
 ## Recording the tests with Java Flight Recorder
 
