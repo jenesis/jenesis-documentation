@@ -139,6 +139,7 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | PMD's `minimumPriority`, `rulesMinimumPriority` | `-Djenesis.source.pmd.priority` |
 | The `mainClass` of the jar, shade or exec plugin | A `<mainClass>` property |
 | `manifestEntries`, `jar.manifest.attributes` | A `META-INF/MANIFEST.MF` among the resources |
+| `addDefaultImplementationEntries` | Written by default |
 | A resource with a `targetPath` | `-Djenesis.project.resources=<file>:<path in the jar>` |
 | A `<profile>` chosen with `-P`, Gradle properties | A `jenesis-<profile>.properties`, selected with `-Djenesis.make.profiles` |
 | `<repositories>`, `settings.xml` | `-Djenesis.maven.uri` or `MAVEN_REPOSITORY_URI` |
