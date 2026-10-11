@@ -221,7 +221,9 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.source.<tool>` | `report` | What a linter's findings do (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`): `report` records them, `strict` fails the build on them, as the linter's own exit code decides - scalafmt on a source it would format differently, CodeNarc on any finding - and `ignore` skips the linter. Any other value is refused. |
 | `jenesis.source.pmd.priority` | `5` | The lowest rule priority PMD runs, from `1`, the highest, to `5`, the lowest, as maven-pmd-plugin's `minimumPriority`; any other value is refused. |
 | `jenesis.validator.spotbugs` | `report` | What SpotBugs does when its filter file is present: `report` records its findings, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
-| `jenesis.format.java` / `.ktlint` / `.scalafmt` | `true` | Per-formatter switch. |
+| `jenesis.format.java` / `.ktlint` / `.ktfmt` / `.scalafmt` | `true` | Per-formatter switch. |
+| `jenesis.format.license` | `true` | The licence header check a `license-header.txt` activates. |
+| `jenesis.format.year` | | The year a rewrite writes for a licence header's `$YEAR`. |
 | `jenesis.format.rewrite` | `false` | Rewrite sources in place instead of verifying. |
 | `jenesis.observe.jacoco` | `true` | Run JaCoCo coverage when its file is present. |
 | `jenesis.observe.native` | `true` | Run the GraalVM tracing agent when its file is present. |

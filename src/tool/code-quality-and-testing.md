@@ -165,10 +165,34 @@ report, a formatter reads them and can rewrite them in place. The Java formatter
 formatter=google
 ```
 
-`formatter=palantir` selects the Palantir formatter instead; with no file, no Java formatter runs. Kotlin
-formatting is `ktlint -F`, activated by the same `.editorconfig` that drives the ktlint linter, and Scala
-formatting is `scalafmt`, activated by `.scalafmt.conf`. Each of the three switches off with
-`jenesis.format.java`, `jenesis.format.ktlint` and `jenesis.format.scalafmt` (each defaulting to `true`).
+`formatter=palantir` selects the Palantir formatter instead, and `formatter=eclipse` the Eclipse formatter; with no
+file, no Java formatter runs. The same file takes the formatter's options, and an option the selected formatter
+does not have fails the build, naming the ones it has:
+
+| Key | Formatter | Value |
+| --- | --- | --- |
+| `style` | google | `google`, the default, or `aosp` for the Android Open Source Project's four-space style |
+| `reflow` | google, palantir | `false` leaves long strings as they are written |
+| `javadoc` | google | `false` leaves Javadoc as it is written |
+| `imports` | google, palantir | what happens to the imports: `sort,remove`, the default, `sort`, `remove` or `none` |
+| `profile` | eclipse | the formatter profile Eclipse exports, a file beside or below `javaformat.properties` |
+
+Kotlin formatting is `ktlint -F`, activated by the same `.editorconfig` that drives the ktlint linter, or ktfmt,
+activated by a `ktfmt.properties` whose `style` is `meta`, the default, `google` or `kotlinlang`, and whose
+`imports=sort` keeps unused imports. The two cannot format the same sources, so a `ktfmt.properties` beside an
+`.editorconfig` needs `jenesis.format.ktlint=false`. Scala formatting is `scalafmt`, activated by `.scalafmt.conf`.
+Each switches off with `jenesis.format.java`, `jenesis.format.ktlint`, `jenesis.format.ktfmt` and
+`jenesis.format.scalafmt` (each defaulting to `true`).
+
+### Licence headers
+
+A `license-header.txt` in a configuration folder holds the header every Java, Kotlin, Scala and Groovy source of the
+module starts with, written as plain text or already as a comment. `$YEAR` in it stands for any year or range of
+years, such as `2016-2026`. A source without the header, or with a different one, fails the build, as a formatter
+does. Under `-Djenesis.format.rewrite=true` the header is inserted, or replaces a leading comment that names a
+copyright or a licence, keeping the year it names; a header that needs a year takes it from
+`-Djenesis.format.year`, since a rewrite never writes the day it runs. Generated sources are not checked, and
+`jenesis.format.license=false` switches the check off.
 
 ### Verify mode, and how to reformat
 
@@ -182,7 +206,8 @@ To apply the formatter and rewrite your sources in place, run the build with the
 java -Djenesis.format.rewrite=true build/jenesis/Make.java
 ```
 
-The switch flips the whole chain - the Java formatter, ktlint and scalafmt - from verifying to rewriting.
+The switch flips the whole chain - the licence headers, the Java formatter, ktlint or ktfmt, and scalafmt - from
+verifying to rewriting.
 After a rewrite, a plain build passes the verify gate again.
 
 <div class="note">
@@ -190,7 +215,7 @@ After a rewrite, a plain build passes the verify gate again.
   project's <code>codenarc.xml</code> lints but nothing reformats.
 </div>
 
-{% demos 34 %}
+{% demos 34, 42 %}
 
 ## Where the reports land
 
