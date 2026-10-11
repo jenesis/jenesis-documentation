@@ -466,6 +466,18 @@ the bill of materials. This is where Maven's `<manifestEntries>` or Gradle's
 is written as it stands. An attribute the build writes with a different value fails the build rather than
 being replaced.
 
+What Maven's `addDefaultImplementationEntries` adds, the build writes without being asked:
+
+| Attribute | Value |
+| --- | --- |
+| `Implementation-Title` | the project's name, or its artifact without one |
+| `Implementation-Vendor` | the project's organisation, when it names one |
+| `Implementation-Version` | the version a `pom.xml`, a `project.properties` or `-Djenesis.project.version` names |
+
+A project that names no version gets no `Implementation-Version`. A value in the project's own manifest wins.
+Code on the class path reads these through `Package.getImplementationVersion()`; on the module path the JDK
+answers from the module's own version instead, which the build sets from the same version.
+
 {% demos 12 %}
 
 ## Handing a program environment variables
