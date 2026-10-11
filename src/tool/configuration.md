@@ -124,7 +124,7 @@ the tests sits in each module's `src/test/build.jenesis/`, or in the folder of e
 
 What these folders can hold - presence activates, contents configure:
 
-- **Code quality**: `checkstyle.xml`, `pmd.xml`, `spotbugs-exclude.xml`, `detekt.yml`, `codenarc.xml`,
+- **Code quality**: `checkstyle.xml`, `pmd.xml`, `spotbugs-exclude.xml`, `forbiddenapis.properties`, `detekt.yml`, `codenarc.xml`,
   `scalastyle-config.xml`, `errorprone.properties`.
 - **Generated sources**: `xjc.properties`, `protoc.properties`, `avro.properties`, `wsimport.properties`,
   `openapi.properties`, `antlr.properties`.
