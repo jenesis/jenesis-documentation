@@ -186,9 +186,16 @@ Each switches off with `jenesis.format.java`, `jenesis.format.ktlint`, `jenesis.
 
 ### Licence headers
 
-A `license-header.txt` in a configuration folder holds the header every Java, Kotlin, Scala and Groovy source of the
-module starts with, written as plain text or already as a comment. The header is taken exactly as it stands, a year
-included: a source without it, or with a different one, fails the build, as a formatter does. Under
+A `licenseheader.properties` in a configuration folder holds, as its `text` key, the header every Java, Kotlin,
+Scala and Groovy source of the module starts with, written as plain text or already as a comment. `\n` separates
+its lines, and a trailing `\` continues the value on the next line:
+
+```properties
+text=Copyright 2026 the original author or authors.\n\n\
+  Licensed under the Apache License, Version 2.0.
+```
+
+The file takes no other key. The header is taken exactly as it stands, a year included: a source without it, or with a different one, fails the build, as a formatter does. Under
 `-Djenesis.format.rewrite=true` the header is inserted as it stands, or replaces a leading comment that names a
 copyright or a licence, so a rewrite gives the same sources whenever it runs. Generated sources are not checked,
 and `jenesis.format.license=false` switches the check off.
