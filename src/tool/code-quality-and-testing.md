@@ -599,6 +599,41 @@ is compared. It is a released artifact like any other, so `pin` records it with 
 tool - one line, not a closure. `-Djenesis.artifact.japicmp=false` suppresses the comparison while keeping
 the file in place.
 
+### revapi beside japicmp
+
+[revapi](https://revapi.org) compares the same two jars and classifies every difference by how severe it is for
+a caller, binary and source alike. A `revapi.properties` beside `japicmp.properties` switches it on, against the
+same baseline: its `baseline` key reads exactly as japicmp's, and without one it is the last release of the
+module's own coordinate. A test module is never compared.
+
+```properties
+severity=non-breaking
+configuration=revapi.json
+```
+
+| Key | Effect | Default |
+| --- | --- | --- |
+| `baseline` | the artifact to compare against, as for japicmp | the module's own last release |
+| `severity` | the least severe difference reported: `equivalent`, `non-breaking`, `potentially-breaking` or `breaking` | `potentially-breaking` |
+| `configuration` | a JSON file beside it holding revapi's own configuration | none |
+
+The `configuration` file is revapi's own, an array of `{"extension": ..., "configuration": ...}` objects, so the
+differences a release accepts stay in revapi's notation, as a `revapi.differences` list:
+
+```json
+[{"extension": "revapi.differences", "configuration": {"ignore": true, "differences": [
+    {"code": "java.method.removed", "old": "method java.lang.String library.Library::farewell(java.lang.String)",
+     "justification": "Deprecated for two releases."}]}}]
+```
+
+Any other key fails the build, as does a `configuration` file that is missing, outside the folder or no JSON
+array. revapi reports like a linter: `reports/revapi/revapi.json` holds one entry per difference, with its code and
+classification, and a `[FINDINGS]` line counts them.
+
+`jenesis.artifact.revapi` decides what the findings do. `report`, the default, keeps the build green; `strict`
+fails it on any difference reported, and `ignore` skips revapi. It resolves in its own `revapi` group, with
+`revapi-java`, `revapi-basic-features` and `revapi-reporter-json` and what they depend on, beside the baseline.
+
 {% demos 40 %}
 
 ## Seeing every failure at once
