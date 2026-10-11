@@ -829,6 +829,11 @@ SpotBugs, a formatter - stay out of it. A test module is marked as test sources,
 module as ordinary sources, since other modules compile against it. A `pom.xml` module is one IDE module, its
 tests among its test sources and the libraries only they need in the test scope.
 
+What the build generates for a module - a parser from a grammar, classes from a schema, what an annotation processor
+writes - is listed as a generated source folder of that module, among its test sources where the tests generated it.
+The folder lies in the build's output, so the editor resolves the generated types, and a build after the grammar or
+the annotated class changed brings them up to date.
+
 Where a module's folder is its source folder, as in a `module-info.java` project, the IDE files land among the
 sources. The build leaves them out of every jar: an `.iml`, a `.classpath` or a `.project` file, and a
 `.settings/`, `.factorypath` or `.eclipse/` entry at the root of a source or resource folder never reach the
