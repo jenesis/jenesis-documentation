@@ -150,7 +150,11 @@ Explained in [Screening what comes in](/repository/screening/).
 
 | Key | Default | Level | Tier | Applies | Effect |
 | --- | --- | --- | --- | --- | --- |
+| `advisory-feeds` | *(empty)* | repository | advanced | at once | The advisory feeds that screen this repository's cached copies, by name and comma-separated, among those this deployment switches on; empty for every one but the OSV mirror, and 'none' for none. A name that is not on is an outage of every screen of the repository, decided by its screening mode. |
 | `allow-redeploy` | `false` | tenant | standard | at once | Off by default: release-version immutability refuses re-pointing an already-published immutable release coordinate at different bytes (a 409), a supply-chain / dependency-confusion guard. |
+| `closure-full-every` | `168` | deployment | advanced | at once | Every Nth closure pass visits every published version, resolving one that has none and re-deriving what each inherits; the passes between visit what was published since and what a copy's new finding or hold changed. |
+| `closure-interval` | `PT5M` | deployment | advanced | at once | How often newly published versions are resolved to their closures. |
+| `closure-resolution` | `true` | repository | essential | at once | Resolve each version published here to the transitive closure a build through this repository resolves, from what the repository holds and fetching nothing; the closure is how a version published here is screened, and what the Dependents page lists. |
 | `deny-list` | *(empty)* | deployment | standard | at once | Comma-separated coordinates an operator forbids; always refused. |
 | `deny-list-action` | `REJECT` | deployment | standard | at once | Verdict for a coordinate the deny list names. |
 | `github` | `false` | deployment | essential | at once | Consult the GitHub Advisory Database. |
@@ -164,6 +168,10 @@ Explained in [Screening what comes in](/repository/screening/).
 | `openssf-endpoint` | `https://api.osv.dev` | deployment | advanced | at once | The OSV API base URL serving the dataset, for a mirror or a proxy. |
 | `osv` | `false` | deployment | essential | at once | Consult the OSV (osv.dev) vulnerability feed. |
 | `osv-endpoint` | `https://api.osv.dev` | deployment | advanced | at once | The OSV API base URL, for a mirror or a proxy. |
+| `osv-export` | `https://osv-vulnerabilities.storage.googleapis.com/` | deployment | advanced | at once | Where OSV publishes its export, for a mirror or a proxy. |
+| `osv-mirror` | `false` | deployment | essential | at once | A local copy of the OSV database, drawn from its export and read instead of asking OSV about each version; it keeps nothing until a repository, or the deployment, names osv-mirror in its advisory feeds. |
+| `osv-mirror-rebuild` | `P7D` | deployment | advanced | at once | How often the mirror draws each ecosystem's export whole again; between, it follows OSV's change lists. |
+| `pending-rescreen-interval` | `PT15M` | deployment | advanced | at once | How often a copy served while an advisory feed could not answer is screened again. |
 | `policy-rules` | *(empty)* | tenant | standard | at once | Expression-based gate rules, one per line (or separated by ';'), each '&lt;verdict&gt; &lt;expression&gt;' where verdict is allow, quarantine or reject - e.g. 'quarantine #ecosystem == "npm" and #advisoryCount &gt; 0' or 'quarantine !#licenses.?[#this matches "(?i).*agpl.*"].empty'. |
 | `provenance-admission-action` | `QUARANTINE` | tenant | standard | at once | Verdict for an artifact whose inbound attestation fails verification - unsigned by a trusted key, signed for a different artifact, or an unexpected builder or source. |
 | `provenance-admission-builder` | *(empty)* | tenant | standard | at once | Comma-separated builder identities an inbound attestation must name, e.g. "https://github.com/acme/.github/workflows/release.yml@refs/tags/*". |
@@ -175,6 +183,7 @@ Explained in [Screening what comes in](/repository/screening/).
 | `scan-interval-millis` | `3600000` | deployment | advanced | at once | Milliseconds between scheduled scans; each pass hits the upstream feeds. |
 | `scan-lookback` | `PT1M` | deployment | advanced | at once | How far before the last full pass's stamp an incremental pass still looks. |
 | `scheduled-scan` | `true` | deployment | standard | at once | Re-scan every repository's inventory against the advisory feeds on a schedule. |
+| `screening-mode` | `HOLD` | repository | standard | at once | What the screen does when an advisory feed or a scanner cannot answer, and whether what it finds holds at all: `HOLD`, `ADMIT` or `RECORD`, which the console names Hold, Admit and Record only. |
 | `signal-refresh-interval-millis` | `300000` | deployment | advanced | at once | Milliseconds between passes that draw a mirroring security signal (the known-exploited catalogue) into its stored snapshot, so a gate decision renders that snapshot instead of fetching on the publish thread. |
 | `signature-attestation-lookup` | *(empty)* | tenant | advanced | at once | The attestation stores asked, by the artifact's digest, for the bundles they hold for an artifact just published, one &lt;ecosystem&gt; = &lt;url&gt; per line; the answer is kept beside the artifact and read as its evidence. |
 | `signature-invalid` | `REJECT` | tenant | standard | at once | Verdict for an artifact whose signature does not match its bytes - the artifact was altered after signing, or the signature was made for different content. |
@@ -348,9 +357,13 @@ Explained in [Proxying upstreams](/repository/proxying/).
 | --- | --- | --- | --- | --- | --- |
 | `immaturity-hold-days` | `2` | deployment | essential | at once | Quarantine proxied artifacts the upstream published within this many days; 0 disables. |
 | `proxy-allow-internal` | `false` | deployment | advanced | on restart | Permit proxy upstreams, and the download URLs an upstream document advertises, that are plain http or resolve to a loopback, private, link-local or cloud-metadata address. |
+| `proxy-artifact-limit` | `107374182400` | deployment | advanced | at once | The most bytes one artifact fetched from an upstream may have before the fill is abandoned and nothing of it is kept; zero lifts it. |
 | `proxy-enabled` | `true` | deployment | standard | at once | Proxy reads that miss locally from the upstreams, caching and bridging them. |
 | `proxy-fetch-deadline` | `PT0S` | deployment | advanced | at once | The longest one upstream fetch may take, from the request to the last byte, before it is abandoned. |
+| `proxy-request-timeout` | `PT1M` | deployment | advanced | at once | The longest an upstream fetch waits for the upstream to start answering before it is abandoned as unreachable. |
 | `proxy-throughput-floor` | `16384` | deployment | advanced | at once | The least an upstream fetch must deliver over each minute spent waiting on it, in bytes, or it is abandoned as the idle timeout abandons one that goes silent. |
+| `upstream-internal` | `false` | repository | advanced | at once | Treat what this repository fetches from its upstreams as the organisation's own: a copy is judged as a version published here is, asked of no advisory feed. |
+| `withhold-incomplete-screens` | `false` | deployment | advanced | at once | Hold for review a proxied artifact no inspector could read whole, rather than serving it with the incomplete screen recorded. |
 
 ### PyPI
 
@@ -359,6 +372,14 @@ Explained in [Proxying upstreams](/repository/proxying/).
 | Key | Default | Level | Tier | Applies | Effect |
 | --- | --- | --- | --- | --- | --- |
 | `pypi-provenance-url` | *(empty)* | deployment | advanced | on restart | Where the provenance document (PEP 740) of a proxied distribution is fetched from, the base of an integrity API answering &lt;base&gt;/&lt;project&gt;/&lt;version&gt;/&lt;file&gt;/provenance. |
+
+### Raw
+
+Explained in [Proxying upstreams](/repository/proxying/#upstream-documents).
+
+| Key | Default | Level | Tier | Applies | Effect |
+| --- | --- | --- | --- | --- | --- |
+| `raw-moving` | *(empty)* | repository | advanced | at once | The files of a raw repository proxying an upstream that the upstream rewrites in place, as globs under its root separated by commas - '**/latest.json' for the document naming Grype's current database; such a file is relayed and remembered for the upstream document ttl, and never kept. |
 
 ### Record lifetimes
 

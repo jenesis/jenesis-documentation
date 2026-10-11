@@ -1,7 +1,7 @@
 ---
 order: 7
 title: Screening what comes in
-description: The gate every artifact passes before it is served - its verdicts, the advisory and malware feeds, signatures and policy rules - and a repository's screening pages - Quarantine, Refused, Vulnerabilities, Findings and Signers.
+description: The gate every artifact passes before it is served - its verdicts, the advisory and malware feeds, a published version's closure, screening modes, signatures and policy rules - and a repository's screening pages - Quarantine, Refused, Vulnerabilities, Findings and Signers.
 ---
 
 Every artifact passes a **gate** before the repository serves it - whether a client published it or the
@@ -26,8 +26,8 @@ console.
 
 | Check | Default | Settings |
 | --- | --- | --- |
-| **Known vulnerabilities** - advisories at or above a severity band | Quarantine at `CRITICAL` | `vulnerability-threshold`, `vulnerability-action` |
-| **Malicious packages** - packages a curated feed marks malicious | Reject | `malware-action` |
+| **Known vulnerabilities** - advisories at or above a severity band, for what is fetched from an upstream | Quarantine at `CRITICAL` | `vulnerability-threshold`, `vulnerability-action` |
+| **Malicious packages** - packages a curated feed marks malicious, for what is fetched from an upstream | Reject | `malware-action` |
 | **The deny list** - coordinates you forbid outright | Reject | `deny-list`, `deny-list-action` |
 | **Signatures** - an untrusted signer, a signature that does not match its bytes, a coordinate whose signer changed | Reject a broken signature, quarantine a changed signer, allow an untrusted signer and record it on the version | `signature-untrusted`, `signature-invalid`, `signature-signer-changed` |
 | **Provenance** - build attestations that name the wrong builder or source | Quarantine, once you name what to expect | `provenance-admission-*` |
@@ -36,6 +36,11 @@ console.
 
 Every setting here is under **Settings → Settings**, in the **Compliance** group, and takes effect at once
 unless it says it needs a restart.
+
+The advisory feeds are asked about what the repository fetches from an upstream, by its coordinate. A version
+published into the repository is asked of no feed: it is your own code, and a feed knows nothing about it. It is
+screened instead through what it relies on, as [What a published version relies
+on](#what-a-published-version-relies-on) describes.
 
 ## Switching the feeds on
 
@@ -51,17 +56,80 @@ you say so**. Three feeds ship with the image, each off by default:
 Switch them on during **Setup**, or in **Settings → Settings**; the gate screens with a feed from the moment it is
 switched on, with no restart. Each feed has an endpoint setting beside it (`osv-endpoint`, `github-endpoint`, `openssf-endpoint`) for a mirror or a proxy.
 
+A switched-on feed screens every repository. A repository can narrow that with its own `advisory-feeds` setting: the
+names of the feeds that screen it, comma-separated, or `none` for none. A feed's switch and its endpoint stay the
+deployment's, so a repository chooses only among the feeds that are on, and naming one that is off is treated as
+that feed being unreachable rather than quietly screening with fewer.
+
 <div class="warning">
-  A feed fails closed. While it is on and cannot be reached, a publish it would have screened is held for review
-  rather than admitted unscreened - so switch a feed on only where the deployment can reach it, and read a held
-  artifact's reason before taking it for a verdict on the content.
+  A feed fails closed by default. While it is on and cannot be reached, an artifact it would have screened is held
+  for review rather than served unscreened - so switch a feed on only where the deployment can reach it, and read a
+  held artifact's reason before taking it for a verdict on the content. A repository's screening mode changes this,
+  as [When a feed cannot answer](#when-a-feed-cannot-answer) describes.
 </div>
 
-Beyond checking each publish, the repository **re-scans everything it already holds** against the feeds on a
-schedule - hourly by default (`scheduled-scan`, `scan-interval-millis`) - so an advisory published after an
-artifact was accepted still reaches it. What it holds is both what was published into it and every copy it cached
-from an upstream: a cached copy is re-checked as a release is, and what a scan finds about it lands on
-**Vulnerabilities** and **Findings** beside the rest. The maintainer-health scan covers both the same way.
+Beyond checking each fetch, the repository **re-scans every copy it already holds** against the feeds on a
+schedule - hourly by default (`scheduled-scan`, `scan-interval-millis`) - so an advisory published after a copy was
+fetched still reaches it, and what a scan finds lands on **Vulnerabilities** and **Findings**. Every 24th pass
+(`scan-full-every`) asks about every copy. The passes between ask about the copies fetched since, and about every
+package whose records a feed's published change list says changed.
+
+### A local copy of OSV
+
+`osv-mirror` keeps a copy of the OSV database inside the deployment, drawn from OSV's public export for the
+ecosystems the repositories using it hold. A screen then reads that copy instead of asking OSV about each version,
+so screening needs no outbound call at fetch time and a scan costs no request per version. The copy follows OSV's
+change lists and is drawn whole again every seven days (`osv-mirror-rebuild`); `osv-export` points it at a mirror of
+the export.
+
+Switching it on keeps nothing yet: a repository uses the copy only when its `advisory-feeds` names `osv-mirror`, and
+setting that at the deployment level names it for every repository. An ecosystem's first copy is its whole export -
+hundreds of megabytes for the largest - and until it lands, what it would screen is treated as a feed that cannot
+answer.
+
+## What a published version relies on
+
+A version published into the repository is resolved to its **closure**: every package its declared dependencies
+reach, and theirs in turn, each the newest version the repository holds that its requirement admits. It is the set a
+build through this repository resolves. The closure is read from what the repository and the repositories its
+fallbacks name already hold, and nothing is fetched to make it, so a dependency the repository does not hold is
+listed as unresolved.
+
+The closure is how a published version is screened. The version's page shows it under **Resolved closure**, with
+the versions it reaches that are held for review or carry findings, and the dependencies each is reached through. A
+new finding or hold on one of those copies reaches the versions relying on it within a pass, and a release or a
+withdrawn advisory clears it the same way. The signal is shown, not enforced: a published version is never held
+because something it relies on is vulnerable.
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `closure-resolution` | `true` | Resolves each version a repository publishes; a repository setting |
+| `closure-interval` | `PT5M` | How long a new version waits to be resolved |
+| `closure-full-every` | `168` | Every how many passes one revisits every published version, which is how a version published before resolution was on is resolved |
+
+The other direction is the **Dependents** page, under the repository's **Provenance** topic: for a package, or one
+version of it, the published versions of the tenant whose closure reaches it, each with the path it is reached along,
+and the versions in this repository whose manifest declares the package, with the requirement each states. On the command line,
+`jenrepo closure <repo> <ecosystem> <coordinate> <version>` prints a closure and `jenrepo dependents <repo>
+<ecosystem> <coordinate>` its dependents.
+
+## When a feed cannot answer
+
+A repository's `screening-mode` says what the screen does when an advisory feed or a scanner cannot answer, and
+whether what it finds holds at all:
+
+| Mode | What happens |
+| --- | --- |
+| **Hold** (`HOLD`, the default) | An artifact the screen could not clear is held for review, with the outage named. |
+| **Admit** (`ADMIT`) | The artifact is decided by every check that could answer and served when they allow it, with the check that could not answer recorded among its reasons. |
+| **Record only** (`RECORD`) | Nothing is held for what the screen found or could not find; every finding is recorded and the artifact is served. |
+
+**Record only** is the mode to run while screening is rolled out over what a repository already serves: the findings
+pile up for review and no build breaks. The deny list refuses in every mode, and a hardened proxy screens strictly in
+every mode.
+
+A copy served under **Admit** while a feed was down is screened again once the feed answers, every fifteen minutes by
+default (`pending-rescreen-interval`), and held then if the feed flags it.
 
 ## Rules of your own
 
@@ -123,8 +191,9 @@ and often the only one.
 
 ## Vulnerabilities
 
-**Vulnerabilities** lists the advisories that apply to what the repository holds - its releases and its cached
-copies - from the last scan, and says when that scan ran. A version whose findings reach `vulnerability-risk-threshold`,
+**Vulnerabilities** lists the advisories that apply to the copies the repository cached from an upstream, from the
+last scan, and says when that scan ran. A version published here carries none of its own: what it relies on is on its
+page. A version whose findings reach `vulnerability-risk-threshold`,
 `LOW` by default, is marked as a risk on its package's list of versions and on its own page; what is held stays the
 vulnerability threshold's to decide. **Rescan against the advisory feeds** starts a fresh one in the background; the page shows it running and refreshes
 itself until it finishes. With no feed switched on, the page says so and links to the settings that change it.

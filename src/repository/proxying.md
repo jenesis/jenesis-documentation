@@ -167,6 +167,10 @@ An upstream must be `https` on a public address: a plaintext URL, or one that re
 cloud-metadata address, is refused unless `proxy-allow-internal` permits it - a fetch carries your credentials,
 and an unscreened address would turn the proxy into a way into your own network.
 
+An upstream that is your own - another instance this repository's builds publish to - can be marked so with the
+repository's `upstream-internal` setting. A copy fetched from it is then judged as a version published here is: asked
+of no advisory feed, and held to the publishing licence and signature rules. Leave it off for a public registry.
+
 ## What happens on a miss
 
 A request is always answered locally first. On a miss, the repository fetches from the upstream and:
@@ -188,7 +192,10 @@ does not flood the upstream.
 
 A fetch that stalls is given up rather than held open: an upstream that delivers less than 16 KiB over any minute
 spent waiting on it is abandoned, as one that goes silent is, while a large file on a slow but steady link still
-lands. `proxy-throughput-floor` changes the floor, and `0` removes it.
+lands. `proxy-throughput-floor` changes the floor, and `0` removes it. An upstream that has not started answering
+within a minute is treated as unreachable (`proxy-request-timeout`), and a fetch is abandoned, nothing of it kept,
+once one artifact passes 100 GiB (`proxy-artifact-limit`, `0` for no limit), so an endless body cannot fill the
+store.
 
 Where an index names each artifact's download URL, the served copy points those URLs back at this repository, so
 a client installs through it rather than straight from the upstream. A Helm chart repository is one: the
@@ -232,6 +239,10 @@ key when every metadata file it names carries its checksum in its name, as `crea
 of those files is gone upstream, the node forgets the family and fetches the current one. A suite or repository that
 cannot be pinned this way is relayed fresh on every read. So is the RubyGems compact index: `/versions` names each
 gem's `info` file by a digest no upstream address serves it by, so the two can only agree when read at one moment.
+
+A raw repository keeps every file it fetches, except the ones named in its `raw-moving` setting - globs under
+its root, comma-separated, such as `**/latest.json` for the document naming Grype's current database. Those are
+files the upstream rewrites in place, so they are relayed and remembered as a document is, and never kept.
 
 A Hugging Face branch is resolved to its commit, and that resolution is remembered for the same six hours, so a
 burst of downloads from one branch costs the upstream one lookup, and a branch that moved resolves again once it is
