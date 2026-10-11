@@ -25,6 +25,8 @@ build. Nothing else is needed - the file's presence is the switch, and its conte
 | `pmd.xml` | PMD | source files |
 | `spotbugs-exclude.xml` | SpotBugs | compiled classes |
 | `forbiddenapis.properties` | forbiddenapis | compiled classes |
+| `jdeps.properties` | the JDK's jdeps | compiled classes |
+| `jdeprscan.properties` | the JDK's jdeprscan | compiled classes |
 | `detekt.yml` | detekt (Kotlin) | source files |
 | `.editorconfig` | ktlint (Kotlin) | source files |
 | `scalastyle-config.xml` | Scalastyle | source files |
@@ -32,7 +34,7 @@ build. Nothing else is needed - the file's presence is the switch, and its conte
 | `codenarc.xml` | CodeNarc (Groovy) | source files |
 
 The source linters run **in parallel with compilation**, since they read sources rather than classes;
-SpotBugs and forbiddenapis run once the classes exist. Each tool resolves in its own dependency group (named after the tool,
+SpotBugs, forbiddenapis, jdeps and jdeprscan run once the classes exist. Each tool resolves in its own dependency group (named after the tool,
 kept apart from your project's own dependencies), floats a `RELEASE` version until pinned, and runs in a
 forked JVM. A tool whose language is not present skips itself: a stray `detekt.yml` in a pure-Java
 project does nothing.
@@ -40,7 +42,7 @@ project does nothing.
 ### Report, strict or ignore
 
 Each linter has one setting that says what its findings do: `jenesis.source.<tool>` for the source linters and
-`jenesis.validator.<tool>` for SpotBugs and forbiddenapis, set on the command line or in `jenesis.properties`.
+`jenesis.validator.<tool>` for the tools that read compiled classes, set on the command line or in `jenesis.properties`.
 
 | Value | The linter |
 | --- | --- |
@@ -59,7 +61,7 @@ number of findings and where its report is:
 `-Djenesis.print.findings=false` leaves that line out, whatever the linter's setting. Under `strict`, as
 `-Djenesis.source.checkstyle=strict`, Checkstyle, PMD, detekt, ktlint, Scalastyle and scalafmt fail as their own
 exit code decides, so a Checkstyle finding at severity `warning` is reported but does not fail the build.
-SpotBugs, CodeNarc and forbiddenapis fail on any finding their report holds.
+SpotBugs, CodeNarc, forbiddenapis, jdeps and jdeprscan fail on any finding their report holds.
 
 Reporting covers findings, not a tool that never ran. A linter that fails on its own configuration, and so
 writes no complete report, fails its step either way.
@@ -94,7 +96,7 @@ deleting its configuration file:
 | Property | Covers |
 | --- | --- |
 | `jenesis.source.<tool>` | `checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc` |
-| `jenesis.validator.<tool>` | `spotbugs`, `forbiddenapis` |
+| `jenesis.validator.<tool>` | `spotbugs`, `forbiddenapis`, `jdeps`, `jdeprscan` |
 
 For example, `-Djenesis.source.checkstyle=ignore` keeps `checkstyle.xml` in place but skips Checkstyle, while
 PMD and SpotBugs still run.
@@ -133,6 +135,37 @@ java.lang.Thread#<init>(java.lang.Runnable)
 Any other key fails the build, and so does a file named under `signatures` that is missing or outside the
 folder. The report, `reports/forbiddenapis/forbiddenapis.txt`, holds one line per finding: the call, the
 reason and where it was made.
+
+### JDK internals and removals
+
+Two tools that ship with the JDK check what the compiled classes, the tests' included, ask of the JDK. They
+resolve nothing, and each is switched on by its own file, which may be empty.
+
+A `jdeps.properties` runs `jdeps --jdk-internals`. It reports every JDK internal API a class uses, with the
+replacement jdeps suggests:
+
+```text
+sample.Legacy -> sun.misc.Unsafe: JDK internal API (jdk.unsupported), instead: See https://openjdk.org/jeps/260
+```
+
+Its one key, `accept`, names internal classes or packages that a project uses on purpose, as `accept=sun.misc`,
+and these are then no finding. A multi-release dependency is read as the JDK running the build would load it.
+
+A `jdeprscan.properties` runs `jdeprscan --for-removal`. It reports every use of an API that the JDK has
+scheduled for removal:
+
+```text
+sample/Legacy uses deprecated method java/lang/Thread::stop()V (forRemoval=true)
+```
+
+`removal=false` reports every deprecated API instead, and `release=<n>` checks the deprecations of that Java
+release. A class whose dependencies are not on the module's compile class path fails the check, naming them,
+rather than going unscanned.
+
+Both use the tool of the JDK the build runs on. Running a build on a newer JDK, as
+`-Djenesis.toolchain.version=<n>` does, therefore shows what that JDK has encapsulated or scheduled for
+removal before the code runs on it. Their reports are `reports/jdeps/jdeps.txt` and
+`reports/jdeprscan/jdeprscan.txt`, one finding per line.
 
 {% demos 34, 42, 45, 47 %}
 
@@ -282,7 +315,7 @@ After a rewrite, a plain build passes the verify gate again.
 ## Where the reports land
 
 Every tool writes its findings into a `reports/<kind>/` folder under its step's output, for example
-`reports/checkstyle/checkstyle-report.xml`, `reports/pmd/`, `reports/spotbugs/`, `reports/forbiddenapis/`. You rarely need the exact
+`reports/checkstyle/checkstyle-report.xml`, `reports/pmd/`, `reports/spotbugs/`, `reports/forbiddenapis/`, `reports/jdeps/`. You rarely need the exact
 path, because a **`stage` build collects every report from every module into one place**, each kind in its own
 subfolder:
 
