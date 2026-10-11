@@ -194,6 +194,26 @@ tests alone. Which engines a module's tests need does not change from one run to
 file of the module rather than a setting. JUnit 4 and TestNG run no platform engine, so they refuse the key. The JUnit Platform's console launcher must be
 1.5 or newer; an older one is refused, naming the versions to raise.
 
+### Running the tests of a dependency
+
+A module can run test classes that another module or a jar holds, as Surefire's `dependenciesToScan` does. The
+`scan` key of its `test.properties` names those dependencies, each by module name or as `<groupId>/<artifactId>`:
+
+```properties
+scan=demo.suite
+```
+
+The test classes of the named jars run among the module's own, chosen by the same naming rules, filters and tags.
+A named dependency must be on the module's test path, or the build fails naming what to declare. In a `pom.xml`
+project, Surefire's `<dependenciesToScan>` is read as the same key, and a `test.properties` replaces it.
+
+The same key runs one set of tests twice with different settings, where Maven declares a second Surefire
+execution and Gradle a second `Test` task. Each run is a module of its own: two modules require the module that
+holds the tests, scan it, and pass their own JVM options and system properties in their own
+`process-test.properties`.
+
+{% demos 74 %}
+
 ### Tests that read their resources as files
 
 The tests run against the packaged test jar, so a resource a test loads with `getResource` is an entry

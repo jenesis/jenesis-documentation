@@ -145,6 +145,7 @@ export default {
         { slug: "demo-71-reproducible", name: "Reproducible builds", blurb: "A jar checked against a SHA-256 recorded in the demo, on Linux, macOS and Windows in CI." },
         { slug: "demo-72-native-image", name: "Native image", blurb: "A GraalVM native binary built end to end, with reachability metadata captured from the tests." },
         { slug: "demo-73-jpx", name: "Running a released program", blurb: "jpx installs and launches a published tool - named as a module and as a coordinate, pinned and hash-verified." },
+        { slug: "demo-74-test-runs", name: "Test runs", blurb: "One module's tests run twice, by two modules that scan its jar with different settings, and as Surefire's dependenciesToScan in a pom.xml." },
       ],
     },
   ],
