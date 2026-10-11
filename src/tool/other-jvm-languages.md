@@ -160,3 +160,28 @@ Java + Kotlin is one Dokka document, Java + Groovy one groovydoc document. Any m
 Kotlin together with Groovy, splits the output, with `javadoc` rendering the Java at the archive root and
 each remaining language in its own subfolder. Either way the produced `-javadoc.jar` always has a root
 `index.html`, so it satisfies a repository like Maven Central.
+
+### Configuring Dokka
+
+A `dokka.properties` in the module's configuration folder takes the options the Dokka Gradle plugin and the
+`dokka-maven-plugin` take. Every key is optional, and an unknown one fails the build:
+
+| Key | Value |
+| --- | --- |
+| `module-name` | the name the pages give the module, `documentation` unless set |
+| `includes` | Markdown files with the module and package documentation, comma-separated |
+| `format` | `html`, the default, or `javadoc` for javadoc-styled pages |
+| `documented-visibilities` | any of `public`, `protected`, `internal`, `private` and `package` |
+| `suppress-obvious-functions`, `skip-empty-packages` | `true` unless set to `false` |
+| `suppress-inherited-members`, `skip-deprecated`, `report-undocumented` | `false` unless set to `true` |
+| `suppressed-packages` | regular expressions of packages to leave out, comma-separated |
+| `fail-on-warning` | `true` fails the build on a warning of Dokka's |
+| `jdk-version` | the Java feature release the JDK links point at |
+| `source-link`, `source-link-suffix` | the URL of the module's sources, and the line suffix, `#L` unless set |
+| `external-link.<name>`, `external-link.<name>.package-list` | documentation to link to, and its package list |
+| `custom-assets`, `custom-styles`, `footer-message` | files and a footer for the HTML pages |
+
+A file the keys name is resolved against the module's own folder, and is an input of the build: editing it renders
+the documentation again. Dokka failing, including on a warning under `fail-on-warning=true`, fails the build.
+
+{% demos 41 %}
