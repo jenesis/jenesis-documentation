@@ -187,13 +187,11 @@ Each switches off with `jenesis.format.java`, `jenesis.format.ktlint`, `jenesis.
 ### Licence headers
 
 A `license-header.txt` in a configuration folder holds the header every Java, Kotlin, Scala and Groovy source of the
-module starts with, written as plain text or already as a comment. `$YEAR` in it stands for any year or range of
-years, such as `2016-2026`. A source without the header, or with a different one, fails the build, as a formatter
-does. Under `-Djenesis.format.rewrite=true` the header is inserted, or replaces a leading comment that names a
-copyright or a licence, keeping the year it names. The build writes no year of its own, so a rewrite gives the
-same sources whenever it runs: a header whose `$YEAR` it would have to choose fails the rewrite, naming the
-file, and the year goes into `license-header.txt` or the header into that file by hand. Generated sources are not
-checked, and `jenesis.format.license=false` switches the check off.
+module starts with, written as plain text or already as a comment. The header is taken exactly as it stands, a year
+included: a source without it, or with a different one, fails the build, as a formatter does. Under
+`-Djenesis.format.rewrite=true` the header is inserted as it stands, or replaces a leading comment that names a
+copyright or a licence, so a rewrite gives the same sources whenever it runs. Generated sources are not checked,
+and `jenesis.format.license=false` switches the check off.
 
 ### Verify mode, and how to reformat
 
