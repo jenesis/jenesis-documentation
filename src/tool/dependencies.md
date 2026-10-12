@@ -115,7 +115,7 @@ A repository that answers `429 Too Many Requests` limits how often your machine 
 retries, and when the answer stays the same it fails, naming the remedy: build again later, or configure a
 mirror of that repository in its place - for the Maven remotes in `jenesis.maven.uri` or `MAVEN_REPOSITORY_URI`.
 
-{% demos 70 %}
+{% demos 73 %}
 
 ### What the build tells the module index
 
@@ -355,7 +355,10 @@ The alias travels with the jar: its manifest records it as `Jenesis-Aliases`, so
 a downstream module that never pulls an optional dependency in, or excludes it, ignores it, and an alias a
 parent POM declares names its jar only in the modules that resolve it.
 
-Aliases reach an artifact by its Maven coordinate, which the strict `modular` layout does not use. A
+An alias names an artifact, never one of its classifiers: a pin of the artifact,
+`@jenesis.pin <groupId>/<artifactId> :<classifier>[:<version>]`, selects a variant. Aliases reach an artifact by its Maven
+coordinate, which the strict `modular` layout does not use, so an alias there fails the build and names
+`-Djenesis.project.layout=modular_to_maven`. A
 `pom.xml` project declares the same lines in a `<!--jenesis.alias ... -->` comment of the POM, one per line,
 and a module inherits those of a local parent. That is how the `module-info.java` a `pom.xml` build compiles in
 a multi-release overlay requires a jar that declares no module name:

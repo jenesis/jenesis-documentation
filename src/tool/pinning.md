@@ -134,7 +134,28 @@ module demo.classifier {
 ```
 
 The pin stays keyed by the bare module name, so it applies wherever that module turns up in the closure -
-directly or transitively - and exactly one variant is ever present, mirroring the module path's own rule.
+directly or transitively - and exactly one variant is ever present, mirroring the module path's own rule. The
+classified jar takes the place of the module's own jar on every path, and the pin's checksum describes the
+classified jar. This works in both modular layouts, and for a module named by an
+[alias](/tool/dependencies/#naming-a-library-that-has-no-module-name) as well.
+
+A module of the same build is selected by its classifier alone, without a version or a checksum, since it is
+resolved as it is built:
+
+```java
+/**
+ * @jenesis.pin demo.natives :platform-a
+ */
+module demo.app {
+    requires demo.natives;
+}
+```
+
+It resolves to the variant declared by that module's
+[`classifiers.properties`](/tool/publishing/#publishing-variants-of-a-jar). Where that file declares the classifier
+only in a profile that is not active, the build fails and names the profile to activate; where no file declares
+it, the build names the file to write. A `pom.xml` selects a variant of a module of the same build with a
+`<classifier>` on the dependency, as Maven does.
 
 ### Choosing the variant per machine
 
@@ -161,13 +182,11 @@ host, and how a free-form token (`fips`, `musl`) names a build flavour of your o
 works on a `pom.xml`'s `<!--jenesis.pin ... -->` block, where it selects a coordinate's version per platform.
 
 <div class="warning">
-  Two corner cases to know. Classifier pins resolve through the <strong>module index</strong> only, so
-  they need the <code>modular</code> layout: a classified artifact shares its coordinate's POM, so
-  <code>modular_to_maven</code> has no per-classifier POM to translate through. And two equally specific
-  guards fail the build, while an unmatched guard with no fallback simply leaves the module unpinned.
+  Two equally specific guards fail the build, while an unmatched guard with no fallback simply leaves the
+  module unpinned.
 </div>
 
-{% demos 28, 29 %}
+{% demos 28, 29, 72 %}
 
 ## Enforcing the pins
 

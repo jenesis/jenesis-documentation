@@ -167,7 +167,7 @@ Both use the tool of the JDK the build runs on. Running a build on a newer JDK, 
 removal before the code runs on it. Their reports are `reports/jdeps/jdeps.txt` and
 `reports/jdeprscan/jdeprscan.txt`, one finding per line.
 
-{% demos 37, 46, 49, 51 %}
+{% demos 37, 46, 50, 52 %}
 
 ## Analysis inside the compiler
 

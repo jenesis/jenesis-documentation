@@ -136,7 +136,7 @@ by default.
   run <code>export</code> on the host.
 </div>
 
-{% demos 57 %}
+{% demos 58 %}
 
 ## Running the launched program in a container
 
@@ -161,7 +161,7 @@ image and the runtime image can differ**.
   <code>false</code> to suppress.
 </div>
 
-{% demos 57 %}
+{% demos 58 %}
 
 ## The build cache
 Every build already has an *incremental* cache: Jenesis content-hashes each step's inputs and outputs under
@@ -279,4 +279,4 @@ Eviction runs on write and goes by file timestamp, which `touch` keeps fresh on 
   <code>false</code> turns the cache off entirely.
 </div>
 
-{% demos 56 %}
+{% demos 57 %}
