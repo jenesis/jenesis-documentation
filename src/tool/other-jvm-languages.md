@@ -127,7 +127,7 @@ instead, as the `kotlinc` command passes them, so the last line gives that JVM `
 Kotlin compiles incrementally with one setting, as Gradle compiles it by default:
 
 ```bash
-java -Djenesis.compile.kotlin.incremental=true build/jenesis/Make.java
+java -Djenesis.kotlin.incremental=true build/jenesis/Make.java
 ```
 
 The first build compiles every source and keeps the compiler's own records beside the classes. After an edit,
