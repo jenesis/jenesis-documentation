@@ -204,8 +204,9 @@ scan=demo.suite
 ```
 
 The test classes of the named jars run among the module's own, chosen by the same naming rules, filters and tags.
-A named dependency must be on the module's test path, or the build fails naming what to declare. In a `pom.xml`
-project, Surefire's `<dependenciesToScan>` is read as the same key, and a `test.properties` replaces it.
+A named dependency must be on the module's test path, or the build fails naming what to declare. A `pom.xml`
+project names them in the same key, in `src/test/build.jenesis/test.properties`: no plugin block of a `pom.xml` is
+read, so Surefire's `<dependenciesToScan>` configures Maven alone.
 
 The same key runs one set of tests twice with different settings, where Maven declares a second Surefire
 execution and Gradle a second `Test` task. Each run is a module of its own: two modules require the module that
