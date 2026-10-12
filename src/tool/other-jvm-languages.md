@@ -44,7 +44,7 @@ already produced.
   <code>.java</code> sources for resolution.
 </div>
 
-{% demos 45, 48, 50 %}
+{% demos 45, 49, 51 %}
 
 ## Which packages you can export
 

@@ -150,6 +150,10 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | A toolchain | `-Djenesis.toolchain.version` |
 | Tests on another JDK, Surefire's `jvm` or a `Test` task's `javaLauncher` | The whole build again with `-Djenesis.toolchain.version`, as a CI matrix leg |
 | A `-tests` jar | `-Djenesis.stage.tests=true` |
+| `maven-jar-plugin` executions with a `<classifier>`, `build-helper`'s `attach-artifact` | A [`classifiers.properties`](/tool/publishing/#publishing-variants-of-a-jar) naming each variant's folders |
+| `os-maven-plugin`'s `${os.detected.classifier}` | One profile per platform, each holding that platform's `classifiers.properties` |
+| A native build run by `exec-maven-plugin` or `maven-antrun-plugin`, Gradle's `cpp-library` | A plugin at `binary/compiled` that writes the library into a folder `classifiers.properties` names |
+| `javac -h`, as `maven-compiler-plugin`'s `<headerOutputDirectory>` or Gradle's `options.headerOutputDirectory` | The same plugin's [header step](/tool/extending-the-build/#compiling-native-code), the build's `javac` step with `headers(true)` |
 | `maven.deploy.skip`, `maven.install.skip` | `stage=false` in the module's `packaging.properties`, which keeps it out of `export` and `release` alike |
 | The flatten-maven-plugin's `flattenDependencyMode=all` | None: a published POM names what the module declares, and a consumer's resolution decides the rest - see [what the published POM names](/tool/publishing/#what-the-published-pom-names) |
 
