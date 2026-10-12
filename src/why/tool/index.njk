@@ -40,6 +40,13 @@ eleventyExcludeFromCollections: true
         <li>Uses the tools the JDK ships</li>
         <li>Reads a <code>pom.xml</code> too</li>
       </ul>
+      <div class="lp-agent" aria-labelledby="agent-label">
+        <p class="lp-agent__label" id="agent-label">Moving a build with a coding agent? Hand it this prompt.</p>
+        <div class="lp-agent__prompt">
+          <code id="agent-prompt">Run `curl -fsSL https://get.jenesis.build | bash` in the root of this project, then run `java build/jenesis/Make.java prompt/migrate` and carry out the task it prints.</code>
+          <button class="lp-button lp-button--small" type="button" data-copy="agent-prompt" aria-describedby="agent-label">Copy prompt</button>
+        </div>
+      </div>
     </div>
 
     <figure class="lp-terminal" aria-label="A Jenesis project and its build command">

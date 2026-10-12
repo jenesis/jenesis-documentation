@@ -1,4 +1,4 @@
-// The landing pages' one behaviour: tabs that follow the ARIA tabs pattern.
+// The landing pages' behaviour: tabs that follow the ARIA tabs pattern, and buttons that copy a text to the clipboard.
 (function () {
   document.querySelectorAll("[data-tabs]").forEach(function (tabs) {
     var list = Array.prototype.slice.call(tabs.querySelectorAll('[role="tab"]'));
@@ -26,6 +26,36 @@
           next.focus();
         }
       });
+    });
+  });
+})();
+
+(function () {
+  function copy(text) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+    var field = document.createElement("textarea");
+    field.value = text;
+    field.setAttribute("readonly", "");
+    field.setAttribute("aria-hidden", "true");
+    field.style.position = "fixed";
+    field.style.opacity = "0";
+    document.body.appendChild(field);
+    field.select();
+    var copied = document.execCommand("copy");
+    document.body.removeChild(field);
+    return copied ? Promise.resolve() : Promise.reject();
+  }
+
+  document.querySelectorAll("[data-copy]").forEach(function (button) {
+    var label = button.textContent;
+    button.setAttribute("aria-live", "polite");
+    button.addEventListener("click", function () {
+      copy(document.getElementById(button.getAttribute("data-copy")).textContent).then(function () {
+        button.textContent = "Copied";
+      }, function () {
+        button.textContent = "Select and copy";
+      });
+      setTimeout(function () { button.textContent = label; }, 2000);
     });
   });
 })();
