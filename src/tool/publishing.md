@@ -158,31 +158,14 @@ same one, and a module under the `modular` layout, which has no Maven coordinate
 
 ### What the published POM names
 
-A published POM names either what the module declares or its whole resolved closure. The `flatten` key of the
-module's `packaging.properties` chooses, and its default follows the build declaration:
+A published POM names what the module declares, each dependency at the version the build resolved, and a
+consumer finds the rest through those dependencies' own POMs. A consumer's own resolution then settles every
+version beneath, as it settles any other: a version it overrides takes the dependencies of that version with
+it, and nothing the module once resolved is kept beside it.
 
-| Build declaration | Default | The published POM names |
-| --- | --- | --- |
-| `pom.xml` | `flatten=false` | the dependencies the module declares |
-| `module-info.java` | `flatten=true` | the resolved closure |
-
-```properties
-# app/META-INF/build.jenesis/packaging.properties - publish what app requires, not its closure
-flatten=false
-```
-
-With `flatten=true`, the POM lists every artifact the module compiles and runs against, at the version it
-resolved to, each a direct dependency of its own. Because the list is already complete, every entry also
-excludes everything beneath it, as `*:*`, so a consumer inherits exactly what this build verified rather than
-re-deriving those subtrees from today's POMs. Nothing is hidden by that: each artifact is a first-class
-dependency, so dependency management and version overrides still reach it. What only an optional dependency
-brings is left out, as Maven leaves it to a consumer that declares that dependency itself, and an optional
-dependency that a required one also brings at run time is published as required.
-
-With `flatten=false`, the POM lists what the module declares, each at the version the build resolved, and a
-consumer finds the rest through those dependencies' own POMs. A `pom.xml` module publishes every dependency
-it declares but those of `test` scope, with their `<optional>` and `<exclusions>`. A module declaration publishes each module it
-requires as the Maven artifact that module resolved to, a sibling module as its published coordinate:
+A `pom.xml` module publishes every dependency it declares but those of `test` scope, with their `<optional>`
+and `<exclusions>`. A module declaration publishes each module it requires as the Maven artifact that module
+resolved to, a sibling module as its published coordinate:
 
 | In `module-info.java` | In the published POM |
 | --- | --- |
@@ -191,7 +174,7 @@ requires as the Maven artifact that module resolved to, a sibling module as its 
 | `@jenesis.exclude` | the `<exclusions>` of the dependency it names |
 
 Nothing is published as optional. A `requires` that resolved to no Maven artifact has nothing to be named by,
-so the build fails and names `flatten=true` as the remedy.
+so the build fails and names the `@jenesis.alias` that gives it one.
 
 ### Pointing a release at its sources
 
