@@ -92,6 +92,13 @@ once its user configures their repository. Other ecosystems already work this wa
 [proxy and a checksum database](https://go.dev/ref/mod#private-module-privacy) as a cache and a ledger, not as a
 place every module must be uploaded to.
 
+The file also lets the community adopt new coordinates without waiting for a central repository to support them.
+A reader ignores the keys it does not know, so a new convention needs only authors who publish it and tools that
+read it. This proposal already resolves a library by its module name, through the
+[`module` key](#pure-module-repositories). Other conventions could follow, such as a key naming the
+[JBang catalog](https://www.jbang.dev/documentation/jbang/latest/alias_catalogs.html) of a domain's scripts, or one
+resolving a bundle by its [OSGi symbolic name](https://docs.osgi.org/specification/osgi.core/8.0.0/framework.module.html#framework.module.bsn).
+
 A discovery file may name Maven Central itself, so nothing changes for an author who publishes there. And a
 project can move elsewhere by changing the file, as a website moves to another host without changing its address.
 
