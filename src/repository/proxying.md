@@ -182,8 +182,9 @@ A request is always answered locally first. On a miss, the repository fetches fr
 - **keeps it**, so the next request is a local hit that never reaches the upstream.
 
 The digests checked are the ones a registry advertises: an npm version's `integrity` or `shasum`, the `#sha256=` a
-PyPI page links a file with, the checksum a Debian `Packages` index or an RPM repository's `primary.xml` lists, a
-Helm chart's `digest`, the checksum database's hash of a Go module, an image layer's `sha256:` name, and their kind.
+PyPI page links a file with, the checksum a Debian `Packages` or `Sources` index or an RPM repository's
+`primary.xml` lists, a Helm chart's `digest`, the checksum database's hash of a Go module, an image layer's `sha256:`
+name, and their kind.
 A fetched file that does not match is not kept, not served, and fetched again on the next request. A checksum the
 *publisher* uploaded beside a file - a Maven or Ivy `.sha1`, a Conan `conanmanifest.txt` - is not one of them: it is
 relayed as the upstream serves it, for the client to check, and the file is kept without it being read. A definite
