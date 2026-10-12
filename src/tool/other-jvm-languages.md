@@ -122,7 +122,7 @@ A `process-kotlinc.properties` in a configuration folder hands `kotlinc` argumen
 Each line is an argument of the compiler. A `-J<option>` line or a `-D` line goes to the JVM that runs it
 instead, as the `kotlinc` command passes them, so the last line gives that JVM `-Xss4m`.
 
-## Compiling incrementally
+## Compiling Kotlin incrementally
 
 Kotlin compiles incrementally with one setting, as Gradle compiles it by default:
 
