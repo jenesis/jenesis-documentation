@@ -321,6 +321,12 @@ to return `false` when the output is large against what it costs to produce, or 
 something the machine already has. The output is still cached locally, so a rebuild on this machine still
 skips the work. See *[the build cache](/tool/build-performance-and-isolation/#the-build-cache)*.
 
+A step whose output cannot come out the same twice by its nature - a report that records when it ran, or a
+measurement - overrides `shouldReproduce()` to return `false`. A build checked with
+`jenesis.project.reproduce` then leaves it out of the comparison, as described in
+*[Checking that a build reproduces](/tool/building-and-running/#checking-that-a-build-reproduces)*. Any other
+step is expected to write the same bytes from the same inputs.
+
 <div class="note">
   Treat a step as a <strong>pure function of its input folders and its identity</strong>, its name in the graph
   and its serialised state: read from the argument folders, write to <code>next</code>, reach outside neither. That is what makes its output cacheable and safe to share

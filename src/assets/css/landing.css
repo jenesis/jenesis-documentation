@@ -153,6 +153,17 @@
 }
 .lp-pills strong { color: var(--lp-accent); font-weight: 700; }
 .lp-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.lp-agent {
+  margin: -0.75rem 0 2rem; padding: 0.9rem 1rem; border-radius: var(--app-radius-md);
+  border: 1px dashed color-mix(in srgb, var(--lp-accent) 60%, transparent); background: var(--lp-surface);
+}
+.lp-agent__label { margin: 0 0 0.6rem; font-size: 0.9rem; font-weight: 600; color: var(--lp-text); }
+.lp-agent__prompt { display: flex; align-items: flex-start; gap: 0.75rem; }
+.lp-agent__prompt code {
+  flex: 1; min-width: 0; font-size: 0.8rem; line-height: 1.5; white-space: normal; overflow-wrap: anywhere;
+  background: transparent; color: var(--lp-muted); padding: 0;
+}
+@media (max-width: 560px) { .lp-agent__prompt { flex-direction: column; } }
 
 .lp-terminal {
   margin: 0; border-radius: var(--app-radius-lg); overflow: hidden;
