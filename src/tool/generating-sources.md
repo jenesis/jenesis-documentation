@@ -1,7 +1,7 @@
 ---
 order: 9
 title: Generating sources
-description: Compiling a schema, a service contract or a grammar into Java as part of the build - XML Schema, protocol buffers, Avro, WSDL, OpenAPI and ANTLR - each turned on by its configuration file, with the contract kept out of the artifact unless you want it there.
+description: Compiling a schema, a service contract or a grammar into Java as part of the build - XML Schema, protocol buffers, Avro, WSDL, OpenAPI and ANTLR - and running Kotlin symbol processors, each turned on by its configuration file, with the contract kept out of the artifact unless you want it there.
 ---
 
 Plenty of Java starts life as something that is not Java: an XML schema, a `.proto` file, an Avro record, a
@@ -173,6 +173,37 @@ group, and what the generated code calls into - `org.antlr.antlr4.runtime` - sta
 the module, pinned separately. Upgrading the parser generator never moves the runtime your program links
 against.
 
+## Kotlin symbol processing
+
+KSP is Kotlin's counterpart of annotation processing: a processor reads the module's own Kotlin and Java
+sources and writes new ones beside them, as Moshi's code generator writes a JSON adapter for each class
+annotated `@JsonClass(generateAdapter = true)`. A `ksp.properties` in a configuration folder switches it on,
+and the processors are declared like `javac`'s, by coordinate in a group of their own:
+
+```java
+/**
+ * @jenesis.plugin ksp maven/com.squareup.moshi/moshi-kotlin-codegen
+ */
+module demo.json { ... }
+```
+
+or, in a `pom.xml`, as the comment `<!--jenesis.plugin ksp maven/com.squareup.moshi/moshi-kotlin-codegen-->`.
+Each line of `ksp.properties` is an option handed to the processors, the `arg(...)` of Gradle's `ksp { }`
+block; an empty file runs them without any:
+
+```properties
+# build.jenesis/ksp.properties
+moshi.generated=javax.annotation.processing.Generated
+```
+
+Unlike the six generators above, KSP reads no folder of contracts but the module's sources and its compile
+dependencies, which is what lets a processor resolve the types the code uses. It runs before the compilers,
+so the sources it writes are compiled with the module's own and the resources it writes, as a service file
+or ProGuard rules, join the jar. KSP itself resolves in the group `ksp-runtime`, apart from the processors in
+`ksp`, because a processor brings a Kotlin standard library of its own that KSP does not use. Its arguments
+go in `process-ksp.properties`, as `-language-version=2.2` when the module's Kotlin is older than the version
+KSP is built for, which it otherwise takes.
+
 ## Turning one off
 
 Each generator has a switch, on by default:
@@ -181,5 +212,5 @@ Each generator has a switch, on by default:
 -Djenesis.generate.xjc=false
 ```
 
-The same shape works for `protoc`, `avro`, `wsimport`, `openapi` and `antlr`. All configuration keys are listed in the
+The same shape works for `protoc`, `avro`, `wsimport`, `openapi`, `antlr` and `ksp`. All configuration keys are listed in the
 *[Reference](/tool/reference/)*.
