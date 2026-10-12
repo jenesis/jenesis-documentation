@@ -580,8 +580,11 @@ module demo.annotations {
 }
 ```
 
-Jenesis resolves the processor, places it on `javac`'s **processor path** (`--processor-module-path`), and the
-compiler runs it. The sources a processor generates are written to a `generated/` folder beside the compiled
+Jenesis resolves the processor, places it on `javac`'s **processor path**, and the compiler runs it. In a module
+build that is `--processor-module-path`, as long as `javac` can resolve every module on it. A processor without a
+`module-info.java` requires nothing by name, so a library it uses that does declare one would be left out, as
+`jakarta.persistence` is for Hibernate's processor. In that case the processors run from `--processor-path`, the
+class path, where every jar is visible. The sources a processor generates are written to a `generated/` folder beside the compiled
 classes rather than among them, so the jar holds the classes compiled from them and not the sources.
 
 A `pom.xml` project declares a processor as a dependency of `<type>processor</type>`. It reaches the processor
