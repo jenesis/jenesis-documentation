@@ -117,6 +117,15 @@ A `process-kotlinc.properties` in a configuration folder hands `kotlinc` argumen
 Each line is an argument of the compiler. A `-J<option>` line or a `-D` line goes to the JVM that runs it
 instead, as the `kotlinc` command passes them, so the last line gives that JVM `-Xss4m`.
 
+## Tests and internal declarations
+
+Kotlin's `internal` visibility ends at the module, and a module's tests reach into it all the same: the build
+hands `kotlinc` the tested module's jar as a friend path when it compiles the tests, as Gradle and the Kotlin
+Maven plugin do. A test that calls an `internal` function compiles without an argument of its own, in a
+`pom.xml` build's test sources and in a module that names its tested module with `@jenesis.test`.
+
+{% demos 41 %}
+
 ## A compiler plugin
 
 A Kotlin or Scala compiler plugin is declared exactly like a Java annotation processor
