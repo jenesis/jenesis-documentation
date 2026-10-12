@@ -138,7 +138,7 @@ the tools below. Some flags are derived for you, and a flag in the file takes pr
 Each is passed only where the project declares the value and the package type takes the flag: an application
 image takes no licence file and no URL.
 
-{% demos 8, 9 %}
+{% demos 9, 10 %}
 
 ## Native installers
 
@@ -182,7 +182,7 @@ the application image. What `process-jpackage.properties` sets reaches every typ
 --linux-deb-maintainer=ops@example.com
 ```
 
-{% demos 8, 9 %}
+{% demos 9, 10 %}
 
 ## Runtime images and `.jmod` files
 
@@ -219,7 +219,7 @@ it would be stranded there.
   <code>jlink</code> accepts.
 </div>
 
-{% demos 9, 56 %}
+{% demos 10, 59 %}
 
 ## Making a closure linkable
 
@@ -252,7 +252,7 @@ rewrite - which is how a single module opts out of a project-wide file.
   downloaded, so a rewritten jar's bytes can never reach a <code>@jenesis.pin</code> checksum.
 </div>
 
-{% demos 21 %}
+{% demos 22 %}
 
 ## Bundles for a JRE base
 
@@ -308,7 +308,7 @@ aggregate for many services, at the cost of coupling to that base's JVM version.
   correction; you never splice it in yourself.
 </div>
 
-{% demos 10 %}
+{% demos 11 %}
 
 ## A container build context
 
@@ -444,7 +444,7 @@ when it does. A type both name is built once:
   <code>buildah bud</code> consume the same folder.
 </div>
 
-{% demos 8, 9 %}
+{% demos 9, 10 %}
 
 ## A single executable jar
 
@@ -475,7 +475,7 @@ a bundle.
   troubleshooting.
 </div>
 
-{% demos 8, 9 %}
+{% demos 9, 10 %}
 
 ## A modular jar on the class path
 
@@ -504,7 +504,7 @@ because the build writes that file itself.
 
 `-Djenesis.generate.classpath=false` switches the step off, in a profile if need be, without deleting the file.
 
-{% demos 54 %}
+{% demos 27 %}
 
 ## Native images
 
@@ -540,7 +540,7 @@ directory to maintain.
   inside every jar - the way to vet exactly what reflection is baked into a published artifact.
 </div>
 
-{% demos 72 %}
+{% demos 55 %}
 
 ### native-image or jpackage?
 
@@ -586,4 +586,4 @@ takes the whole folder below it.
   adds nothing to <code>legal/</code>, so check its licence before shipping it.
 </div>
 
-{% demos 9, 21, 72 %}
+{% demos 10, 22, 55 %}

@@ -237,4 +237,4 @@ the built-in that replaces each common plugin. The agent closes with a summary: 
 what replaced each plugin, the split packages that kept the build on `pom.xml`, each shaded dependency and what
 replaced it, what still differs from the old build, and the command CI now runs.
 
-{% demos 1, 3, 12 %}
+{% demos 1, 3, 13 %}

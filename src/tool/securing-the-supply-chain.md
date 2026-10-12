@@ -251,7 +251,7 @@ gpg --import key.asc                       # only once the fingerprint matches
   be against a channel an attacker does not control.
 </div>
 
-{% demos 29 %}
+{% demos 31 %}
 
 ## An identity instead of a key
 
@@ -330,7 +330,7 @@ a project moving from one to the other declares both and neither is weakened. Wh
 a repository publishes: a detached `.asc` is near-universal on Maven Central, while bundles are still the
 exception, so an identity is an additional answer where one exists rather than a replacement.
 
-{% demos 30 %}
+{% demos 32 %}
 
 ## Modules resolved by name
 
@@ -402,7 +402,7 @@ the diff, commit it, and the pins carry that verdict to everyone who trusts your
 Getting there is the fiddly part, and `-Djenesis.print.signatures` under `declared` makes it tractable: it
 names every coordinate no declaration covers, which is exactly the list `strict` would refuse.
 
-{% demos 50 %}
+{% demos 57 %}
 
 ## Where each one stops
 
@@ -421,7 +421,7 @@ Stating the limits plainly matters more than the guarantees:
 - **`pin` itself** runs after a full build, because a dependency can be introduced by any step and the closure
   is only complete at the end, so a pin rewrite is not the moment anything is checked.
 
-{% demos 28 %}
+{% demos 30 %}
 
 ## A defensible posture
 

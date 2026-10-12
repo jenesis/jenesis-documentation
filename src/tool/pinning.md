@@ -167,7 +167,7 @@ works on a `pom.xml`'s `<!--jenesis.pin ... -->` block, where it selects a coord
   guards fail the build, while an unmatched guard with no fallback simply leaves the module unpinned.
 </div>
 
-{% demos 26, 27 %}
+{% demos 28, 29 %}
 
 ## Enforcing the pins
 
@@ -209,7 +209,7 @@ A pinned project that has built once holds everything it needs in `.jenesis/arti
 `-Djenesis.repository.offline=true`, which downloads nothing and fails the build with the URL of any file the
 local caches lack - see *[Dependencies](/tool/dependencies/#how-fresh-the-metadata-is)*.
 
-{% demos 28 %}
+{% demos 30 %}
 
 ## Refreshing the pins
 
@@ -277,7 +277,7 @@ The second line shows the other source a BOM can come from: **a published Maven 
 third form names a module, which resolves a BOM published under that module name through the module index
 or from your local module repository, versioned and checksummed, or floating to the latest published file.
 
-{% demos 20 %}
+{% demos 21 %}
 
 ### Which source seals how much
 

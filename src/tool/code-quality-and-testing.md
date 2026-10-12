@@ -167,7 +167,7 @@ Both use the tool of the JDK the build runs on. Running a build on a newer JDK, 
 removal before the code runs on it. Their reports are `reports/jdeps/jdeps.txt` and
 `reports/jdeprscan/jdeprscan.txt`, one finding per line.
 
-{% demos 34, 42, 45, 47 %}
+{% demos 37, 46, 49, 51 %}
 
 ## Analysis inside the compiler
 
@@ -222,7 +222,7 @@ comment, in the module's POM or in a parent POM in the project, and the build na
 `-Djenesis.compile.errorprone=false` keeps the file and the declaration in place but compiles without the
 plugin.
 
-{% demos 14 %}
+{% demos 15 %}
 
 ## Formatting
 
@@ -310,7 +310,7 @@ After a rewrite, a plain build passes the verify gate again.
   project's <code>codenarc.xml</code> lints but nothing reformats.
 </div>
 
-{% demos 34, 42 %}
+{% demos 37, 46 %}
 
 ## Where the reports land
 
@@ -383,7 +383,7 @@ Because the file lives in a configuration folder, a profile switches the recordi
 file runs the tests again. Set `-Djenesis.observe.jfr=false` to suppress the recording even when the file is
 present.
 
-{% demos 36 %}
+{% demos 39 %}
 
 ## Narrowing a test run
 
@@ -485,7 +485,7 @@ one runs the tests again and starts a new memory.
   result can be served to someone asking for more.
 </div>
 
-{% demos 3, 4, 35 %}
+{% demos 3, 4, 38 %}
 
 ## Running only the tests a change affects
 
@@ -515,7 +515,7 @@ on every save and a narrowed test pass keeps the feedback loop tight.
   the whole suite - a plain <code>build</code> with selection off.
 </div>
 
-{% demos 37 %}
+{% demos 40 %}
 
 ## Mutation testing
 
@@ -550,7 +550,7 @@ project's own resolved `junit-platform`, so it always lines up with the test fra
 lands under `reports/pitest/`, and `-Djenesis.mutate.pitest=false` suppresses the run while keeping the file in
 place.
 
-{% demos 38 %}
+{% demos 41 %}
 
 ## API compatibility
 
@@ -644,7 +644,7 @@ classification, and a `[FINDINGS]` line counts them.
 fails it on any difference reported, and `ignore` skips revapi. It resolves in its own `revapi` group, with
 `revapi-java`, `revapi-basic-features` and `revapi-reporter-json` and what they depend on, beside the baseline.
 
-{% demos 40 %}
+{% demos 44 %}
 
 ## Seeing every failure at once
 

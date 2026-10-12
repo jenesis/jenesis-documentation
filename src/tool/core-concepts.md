@@ -138,7 +138,7 @@ java -Djenesis.project.layout=modular build/jenesis/Make.java
 
 The property accepts `auto`, `maven`, `modular`, and `modular_to_maven`.
 
-{% demos 22 %}
+{% demos 23 %}
 
 ### Seeing the difference
 
