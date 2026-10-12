@@ -29,6 +29,10 @@ is also a great way to distribute a small open-source project released now and t
 and every build finds the library, with no hosting for its author to keep alive. That low barrier to entry is
 worth keeping.
 
+What this proposal changes is who does what. Authors publish to the ecosystem rather than to one repository.
+Central repositories, as many as care to run one, collect what authors publish and offer the guarantees an author
+cannot give - retention, immutability, signature checks, scanning - to the users who need them.
+
 What this proposal questions is that there is only one such repository, and that every library has to pass
 through it. Today, that repository is Maven Central -
 [Maven's default repository](https://maven.apache.org/ref/current/maven-model-builder/super-pom.html), and the
@@ -117,10 +121,14 @@ security issues in libraries are found at a far greater pace -
 and every fix asks for a release, so authors must publish more often just as publishing more is what the quotas
 restrict.
 
-### Publishing beside it
+### Publishing to the ecosystem
 
-The discovery file lets authors distribute what they build themselves, beside a central repository rather than
-instead of it, and frees them from fitting their work to someone else's quota. Some already publish elsewhere:
+The discovery file lets an author publish to the ecosystem rather than to one repository. They release where they
+already distribute their work - a GitHub release, their own server, or a Maven repository of their choosing - and
+say so once, in a file on their domain. Every build and every central repository then finds the release by its
+name, without an upload, an account or a quota.
+
+Some authors already publish outside Central:
 [the Shibboleth project does not publish OpenSAML to Maven Central](https://shibboleth.atlassian.net/wiki/spaces/DEV/pages/1123844333),
 because its terms require an indemnification its developers will not take on personally, and
 [Jenkins releases its plugins and libraries](https://www.jenkins.io/doc/developer/publishing/artifact-repository/)
@@ -149,20 +157,57 @@ as a cache and a ledger, not as a place every module must be uploaded to. Homebr
   [Bazel](https://github.com/bazel-contrib/rules_jvm_external) record them, compared
   [side by side](/why/tool/#verify-what-the-build-downloads).
 
-### Many central repositories
+### What a central repository adds
 
-Once authors say where they publish, a central repository no longer depends on uploads to be complete. It could
-populate itself by monitoring the authors' distribution servers: follow the latest links of the modules and
-artifacts it knows, notice each new release as it appears, and fetch it as a build would. It could keep every
-version as first fetched, close to publication, so that a version once seen never changes. Or it could keep only
-the checksums it recorded then and refuse any later file that does not match - the guarantee of central storage,
-without storing the artifacts. A discovery file may name Maven Central itself, so nothing changes for an author
-who publishes there. And as a project grows into different needs, its author can move it elsewhere by
-changing the file, as the owner of a domain moves a website to another host without changing its address.
+Maven Central does two jobs in one: it distributes a release, and it vouches for it. Publishing to the ecosystem
+separates them. The author distributes. A central repository consumes what authors publish and adds the
+guarantees that an author cannot give for their own work:
+
+- **Retention.** It keeps every version it has seen, after the author drops it from their hosting, moves on, or
+  lets the domain lapse.
+- **Immutability.** It records each file as first fetched, close to publication, and refuses a later file that
+  does not match. An artifact cannot then be swapped under an existing version, whoever controls the author's
+  hosting by then.
+- **Signature validation.** It checks each file against the signature beside it, and notices when a new version
+  is signed with another key than the versions before it - as a release from a lapsed domain bought by someone
+  else would be.
+- **Scanning.** It checks each release for malware and known vulnerabilities before a build downloads it, and
+  marks the versions that a later CVE affects.
+- **Availability.** It serves the release when the author's hosting is down.
+
+An author cannot give these guarantees for their own work, however careful they are. A promise to keep a file is
+only as good as the hosting behind it, and a check on a release counts for most when it is made by someone other
+than whoever could change the release.
+
+Such a repository needs no uploads to be complete. It could populate itself by monitoring the authors'
+distribution servers: follow the latest links of the modules and artifacts it knows, notice each new release as
+it appears, and fetch it as a build would. It could keep the files, or only the checksums it recorded - the
+guarantee of immutability, without storing the artifacts. A discovery file may name Maven Central itself, so
+nothing changes for an author who publishes there. And as a project grows into different needs, its author can
+move it elsewhere by changing the file, as the owner of a domain moves a website to another host without changing
+its address.
+
+### Who pays for the guarantees
+
+Today, the cost of a central repository falls on whoever publishes to it, as quotas and subscriptions. When
+authors publish to the ecosystem, the cost falls on whoever needs a repository's guarantees - and those are not
+the same people.
+
+Open-source projects can do most of these checks in their own build, and many do: they pin checksums, verify
+signatures and scan their dependencies, at no cost beyond the build's time. Enterprises typically want more than
+a check they ran themselves. They want a compliance guarantee they can show an auditor or a customer, given by a
+party that answers for it. And they want to know that software they shipped years ago still builds today, from
+exactly the dependencies it was built with.
+
+That second need is where much of the money in software is. Keeping old software running is a business of its
+own - long-term support of a JDK release, for one, is sold by several vendors. A repository that keeps old
+versions available, unchanged and vetted sells exactly that: to the users who earn money from the legacy, rather
+than to the authors who have moved on from it.
 
 Anyone could run such a repository, so there need not be only one. Several could exist side by side, competing on
-availability, on the record they keep and on the checks they run, and offering proxying and supply chain
-security as a service - a market that a single central repository does not allow for today.
+availability, on the record they keep, on the checks they run and on their price - a market that a single
+central repository does not allow for today. An open-source project that needs none of it pays nothing, and
+neither does its author.
 
 Such a market also lets the Java ecosystem face a question it will have to entertain at some point: whether
 every version must be kept forever. Maven Central
@@ -173,8 +218,8 @@ it can charge for doing so. A build that relies on Byte Buddy 0.1, a pre-release
 premium to keep it available - and that cost is an incentive to migrate away once the legacy has become too
 expensive.
 
-Hosting thereby moves back towards the authors who produce the code, and the choice of whom to trust towards the
-users who run it.
+Hosting thereby moves back towards the authors who produce the code, the guarantees towards the repositories
+that compete to give them, and the choice of whom to trust towards the users who run it.
 
 ## Describing Maven artifacts
 
