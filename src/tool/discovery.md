@@ -46,17 +46,15 @@ no build replaces on its own. That is a problem in itself, whatever its operator
 - **It is a single point of failure.** When Central cannot be reached, neither can any library published nowhere
   else. Its own [terms of service](https://central.sonatype.org/terms.html) state that outages may occur and
   that Sonatype is under no obligation to store or back up what is published.
-- **It answers to no community.** Under the same terms, Sonatype decides at its sole discretion what it accepts,
-  and may change the terms at any time without notice.
-  [Google's mirror](https://storage-download.googleapis.com/maven-central/index.html), like those companies run,
-  copies what Central holds, but publishing goes through Sonatype alone. The rest of the Java ecosystem is
-  governed otherwise: the language through the [Java Community Process](https://jcp.org/en/home/index), the JDK
-  under the [OpenJDK bylaws](https://openjdk.org/bylaws), and Maven at the
+- **It is run by one company.** Sonatype, a private firm majority-owned by
+  [Vista Equity Partners](https://www.vistaequitypartners.com/companies/sonatype/) since
+  [2019](https://www.sonatype.com/press-releases/vista-acquires-majority-interest-in-sonatype), decides what Central
+  accepts and may change its terms at any time. Mirrors such as
+  [Google's](https://storage-download.googleapis.com/maven-central/index.html) copy what Central holds, but
+  publishing goes through Sonatype alone. The rest of the Java ecosystem is governed by its community: the language
+  through the [Java Community Process](https://jcp.org/en/home/index), the JDK under the
+  [OpenJDK bylaws](https://openjdk.org/bylaws), and Maven at the
   [Apache Software Foundation](https://www.apache.org/foundation/how-it-works/).
-- **It can change course quickly.** Sonatype is a private firm, majority-owned since
-  [2019](https://www.sonatype.com/press-releases/vista-acquires-majority-interest-in-sonatype) by the private
-  equity firm [Vista Equity Partners](https://www.vistaequitypartners.com/companies/sonatype/). Such a firm can
-  change direction fast, all the more after a change of ownership, and the Java ecosystem has no say in either.
 - **Its priorities become the ecosystem's.** Java modules have named a library the Java-native way since
   [Java 9](https://openjdk.org/projects/jdk9/) in 2017, almost ten years, yet Central
   [finds an artifact](https://central.sonatype.org/search/rest-api-guide/) by its coordinate, a class name or a
