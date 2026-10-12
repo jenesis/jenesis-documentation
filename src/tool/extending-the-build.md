@@ -130,6 +130,13 @@ A plugin found in the local export is built on your machine and is not checked a
 `-Djenesis.plugin.<name>=false` leaves a plugin out, as the stock tools are switched off, without editing the
 file, and `-Djenesis.project.plugins=false` leaves out every plugin the file names.
 
+A plugin hands the **tests** a file the same way: in the test module's `binary/compiled`, it writes the file below
+`classes/`, where only the tests' jar holds it, and the tests read it as a resource. Its
+`plugin-<name>.properties` sits where the test module's configuration is looked up, as `src/test/build.jenesis/`
+in a `pom.xml` project. A framework that wants a file path in a system property instead gets one from a
+`LauncherSessionListener` of the tests, a JUnit service that copies the resource to a temporary file and sets the
+property before the first test runs.
+
 A plugin in **`package`** can wrap or sign one of the images `packaging.properties` asks Jenesis to build - a
 runtime image, a `jpackage` image, a launcher - into a package of its own: an AppImage, an installer built with
 other tools, a distribution zip. A package whose name another packager, or `jpackage`, writes already fails the
