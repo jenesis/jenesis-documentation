@@ -59,9 +59,10 @@ Since October 2026, publishing an artifact of a commercial nature requires Sonat
 [Publisher Pro](https://central.sonatype.org/news/20260908_publisher_tiers_commercial_use/), and so does
 publishing beyond [monthly quotas](https://central.sonatype.org/publish/maven-central-publishing-limits/) on file
 count, release count and release size. The quotas count every signature, checksum, POM, sources and javadoc jar as
-a file, per organisation; community projects can ask for an exemption. A
-[release of Byte Buddy](https://repo1.maven.org/maven2/net/bytebuddy/) publishes about 120 files and close to
-70 MB, so a second release in a month passes the size quota.
+a file, per organisation. A [release of Byte Buddy](https://repo1.maven.org/maven2/net/bytebuddy/) publishes
+about 120 files and close to 70 MB, so a second release in a month passes the size quota. Byte Buddy is exempt,
+but every community project has to apply for an exemption of its own, an approach that does not scale with the
+number of projects.
 
 For a company, this puts a price on shipping a Java SDK: Sonatype counts service-dependent SDKs and generated
 clients as commercial, however few files they hold. npm gives organisations
