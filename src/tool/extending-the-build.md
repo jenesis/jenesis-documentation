@@ -67,7 +67,7 @@ point runs as `custom/<name>`, in the module build itself:
 | `check` | Beside the stock source checks, handed the module's sources and manifests. |
 | `format` | Beside the stock formatters, handed the same. |
 | `compliance` | Beside the licence and vulnerability checks, handed the manifests and the resolved dependencies. |
-| `binary/generated` | Before compilation, beside the stock generators; a `sources/` tree it writes is compiled with the module. |
+| `binary/generated` | Before compilation, beside the stock generators; a `sources/` tree it writes is compiled with the module, and a `resources/` tree, such as a service file, joins the module's jar. |
 | `binary/compiled` | Beside the stock compilers, handed what they compile; what it writes below `classes/` joins the module's jar, and a class that two compilers or plugins both write fails the build, naming both. |
 | `binary/transform` | After the compilers, handed the module's compiled classes first and the module's inputs after them; what it writes below `classes/` replaces the class of that name. Several plugins run in the order the file names them, each handed what the one before wrote. |
 | `binary/validate` | After compilation, beside the bytecode checks, handed the compiled classes. |
