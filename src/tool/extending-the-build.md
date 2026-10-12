@@ -436,8 +436,9 @@ Each argument is keyed by its predecessor's path: `argument.folder()` is that pr
 point is handed the module's `metadata.properties`, with its version, name and the rest, and its
 `module.properties`, whose `test` key tells the tests of a `pom.xml` from its main code - so a step that belongs
 to one of them returns early on the other. The resolved dependencies arrive as a folder too, read with
-`build.jenesis.step.Dependencies`: `Dependencies.select(folder, "main", "compile")` lists the jars of one group and scope, and
-`Dependencies.all(folder)` every one. What a step in `binary/compiled` writes as `classes/` and as a
+`build.jenesis.step.Dependencies`: `Dependencies.paths(arguments, "main", "compile")` lists the jars of one group and
+scope across every argument a step is handed, `Dependencies.select(folder, "main", "compile")` those of one folder,
+and `Dependencies.all(folder)` every one. What a step in `binary/compiled` writes as `classes/` and as a
 `manifest.mf` is merged into the module's jar. A step in `binary/transform` finds the compiled classes in the
 first of its arguments, and what it writes below `classes/` replaces the file of that name, while every file it does not write passes on
 as it was. A `manifest.mf` it writes is merged into the module's manifest, its own value winning for an attribute
