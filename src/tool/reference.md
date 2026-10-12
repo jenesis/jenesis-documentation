@@ -55,7 +55,7 @@ property). The top-level targets the shipped layouts register:
 | `ide` | Generate IntelliJ IDEA, VS Code, and Eclipse project metadata at the project root (see *[Building &amp; running](/tool/building-and-running/#opening-the-project-in-an-ide)*). |
 | `help` | Print a one-screen orientation: how to start, the selectors, and how to make a step verbose. |
 | `skill` | Print the briefing a coding agent works from, every page of it; `skill/start` prints the overview, which names the pages, and `skill/<page>` one page. |
-| `prompt` | Print a task to hand a coding agent, without the build's progress lines; `prompt/migrate` is the move of a Maven or Gradle build (see *[Migrating a Maven or Gradle build](/tool/migrating/#migrating-with-a-coding-agent)*). |
+| `prompt` | Print a task to hand a coding agent; `prompt/migrate` is the move of a Maven or Gradle build (see *[Migrating a Maven or Gradle build](/tool/migrating/#migrating-with-a-coding-agent)*). |
 | `metadata` | Refresh the metadata module outputs without building artifacts. |
 | `configuration` | Print every setting with the value in force, one per line: `jenesis.<key>=<value> [set\|default\|unset] <what it does>`. Built to grep, and the tool's own property reference. |
 | `properties` | Print every `jenesis.*` setting in force for this run - from the command line, `jenesis.properties` or a profile alike - sorted by key. |
