@@ -295,13 +295,13 @@ however many modules and artifacts it serves, and resolves what no file names as
 
 What a domain answered - its file, or a `404` or `410` saying it publishes none - is kept in the local module
 repository, under `well-known/` in `~/.jenesis` or where `jenesis.module.local` points, for 24 hours, so the
-builds of that day ask it nothing. `jenesis.repository.discovery.ttl` sets the hours, and `0` keeps nothing. Only
+builds of that day ask it nothing. `jenesis.discovery.ttl` sets the hours, and `0` keeps nothing. Only
 the command line or your own `~/.jenesis/jenesis.properties` may set it. No setting asks a domain again sooner:
 delete `well-known/` for that. A build with `jenesis.repository.offline=true` asks no domain and reads what is
 kept, however old.
 
 A domain is asked once, without the retries a repository is given, and has five seconds to connect and to
-answer each read, which `jenesis.repository.discovery.timeout` sets in milliseconds. A file that cannot be
+answer each read, which `jenesis.discovery.timeout` sets in milliseconds. A file that cannot be
 fetched counts as absent: a host that does not exist, one a proxy cannot reach, one that does not answer in
 time, or one that resets or refuses the TLS handshake. Such a failure is not kept, since the domain may answer
 the next build. A certificate that does not verify, or that names another host, fails the build instead.
