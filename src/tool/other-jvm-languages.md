@@ -138,9 +138,10 @@ not by Jenesis.
 
 The setting needs Kotlin 2.3 or newer. Kotlin is then compiled through the Kotlin Build Tools API, which
 resolves as `org.jetbrains.kotlin:kotlin-build-tools-impl` in the `kotlinc` group and is pinned there beside
-the compiler, at the compiler's version. The compiler runs in the build's own JVM rather than a process of its
-own, so it stays loaded from one module to the next. A `-J` or `-D` line of `process-kotlinc.properties` is
-refused then, as there is no separate JVM for it to configure.
+the compiler, at the compiler's version. The compiler runs in the Kotlin daemon, a JVM of its own that ships
+with the compiler and outlives the build, so it stays loaded from one module and one build to the next. It
+stops on its own once no build has used it for a while. A `-J` or `-D` line of `process-kotlinc.properties`
+configures the daemon's JVM.
 
 ## Tests and internal declarations
 
