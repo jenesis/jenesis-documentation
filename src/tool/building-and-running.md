@@ -338,7 +338,8 @@ compiles for its own release alone, whatever release the module's declaration na
 
 A Kotlin source in the overlay is compiled the same way: `kotlinc` compiles a `.kt` below
 `sources/META-INF/versions/<N>/` for release `<N>` into the jar's `META-INF/versions/<N>/`, beside the base
-class of the same name, and a Java source of that overlay compiles against it. Dokka documents the base
+class of the same name, and a Java source of that overlay compiles against it. The overlay belongs to the
+module, so it sees the module's `internal` declarations as the base sources do. Dokka documents the base
 sources alone.
 
 An overlay may also carry the `module-info.java` itself. That is how a library whose main code targets Java 8,
