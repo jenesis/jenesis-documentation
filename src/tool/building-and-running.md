@@ -229,6 +229,10 @@ java -Djenesis.test.jars=false build/jenesis/Make.java
 A module whose tests run on the module path refuses the setting, because a folder of resources is no part of a
 module there.
 
+A test may write files into its working directory or a temporary folder, but not beside what it tests. A test
+that changes the classes or resources the build handed it fails the run and names the files it wrote,
+because the steps after the tests read those folders as they were built.
+
 {% demos 3, 4, 35 %}
 
 ### Skipping the tests
@@ -591,6 +595,10 @@ A `pom.xml` project declares a processor as a dependency of `<type>processor</ty
 path of the half whose scope declares it - the main code, or with `<scope>test</scope>` the tests alone - and
 never the closure of a module that depends on this one. Its `<exclusions>` prune its closure on the processor
 path, as they prune a dependency's.
+
+A processor can be a module of the same project. It is named the same way, and Jenesis builds it before the
+module that uses it rather than downloading it. In a `pom.xml`, a `<!--jenesis.plugin ...-->` comment that names
+such a module without a version takes that module's own version.
 
 <div class="warning">
   Processors are run <strong>only from what you declare</strong>. A dependency that happens to bundle a
