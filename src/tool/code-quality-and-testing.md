@@ -535,6 +535,16 @@ targetTests=calctest.*          # which tests to run against the mutants
 outputFormats=XML,HTML          # report formats (an optional `mutators` key selects a mutator set)
 ```
 
+| Key | Meaning | Default |
+| --- | --- | --- |
+| `targetClasses` | globs of the classes to mutate | `*` |
+| `targetTests` | globs of the tests to run against the mutants | `*` |
+| `outputFormats` | the report formats, of `XML`, `HTML` and `CSV` | `XML` |
+| `mutators` | the mutators or mutator groups PIT applies | PIT's own default |
+| `failWhenNoMutations` | fail when PIT finds nothing to mutate | `false` |
+
+An unknown key, or a format that is not one of the three, fails the build naming the ones that exist.
+
 PIT and its JUnit 5 plugin resolve in their own `pitest` group; the plugin's version is taken from the
 project's own resolved `junit-platform`, so it always lines up with the test framework you use. The report
 lands under `reports/pitest/`, and `-Djenesis.mutate.pitest=false` suppresses the run while keeping the file in
