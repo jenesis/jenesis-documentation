@@ -130,6 +130,7 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | --- | --- |
 | `compilerArgs`, `options.compilerArgs` | `process-javac.properties` |
 | `fork` with `meminitial`, `maxmem` or `-J` options | `jenesis.process.factory=fork` in `jenesis.properties`, with `-J<option>=` in `process-javac.properties` |
+| A multi-release jar's sources in `src/main/java<N>`, a compiler execution with `multiReleaseOutput`, a Gradle `java<N>` source set | The same sources moved below `src/main/java/META-INF/versions/<N>/`, compiled as a [multi-release overlay](/tool/building-and-running/#one-jar-several-java-versions) |
 | `annotationProcessorPaths` | A dependency of `<type>processor</type>`; one named without a version takes it from `<dependencyManagement>` |
 | The incremental Scala compilation of sbt, Gradle and the `scala-maven-plugin`'s `recompileMode=incremental` | `jenesis.scala.incremental=true` in `jenesis.properties` - see *[Compiling Scala incrementally](/tool/other-jvm-languages/#compiling-scala-incrementally)* |
 | Gradle's `com.google.devtools.ksp` plugin and its `ksp(...)` dependencies | A [`ksp.properties`](/tool/generating-sources/#kotlin-symbol-processing), with each processor as `@jenesis.plugin ksp <coordinate>` |
@@ -140,7 +141,7 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | `forkCount` with `reuseForks=false`, `forkEvery` | A test module of its own, since each test module runs in a JVM of its own |
 | The environment of the tests | `environment-test.properties` |
 | Checkstyle's `propertyExpansion`, `configProperties` | A `checkstyle.properties` beside `checkstyle.xml` |
-| PMD's `minimumPriority`, `rulesMinimumPriority` | `-Djenesis.source.pmd.priority` |
+| PMD's `minimumPriority`, `rulesMinimumPriority` | `-Djenesis.pmd.priority` |
 | The `mainClass` of the jar, shade or exec plugin | A `<mainClass>` property |
 | `manifestEntries`, `jar.manifest.attributes` | A `META-INF/MANIFEST.MF` among the resources |
 | `addDefaultImplementationEntries` | Written by default |
@@ -178,9 +179,10 @@ Checkstyle reads a copy of the sources below `target/build/`, so a suppression k
 `src/test/java`, matches nothing. Key it on the package's folders instead, as `[/\\]example[/\\]test[/\\]`.
 
 The tests run a little differently, too. `jenesis.test.filter` replaces the default naming and its JUnit 4 check
-rather than narrowing them, and the root module's entry is written `/<classRegex>`. As with Surefire, they run in
-the module's folder with the `basedir` system property set to it, so a relative `src/test/...` path finds the
-module's file. They run against the module's jar, so one that turns `getResource` into a `java.io.File` needs
+rather than narrowing them, and the root module's entry is written `/<classRegex>`. Unlike Surefire, they do not
+run in the module's folder, and no `basedir` property is set: a test that opens `src/test/...` by a relative path
+is changed to read that file as a test resource. They run against the module's jar, so one that turns `getResource`
+into a `java.io.File` needs
 `-Djenesis.test.jars=false`. A build prints no test totals; `-Djenesis.print.tests` streams the runner's summary.
 
 ### Shading

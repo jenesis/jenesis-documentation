@@ -397,14 +397,14 @@ its module name as well.
 ## Releasing into a Maven repository of your own
 
 An internal Maven repository - a Nexus, an Artifactory, a `java` repository of a Jenesis Repository - takes the
-staged Maven tree from `release` itself. Once `jenesis.release.maven.uri` names it, `release` puts the tree there
+staged Maven tree from `release` itself. Once `jenesis.deploy.uri` names it, `release` puts the tree there
 as its `release/maven` step, which is what `maven-deploy-plugin` does with a `<distributionManagement>`
 repository, or Gradle's `maven-publish` with a repository of its own:
 
 ```bash
 java -Djenesis.project.version=1.0.0 \
-     -Djenesis.release.maven.uri=https://repo.example.com/repository/maven-releases/ \
-     -Djenesis.release.maven.token="Basic <credentials>" \
+     -Djenesis.deploy.uri=https://repo.example.com/repository/maven-releases/ \
+     -Djenesis.deploy.token="Basic <credentials>" \
      build/jenesis/Make.java release
 ```
 
@@ -439,7 +439,7 @@ and any other answer than success stops it, naming the address and the status.
 
 <div class="warning">
   Maven Central is refused by name: it takes a release signed and through its own publishing service, which is
-  what a <code>jreleaser.yml</code> describes, as the next section shows. <code>jenesis.release.maven.uri</code>
+  what a <code>jreleaser.yml</code> describes, as the next section shows. <code>jenesis.deploy.uri</code>
   names a repository of your own.
 </div>
 

@@ -291,8 +291,8 @@ part of a launch a bundle cannot know in advance. Dropped onto a `-jre` base it 
 
 What a `process-java.properties` gives the module's JVM - an `--add-reads` its module path needs, a system
 property - leads both argument files, as it leads the JVM `Execute` starts, so the launch the bundle carries is
-the one the build ran. `stage` collects the zip into `stage/packages/` as `<artifact>.zip`, beside what
-jpackage writes there, so `export` and `release` ship it like any other package.
+the one the build ran. The zip stays in the build tree rather than being staged, so `export` and `release`
+leave it out.
 
 The trade against an app-image is the classic one. An app-image is self-contained but duplicates the JVM per
 service. A bundle is tiny and shares one JVM layer across every image built on the same base - leaner in
@@ -461,8 +461,8 @@ JDK 25 or newer, and unlike a bundle it needs no launch script. The shaded launc
 verified and the build stays reproducible. Like every archive the build writes, the jar records one date on
 every entry, the one `jenesis.archive.timestamp` names where it is set.
 
-`stage` collects the jar into `stage/packages/` as `<artifact>.jar`, so `export` and `release` ship it like any
-other package. Every jar it stores keeps its directory entries, so a scan of a package on the class path finds
+The jar stays in the build tree rather than being staged, so `export` and `release` leave it out. Every jar it
+stores keeps its directory entries, so a scan of a package on the class path finds
 them as it would in the original jar. The `--add-reads`, `--add-exports`, `--add-opens` and
 `--enable-native-access` lines of `process-java.properties` travel with it, and the launcher applies them as it
 builds the module graph. Any other JVM option does not, because `java -jar` reads none from the jar it runs:

@@ -84,7 +84,7 @@ A jar of custom checks or filters, a dependency of the Checkstyle plugin in Mave
 when `@jenesis.plugin checkstyle maven/<groupId>/<artifactId>` names it in `module-info.java`, or
 `<!--jenesis.plugin checkstyle maven/<groupId>/<artifactId>-->` in a `pom.xml`.
 
-PMD runs the rules of every priority in `pmd.xml`. `jenesis.source.pmd.priority` names the lowest priority it
+PMD runs the rules of every priority in `pmd.xml`. `jenesis.pmd.priority` names the lowest priority it
 runs, from `1`, the highest, to `5`, the default, as the Maven plugin's `minimumPriority` does; any other
 value is refused.
 
