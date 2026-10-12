@@ -122,6 +122,26 @@ A `process-kotlinc.properties` in a configuration folder hands `kotlinc` argumen
 Each line is an argument of the compiler. A `-J<option>` line or a `-D` line goes to the JVM that runs it
 instead, as the `kotlinc` command passes them, so the last line gives that JVM `-Xss4m`.
 
+## Compiling incrementally
+
+Kotlin compiles incrementally with one setting, as Gradle compiles it by default:
+
+```bash
+java -Djenesis.compile.kotlin.incremental=true build/jenesis/Make.java
+```
+
+The first build compiles every source and keeps the compiler's own records beside the classes. After an edit,
+the next build recompiles only the sources the change reaches. A changed function body recompiles its own file,
+and a changed signature also the files that use it. A module that depends on the changed one recompiles only the
+sources that use a changed declaration. Which sources a change reaches is decided by the Kotlin compiler itself,
+not by Jenesis.
+
+The setting needs Kotlin 2.3 or newer. Kotlin is then compiled through the Kotlin Build Tools API, which
+resolves as `org.jetbrains.kotlin:kotlin-build-tools-impl` in the `kotlinc` group and is pinned there beside
+the compiler, at the compiler's version. The compiler runs in the build's own JVM rather than a process of its
+own, so it stays loaded from one module to the next. A `-J` or `-D` line of `process-kotlinc.properties` is
+refused then, as there is no separate JVM for it to configure.
+
 ## Tests and internal declarations
 
 Kotlin's `internal` visibility ends at the module, and a module's tests reach into it all the same: the build
