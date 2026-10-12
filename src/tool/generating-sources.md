@@ -202,7 +202,8 @@ so the sources it writes are compiled with the module's own and the resources it
 or ProGuard rules, join the jar. KSP itself resolves in the group `ksp-runtime`, apart from the processors in
 `ksp`, because a processor brings a Kotlin standard library of its own that KSP does not use. Its arguments
 go in `process-ksp.properties`, as `-language-version=2.2` when the module's Kotlin is older than the version
-KSP is built for, which it otherwise takes.
+KSP is built for, which it otherwise takes. A `-J<option>` line or a `-D` line goes to the JVM that runs KSP
+instead, as it does for `kotlinc`.
 
 ## Turning one off
 
