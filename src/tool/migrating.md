@@ -131,7 +131,7 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | `compilerArgs`, `options.compilerArgs` | `process-javac.properties` |
 | `fork` with `meminitial`, `maxmem` or `-J` options | `jenesis.process.factory=fork` in `jenesis.properties`, with `-J<option>=` in `process-javac.properties` |
 | `annotationProcessorPaths` | A dependency of `<type>processor</type>`; one named without a version takes it from `<dependencyManagement>` |
-| The incremental Scala compilation of sbt, Gradle and the `scala-maven-plugin`'s `recompileMode=incremental` | `jenesis.compile.scala.incremental=true` in `jenesis.properties` - see *[Compiling Scala incrementally](/tool/other-jvm-languages/#compiling-scala-incrementally)* |
+| The incremental Scala compilation of sbt, Gradle and the `scala-maven-plugin`'s `recompileMode=incremental` | `jenesis.scala.incremental=true` in `jenesis.properties` - see *[Compiling Scala incrementally](/tool/other-jvm-languages/#compiling-scala-incrementally)* |
 | Gradle's `com.google.devtools.ksp` plugin and its `ksp(...)` dependencies | A [`ksp.properties`](/tool/generating-sources/#kotlin-symbol-processing), with each processor as `@jenesis.plugin ksp <coordinate>` |
 | Surefire includes and groups | `-Djenesis.test.filter`, `-Djenesis.test.tag` |
 | Surefire excludes | `-Djenesis.test.exclude`, as `.*IntegrationTest` |

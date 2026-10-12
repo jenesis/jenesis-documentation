@@ -234,7 +234,7 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.artifact.japicmp` | `true` | Run the japicmp API comparison when its file is present. |
 | `jenesis.artifact.revapi` | `report` | What revapi does when a `revapi.properties` is present: `report` records the differences that reach its severity, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.compile.errorprone` | `true` | Run Error Prone when an `errorprone.properties` is present; `javac` forks while it does, to grant the plugin the compiler internals it reads. |
-| `jenesis.compile.scala.incremental` | `false` | Compile Scala incrementally with Zinc, in a JVM forked per compile - see *[Compiling Scala incrementally](/tool/other-jvm-languages/#compiling-scala-incrementally)*. |
+| `jenesis.scala.incremental` | `false` | Compile Scala incrementally with Zinc, in a JVM forked per compile - see *[Compiling Scala incrementally](/tool/other-jvm-languages/#compiling-scala-incrementally)*. |
 | `jenesis.generate.<tool>` | `true` | Per-generator switch (`xjc`, `protoc`, `avro`, `wsimport`, `openapi`, `antlr`, `ksp`). |
 | `jenesis.generate.classpath` | `true` | Write `META-INF/services` files, and `Enable-Native-Access` for a module granting itself, from `module-info` when a `classpath.properties` is present - see *[A modular jar on the class path](/tool/packaging/#a-modular-jar-on-the-class-path)*. |
 

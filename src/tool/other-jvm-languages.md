@@ -127,7 +127,7 @@ instead, as the `kotlinc` command passes them, so the last line gives that JVM `
 Scala compiles incrementally with Zinc, the incremental compiler sbt is built on, with one setting:
 
 ```bash
-java -Djenesis.compile.scala.incremental=true build/jenesis/Make.java
+java -Djenesis.scala.incremental=true build/jenesis/Make.java
 ```
 
 The first build compiles every source and keeps Zinc's analysis beside the classes. After an edit, the next
