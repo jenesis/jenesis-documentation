@@ -316,7 +316,7 @@ jenesis.module.uri=
 
 A location over plain `http` is followed only where `jenesis.repository.insecure` allows it.
 
-{% demos 70 %}
+{% demos 72 %}
 
 ## From modules to Maven artifacts
 
@@ -377,7 +377,7 @@ as the latest link too, `https://repo.jenesis.build/module/{module}/{module}.jar
 A key that does not answer leaves the request to the other, so a domain that publishes both `module` and
 `moduletomaven` serves either kind of build.
 
-{% demos 69 %}
+{% demos 71 %}
 
 ## The sources of a release
 
@@ -397,7 +397,7 @@ the [CycloneDX](https://cyclonedx.org/docs/1.6/json/#components_items_externalRe
 build, as the `source-distribution` reference of each dependency the file answers for, so whoever reads the SBOM
 finds the code each jar was built from.
 
-{% demos 69 %}
+{% demos 71 %}
 
 ## Publishing everything a build may ask for
 

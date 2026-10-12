@@ -44,7 +44,7 @@ already produced.
   <code>.java</code> sources for resolution.
 </div>
 
-{% demos 41, 44, 46 %}
+{% demos 45, 48, 50 %}
 
 ## Which packages you can export
 
@@ -129,7 +129,7 @@ hands `kotlinc` the tested module's jar as a friend path when it compiles the te
 Maven plugin do. A test that calls an `internal` function compiles without an argument of its own, in a
 `pom.xml` build's test sources and in a module that names its tested module with `@jenesis.test`.
 
-{% demos 41 %}
+{% demos 45 %}
 
 ## A compiler plugin
 
@@ -162,7 +162,7 @@ group, and `scalac` loads the plugin the same way.
 The plugin's version is pinned the usual way, coordinated to the compiler - the `pin` step writes back its
 `@jenesis.pin` line for you.
 
-{% demos 43 %}
+{% demos 47 %}
 
 ## API documentation
 
@@ -198,4 +198,4 @@ A `dokka.properties` in the module's configuration folder takes the options the 
 A file the keys name is resolved against the module's own folder, and is an input of the build: editing it renders
 the documentation again. Dokka failing, including on a warning under `fail-on-warning=true`, fails the build.
 
-{% demos 41 %}
+{% demos 45 %}

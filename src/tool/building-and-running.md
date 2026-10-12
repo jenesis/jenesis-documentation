@@ -213,7 +213,7 @@ execution and Gradle a second `Test` task. Each run is a module of its own: two 
 holds the tests, scan it, and pass their own JVM options and system properties in their own
 `process-test.properties`.
 
-{% demos 74 %}
+{% demos 43 %}
 
 ### Tests that read their resources as files
 
@@ -234,7 +234,7 @@ A test may write files into its working directory or a temporary folder, but not
 that changes the classes or resources the build handed it fails the run and names the files it wrote,
 because the steps after the tests read those folders as they were built.
 
-{% demos 3, 4, 35 %}
+{% demos 3, 4, 38 %}
 
 ### Skipping the tests
 
@@ -317,7 +317,7 @@ enables them itself, so its test module declares `25-preview` too; without it, t
 compiling and names the release to declare. A class that uses a preview feature runs only on the Java version
 it was compiled for, so a library built this way binds its users to that JDK until the feature is final.
 
-{% demos 15 %}
+{% demos 16 %}
 
 ### One jar, several Java versions
 
@@ -353,7 +353,7 @@ with `maven.compiler.release` at `8`, the descriptor lives in `src/main/java/MET
 that declares none is given its module name by a `<!--jenesis.alias <module> <groupId>/<artifactId>-->`
 comment in the POM.
 
-{% demos 11, 41 %}
+{% demos 12, 45 %}
 
 ### Source and API-documentation jars
 
@@ -381,7 +381,7 @@ documents the generated classes, and the sources jar carries their source files 
 from, as Maven's does. The sources jar also holds the module's resources, those `jenesis.project.resources`
 places among them included, as Maven's and Gradle's sources jars do.
 
-{% demos 67 %}
+{% demos 69 %}
 
 ### Reproducible archives
 
@@ -447,7 +447,7 @@ version of the tool that writes them may well reproduce.
 `Make.java` and the `jenesis-make` tool take the setting; `Execute.java` builds once, as the program it runs
 afterwards is no part of the build. A project's own files name only a folder inside the project.
 
-{% demos 71 %}
+{% demos 36 %}
 
 ## Passing extra arguments to a tool
 
@@ -548,7 +548,7 @@ A project that names no version gets no `Implementation-Version`. A value in the
 Code on the class path reads these through `Package.getImplementationVersion()`; on the module path the JDK
 answers from the module's own version instead, which the build sets from the same version.
 
-{% demos 12 %}
+{% demos 13 %}
 
 ## Handing a program environment variables
 
@@ -651,7 +651,7 @@ such a module without a version takes that module's own version.
 The same tag, with a compiler name in front (`@jenesis.plugin kotlinc <coordinate>`), declares a compiler
 plugin for another language - covered in *Other JVM languages*.
 
-{% demos 13, 39 %}
+{% demos 14, 42 %}
 
 ## Running a module's main
 
@@ -722,7 +722,7 @@ java -Djenesis.execute.module=tools \
   current project is the job of <a href="/jpx/">jpx</a>.
 </div>
 
-{% demos 8, 9, 52 %}
+{% demos 9, 10, 53 %}
 
 ## Attaching a Java agent
 
@@ -769,7 +769,7 @@ module demo.agents.test {
   are ordinary dependencies otherwise: they resolve, pin, and appear in the bill of materials like any other.
 </div>
 
-{% demos 51 %}
+{% demos 52 %}
 
 ## Granting native access
 
@@ -861,7 +861,7 @@ build on it:
 java -Djenesis.dependency.native=warn build/jenesis/Make.java
 ```
 
-{% demos 52, 53 %}
+{% demos 53, 54 %}
 
 ## Watch mode
 

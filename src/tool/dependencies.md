@@ -115,7 +115,7 @@ A repository that answers `429 Too Many Requests` limits how often your machine 
 retries, and when the answer stays the same it fails, naming the remedy: build again later, or configure a
 mirror of that repository in its place - for the Maven remotes in `jenesis.maven.uri` or `MAVEN_REPOSITORY_URI`.
 
-{% demos 68 %}
+{% demos 70 %}
 
 ### What the build tells the module index
 
@@ -324,7 +324,7 @@ build never fetched it.
   rather than ignored. Nothing is lost: a module only ever sees what it <code>requires</code>.
 </div>
 
-{% demos 19 %}
+{% demos 20 %}
 
 ## Naming a library that has no module name
 
@@ -368,7 +368,7 @@ jline jline/jline
 
 A line naming a dependency of `test` scope reaches the tests alone, as the main code never resolves it.
 
-{% demos 21 %}
+{% demos 22 %}
 
 ## Replacing a module another artifact already carries
 
@@ -397,7 +397,7 @@ Jenesis drops the replaced artifact from the closure and puts a module of that n
 the carrier's copy of the packages. `requires jakarta.servlet` keeps meaning what it says, in your code and in
 the libraries you depend on. Like aliases, overrides need the `modular_to_maven` layout.
 
-{% demos 23 %}
+{% demos 24 %}
 
 ## Keeping a dependency private
 
@@ -444,7 +444,7 @@ even resolve a different version of the same dependency for itself. The declarat
 build that resolves that jar reconstructs the layer from it. Discovery runs to a fixpoint, so a module
 inside a layer may isolate a dependency of its own, without limit.
 
-{% demos 24 %}
+{% demos 25 %}
 
 ### Libraries that name themselves nowhere
 
@@ -474,7 +474,7 @@ automatic module reads the unnamed module, which is why the alias matters - a ja
 an *automatic* module when you name it, and an automatic module can read a class path. A module with a
 descriptor of its own cannot, and `javac` will not let it try.
 
-{% demos 25 %}
+{% demos 26 %}
 
 ### What the build refuses
 

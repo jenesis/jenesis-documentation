@@ -33,7 +33,7 @@ requires the module by name, and the local repositories are read before any remo
 the latest export, with a pinned version that version's build. A consumer does not notice a new export on its
 own; it takes one when it is rebuilt with `-Djenesis.executor.rebuild=true`.
 
-{% demos 66 %}
+{% demos 68 %}
 
 ## Staging the release tree
 
@@ -221,7 +221,7 @@ that is not a 40-character Git tree id fails the build. When
 notation SPDX uses for a download location: `git+https://github.com/jenesis/jenesis.git@<revision>`. A tag of
 `HEAD`, which a `pom.xml` declares for the root of its repository, counts as no tag there.
 
-{% demos 67 %}
+{% demos 69 %}
 
 ## Publishing a bill of materials
 
@@ -273,7 +273,7 @@ Such a module is published as its POM alone, the relocation kept, whatever its p
 leaves out - here the group ID and the version - stays that of the module itself, as Maven reads it. A module
 that relocates its artifact and also holds sources fails the build, since nothing would compile them.
 
-{% demos 20, 3 %}
+{% demos 3, 21 %}
 
 ## Signing the jar itself
 
@@ -338,7 +338,7 @@ detached signature made afterwards covers the signed bytes.
   delete <code>target/</code> after a key rotation.
 </div>
 
-{% demos 65 %}
+{% demos 67 %}
 
 ## Releasing into a Jenesis module repository
 
@@ -427,7 +427,7 @@ and any other answer than success stops it, naming the address and the status.
   names a repository of your own.
 </div>
 
-{% demos 67 %}
+{% demos 69 %}
 
 ## The last mile: signing and uploading
 

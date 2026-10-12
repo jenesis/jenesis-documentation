@@ -175,7 +175,7 @@ the same input fails the build.
   <em><a href="/tool/build-performance-and-isolation/#what-runs-on-the-host">What runs on the host</a></em>).
 </div>
 
-{% demos 57, 58 %}
+{% demos 60, 61 %}
 
 ## Plugins for the whole project
 
@@ -289,7 +289,7 @@ any plugin:
 java -Djenesis.project.plugins=false build/jenesis/Make.java pin
 ```
 
-{% demos 60 %}
+{% demos 63 %}
 
 ## Writing a build step
 
@@ -577,7 +577,7 @@ Byte Buddy resolves into the plugin's own module layer, and what the plugin rewr
  */
 ```
 
-{% demos 59 %}
+{% demos 62 %}
 
 ### Forking a tool that cannot be a module
 
@@ -683,7 +683,7 @@ points at `preprocess`. `javac`, the jar step, and the tests all consume the tra
 of the build is untouched. Any pass that produces a `sources/` tree - template expansion, code generation,
 licence-header stamping - fits the same shape.
 
-{% demos 55, 56 %}
+{% demos 58, 59 %}
 
 ### Starting on the selected JDK
 
@@ -725,7 +725,7 @@ This is a middle ground: no layout, no goals, no `Project`, yet you did not wire
 no generated POM). For full control - a custom repository, strict pinning, a different digest, or emitting a
 POM as well - switch to the longer `make(...)` overload that `Project` itself uses.
 
-{% demos 61, 62 %}
+{% demos 64, 65 %}
 
 ### Wiring the graph by hand
 
@@ -749,7 +749,7 @@ cached outputs whose inputs are unchanged. The `generate` step above synthesises
 There is no phase lifecycle to fit into: a build is just steps wired to steps, and here you wire them
 yourself.
 
-{% demos 63 %}
+{% demos 66 %}
 
 ## Running a build inside another program
 
@@ -789,5 +789,5 @@ The tools are found by name when `build.jenesis` is a resolved module or a jar o
 mode registers no service, so a program there constructs `new MakeTool()`, `new ExecuteTool()` or
 `new JpxTool()` itself; the contract is the same.
 
-{% demos 64 %}
+{% demos 74 %}
 
