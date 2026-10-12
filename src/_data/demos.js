@@ -142,7 +142,7 @@ export default {
         { slug: "demo-68-module-convention", name: "Your own module repository", blurb: "Modules published to a plain Maven repository and resolved back by module name, with no registry to keep in sync." },
         { slug: "demo-69-discovery-module", name: "Module discovery", blurb: "A module resolved from what its domain's .well-known file says - the jar straight from a GitHub release, without a module repository or Maven." },
         { slug: "demo-70-discovery-maven", name: "Maven discovery", blurb: "A Maven dependency resolved from the location its group's domain names, beside the Maven remotes." },
-        { slug: "demo-71-reproducible", name: "Reproducible builds", blurb: "A jar checked against a SHA-256 recorded in the demo, on Linux, macOS and Windows in CI." },
+        { slug: "demo-71-reproducible", name: "Reproducible builds", blurb: "The build run twice and compared step by step, with a fingerprint over every step's output and the steps that differ named." },
         { slug: "demo-72-native-image", name: "Native image", blurb: "A GraalVM native binary built end to end, with reachability metadata captured from the tests." },
         { slug: "demo-73-jpx", name: "Running a released program", blurb: "jpx installs and launches a published tool - named as a module and as a coordinate, pinned and hash-verified." },
         { slug: "demo-74-test-runs", name: "Test runs", blurb: "One module's tests run twice, by two modules that scan its jar with different settings, in a modular and in a pom.xml build." },
