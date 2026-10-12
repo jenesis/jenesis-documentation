@@ -76,6 +76,11 @@ Each language needs its standard library on the module path. You declare it as a
 | Scala | `requires scala.library;` | `org.scala-lang:scala-library` |
 | Groovy | `requires org.apache.groovy;` | `org.apache.groovy:groovy` |
 
+The code compiles against what the module declares and nothing else - not against the libraries the compiler
+itself runs on. Gradle's Kotlin plugin adds `kotlin-stdlib` to a project on its own, so a build moved from
+Gradle declares it, as a `pom.xml` dependency or a `requires`, or `kotlinc` reports that it cannot access
+`kotlin.Any`.
+
 Groovy's jar carries an `Automatic-Module-Name`, so `org.apache.groovy` resolves as an automatic module. The
 Scala standard library lives entirely in one module - `scala-library` - with `scala3-library_3` being an empty
 aggregator, so nothing splits `package scala` across two modules and the Java Module System accepts it on the
