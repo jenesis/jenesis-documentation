@@ -150,7 +150,12 @@ The `dependencies` selector prints each module's resolved tree, the way `mvn dep
 java build/jenesis/Make.java dependencies
 ```
 
-Named alone, it still compiles the modules but runs no tests, unless `-Djenesis.test.skip=false` asks for them.
+It compiles the modules and runs their tests on the way, as a build does. To see the trees without running
+the tests, add `-Djenesis.test.skip=true`:
+
+```bash
+java -Djenesis.test.skip=true build/jenesis/Make.java dependencies
+```
 
 Each module gets one tree, starting from the module itself and written like any other node: the coordinate it
 is published under, its version, the scopes it resolves and its module name, tagged `local` with the folder it
