@@ -440,7 +440,8 @@ between two machines.
 Some outputs differ by nature, because they record a time or a measurement: JaCoCo's coverage data and
 report, PIT's report, the reports of SpotBugs, PMD, CodeNarc and japicmp, and a JFR recording of the tests. The steps that write
 them are left out of the comparison and of the fingerprint, together with the steps handed what they wrote,
-and the summary line counts them.
+and the summary line counts them. So is a Kotlin compile under `jenesis.kotlin.incremental=true`, whose output holds the compiler's state;
+the classes it compiled are still compared, in the steps that copy them.
 
 `Make.java` and the `jenesis-make` tool take the setting; `Execute.java` builds once, as the program it runs
 afterwards is no part of the build. A project's own files name only a folder inside the project.
