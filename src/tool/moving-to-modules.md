@@ -127,9 +127,8 @@ the setting, what is staged is unversioned and its POM carries `0-SNAPSHOT`.
 The pins `pin` wrote into a `pom.xml` do not carry over: until `pin` runs again, the module build resolves the
 newest versions. Write a bare `@jenesis.pin <module> <version>` for each required module whose version to
 keep, and `@jenesis.pin <groupId>/<artifactId> <version>` for one only a dependency's POM brings in, since a
-module name reaches only a module that is required by it. A module name that would move such a module to
-another version fails the build, naming the coordinate pin. Then run `pin`, which adds the checksums and the
-closure. The module build resolves a conflict as a `pom.xml` does, so a version Gradle resolved higher is
+module name reaches only a module that is required by it, and a module name pin for any other module changes
+nothing. Then run `pin`, which adds the checksums and the closure. The module build resolves a conflict as a `pom.xml` does, so a version Gradle resolved higher is
 pinned here as well.
 
 ## While the old build remains
