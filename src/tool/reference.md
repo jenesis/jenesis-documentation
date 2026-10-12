@@ -48,7 +48,7 @@ property). The top-level targets the shipped layouts register:
 | `build` | Compile, check, test, and package every module (the default). |
 | `stage` | Materialise the release tree under `target/stage/…` (see *[Publishing](/tool/publishing/)*). |
 | `export` | Publish the staged tree - into the local Maven repository (`~/.m2`), the local module repository (`~/.jenesis`), or both, depending on the layout. |
-| `release` | Put the staged trees into the repositories `jenesis.release.uri` and `jenesis.release.maven.uri` name, and hand them to a release tool a `jreleaser.yml` configures, as a dry run unless told otherwise (see *[Publishing](/tool/publishing/)*). |
+| `release` | Put the staged trees into the repositories `jenesis.release.uri` and `jenesis.deploy.uri` name, and hand them to a release tool a `jreleaser.yml` configures, as a dry run unless told otherwise (see *[Publishing](/tool/publishing/)*). |
 | `plugin/<name>` | Run a plugin the project names under the hook point `plugin`, which runs only when named (see *[Extending the build](/tool/extending-the-build/#plugins-for-the-whole-project)*). |
 | `pin` | Rewrite every `pom.xml` / `module-info.java` so the transitive closure is pinned at source (see *[Pinning &amp; bills of materials](/tool/pinning/)*). |
 | `dependencies` | Print each module's resolved dependency graph with licences; named alone, it runs no tests unless `-Djenesis.test.skip=false` asks. |
@@ -217,9 +217,10 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.sbom.cyclonedx` | `true` | Emit a CycloneDX SBOM; set `false` to skip it. |
 | `jenesis.graalvm.license` | *(unset)* | Licence the SBOM beside a native image records for the GraalVM that compiled it, as an SPDX identifier or a name; unset records none (see *[Supply-chain features](/tool/supply-chain/)*). |
 | `jenesis.legal.notices` | `META-INF/NOTICE,META-INF/LICENSE,META-INF/license/,META-INF/licenses/,LICENSE,about.html` | Comma-separated jar entries taken as legal notices into a `.jmod`, a linked or packaged image and beside a native image, from the module's jar and from each runtime dependency's jar; names match regardless of case and also with an extension, and an entry ending in `/` takes the folder below it (see *[Packaging](/tool/packaging/#licences-in-each-form)*). |
-| `jenesis.compliance` | `true` | Run the licence and vulnerability checks; `false` skips both. |
+| `jenesis.compliance.license` | `true` | Run the licence check a `licensing.properties` activates; `false` skips it. |
+| `jenesis.compliance.vulnerability` | `true` | Run the vulnerability check a `vulnerability.properties` activates; `false` skips it. |
 | `jenesis.source.<tool>` | `report` | What a linter's findings do (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`): `report` records them, `strict` fails the build on them, as the linter's own exit code decides - scalafmt on a source it would format differently, CodeNarc on any finding - and `ignore` skips the linter. Any other value is refused. |
-| `jenesis.source.pmd.priority` | `5` | The lowest rule priority PMD runs, from `1`, the highest, to `5`, the lowest, as maven-pmd-plugin's `minimumPriority`; any other value is refused. |
+| `jenesis.pmd.priority` | `5` | The lowest rule priority PMD runs, from `1`, the highest, to `5`, the lowest, as maven-pmd-plugin's `minimumPriority`; any other value is refused. |
 | `jenesis.validator.spotbugs` | `report` | What SpotBugs does when its filter file is present: `report` records its findings, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.validator.forbiddenapis` | `report` | What forbiddenapis does when a `forbiddenapis.properties` is present: `report` records its findings, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.validator.jdeps` | `report` | What jdeps does when a `jdeps.properties` is present: `report` records the JDK internal APIs the classes use, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
@@ -290,11 +291,11 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.repository.insecure` | `false` | Permit plaintext (`http://`) repositories, and over `https` accept a certificate that does not verify, such as a self-signed one. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.repository.retries` | `2` | Retries for a transient fetch failure (`0` disables). |
 | `jenesis.repository.backoff` | `125` | Initial retry wait in milliseconds, doubling each attempt. |
-| `jenesis.repository.connect.timeout` | `10000` | Connect timeout for a repository fetch, in milliseconds. |
-| `jenesis.repository.read.timeout` | `30000` | Read timeout for a repository fetch, in milliseconds. |
+| `jenesis.repository.connect` | `10000` | Connect timeout for a repository fetch, in milliseconds. |
+| `jenesis.repository.read` | `30000` | Read timeout for a repository fetch, in milliseconds. |
 | `jenesis.repository.discovery` | `false` | Before the module and Maven repositories, read `https://<domain>/.well-known/java-repository.properties` of the domain a module or Maven group is named after - see *[Discovery](/tool/discovery/)*. |
-| `jenesis.repository.discovery.timeout` | `5000` | Connect and read timeout, in milliseconds, for a domain's discovery file, which is asked once rather than with the retries of `jenesis.repository.retries`; a domain that does not answer in time counts as publishing none for this build. A value that is not positive is refused. |
-| `jenesis.repository.discovery.ttl` | `24` | Hours a domain's discovery answer - its file, or a `404` or `410` for none - is kept under `well-known/` in the local module repository, so a later build reads it rather than asking again; `0` keeps nothing. Delete `well-known/` to ask sooner. A local module repository that cannot be written is read alone. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.discovery.timeout` | `5000` | Connect and read timeout, in milliseconds, for a domain's discovery file, which is asked once rather than with the retries of `jenesis.repository.retries`; a domain that does not answer in time counts as publishing none for this build. A value that is not positive is refused. |
+| `jenesis.discovery.ttl` | `24` | Hours a domain's discovery answer - its file, or a `404` or `410` for none - is kept under `well-known/` in the local module repository, so a later build reads it rather than asking again; `0` keeps nothing. Delete `well-known/` to ask sooner. A local module repository that cannot be written is read alone. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.repository.offline` | `false` | Download nothing. Modules, artifacts, checksums and keys come from `.jenesis/artifacts`, the local Maven repository or a local module folder, and Maven metadata an earlier resolution stored answers a version range at the versions it named then. A fetch that would need the network fails the build with its URL named. No domain is asked for its discovery file, and what an earlier build kept of one is read whatever its age. The remote build cache is skipped, and a vulnerability lookup or a release fails the build. |
 
 ### Caching
@@ -316,12 +317,12 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.execute.module` | *(prompt)* | The module to run with `Execute.java`. |
 | `jenesis.execute.main` | *(inferred)* | The main class to run. |
 | `jenesis.project.docker` | `false` | Build inside a throwaway container. Command line or `~/.jenesis/jenesis.properties` only. |
-| `jenesis.project.docker.image` | *(hardened)* | Image for the build container. Command line or `~/.jenesis/jenesis.properties` only. |
-| `jenesis.project.docker.readable` | *(none)* | `<host>[:<container>],…` read-only bind mounts. Command line or `~/.jenesis/jenesis.properties` only. |
-| `jenesis.project.docker.writable` | *(none)* | Writable bind mounts. Command line or `~/.jenesis/jenesis.properties` only. |
-| `jenesis.project.docker.env` | *(none)* | `<name>[=<value>],…` environment forwarded into the container. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.project.image` | *(hardened)* | Image for the build container. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.project.readable` | *(none)* | `<host>[:<container>],…` read-only bind mounts. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.project.writable` | *(none)* | Writable bind mounts. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.project.env` | *(none)* | `<name>[=<value>],…` environment forwarded into the container. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.execute.docker` | `false` | Run the launched program in a container. Command line or `~/.jenesis/jenesis.properties` only. |
-| `jenesis.execute.docker.image` / `.mount` / `.env` | *(as above)* | The run-side equivalents. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.execute.image` / `readable` / `writable` / `env` | *(as above)* | The run-side equivalents. Command line or `~/.jenesis/jenesis.properties` only. |
 
 ### Releasing
 
@@ -331,8 +332,8 @@ Read by the `release` target - see *[Publishing](/tool/publishing/)*.
 | --- | --- | --- |
 | `jenesis.release.uri` (`JENESIS_RELEASE_URI`) | *(unset)* | The Jenesis module repository `release` puts each staged module into, with one put of its jar at `module/<module>/<version>/<module>.jar`, so every module needs a version: the `https:` address of a `jenesis` repository of a Jenesis Repository, the one `jenesis.module.uri` names; a `java` repository takes Maven publishes only and refuses the put. Unset, `release` puts nothing there. Its environment variable is not the one a build resolves through. |
 | `jenesis.release.token` (`JENESIS_RELEASE_TOKEN`) | *(unset)* | `Authorization` header sent to that repository, as given. Command line, `~/.jenesis/jenesis.properties` or the environment only. It travels only to a `jenesis.release.uri` named in the environment, on the command line or there, never to one a project's own file named. Its environment variable is not the one sent to the resolving repositories. |
-| `jenesis.release.maven.uri` (`MAVEN_RELEASE_URI`) | *(unset)* | The Maven repository `release` puts the staged Maven tree into, every file at `<group path>/<artifactId>/<version>/<file>` with its `.md5`, `.sha1`, `.sha256` and `.sha512`, then each artifact's `maven-metadata.xml` merged with the one the repository holds; a `-SNAPSHOT` version under a unique timestamped name beside its own `maven-metadata.xml`, as Maven deploys one. Nothing is signed, and Maven Central is refused, as a `jreleaser.yml` releases there. Unset, `release` puts nothing there. Its environment variable is not the one a build resolves through. |
-| `jenesis.release.maven.token` (`MAVEN_RELEASE_TOKEN`) | *(unset)* | `Authorization` header sent to that repository, as given, so it names its scheme, as `Basic <credentials>` or `Bearer <token>`. Command line, `~/.jenesis/jenesis.properties` or the environment only. It travels only to a `jenesis.release.maven.uri` named in the environment, on the command line or there, never to one a project's own file named. |
+| `jenesis.deploy.uri` (`MAVEN_RELEASE_URI`) | *(unset)* | The Maven repository `release` puts the staged Maven tree into, every file at `<group path>/<artifactId>/<version>/<file>` with its `.md5`, `.sha1`, `.sha256` and `.sha512`, then each artifact's `maven-metadata.xml` merged with the one the repository holds; a `-SNAPSHOT` version under a unique timestamped name beside its own `maven-metadata.xml`, as Maven deploys one. Nothing is signed, and Maven Central is refused, as a `jreleaser.yml` releases there. Unset, `release` puts nothing there. Its environment variable is not the one a build resolves through. |
+| `jenesis.deploy.token` (`MAVEN_RELEASE_TOKEN`) | *(unset)* | `Authorization` header sent to that repository, as given, so it names its scheme, as `Basic <credentials>` or `Bearer <token>`. Command line, `~/.jenesis/jenesis.properties` or the environment only. It travels only to a `jenesis.deploy.uri` named in the environment, on the command line or there, never to one a project's own file named. |
 | `jenesis.jreleaser.config` | *(discovered)* | The release-tool configuration file; must exist when named. |
 | `jenesis.jreleaser.dry` | `true` | Perform every local phase and skip every remote one; `false` publishes. |
 | `jenesis.jreleaser.executable` | `jreleaser` | The executable to locate. Command line or `~/.jenesis/jenesis.properties` only. |
