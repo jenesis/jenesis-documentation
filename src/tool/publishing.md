@@ -172,6 +172,7 @@ resolved to, a sibling module as its published coordinate:
 | `requires` | a dependency of `compile` scope |
 | `requires static` | a dependency of `provided` scope |
 | `@jenesis.exclude` | the `<exclusions>` of the dependency it names |
+| `@jenesis.override` | no dependency for the overridden module, and an exclusion of each artifact the override dropped on every dependency |
 
 Nothing is published as optional. A `requires` that resolved to no Maven artifact has nothing to be named by,
 so the build fails and names the `@jenesis.alias` that gives it one.
