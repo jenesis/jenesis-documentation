@@ -444,6 +444,9 @@ Some outputs differ by nature, because they record a time or a measurement, such
 recording or a report that records when it was written. They are listed like any other difference, as a newer
 version of the tool that writes them may well reproduce.
 
+A Scala compile under `jenesis.scala.incremental=true` is listed as well, because its output holds the
+compiler's state beside the classes. The classes it compiled are still compared, in the steps that copy them.
+
 `Make.java` and the `jenesis-make` tool take the setting; `Execute.java` builds once, as the program it runs
 afterwards is no part of the build. A project's own files name only a folder inside the project.
 

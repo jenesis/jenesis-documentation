@@ -122,6 +122,25 @@ A `process-kotlinc.properties` in a configuration folder hands `kotlinc` argumen
 Each line is an argument of the compiler. A `-J<option>` line or a `-D` line goes to the JVM that runs it
 instead, as the `kotlinc` command passes them, so the last line gives that JVM `-Xss4m`.
 
+## Compiling Scala incrementally
+
+Scala compiles incrementally with Zinc, the incremental compiler sbt is built on, with one setting:
+
+```bash
+java -Djenesis.scala.incremental=true build/jenesis/Make.java
+```
+
+The first build compiles every source and keeps Zinc's analysis beside the classes. After an edit, the next
+build recompiles only the sources the change reaches: a changed method body recompiles its own file, and a
+changed signature also the files that use it. Which sources a change reaches is decided by Zinc itself, not by
+Jenesis. Zinc also compiles the `.java` sources of a mixed module to follow what they declare, but the module's
+Java classes still come from `javac`, which runs after it as without the setting.
+
+Zinc resolves as `org.scala-sbt:zinc_2.13` in a `zinc` group of its own and is pinned there. It drives the
+compiler through `org.scala-lang:scala3-sbt-bridge`, which resolves in the `scalac` group beside the compiler, at
+the compiler's version. Each compile runs in a JVM of its own, as `scalac` does without the setting, and the
+lines of `process-scalac.properties` configure that JVM.
+
 ## Tests and internal declarations
 
 Kotlin's `internal` visibility ends at the module, and a module's tests reach into it all the same: the build
