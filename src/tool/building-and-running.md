@@ -423,25 +423,26 @@ The build runs into the target folder as usual, then builds the same selection a
 by the checksums it records for every step, and ends with one line:
 
 ```
-The build reproduced: 19 steps wrote the same output into target-reproduced as into target - fingerprint SHA-256:401a4f13dd00c7b7d7eeee6579468ca7200b1e62fa3380a036c1e1a678f0bb49
+The build reproduced: 20 steps wrote the same output into target-reproduced as into target - fingerprint SHA-256:401a4f13dd00c7b7d7eeee6579468ca7200b1e62fa3380a036c1e1a678f0bb49
 ```
 
 It then deletes `target-reproduced`. The fingerprint is a SHA-256 digest of what every step wrote, so two
 machines that print the same one built the same bytes in every step, not only in the archives.
 
-A difference fails the build. The message first names each step that wrote a different output although it
-was handed the same input in both builds, with the files that differ. After them it lists the steps that were
-handed a different input as a consequence, and any step that ran in one build only. Both folders are kept, so
-the `output` folder of a step named in the message can be compared between them.
+The check is a debugging aid, so a difference does not fail the build. The summary line then says how many steps
+differ, and below it the build first names each step that wrote a different output although it was handed the
+same input in both builds, with the files that differ. After them it lists the steps that were handed a
+different input as a consequence, and any step that ran in one build only. `-Djenesis.print.reproduce=false`
+prints the summary line alone. Both folders are kept, so the `output` folder of a step named there can be
+compared between them.
 
 The second build writes into another folder on purpose. A step that records the path it writes to - a report
 that names the files it checked by their absolute path, say - differs between the two builds, as it would
 between two machines.
 
-Some outputs differ by nature, because they record a time or a measurement: JaCoCo's coverage data and
-report, PIT's report, the reports of SpotBugs, PMD, CodeNarc and japicmp, and a JFR recording of the tests. The steps that write
-them are left out of the comparison and of the fingerprint, together with the steps handed what they wrote,
-and the summary line counts them.
+Some outputs differ by nature, because they record a time or a measurement, such as coverage data, a test
+recording or a report that records when it was written. They are listed like any other difference, as a newer
+version of the tool that writes them may well reproduce.
 
 `Make.java` and the `jenesis-make` tool take the setting; `Execute.java` builds once, as the program it runs
 afterwards is no part of the build. A project's own files name only a folder inside the project.
