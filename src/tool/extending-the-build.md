@@ -76,6 +76,7 @@ point runs as `custom/<name>`, in the module build itself:
 | `observed` | With the module's tests, beside the stock observers such as coverage. |
 | `observe` | Attached to the JVM the module's tests run in, by a plugin that provides an `ObservabilityFactory`; its report runs as `observed/observations/<name>`, handed the tests' output. |
 | `test` | The framework the module's tests run on, from a plugin that provides a `TestFrameworkFactory`, consulted before the built-in frameworks. |
+| `language` | A language of its own, from a plugin that provides a `LanguageFactory`: compiled before or after javac, and documented, wherever a module holds a file of its extensions. |
 | `documentation/generate` | Beside the stock documentation generators. |
 | `documentation` | Within the documentation build, handed the compiled module. |
 | *(none)* | In the module build itself, handed everything the module reads. |
@@ -541,6 +542,27 @@ public Map<String, String> systemProperties() {
     properties.put("demo.framework", name);
     return properties;
 }
+```
+
+### Compiling a language of your own
+
+A plugin of the hook point `language` provides a `LanguageFactory`, is handed the same, and returns a `Language`:
+the file extensions it compiles, the module that compiles them, whether that runs before or after javac, and the
+module that documents them, or `null`. It needs no `plugin-<name>.properties`: it runs in every module that holds a
+file of its extensions, and takes its values from that file where one is found.
+
+| A language's | Is handed, and writes |
+| --- | --- |
+| compiler before javac | the module's sources and dependencies, and the classes of the compilers before it; javac compiles against the `classes/` it writes. |
+| compiler after javac | the same, and the classes javac wrote. |
+| documentation | the module's sources; the `javadoc/` it writes joins the module's documentation, at its root where the language is the module's only one and under `javadoc/<name>/` beside others. |
+
+A file of the language's extensions is no resource, so it never reaches the jar. A `pom.xml` project compiles a
+folder beside `src/main/java`, such as `src/main/kotlin`, only where `jenesis.maven.sources` names it:
+
+```properties
+# jenesis.properties
+jenesis.maven.sources=kotlin
 ```
 
 {% demos 60 %}
