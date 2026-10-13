@@ -259,31 +259,34 @@ parent POM in the project.
 ## Formatting
 
 Formatters are the rewriting counterpart to the linters: where a linter reads your sources and writes a
-report, a formatter reads them and can rewrite them in place. The Java formatter is selected by a
-`javaformat.properties` file naming the formatter:
+report, a formatter reads them and can rewrite them in place. The formatters are plugins of the hook point
+`format`, which runs them after the licence header is checked or written:
 
 ```properties
-formatter=google
+# jenesis.plugins.properties
+googlejavaformat+format=build.jenesis.plugin.googlejavaformat
 ```
 
-`formatter=palantir` selects the Palantir formatter instead, and `formatter=eclipse` the Eclipse formatter; with no
-file, no Java formatter runs. The same file takes the formatter's options, and an option the selected formatter
-does not have fails the build, naming the ones it has:
+Each runs where its `plugin-<name>.properties` is found. The file may be empty, or hold the formatter's options,
+and an option the formatter does not have fails the build, naming the ones it has:
 
-| Key | Formatter | Value |
+| Plugin | Value | Meaning |
 | --- | --- | --- |
-| `style` | google | `google`, the default, or `aosp` for the Android Open Source Project's four-space style |
-| `reflow` | google, palantir | `false` leaves long strings as they are written |
-| `javadoc` | google | `false` leaves Javadoc as it is written |
-| `imports` | google, palantir | what happens to the imports: `sort,remove`, the default, `sort`, `remove` or `none` |
-| `profile` | eclipse | the formatter profile Eclipse exports, a file beside or below `javaformat.properties` |
+| `build.jenesis.plugin.googlejavaformat` | `style` | `google`, the default, or `aosp` for the Android Open Source Project's four-space style |
+| | `reflow` | `false` leaves long strings as they are written |
+| | `javadoc` | `false` leaves Javadoc as it is written |
+| | `imports` | what happens to the imports: `sort,remove`, the default, `sort`, `remove` or `none` |
+| `build.jenesis.plugin.palantir` | `reflow`, `imports` | as for google-java-format |
+| `build.jenesis.plugin.eclipse` | `@profile/eclipse-formatter.xml=<path>` | binds the formatter profile Eclipse exports |
+| `build.jenesis.plugin.ktlint@format` | `@rules=<path>` | binds the `.editorconfig` that drives ktlint |
+| `build.jenesis.plugin.ktfmt` | `style` | `meta`, the default, `google` or `kotlinlang` |
+| | `imports` | `sort` keeps unused imports; `sort,remove`, the default, removes them as well |
+| `build.jenesis.plugin.scalafmt@format` | `@rules=<path>` | binds `.scalafmt.conf` |
 
-Kotlin formatting is `ktlint -F`, activated by the same `.editorconfig` that drives the ktlint linter, or ktfmt,
-activated by a `ktfmt.properties` whose `style` is `meta`, the default, `google` or `kotlinlang`, and whose
-`imports=sort` keeps unused imports. The two cannot format the same sources, so a `ktfmt.properties` beside an
-`.editorconfig` needs `jenesis.format.ktlint=false`. Scala formatting is `scalafmt`, activated by `.scalafmt.conf`.
-Each switches off with `jenesis.format.java`, `jenesis.format.ktlint`, `jenesis.format.ktfmt` and
-`jenesis.format.scalafmt` (each defaulting to `true`).
+The ktlint and scalafmt plugins also check, so their linter and their formatter are named apart, as
+`ktlint+check=build.jenesis.plugin.ktlint@check` and `ktlintformat+format=build.jenesis.plugin.ktlint@format`. Two
+formatters would fight over the same sources, so a profile that brings one in switches the other off with
+`jenesis.plugin.<name>=false` in its `jenesis-<profile>.properties`.
 
 ### Licence headers
 
@@ -333,8 +336,8 @@ To apply the formatter and rewrite your sources in place, run the build with the
 java -Djenesis.format.rewrite=true build/jenesis/Make.java
 ```
 
-The switch flips the whole chain - the licence headers, the Java formatter, ktlint or ktfmt, and scalafmt - from
-verifying to rewriting.
+The switch flips the whole chain - the licence headers and every formatter plugin - from verifying to
+rewriting.
 After a rewrite, a plain build passes the verify gate again.
 
 <div class="note">

@@ -125,12 +125,12 @@ the tests sits in each module's `src/test/build.jenesis/`, or in the folder of e
 What these folders can hold - presence activates, contents configure:
 
 - **Plugins**: `plugin-<name>.properties` - a plugin `jenesis.plugins.properties` names runs where its file is
-  found, with its values and the files it binds, as Checkstyle's `checkstyle.xml`.
+  found, with its values and the files it binds, as Checkstyle's `checkstyle.xml` or the `.editorconfig` of ktlint.
 - **Code quality**: `spotbugs-exclude.xml`, `forbiddenapis.properties`, `jdeps.properties`,
   `jdeprscan.properties`.
 - **Generated sources**: `xjc.properties`, `protoc.properties`, `avro.properties`, `wsimport.properties`,
   `openapi.properties`, `antlr.properties`.
-- **Formatting**: `javaformat.properties`, `.editorconfig`, `ktfmt.properties`, `.scalafmt.conf`, `licenseheader.properties`.
+- **Formatting**: `licenseheader.properties`; the formatters are plugins.
 - **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`.
 - **Compliance**: `licensing.properties`, `vulnerability.properties`, `spdx.properties`.
 - **Tests**: `test.properties`, naming the engine a module's tests run on.

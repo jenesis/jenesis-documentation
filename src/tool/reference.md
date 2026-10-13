@@ -226,7 +226,6 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.validator.forbiddenapis` | `report` | What forbiddenapis does when a `forbiddenapis.properties` is present: `report` records its findings, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.validator.jdeps` | `report` | What jdeps does when a `jdeps.properties` is present: `report` records the JDK internal APIs the classes use, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.validator.jdeprscan` | `report` | What jdeprscan does when a `jdeprscan.properties` is present: `report` records the uses of APIs deprecated for removal, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
-| `jenesis.format.java` / `.ktlint` / `.ktfmt` / `.scalafmt` | `true` | Per-formatter switch. |
 | `jenesis.format.license` | `true` | The licence header check a `licenseheader.properties` activates, with its `text` or, without one, SPDX lines naming the declared licence and copyright. |
 | `jenesis.format.rewrite` | `false` | Rewrite sources in place instead of verifying. |
 | `jenesis.observe.jacoco` | `true` | Run JaCoCo coverage when its file is present. |
