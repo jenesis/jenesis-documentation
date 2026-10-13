@@ -1,14 +1,14 @@
 ---
 order: 10
 title: Code quality & testing
-description: The linters, the compiler plugin, formatters, coverage, test selection, mutation testing and API-compatibility checks Jenesis runs for you - each turned on by dropping its config file in place, no build script and no plugin to register.
+description: The linters, the compiler plugin, formatters, coverage, test selection, mutation testing and API-compatibility checks Jenesis runs for you - each turned on by its configuration file or a line naming its plugin, with no build script.
 ---
 
 A healthy codebase runs more than a compiler over its sources. Jenesis wires in the usual quality tools
-(static analysis, formatters, coverage, mutation testing) and a faster inner test loop, and it does so the
-same way it does everything else: **there is no plugin to register**. A tool turns itself on when its
-configuration file is present, and stays off when it is not. This chapter is the set of tools and how each
-one behaves.
+(static analysis, formatters, coverage, mutation testing) and a faster inner test loop. A tool of the build
+turns itself on when its configuration file is present, and stays off when it is not; a plugin runs where
+`jenesis.plugins.properties` names it and its `plugin-<name>.properties` is found. This chapter is the set of
+tools and how each one behaves.
 
 Every file below lives in a **configuration folder** (`build.jenesis/` by default). *[Configuration](/tool/configuration/)* covers
 where those folders sit and how per-module and profile overrides work; here we only care about which file
@@ -16,27 +16,45 @@ switches on which tool.
 
 ## Static analysis
 
-Drop a tool's conventional configuration file into the configuration folder and the tool runs on the next
-build. Nothing else is needed - the file's presence is the switch, and its contents are the tool's own rules.
+The linters of the sources are plugins. A line of `jenesis.plugins.properties`, beside `jenesis.properties`,
+names each at the hook point `check`, which runs it beside the module's own checks. The plugin runs in a module
+where its `plugin-<name>.properties` is found in a configuration folder, and that file binds the configuration
+its tool reads:
 
-| File | Tool | Inspects |
+```properties
+# jenesis.plugins.properties
+checkstyle+check=build.jenesis.plugin.checkstyle
+pmd+check=build.jenesis.plugin.pmd
+```
+
+```properties
+# build.jenesis/plugin-pmd.properties
+@rules=../build.jenesis/pmd.xml
+```
+
+`@rules=<path>` hands the file at the path, resolved against the module's folder, to the plugin as its input
+`rules`. The tools that read compiled classes still turn on when their file is present in the configuration
+folder.
+
+| Plugin or file | Tool | Inspects |
 | --- | --- | --- |
-| `checkstyle.xml` | Checkstyle | source files |
-| `pmd.xml` | PMD | source files |
+| `build.jenesis.plugin.checkstyle`, binding `checkstyle.xml` | Checkstyle | source files |
+| `build.jenesis.plugin.pmd`, binding `pmd.xml` | PMD | source files |
+| `build.jenesis.plugin.detekt`, binding `detekt.yml` | detekt (Kotlin) | source files |
+| `build.jenesis.plugin.ktlint@check`, binding `.editorconfig` | ktlint (Kotlin) | source files |
+| `build.jenesis.plugin.scalastyle`, binding `scalastyle-config.xml` | Scalastyle | source files |
+| `build.jenesis.plugin.scalafmt@check`, binding `.scalafmt.conf` | scalafmt (as a linter) | source files |
+| `build.jenesis.plugin.codenarc`, binding `codenarc.xml` | CodeNarc (Groovy) | source files |
 | `spotbugs-exclude.xml` | SpotBugs | compiled classes |
 | `forbiddenapis.properties` | forbiddenapis | compiled classes |
 | `jdeps.properties` | the JDK's jdeps | compiled classes |
 | `jdeprscan.properties` | the JDK's jdeprscan | compiled classes |
-| `detekt.yml` | detekt (Kotlin) | source files |
-| `.editorconfig` | ktlint (Kotlin) | source files |
-| `scalastyle-config.xml` | Scalastyle | source files |
-| `.scalafmt.conf` | scalafmt (as a linter) | source files |
-| `codenarc.xml` | CodeNarc (Groovy) | source files |
 
-The source linters run **in parallel with compilation**, since they read sources rather than classes;
-SpotBugs, forbiddenapis, jdeps and jdeprscan run once the classes exist. Each tool resolves in its own dependency group (named after the tool,
-kept apart from your project's own dependencies), floats a `RELEASE` version until pinned, and runs in a
-forked JVM. A tool whose language is not present skips itself: a stray `detekt.yml` in a pure-Java
+The ktlint and scalafmt plugins also format, so `@check` selects their checker. The source linters run **in
+parallel with compilation**, since they read sources rather than classes; SpotBugs, forbiddenapis, jdeps and
+jdeprscan run once the classes exist. Each tool resolves in its own dependency group (named after the tool or
+the plugin, kept apart from your project's own dependencies), floats a `RELEASE` version until pinned, and runs
+in a JVM of its own. A tool whose language is not present skips itself: the detekt plugin in a pure-Java
 project does nothing.
 
 ### Report, strict or ignore
@@ -48,7 +66,7 @@ Each linter has one setting that says what its findings do: `jenesis.source.<too
 | --- | --- |
 | `report` *(the default)* | runs and records its findings, but never fails the build |
 | `strict` | runs and fails the build on its findings |
-| `ignore` | does not run, though its configuration file is in place |
+| `ignore` | does not run, though its configuration is in place |
 
 Any other value is refused, naming these three. Reporting by default makes it safe to turn a tool on across an
 existing codebase without an immediate red build. A linter that found something says so in one line, with the
@@ -66,32 +84,30 @@ SpotBugs, CodeNarc, forbiddenapis, jdeps and jdeprscan fail on any finding their
 Reporting covers findings, not a tool that never ran. A linter that fails on its own configuration, and so
 writes no complete report, fails its step either way.
 
-Checkstyle reads `${config_loc}` as the folder of `checkstyle.xml`, as the Maven and Gradle plugins define
-it. A file the configuration names as `${config_loc}/<path>`, such as a suppressions file beside it, is handed
-to Checkstyle with it, and changing that file runs the check again. A path that leaves the folder of
-`checkstyle.xml` is refused.
+### Checkstyle and PMD
 
-Every other `${<property>}` the configuration names is a line of a `checkstyle.properties` in the
-configuration folder, which takes the place of the Maven plugin's `propertyExpansion` and Gradle's
-`configProperties`. Without the line, Checkstyle fails to load the configuration. `config_loc` is the one
-property the file cannot set. A value `@<key>` stands for the setting `-Djenesis.variable.<key>`,
-`@<key>/<default>` gives it a default, and `@@` writes a literal `@`:
+Checkstyle reads `${config_loc}` as the folder of `checkstyle.xml`, as the Maven and Gradle plugins define
+it. A file the configuration names as `${config_loc}/<path>`, such as a suppressions file beside it, is bound
+into the same input, as `@rules/suppressions.xml=<path>`, and changing that file runs the check again.
+
+Every other `${<property>}` the configuration names is a line of `plugin-checkstyle.properties`, which takes the
+place of the Maven plugin's `propertyExpansion` and Gradle's `configProperties`. Without the line, Checkstyle
+fails to load the configuration. `config_loc` is the one property the file cannot set. A value `@<key>` stands
+for the setting `-Djenesis.variable.<key>`, `@<key>/<default>` gives it a default, and `@@` writes a literal `@`:
 
 ```properties
-# build.jenesis/checkstyle.properties  →  read by <property name="severity" value="${checkstyle.severity}"/>
+# build.jenesis/plugin-checkstyle.properties  →  read by <property name="severity" value="${checkstyle.severity}"/>
+@rules=../build.jenesis/checkstyle.xml
 checkstyle.severity=warning
 ```
 
-The line `configuration` names a configuration to use in place of a `checkstyle.xml`, resolved against the
-properties file. It may lie outside the project, so that several projects share one, and the files it names as
-`${config_loc}/<path>` are taken from beside it:
+A bound file may lie outside the project, so that several projects share one configuration.
+`@rules/checkstyle.xml=<path>` hands it to Checkstyle as `checkstyle.xml`, whatever it is called:
 
 ```properties
-# build.jenesis/checkstyle.properties
-configuration=../../shared/company.xml
+# build.jenesis/plugin-checkstyle.properties
+@rules/checkstyle.xml=../../shared/company.xml
 ```
-
-A `checkstyle.xml` beside a `checkstyle.properties` that names another configuration fails the build.
 
 A jar of custom checks or filters, a dependency of the Checkstyle plugin in Maven, joins Checkstyle's class path
 when `@jenesis.plugin checkstyle maven/<groupId>/<artifactId>` names it in `module-info.java`, or
@@ -103,8 +119,7 @@ value is refused.
 
 ### Switching a tool off
 
-File discovery alone decides which linters run until a setting says otherwise. `ignore` skips one without
-deleting its configuration file:
+`ignore` skips a linter without deleting its configuration:
 
 | Property | Covers |
 | --- | --- |
@@ -112,7 +127,7 @@ deleting its configuration file:
 | `jenesis.validator.<tool>` | `spotbugs`, `forbiddenapis`, `jdeps`, `jdeprscan` |
 
 For example, `-Djenesis.source.checkstyle=ignore` keeps `checkstyle.xml` in place but skips Checkstyle, while
-PMD and SpotBugs still run.
+PMD and SpotBugs still run. `-Djenesis.plugin.<name>=false` leaves out any plugin the file names.
 
 ### Forbidden API calls
 

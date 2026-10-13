@@ -220,8 +220,8 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.legal.notices` | `META-INF/NOTICE,META-INF/LICENSE,META-INF/license/,META-INF/licenses/,LICENSE,about.html` | Comma-separated jar entries taken as legal notices into a `.jmod`, a linked or packaged image and beside a native image, from the module's jar and from each runtime dependency's jar; names match regardless of case and also with an extension, and an entry ending in `/` takes the folder below it (see *[Packaging](/tool/packaging/#licences-in-each-form)*). |
 | `jenesis.compliance.license` | `true` | Run the licence check a `licensing.properties` activates; `false` skips it. |
 | `jenesis.compliance.vulnerability` | `true` | Run the vulnerability check a `vulnerability.properties` activates; `false` skips it. |
-| `jenesis.source.<tool>` | `report` | What a linter's findings do (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`): `report` records them, `strict` fails the build on them, as the linter's own exit code decides - scalafmt on a source it would format differently, CodeNarc on any finding - and `ignore` skips the linter. Any other value is refused. |
-| `jenesis.pmd.priority` | `5` | The lowest rule priority PMD runs, from `1`, the highest, to `5`, the lowest, as maven-pmd-plugin's `minimumPriority`; any other value is refused. |
+| `jenesis.source.<tool>` | `report` | What the findings of a linter plugin do (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`), read by the plugin: `report` records them, `strict` fails the build on them, as the linter's own exit code decides - scalafmt on a source it would format differently, CodeNarc on any finding - and `ignore` skips the linter. Any other value is refused. |
+| `jenesis.pmd.priority` | `5` | The lowest rule priority the PMD plugin runs, from `1`, the highest, to `5`, the lowest, as maven-pmd-plugin's `minimumPriority`; any other value is refused. |
 | `jenesis.validator.spotbugs` | `report` | What SpotBugs does when its filter file is present: `report` records its findings, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.validator.forbiddenapis` | `report` | What forbiddenapis does when a `forbiddenapis.properties` is present: `report` records its findings, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.validator.jdeps` | `report` | What jdeps does when a `jdeps.properties` is present: `report` records the JDK internal APIs the classes use, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
@@ -238,7 +238,7 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.generate.<tool>` | `true` | Per-generator switch (`xjc`, `protoc`, `avro`, `wsimport`, `openapi`, `antlr`, `ksp`). |
 | `jenesis.generate.classpath` | `true` | Write `META-INF/services` files, and `Enable-Native-Access` for a module granting itself, from `module-info` when a `classpath.properties` is present - see *[A modular jar on the class path](/tool/packaging/#a-modular-jar-on-the-class-path)*. |
 
-The quality and packaging *files* these keys gate (`checkstyle.xml`, `packaging.properties`, and the like)
+The quality and packaging *files* these keys gate (`spotbugs-exclude.xml`, `packaging.properties`, and the like)
 are covered in *[Code quality &amp; testing](/tool/code-quality-and-testing/)*, *[Generating
 sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chain/)*, and
 *[Packaging](/tool/packaging/)*.
@@ -257,7 +257,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.pin.provided` | *(unset)* | Comma-separated pin files, relative to the project root, whose entries the file `jenesis.pin.file` names leaves out where the version and the checksum are the same. |
 | `jenesis.pin.concurrency` | *(processor count)* | How many modules' pins `pin` rewrites at once; `0` is unbounded. |
 | `jenesis.platform.<token>` | *(detected)* | Add (`=true`) or remove (`=false`) a platform token used to select guarded pins. |
-| `jenesis.variable.<key>` | *(unset)* | What a value `@<key>` or `@<key>/<default>` in a `process-<command>.properties`, `environment-<command>.properties`, `plugin-<name>.properties` or `checkstyle.properties` stands for; part of the input of every program it reaches (see *[Building &amp; running](/tool/building-and-running/#values-from-the-command-line)*). |
+| `jenesis.variable.<key>` | *(unset)* | What a value `@<key>` or `@<key>/<default>` in a `process-<command>.properties`, `environment-<command>.properties` or `plugin-<name>.properties` stands for; part of the input of every program it reaches (see *[Building &amp; running](/tool/building-and-running/#values-from-the-command-line)*). |
 | `jenesis.plugin.<name>` | `true` | `false` leaves out the plugin `<name>` that `jenesis.plugins.properties` names (see *[Extending the build](/tool/extending-the-build/#adding-plugins-to-the-stock-build)*). |
 | `jenesis.project.plugins` | `true` | `false` leaves out every plugin that `jenesis.plugins.properties` names, while `pin` still pins those of the whole project (see *[Extending the build](/tool/extending-the-build/#pinning-them)*). |
 | `jenesis.project.digest` | `SHA-256` | Digest algorithm the `pin` step uses to checksum artifacts. |

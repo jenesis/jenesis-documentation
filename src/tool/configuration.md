@@ -101,9 +101,9 @@ because a JVM option has to reach the JVM and therefore belongs before the main 
 
 ## Where tool configuration lives
 
-System properties are the small knobs. A tool like Checkstyle or jpackage needs its own configuration *file*,
-and those live in dedicated folders. A tool **activates on the presence of its file**: drop a `checkstyle.xml`
-in and static analysis turns on; leave it out and it stays off. The folder is both the switch and the
+System properties are the small knobs. A tool like SpotBugs or jpackage needs its own configuration *file*,
+and those live in dedicated folders. A tool **activates on the presence of its file**: drop a
+`spotbugs-exclude.xml` in and bytecode analysis turns on; leave it out and it stays off. The folder is both the switch and the
 settings.
 
 Every lookup walks one ordered list of folders and the **first folder that carries the file wins**. The list
@@ -124,9 +124,10 @@ the tests sits in each module's `src/test/build.jenesis/`, or in the folder of e
 
 What these folders can hold - presence activates, contents configure:
 
-- **Code quality**: `checkstyle.xml`, `pmd.xml`, `spotbugs-exclude.xml`, `forbiddenapis.properties`, `jdeps.properties`,
-  `jdeprscan.properties`, `detekt.yml`, `codenarc.xml`,
-  `scalastyle-config.xml`.
+- **Plugins**: `plugin-<name>.properties` - a plugin `jenesis.plugins.properties` names runs where its file is
+  found, with its values and the files it binds, as Checkstyle's `checkstyle.xml`.
+- **Code quality**: `spotbugs-exclude.xml`, `forbiddenapis.properties`, `jdeps.properties`,
+  `jdeprscan.properties`.
 - **Generated sources**: `xjc.properties`, `protoc.properties`, `avro.properties`, `wsimport.properties`,
   `openapi.properties`, `antlr.properties`.
 - **Formatting**: `javaformat.properties`, `.editorconfig`, `ktfmt.properties`, `.scalafmt.conf`, `licenseheader.properties`.
@@ -161,7 +162,7 @@ Select profiles with the `jenesis.make.profiles` property - a comma-separated li
 - a **`jenesis-<name>.properties`** file at the project root, whose entries feed the same `jenesis.*` system
   properties, and
 - a **`<name>/` subfolder** inside each configuration folder, searched *ahead of* the folder itself - so a
-  profile can carry its own `checkstyle.xml`, `packaging.properties`, and so on.
+  profile can carry its own `plugin-checkstyle.properties`, `packaging.properties`, and so on.
 
 <div class="note">
   A <code>pin-&lt;name&gt;.properties</code> bill of materials is not searched for in a profile subfolder. It
