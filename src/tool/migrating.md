@@ -142,6 +142,7 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | `forkCount` with `reuseForks=false`, `forkEvery` | A test module of its own, since each test module runs in a JVM of its own |
 | The environment of the tests | `environment-test.properties` |
 | The Checkstyle, PMD, detekt, ktlint, Scalastyle, scalafmt or CodeNarc plugin | A line `<name>+check=build.jenesis.plugin.<name>` of `jenesis.plugins.properties`, and a `plugin-<name>.properties` that binds its configuration as `@rules=<path>` |
+| The spotbugs-maven-plugin, forbiddenapis, japicmp or revapi | A line `<name>+binary/validate=build.jenesis.plugin.<name>`, or `+artifact` for japicmp and revapi, of `jenesis.plugins.properties`, and a `plugin-<name>.properties` with its values and bindings |
 | Spotless, the fmt-maven-plugin or the formatter-maven-plugin | A line `<name>+format=build.jenesis.plugin.<name>` of `jenesis.plugins.properties` for google-java-format (`googlejavaformat`), Palantir (`palantir`), Eclipse (`eclipse`), ktfmt (`ktfmt`), or ktlint and scalafmt with `@format` |
 | Checkstyle's `propertyExpansion`, `configProperties` | Values of `plugin-checkstyle.properties` |
 | PMD's `minimumPriority`, `rulesMinimumPriority` | `-Djenesis.pmd.priority` |

@@ -605,7 +605,15 @@ you are about to publish still works for everyone who compiled against the last 
 a caller linked against class files, so a removed method, a narrowed return type or a tightened modifier is
 what breaks them.
 
-A `japicmp.properties` in a configuration folder switches it on. Empty, it compares the module's fresh jar
+The japicmp plugin is named at the hook point `artifact`, and runs where its `plugin-japicmp.properties` is
+found:
+
+```properties
+# jenesis.plugins.properties
+japicmp+artifact=build.jenesis.plugin.japicmp
+```
+
+Its `plugin-japicmp.properties` may be empty. Then it compares the module's fresh jar
 against the last release of **that module's own coordinate**, so the check follows your releases rather than
 being re-pointed by hand. A `baseline` key names another artifact, read by how many slashes it carries:
 
@@ -616,7 +624,7 @@ baseline=modular/com.example/library/1.2.3             # served from a named rep
 ```
 
 A module with no Maven coordinate has nothing to default to and says so. The file is read per module, so a
-project-wide `japicmp.properties` without a `baseline` gives every module its own coordinate - a `baseline`
+project-wide `plugin-japicmp.properties` without a `baseline` gives every module its own coordinate - a `baseline`
 there would point them all at one artifact, so a per-module baseline belongs in that module's own
 configuration folder. A test module, such as the tests of a `pom.xml` project, has no release of its own and is
 never compared.
@@ -636,8 +644,7 @@ The remaining keys map onto japicmp's own options:
 | `error-on-modifications` | fail the build on any change at all | `false` |
 | `error-on-semantic-incompatibility` | fail the build on a semantic-versioning violation | `false` |
 
-An unknown key fails the build and lists the ones that exist; anything japicmp accepts that the file does not
-model can be appended with a `process-japicmp.properties`, like for every other forked tool.
+An unknown key fails the build and lists the ones that exist.
 
 Like the linters, the check only **reports** by default: it writes `reports/japicmp/japicmp-report.xml` and
 keeps the build green, so you see what changed before you decide to enforce it. Turning on a gate makes the
@@ -651,28 +658,29 @@ E: There is at least one incompatibility:
 japicmp and the baseline artifact resolve in their own `japicmp` group, kept apart from the module's own
 dependencies; the baseline resolves **without** its transitive dependencies, because only its own byte code
 is compared. It is a released artifact like any other, so `pin` records it with a checksum alongside the
-tool - one line, not a closure. `-Djenesis.artifact.japicmp=false` suppresses the comparison while keeping
-the file in place.
+tool - one line, not a closure. The plugin resolves both with the project's repositories.
+`-Djenesis.plugin.japicmp=false` suppresses the comparison while keeping the file in place.
 
 ### revapi beside japicmp
 
 [revapi](https://revapi.org) compares the same two jars and classifies every difference by how severe it is for
-a caller, binary and source alike. A `revapi.properties` beside `japicmp.properties` switches it on, against the
-same baseline: its `baseline` key reads exactly as japicmp's, and without one it is the last release of the
+a caller, binary and source alike. The revapi plugin, `revapi+artifact=build.jenesis.plugin.revapi`, compares
+against the same baseline: its `baseline` key reads exactly as japicmp's, and without one it is the last release of the
 module's own coordinate. A test module is never compared.
 
 ```properties
+# build.jenesis/plugin-revapi.properties
 severity=non-breaking
-configuration=revapi.json
+@analysis/revapi.json=../build.jenesis/revapi.json
 ```
 
 | Key | Effect | Default |
 | --- | --- | --- |
 | `baseline` | the artifact to compare against, as for japicmp | the module's own last release |
 | `severity` | the least severe difference reported: `equivalent`, `non-breaking`, `potentially-breaking` or `breaking` | `potentially-breaking` |
-| `configuration` | a JSON file beside it holding revapi's own configuration | none |
+| `@analysis/revapi.json=<path>` | binds a JSON file holding revapi's own configuration | none |
 
-The `configuration` file is revapi's own, an array of `{"extension": ..., "configuration": ...}` objects, so the
+That file is revapi's own, an array of `{"extension": ..., "configuration": ...}` objects, so the
 differences a release accepts stay in revapi's notation, as a `revapi.differences` list:
 
 ```json
@@ -681,8 +689,7 @@ differences a release accepts stay in revapi's notation, as a `revapi.difference
      "justification": "Deprecated for two releases."}]}}]
 ```
 
-Any other key fails the build, as does a `configuration` file that is missing, outside the folder or no JSON
-array. revapi reports like a linter: `reports/revapi/revapi.json` holds one entry per difference, with its code and
+Any other key fails the build, as does a bound `revapi.json` that is no JSON array. revapi reports like a linter: `reports/revapi/revapi.json` holds one entry per difference, with its code and
 classification, and a `[FINDINGS]` line counts them.
 
 `jenesis.artifact.revapi` decides what the findings do. `report`, the default, keeps the build green; `strict`
