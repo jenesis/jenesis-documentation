@@ -616,7 +616,7 @@ writes the library into a folder that its
 Loading a library is a restricted method, so the application grants native access to the module that loads it,
 as *[Granting native access](/tool/building-and-running/#granting-native-access)* describes.
 
-{% demos 65 %}
+{% demos 66 %}
 
 ## Writing an entry point of your own
 
@@ -748,7 +748,7 @@ This is a middle ground: no layout, no goals, no `Project`, yet you did not wire
 no generated POM). For full control - a custom repository, strict pinning, a different digest, or emitting a
 POM as well - switch to the longer `make(...)` overload that `Project` itself uses.
 
-{% demos 66, 67 %}
+{% demos 67, 68 %}
 
 ### Wiring the graph by hand
 
@@ -772,7 +772,7 @@ cached outputs whose inputs are unchanged. The `generate` step above synthesises
 There is no phase lifecycle to fit into: a build is just steps wired to steps, and here you wire them
 yourself.
 
-{% demos 68 %}
+{% demos 69 %}
 
 ## Running a build inside another program
 
