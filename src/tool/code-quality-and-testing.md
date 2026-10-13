@@ -481,7 +481,10 @@ different frameworks is selected with one expression: `-Djenesis.test.tag=slow` 
 JUnit Platform module and the group `slow` in a TestNG module alike. Under JUnit 4 a tag is a class name, and JUnit
 fails the run when the class does not exist or when the selection matches no test of the module. A selection a framework cannot
 run fails the build with the form it would accept. A framework plugged in through the `TestFramework` interface
-translates the selection in its own `tags` method, and one that does not implement it refuses any selection.
+translates the selection in its own `tags` method, and one that does not implement it refuses any selection. A
+project declares such a framework as a plugin of the hook point `test` (see
+*[Extending the build](/tool/extending-the-build/#running-the-tests-on-a-framework-of-your-own)*), and the frameworks it
+declares are consulted before the built-in ones.
 
 A narrowed run is still the same step, so its result is remembered together with **what it covered**, and every
 later run adds to that memory until the tests or what they test change. A request runs only what no remembered

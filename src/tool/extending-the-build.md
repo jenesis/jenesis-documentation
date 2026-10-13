@@ -75,6 +75,7 @@ point runs as `custom/<name>`, in the module build itself:
 | `artifact` | Once the module's jar is built, handed it with the module's dependencies. |
 | `observed` | With the module's tests, beside the stock observers such as coverage. |
 | `observe` | Attached to the JVM the module's tests run in, by a plugin that provides an `ObservabilityFactory`; its report runs as `observed/observations/<name>`, handed the tests' output. |
+| `test` | The framework the module's tests run on, from a plugin that provides a `TestFrameworkFactory`, consulted before the built-in frameworks. |
 | `documentation/generate` | Beside the stock documentation generators. |
 | `documentation` | Within the documentation build, handed the compiled module. |
 | *(none)* | In the module build itself, handed everything the module reads. |
@@ -501,6 +502,28 @@ and a changed value runs the tests anew. Its coordinates resolve with the test r
 after, the plugin's name. The plugin is built before the tests, under `observed/observers/<name>`, and its report
 runs as `observed/observations/<name>`; it takes values but binds no files. Only a module that runs tests is
 observed.
+
+### Running the tests on a framework of your own
+
+A plugin of the hook point `test` provides a `TestFrameworkFactory`, is handed the same, and returns a
+`TestFramework`: the runner the tests' JVM starts, the arguments it takes, and the modules that mark a test module as
+its own. The frameworks a project declares are consulted first, in the order `jenesis.plugins.properties` names
+them, and the built-in JUnit Platform, JUnit 4 and TestNG after them, so the first framework a module of the tests
+marks runs them. A `framework=<name>` line in `test.properties` names a declared framework by its plugin name, as it
+names a built-in one.
+
+A framework is part of what decides whether the tests run again, so it holds its settings as serialisable fields. It
+may delegate to a built-in one, as a framework that runs on the JUnit Platform but hands the tests a system property
+of its own does:
+
+```java
+@Override
+public Map<String, String> systemProperties() {
+    Map<String, String> properties = new LinkedHashMap<>(platform.systemProperties());
+    properties.put("demo.framework", name);
+    return properties;
+}
+```
 
 {% demos 60 %}
 
