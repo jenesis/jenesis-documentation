@@ -71,14 +71,27 @@ it. A file the configuration names as `${config_loc}/<path>`, such as a suppress
 to Checkstyle with it, and changing that file runs the check again. A path that leaves the folder of
 `checkstyle.xml` is refused.
 
-Every other `${<property>}` the configuration names is a line of a `checkstyle.properties` beside it, which
-takes the place of the Maven plugin's `propertyExpansion` and Gradle's `configProperties`. Without the line,
-Checkstyle fails to load the configuration. `config_loc` is the one property the file cannot set:
+Every other `${<property>}` the configuration names is a line of a `checkstyle.properties` in the
+configuration folder, which takes the place of the Maven plugin's `propertyExpansion` and Gradle's
+`configProperties`. Without the line, Checkstyle fails to load the configuration. `config_loc` is the one
+property the file cannot set. A value `@<key>` stands for the setting `-Djenesis.variable.<key>`,
+`@<key>/<default>` gives it a default, and `@@` writes a literal `@`:
 
 ```properties
 # build.jenesis/checkstyle.properties  →  read by <property name="severity" value="${checkstyle.severity}"/>
 checkstyle.severity=warning
 ```
+
+The line `configuration` names a configuration to use in place of a `checkstyle.xml`, resolved against the
+properties file. It may lie outside the project, so that several projects share one, and the files it names as
+`${config_loc}/<path>` are taken from beside it:
+
+```properties
+# build.jenesis/checkstyle.properties
+configuration=../../shared/company.xml
+```
+
+A `checkstyle.xml` beside a `checkstyle.properties` that names another configuration fails the build.
 
 A jar of custom checks or filters, a dependency of the Checkstyle plugin in Maven, joins Checkstyle's class path
 when `@jenesis.plugin checkstyle maven/<groupId>/<artifactId>` names it in `module-info.java`, or

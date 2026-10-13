@@ -161,10 +161,11 @@ and folders. A single file keeps its name unless a target renames it. Editing a 
 A value whose key really starts with `@` is written with two: `@@name=value` hands the plugin `@name=value`.
 
 In a module's `plugin-<name>.properties`, a path is resolved against the module's own folder, the one holding its
-`module-info.java` or `pom.xml`. It has
+`module-info.java` or `pom.xml`. A folder has
 to stay within the project, symbolic links included, and a plugin folder named as `./<folder>` must lie within
-the project as well. A path that leaves the project, does not exist, or shares a target with another binding of
-the same input fails the build.
+the project as well. A file may lie outside it, so that several projects share one configuration, and a path
+written as `@<key>` names one through the setting `-Djenesis.variable.<key>`. A folder that leaves the project, a
+path that does not exist, or one that shares a target with another binding of the same input fails the build.
 
 <div class="note">
   A plugin runs code the project chooses - compiled from its own sources, or resolved by a module name it
@@ -394,32 +395,41 @@ immediately rather than silently breaking cache invalidation. If you see it, hol
 
 ## Writing a plugin
 
-A plugin is a **build module**: a named Java module that `provides` a build-executor service, which Jenesis
-discovers through that declaration alone:
+A plugin is a named Java module that `provides` a `BuildModuleFactory`, which Jenesis discovers through that
+declaration alone:
 
 ```java
 module demo.plugin {
     requires build.jenesis;
     requires org.json;
-    provides build.jenesis.BuildExecutorModule with demo.plugin.GreetingModule;
+    provides build.jenesis.BuildModuleFactory with demo.plugin.GreetingFactory;
 }
 ```
 
-Its `BuildExecutorModule` adds the steps it contributes, as a stock module does. The values of its
-`plugin-<name>.properties`, or its lines of `jenesis.plugins.arguments.properties`, reach it through a public
-constructor taking a `SequencedMap<String, String>` of them, in the file's order. `javac` requires every service provider to keep a public constructor without
-arguments as well, which the build uses when the file is empty. A file with values for a provider that takes
-none fails the build, rather than the values being dropped:
+The factory creates the `BuildExecutorModule` that adds the steps the plugin contributes, as a stock module does.
+It is handed the settings of the build, the values of its `plugin-<name>.properties` or its lines of
+`jenesis.plugins.arguments.properties` in the file's order, the permits that bound the processes the build runs
+at once, the dependency group to resolve a tool in, and the build's repositories and resolvers:
 
 ```java
-public GreetingModule() {
-    this(Collections.emptyNavigableMap());
-}
+public class GreetingFactory implements BuildModuleFactory {
 
-public GreetingModule(SequencedMap<String, String> properties) {
-    greeting = properties.getOrDefault("greeting", "Hello from a generated source!");
+    @Override
+    public BuildExecutorModule create(Environment environment,
+                                      SequencedMap<String, String> properties,
+                                      Semaphore permits,
+                                      String group,
+                                      Map<String, Repository> repositories,
+                                      Map<String, Resolver> resolvers) {
+        return new GreetingModule(properties);
+    }
 }
 ```
+
+A value arrives resolved: `@<key>` stands for the setting `-Djenesis.variable.<key>`, `@<key>/<default>` falls
+back to what follows the slash, and `@@` writes a literal `@`. A value is never a path - a file the plugin reads
+is bound as an input, as [Handing a plugin files of the project](#handing-a-plugin-files-of-the-project) shows. A factory refuses a value it does not take, naming those it
+does, rather than dropping it.
 
 The steps a plugin adds are handed their inputs as arguments. An input bound with `@<input>` arrives as the
 argument `../inputs/<input>`, and a transform or an inspection finds each module's inventory as an

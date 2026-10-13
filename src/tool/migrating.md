@@ -139,7 +139,7 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | Surefire's `rerunFailingTestsCount`, Gradle's `test-retry` plugin | A retry of the test framework, such as JUnit Pioneer's `@RetryingTest` |
 | `forkCount` with `reuseForks=false`, `forkEvery` | A test module of its own, since each test module runs in a JVM of its own |
 | The environment of the tests | `environment-test.properties` |
-| Checkstyle's `propertyExpansion`, `configProperties` | A `checkstyle.properties` beside `checkstyle.xml` |
+| Checkstyle's `propertyExpansion`, `configProperties` | A `checkstyle.properties` in the configuration folder |
 | PMD's `minimumPriority`, `rulesMinimumPriority` | `-Djenesis.pmd.priority` |
 | The `mainClass` of the jar, shade or exec plugin | A `<mainClass>` property |
 | `manifestEntries`, `jar.manifest.attributes` | A `META-INF/MANIFEST.MF` among the resources |
