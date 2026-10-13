@@ -17,8 +17,8 @@ launcher knows how to read:
 ```
 app.jar
 ├── META-INF/MANIFEST.MF   # Main-Class: build.jenesis.launcher.Launcher
+├── META-INF/jenesis/application.properties   # the descriptor: mainClass, mainModule, classpath, modulepath
 ├── build/jenesis/launcher/…   # the launcher's own classes
-├── application.properties   # the descriptor: mainClass, mainModule, classpath, modulepath
 └── jars/
     ├── demo.app-0-SNAPSHOT.jar/…   # the application's own module, exploded
     ├── org.slf4j-2.0.16.jar/…   # a modular or automatic dependency, exploded
@@ -45,8 +45,9 @@ modular - and `classpath` names the rest. A non-modular application therefore li
 
 ### The descriptor
 
-`application.properties` is the small text file that tells the launcher what to run. The build tool writes
-four keys:
+`META-INF/jenesis/application.properties` is the small text file that tells the launcher what to run. It sits
+below `META-INF/jenesis/` rather than at the jar's root, so it never takes the name of a file the application
+carries itself, such as an `application.properties` of its own. The build tool writes four keys:
 
 | Key | Meaning |
 | --- | --- |
@@ -66,12 +67,13 @@ Running `java -jar app.jar` starts the launcher's `main`, which then:
 
 1. **finds itself** - it locates the running jar from its own `CodeSource` and opens it. A packaged jar and
    an exploded directory of the same layout both work.
-2. **reads the descriptor and indexes the entries** - it loads `application.properties` and records the
+2. **reads the descriptor and indexes the entries** - it loads `META-INF/jenesis/application.properties` and records the
    *entry names* under each `jars/<entry>/` subfolder. It also reads each dependency's manifest, and for a
    jar the `modulepath` key names, its `module-info.class` and `META-INF/services` files, since those
    describe the module. Class bytes are not read here.
-3. **builds one class loader** over the entries `classpath` names. This loader's unnamed module is the
-   analogue of everything a `-cp` class path would carry. It holds no class bytes, only the index.
+3. **builds one class loader** over the entries `classpath` names, parented on the platform class loader. This
+   loader's unnamed module is the analogue of everything a `-cp` class path would carry. It holds no class
+   bytes, only the index.
 4. **reconstructs the module layer**, if `modulepath` names any entries. An in-memory module finder resolves
    them and defines a **child `ModuleLayer`** against the boot layer, mapping every module to that *same*
    loader. When a `mainModule` is declared, the layer grants the launcher access to the main class's

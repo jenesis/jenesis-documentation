@@ -43,7 +43,7 @@ A minimal image is built on demand the first time and cached for later runs. Ins
 your home directory nor the host environment is present, so a test or dependency that reaches for
 `~/.aws/credentials` or a CI secret finds nothing.
 
-To target a different image, add `-Djenesis.project.docker.image=<reference>`. The implicit image runs with
+To target a different image, add `-Djenesis.project.image=<reference>`. The implicit image runs with
 `--cap-drop ALL` and `--security-opt no-new-privileges`; a named image is run as you named it, without those
 two flags, so harden it in the image itself if you swap it.
 
@@ -51,11 +51,13 @@ two flags, so harden it in the image itself if you swap it.
 
 All of the project's code runs inside the container. On the host, Jenesis only reads the settings and starts
 the container, handing it every `jenesis.*` setting in force - from the command line, `jenesis.properties` or a
-profile alike - except the `jenesis.project.docker*` settings that start it. It runs no test there and none of the
+profile alike - except the settings that start it, `jenesis.project.docker` and its `image`, `readable`, `writable`
+and `env`. It runs no test there and none of the
 plugins the project names until the container is up and the isolation is in place.
 
-The project also cannot undo the isolation. Its `jenesis.properties` and its profiles are refused if they set any
-`jenesis.project.docker*` or `jenesis.execute.docker*` key, so a project can neither switch Docker off nor widen
+The project also cannot undo the isolation. Its `jenesis.properties` and its profiles are refused if they set
+`jenesis.project.docker` or `jenesis.execute.docker`, or the `image`, `readable`, `writable` or `env` of either, so a
+project can neither switch Docker off nor widen
 the container with a mount or an environment variable. Only your command line or your own
 `~/.jenesis/jenesis.properties` configures Docker.
 
@@ -109,7 +111,7 @@ Anything else the build needs from outside the root is **invisible** inside the 
 
 A `build/jenesis` symlinked to a shared engine checkout, a sibling source tree, or a generated-sources directory
 lives outside the root and so is not present. Add such paths with
-`-Djenesis.project.docker.readable=<host>[:<container>],...`:
+`-Djenesis.project.readable=<host>[:<container>],...`:
 
 - a bare `host` is mounted at the **same** path inside the container (`host:host`) - what a symlink or absolute
   reference needs to resolve; `host:container` remaps it instead;
@@ -117,11 +119,11 @@ lives outside the root and so is not present. Add such paths with
 - relative host paths resolve against the project root, and several mounts are comma-separated.
 
 For the rare case that the build must write to a host path outside the project root, use
-`-Djenesis.project.docker.writable=<host>[:<container>],...`. Reach for it sparingly: every writable mount
+`-Djenesis.project.writable=<host>[:<container>],...`. Reach for it sparingly: every writable mount
 is a hole in the confinement.
 
 By default **no host environment is forwarded** into the container. Pass selected variables with
-`-Djenesis.project.docker.env=<name>[=<value>],...`: a bare `name` forwards the host's current value, while
+`-Djenesis.project.env=<name>[=<value>],...`: a bare `name` forwards the host's current value, while
 `name=value` sets it explicitly. This is the channel for a build input that legitimately lives in the
 environment - a private-repository token, a proxy setting - and is opt-in so ambient host secrets do not leak in
 by default.
@@ -134,7 +136,7 @@ by default.
   run <code>export</code> on the host.
 </div>
 
-{% demos 50 %}
+{% demos 57 %}
 
 ## Running the launched program in a container
 
@@ -147,9 +149,9 @@ java -Djenesis.execute.docker=true build/jenesis/Execute.java
 ```
 
 The container does not receive the host environment and its home is not the host's, so the artifact runs but the
-secrets are out of reach. `-Djenesis.execute.docker.image=<reference>` overrides the image, and
-`-Djenesis.execute.docker.readable` (read-only), `-Djenesis.execute.docker.writable` (read-write), and
-`-Djenesis.execute.docker.env=<name>[=<value>],...` behave exactly like their `jenesis.project.docker.*`
+secrets are out of reach. `-Djenesis.execute.image=<reference>` overrides the image, and
+`-Djenesis.execute.readable` (read-only), `-Djenesis.execute.writable` (read-write), and
+`-Djenesis.execute.env=<name>[=<value>],...` behave exactly like their `jenesis.project.*`
 counterparts. Because the build runs as usual and only the launch crosses the container boundary, the **build
 image and the runtime image can differ**.
 
@@ -159,7 +161,7 @@ image and the runtime image can differ**.
   <code>false</code> to suppress.
 </div>
 
-{% demos 50 %}
+{% demos 57 %}
 
 ## The build cache
 Every build already has an *incremental* cache: Jenesis content-hashes each step's inputs and outputs under
@@ -277,4 +279,4 @@ Eviction runs on write and goes by file timestamp, which `touch` keeps fresh on 
   <code>false</code> turns the cache off entirely.
 </div>
 
-{% demos 49 %}
+{% demos 56 %}

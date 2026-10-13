@@ -58,6 +58,25 @@ module demo.app {
 }
 <span class="lp-prompt">$</span> <span class="lp-strong">java build/jenesis/Make.java</span></code></pre>
     </figure>
+
+    <div class="lp-agent" aria-labelledby="agent-label">
+      <p class="lp-agent__label" id="agent-label">Moving a build with a coding agent? Hand it this prompt, or start one with it from the root of the project.</p>
+      <div class="lp-agent__row">
+        <span class="lp-agent__name">Prompt</span>
+        <code id="agent-prompt">Run `curl -fsSL https://get.jenesis.build | bash` in the root of this project, then run `java build/jenesis/Make.java prompt/migrate` and carry out the task it prints.</code>
+        <button class="lp-button lp-button--small" type="button" data-copy="agent-prompt" aria-describedby="agent-label">Copy</button>
+      </div>
+      <div class="lp-agent__row">
+        <span class="lp-agent__name">Claude Code</span>
+        <code id="agent-claude" class="lp-agent__command">claude 'Run `curl -fsSL https://get.jenesis.build | bash` in the root of this project, then run `java build/jenesis/Make.java prompt/migrate` and carry out the task it prints.'</code>
+        <button class="lp-button lp-button--small" type="button" data-copy="agent-claude" aria-describedby="agent-label">Copy</button>
+      </div>
+      <div class="lp-agent__row">
+        <span class="lp-agent__name">Codex</span>
+        <code id="agent-codex" class="lp-agent__command">codex 'Run `curl -fsSL https://get.jenesis.build | bash` in the root of this project, then run `java build/jenesis/Make.java prompt/migrate` and carry out the task it prints.'</code>
+        <button class="lp-button lp-button--small" type="button" data-copy="agent-codex" aria-describedby="agent-label">Copy</button>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -238,6 +257,9 @@ java build/jenesis/Make.java</code></pre></div>
       <a class="lp-link" href="{{ docs }}extending-the-build/#hook-points">hook points</a> of a plugin, without
       changing anything else of the build. The result is validated by comparing what both builds produce: the
       jar contents, the dependency tree, the number of tests run and the POM a consumer receives.</p>
+    <p class="lp-after">
+      <a class="lp-link" href="{{ docs }}migrating/">Migrating a Maven or Gradle build, step by step &rarr;</a>
+    </p>
   </div>
 </section>
 

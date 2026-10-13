@@ -8,7 +8,9 @@ Jenesis is not a Java-only build tool. Drop `.kt`, `.scala` or `.groovy` sources
 the matching compiler and builds them, mixed freely with Java, into one modular jar and its generated POM, with
 **no build script to write**. You do not turn a language on. Jenesis detects it from the file extensions
 present and wires the right compiler into the same step graph *[Core concepts](/tool/core-concepts/)*
-described.
+described. A `pom.xml` project also reads `src/main/kotlin` and `src/main/groovy`, and `src/test/kotlin` and
+`src/test/groovy` for its tests, beside its source directories where they exist, as the Kotlin and GMavenPlus
+plugins do by default.
 
 This chapter covers what changes when a module holds more than Java: how two compilers share one module, the one
 rule that decides which packages you can export, the standard-library dependency each language needs, and how
@@ -42,7 +44,7 @@ already produced.
   <code>.java</code> sources for resolution.
 </div>
 
-{% demos 41, 44, 46 %}
+{% demos 45, 48, 50 %}
 
 ## Which packages you can export
 
@@ -74,6 +76,11 @@ Each language needs its standard library on the module path. You declare it as a
 | Scala | `requires scala.library;` | `org.scala-lang:scala-library` |
 | Groovy | `requires org.apache.groovy;` | `org.apache.groovy:groovy` |
 
+The code compiles against what the module declares and nothing else - not against the libraries the compiler
+itself runs on. Gradle's Kotlin plugin adds `kotlin-stdlib` to a project on its own, so a build moved from
+Gradle declares it, as a `pom.xml` dependency or a `requires`, or `kotlinc` reports that it cannot access
+`kotlin.Any`.
+
 Groovy's jar carries an `Automatic-Module-Name`, so `org.apache.groovy` resolves as an automatic module. The
 Scala standard library lives entirely in one module - `scala-library` - with `scala3-library_3` being an empty
 aggregator, so nothing splits `package scala` across two modules and the Java Module System accepts it on the
@@ -95,9 +102,34 @@ java build/jenesis/Make.java pin
 
 <div class="tip">
   For Scala and Groovy this is more than reproducibility. Their latest releases on Maven Central are often
-  pre-release builds - a Scala <code>-RC</code> or a Groovy <code>-alpha</code> - so an unpinned build can drift
-  onto one. Pinning keeps the module on a stable compiler while you upgrade deliberately.
+  pre-release builds - a Scala <code>-RC</code> or a Groovy <code>-alpha</code>. An unpinned build skips a
+  version with a pre-release qualifier while a version without one is published, and so takes the newest stable
+  compiler of the day; pinning keeps the module on one compiler while you upgrade deliberately.
 </div>
+
+## Compiler arguments
+
+A `process-kotlinc.properties` in a configuration folder hands `kotlinc` arguments of its own, written as
+`process-javac.properties` writes them for `javac` (see *[Building & running](/tool/building-and-running/#passing-extra-arguments-to-a-tool)*):
+
+```properties
+# build.jenesis/process-kotlinc.properties
+-api-version=2.0
+-java-parameters=
+-J-Xss4m=
+```
+
+Each line is an argument of the compiler. A `-J<option>` line or a `-D` line goes to the JVM that runs it
+instead, as the `kotlinc` command passes them, so the last line gives that JVM `-Xss4m`.
+
+## Tests and internal declarations
+
+Kotlin's `internal` visibility ends at the module, and a module's tests reach into it all the same: the build
+hands `kotlinc` the tested module's jar as a friend path when it compiles the tests, as Gradle and the Kotlin
+Maven plugin do. A test that calls an `internal` function compiles without an argument of its own, in a
+`pom.xml` build's test sources and in a module that names its tested module with `@jenesis.test`.
+
+{% demos 45 %}
 
 ## A compiler plugin
 
@@ -130,7 +162,7 @@ group, and `scalac` loads the plugin the same way.
 The plugin's version is pinned the usual way, coordinated to the compiler - the `pin` step writes back its
 `@jenesis.pin` line for you.
 
-{% demos 43 %}
+{% demos 47 %}
 
 ## API documentation
 
@@ -142,3 +174,28 @@ Java + Kotlin is one Dokka document, Java + Groovy one groovydoc document. Any m
 Kotlin together with Groovy, splits the output, with `javadoc` rendering the Java at the archive root and
 each remaining language in its own subfolder. Either way the produced `-javadoc.jar` always has a root
 `index.html`, so it satisfies a repository like Maven Central.
+
+### Configuring Dokka
+
+A `dokka.properties` in the module's configuration folder takes the options the Dokka Gradle plugin and the
+`dokka-maven-plugin` take. Every key is optional, and an unknown one fails the build:
+
+| Key | Value |
+| --- | --- |
+| `module-name` | the name the pages give the module, `documentation` unless set |
+| `includes` | Markdown files with the module and package documentation, comma-separated |
+| `format` | `html`, the default, or `javadoc` for javadoc-styled pages |
+| `documented-visibilities` | any of `public`, `protected`, `internal`, `private` and `package` |
+| `suppress-obvious-functions`, `skip-empty-packages` | `true` unless set to `false` |
+| `suppress-inherited-members`, `skip-deprecated`, `report-undocumented` | `false` unless set to `true` |
+| `suppressed-packages` | regular expressions of packages to leave out, comma-separated |
+| `fail-on-warning` | `true` fails the build on a warning of Dokka's |
+| `jdk-version` | the Java feature release the JDK links point at |
+| `source-link`, `source-link-suffix` | the URL of the module's sources, and the line suffix, `#L` unless set |
+| `external-link.<name>`, `external-link.<name>.package-list` | documentation to link to, and its package list |
+| `custom-assets`, `custom-styles`, `footer-message` | files and a footer for the HTML pages |
+
+A file the keys name is resolved against the module's own folder, and is an input of the build: editing it renders
+the documentation again. Dokka failing, including on a warning under `fail-on-warning=true`, fails the build.
+
+{% demos 45 %}

@@ -33,8 +33,10 @@ The SBOM is a supply-chain counterpart to the `dependencies` selector (see *[Dep
 where that *prints* the resolved graph, the SBOM *freezes* it into a publishable artifact. It lands in three
 places, one per consumer:
 
-- **Embedded in the jar**, at `META-INF/sbom/<artifact>.cdx.json`, so the bill of materials travels inside the
-  artifact. The jar's manifest records `Sbom-Format: CycloneDX` and an `Sbom-Location` header pointing at it.
+- **Embedded in the jar**, at `META-INF/sbom/<groupId>/<artifactId>.cdx.json`, or at `META-INF/sbom/<module>.cdx.json`
+  for a module without a group ID, so the bill of materials travels inside the artifact. The jar's manifest records
+  `Sbom-Format: CycloneDX` and an `Sbom-Location` header pointing at it. No two jars share the name, so every jar on
+  a class path or module path keeps its own.
   An executable [launcher jar](/launcher/producing-a-launcher-jar/) carries a document of its own at the same
   place, which describes the project as an `application` and adds the launcher it shades as a dependency - once
   if the module already depends on the same version, beside it if on another. A [native image](/tool/packaging/)
@@ -137,7 +139,7 @@ placed file builds the jars again. A path must exist and stay within the project
 target must be a relative path without `..` that no other pair names. A module that brings a resource of its own
 at the same path fails the build rather than losing one of the two.
 
-{% demos 31 %}
+{% demos 33 %}
 
 ## Licence compliance
 
@@ -200,7 +202,7 @@ licence check and the SBOM's licence identifiers. The project's own licences are
 its SBOM names them by SPDX id as well. It is distinct from `licensing.properties`, which is the
 enforcement policy, not the classification.
 
-{% demos 32 %}
+{% demos 34 %}
 
 ## Vulnerability scanning
 
@@ -231,10 +233,10 @@ The keys:
 
 An unrecognised key fails the build. The licence and vulnerability checks are two halves of the same
 `compliance` step, each turned on by the presence of its own file, so you can run either, both, or neither.
-To keep both files in place but skip both checks for a single build, pass the default-`true` override
-`-Djenesis.compliance=false`.
+To keep both files in place but skip a check for a single build, pass its default-`true` override as `false`:
+`-Djenesis.compliance.license=false` or `-Djenesis.compliance.vulnerability=false`.
 
-{% demos 33 %}
+{% demos 35 %}
 
 ## Hardening the whole build
 
@@ -257,4 +259,4 @@ That leaves one gap: a tampered POM could try to introduce a dependency the jar 
 strict mode rejects, so a manipulated POM cannot quietly pull in an unverified artifact. This is why strict
 pinning is recommended for builds in unsecured environments and for releases.
 
-{% demos 28 %}
+{% demos 30 %}

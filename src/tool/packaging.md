@@ -47,7 +47,9 @@ module demo.modular.executable {
 ```
 
 Every packaging step keys off that one declaration and skips a module that has none. A library needs no
-packaging configuration to be left alone, and an application needs no packaging-specific entry point.
+packaging configuration to be left alone, and an application needs no packaging-specific entry point. Where
+`launcher=true` or `bundle=true` reaches a module without one, a `[SKIPPED]` line names the module and how to
+declare its main class.
 
 ## The application image
 
@@ -136,7 +138,7 @@ the tools below. Some flags are derived for you, and a flag in the file takes pr
 Each is passed only where the project declares the value and the package type takes the flag: an application
 image takes no licence file and no URL.
 
-{% demos 8, 9 %}
+{% demos 9, 10 %}
 
 ## Native installers
 
@@ -150,8 +152,9 @@ rather than a directory to launch in place. The value is passed straight to `jpa
 | `dmg`, `pkg` | macOS |
 
 An installer carries the whole bundled runtime, so it is tens of megabytes. Producing one needs the platform's
-own packaging tooling on the `PATH`: `dpkg-deb`/`fakeroot` for `deb` and `rpmbuild` for `rpm` on Linux, the
-WiX Toolset on Windows, the bundled `productbuild`/`hdiutil` on macOS. For that reason an installer is usually
+own packaging tooling on the `PATH`: `dpkg-deb` for `deb` and `rpmbuild` for `rpm` on Linux, the WiX Toolset
+on Windows, the bundled `productbuild`/`hdiutil` on macOS. A `deb` needs no `fakeroot`: the build has `dpkg-deb`
+record every file as owned by `root` itself. For that reason an installer is usually
 built locally, while the tooling-free `app-image` covers the packaging path in CI.
 
 ### Several types in one build
@@ -179,7 +182,7 @@ the application image. What `process-jpackage.properties` sets reaches every typ
 --linux-deb-maintainer=ops@example.com
 ```
 
-{% demos 8, 9 %}
+{% demos 9, 10 %}
 
 ## Runtime images and `.jmod` files
 
@@ -216,7 +219,7 @@ it would be stranded there.
   <code>jlink</code> accepts.
 </div>
 
-{% demos 9, 56 %}
+{% demos 10, 59 %}
 
 ## Making a closure linkable
 
@@ -249,7 +252,7 @@ rewrite - which is how a single module opts out of a project-wide file.
   downloaded, so a rewritten jar's bytes can never reach a <code>@jenesis.pin</code> checksum.
 </div>
 
-{% demos 21 %}
+{% demos 22 %}
 
 ## Bundles for a JRE base
 
@@ -286,6 +289,11 @@ to launch. The [module layers](/tool/dependencies/#keeping-a-dependency-private)
 there too, each as a `-Djlayer.modulepath.<layer>`. There are two files because the path separator is the one
 part of a launch a bundle cannot know in advance. Dropped onto a `-jre` base it needs no JDK and no jpackage.
 
+What a `process-java.properties` gives the module's JVM - an `--add-reads` its module path needs, a system
+property - leads both argument files, as it leads the JVM `Execute` starts, so the launch the bundle carries is
+the one the build ran. The zip stays in the build tree rather than being staged, so `export` and `release`
+leave it out.
+
 The trade against an app-image is the classic one. An app-image is self-contained but duplicates the JVM per
 service. A bundle is tiny and shares one JVM layer across every image built on the same base - leaner in
 aggregate for many services, at the cost of coupling to that base's JVM version.
@@ -300,7 +308,7 @@ aggregate for many services, at the cost of coupling to that base's JVM version.
   correction; you never splice it in yourself.
 </div>
 
-{% demos 10 %}
+{% demos 11 %}
 
 ## A container build context
 
@@ -335,7 +343,8 @@ ENTRYPOINT ["java", "@/app/application.args"]
 The entry point is the same one every other packaging form reads, so a container can never drift from what
 the app image or the launcher jar starts, and it stays this size however many jars the application resolves.
 When the module graph is not self-contained, the argument file carries the same
-`--add-modules=ALL-MODULE-PATH,ALL-DEFAULT` correction.
+`--add-modules=ALL-MODULE-PATH,ALL-DEFAULT` correction, and it opens with what `process-java.properties` gives
+the module's JVM, as a bundle's argument files do.
 
 The base image and the labels are the only knobs, and deliberately so: `ENV`, `USER`, `EXPOSE` and the rest
 are inherited from the base, so image environment belongs in a base image rather than in build configuration.
@@ -435,20 +444,30 @@ when it does. A type both name is built once:
   <code>buildah bud</code> consume the same folder.
 </div>
 
-{% demos 8, 9 %}
+{% demos 9, 10 %}
 
 ## A single executable jar
 
 `launcher=true` produces a **single executable jar** you run with `java -jar app.jar`, without flattening
 dependencies into a fat jar. The build shades the published Jenesis Launcher into the jar as its `Main-Class`
-and explodes each dependency into its own `jars/<jar>/` subfolder, with an `application.properties` naming
-which of them each path holds. At run time the launcher rebuilds the module graph from those subfolders in
+and explodes each dependency into its own `jars/<jar>/` subfolder, with a descriptor,
+`META-INF/jenesis/application.properties`, naming which of them each path holds. The application sees those
+paths and nothing else of the jar, so an `application.properties` of its own is the one it finds. At run time the launcher rebuilds the module graph from those subfolders in
 process, so `module-info`s and `META-INF/services` never collide.
 
 Unlike jpackage and bundle, this carries no JVM and no `jlink` runtime. It is a plain jar that runs on any
 JDK 25 or newer, and unlike a bundle it needs no launch script. The shaded launcher is
 [pinned](/tool/pinning/) like any other dependency, in its own `launcher` group, so the exact bytes are
-verified and the build stays reproducible.
+verified and the build stays reproducible. Like every archive the build writes, the jar records one date on
+every entry, the one `jenesis.archive.timestamp` names where it is set.
+
+The jar stays in the build tree rather than being staged, so `export` and `release` leave it out. Every jar it
+stores keeps its directory entries, so a scan of a package on the class path finds
+them as it would in the original jar. The `--add-reads`, `--add-exports`, `--add-opens` and
+`--enable-native-access` lines of `process-java.properties` travel with it, and the launcher applies them as it
+builds the module graph. Any other JVM option does not, because `java -jar` reads none from the jar it runs:
+the build names each one it leaves out, and an application that needs one passes it to `java -jar` or ships as
+a bundle.
 
 <div class="tip">
   The launcher jar has its own section - see
@@ -456,7 +475,7 @@ verified and the build stays reproducible.
   troubleshooting.
 </div>
 
-{% demos 8, 9 %}
+{% demos 9, 10 %}
 
 ## A modular jar on the class path
 
@@ -485,7 +504,7 @@ because the build writes that file itself.
 
 `-Djenesis.generate.classpath=false` switches the step off, in a profile if need be, without deleting the file.
 
-{% demos 54 %}
+{% demos 27 %}
 
 ## Native images
 
@@ -521,7 +540,7 @@ directory to maintain.
   inside every jar - the way to vet exactly what reflection is baked into a published artifact.
 </div>
 
-{% demos 71 %}
+{% demos 55 %}
 
 ### native-image or jpackage?
 
@@ -567,4 +586,4 @@ takes the whole folder below it.
   adds nothing to <code>legal/</code>, so check its licence before shipping it.
 </div>
 
-{% demos 9, 21, 71 %}
+{% demos 10, 22, 55 %}

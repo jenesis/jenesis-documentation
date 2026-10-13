@@ -17,7 +17,7 @@ The jar names the launcher as its `Main-Class`, so you start it exactly as any e
 java -jar app.jar [args...]
 ```
 
-The launcher finds itself, reads `application.properties`, rebuilds the loader and module layer, and invokes
+The launcher finds itself, reads its descriptor, `META-INF/jenesis/application.properties`, rebuilds the loader and module layer, and invokes
 your real main class - the sequence covered in [*How it works*](/launcher/how-it-works/). Your arguments pass
 straight through to `main`. Anything the launcher cannot resolve surfaces before `main` runs, as an exception
 with a stack trace and exit code 1 - the same way a bad `java -p … -m …` command line fails.
@@ -43,6 +43,27 @@ occasionally surprise people coming from a fat jar:
   order, it was relying on fat-jar behaviour that a real module path never had.
 </div>
 
+### What the application sees
+
+The application's loader holds only the paths the descriptor names, and it is parented on the platform class
+loader. `java -jar app.jar` makes the outer jar the system class path, but nothing of that jar's root - the
+launcher's classes, the descriptor, the outer manifest - is visible to the application, just as
+`java -p modulepath -cp classpath` shows it nothing but the two paths. An `application.properties` the
+application carries itself is therefore the one it finds, which is what a framework such as Spring Boot reads
+its configuration from; a Spring Boot application runs as a launcher jar as well as from a
+[bundle](/tool/packaging/#bundles-for-a-jre-base).
+
+Two consequences follow from the parent being the platform class loader rather than the system class loader:
+
+- A `ServiceLoader` over the application's loader does not find providers in JDK modules defined to the
+  system class loader, such as the tool modules. `java.util.spi.ToolProvider.findFirst` and
+  `javax.tools.ToolProvider` look those up through the system class loader and still work.
+- Classes that an external agent appends to the system class path, or that an external `-javaagent` jar
+  holds, are not visible to the application.
+
+A launcher jar that is itself a Java agent, declaring no `mainClass`, keeps the system class loader as the
+parent of its loader, because a `-javaagent` jar's agents share that loader with their host.
+
 ## Start-up failures
 
 A start-up failure is visible immediately, before your `main` runs. These are the messages the launcher
@@ -50,7 +71,7 @@ itself raises, and what each means:
 
 | Message | Cause and fix |
 | --- | --- |
-| `No 'mainClass' declared in application.properties of …` | The descriptor has no entry point. A build-produced jar always has one; a hand-assembled jar is missing the key. |
+| `No 'mainClass' declared in META-INF/jenesis/application.properties of …` | The descriptor has no entry point. A build-produced jar always has one; a hand-assembled jar is missing the key. |
 | `Main module not found on the module path: <name>` | `mainModule` names a module that nothing `modulepath` names provides, or the jar that provides it derives a different name. |
 | `Two bundled modules resolve to the same name: <name>` | Two jars `modulepath` names declare or derive the same module name - typically two versions of one library. A module path can carry a name only once; drop one. |
 | `… is aliased as both <a> and <b>` | Two `Jenesis-Aliases` declarations claim one jar. A jar can carry one module name. |
@@ -121,11 +142,16 @@ widen the flat `getResource` API. That is exactly how a real `java -p … -cp �
 `.class` files are always served, as the JDK serves them, and so are resources in no package (top-level
 entries, anything under `META-INF/`) and class-path resources.
 
-### Directory entries are not resources
+### Package directories as resources
 
-Only file entries are indexed, so `getResource("com/foo/")` for a package or directory returns `null`, where
-a real exploded-directory class loader would hand back a directory URL. Class loading and file-resource
-lookups are unaffected - this only bites code that enumerates a directory URL.
+A class path scan, such as a framework's component scan, starts from `getResource("com/foo/")` for a package.
+The launcher answers it as the JDK does: with a `jar:` URL where the stored jar has a directory entry for the
+package, and with a `file:` URL for the folder of a launcher jar laid out as an exploded directory. The build
+tool keeps the directory entries of every jar it stores in a launcher jar.
+
+A jar built without directory entries answers `null` for its packages, exactly as the JDK answers for that jar
+on any class path, so a scan finds nothing in such a dependency. Class loading and file-resource lookups are
+unaffected; only code that starts from a directory URL notices.
 
 ### The jar stays open
 

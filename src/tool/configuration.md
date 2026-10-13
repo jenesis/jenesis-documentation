@@ -31,6 +31,10 @@ overrides a file entry, so you can still override the project's baseline for a s
 java -Djenesis.project.sources=false build/jenesis/Make.java
 ```
 
+A key in the file is written in full, `jenesis.` prefix included, exactly as the `configuration` selector prints
+it. A key without the prefix, such as `test.skip=true`, is no setting: the build refuses it and names the key to
+write instead, `jenesis.test.skip`.
+
 `jenesis.make.root` belongs on the command line only, because the root is what locates the file in the first
 place. Setting it in a file is reported as an error.
 
@@ -93,7 +97,7 @@ java build/jenesis/Make.java -Djenesis.project.version=1.0.0 build
 Only `jenesis.*` settings may be written there; any other `-D` is refused, naming what would be valid,
 because a JVM option has to reach the JVM and therefore belongs before the main class.
 
-{% demos 48 %}
+{% demos 8 %}
 
 ## Where tool configuration lives
 
@@ -112,18 +116,25 @@ runs from the most specific per-module location to the project-wide fallback:
 | `build.jenesis/` next to the `pom.xml` | `maven` | both of the pom's modules |
 | the `jenesis.project.configuration` folders (default `build.jenesis/` at the project root) | all | project-wide |
 
+The first file found configures the tool alone, and nothing merges. A module's `process-javac.properties`
+therefore replaces the project-wide one rather than adding to it, and repeats the lines of it the module still
+needs. The project-wide folder has no counterpart for the tests or the main code alone: a file that differs for
+the tests sits in each module's `src/test/build.jenesis/`, or in the folder of each test module. Nothing below
+`META-INF/build.jenesis/` reaches a jar the module packs, the sources jar included.
+
 What these folders can hold - presence activates, contents configure:
 
-- **Code quality**: `checkstyle.xml`, `pmd.xml`, `spotbugs-exclude.xml`, `detekt.yml`, `codenarc.xml`,
+- **Code quality**: `checkstyle.xml`, `pmd.xml`, `spotbugs-exclude.xml`, `forbiddenapis.properties`, `jdeps.properties`,
+  `jdeprscan.properties`, `detekt.yml`, `codenarc.xml`,
   `scalastyle-config.xml`, `errorprone.properties`.
 - **Generated sources**: `xjc.properties`, `protoc.properties`, `avro.properties`, `wsimport.properties`,
   `openapi.properties`, `antlr.properties`.
-- **Formatting**: `javaformat.properties`, `.editorconfig`, `.scalafmt.conf`.
+- **Formatting**: `javaformat.properties`, `.editorconfig`, `ktfmt.properties`, `.scalafmt.conf`, `licenseheader.properties`.
 - **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`.
 - **Compliance**: `licensing.properties`, `vulnerability.properties`, `spdx.properties`.
 - **Tests**: `test.properties`, naming the engine a module's tests run on.
 - **Test observability**: `jacoco.properties`, `graal.properties`, `pitest.properties`.
-- **API compatibility**: `japicmp.properties`.
+- **API compatibility**: `japicmp.properties`, `revapi.properties`.
 - **Forked-tool arguments**: `process-<command>.properties` - extra flags for `javac`, `kotlinc`, `jar`, and
   the like (see *[Building & running](/tool/building-and-running/)*).
 - **Forked-program environment**: `environment-<command>.properties` - variables for the test run, a forked
@@ -159,7 +170,7 @@ Select profiles with the `jenesis.make.profiles` property - a comma-separated li
 </div>
 
 Profiles **chain**: any loaded file may itself set `jenesis.make.profiles` to pull in more, transitively.
-The [`profiles`](https://github.com/jenesis/jenesis/tree/main/demo/demo-48-profiles) demo ships a `release`
+The [`profiles`](https://github.com/jenesis/jenesis/tree/main/demo/demo-08-profiles) demo ships a `release`
 profile that turns on source jars and chains to a `supply-chain` profile that enforces strict pinning:
 
 ```properties
@@ -180,7 +191,7 @@ java -Djenesis.make.profiles=release build/jenesis/Make.java stage
 A missing `jenesis-<name>.properties` is skipped, not an error, so a profile may contribute only a
 configuration folder, only a properties file, or both.
 
-{% demos 48 %}
+{% demos 8 %}
 
 ## Precedence
 

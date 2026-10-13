@@ -27,7 +27,7 @@ Like every packaging feature, it only runs for a module that declares a main cla
 tag (or `<mainClass>` POM property) the other packaging steps key off. A module without one is skipped, so a
 library is left alone and an application needs no launcher-specific configuration.
 
-{% demos 8, 9 %}
+{% demos 9, 10 %}
 
 ## What the build writes
 
@@ -41,24 +41,26 @@ place here:
 2. **Each dependency is exploded into its own subfolder of one `jars/` store.** The resolved jar file name
    becomes the folder name: `jars/org.slf4j-2.0.16.jar/`, and the application's own jar is named the same
    way, `jars/demo.bundle-0-SNAPSHOT.jar/`. Every jar is stored once, whatever it is for.
-3. **`application.properties` is written** with `mainClass`, `mainModule` (modular applications only), and
+3. **The descriptor, `META-INF/jenesis/application.properties`, is written** with `mainClass`, `mainModule` (modular applications only), and
    the two path lists, `classpath` and `modulepath` - because a jar is read on the path that names it, never
    because of where it sits. Which list a jar lands in follows the same rule as the build's `Execute`
    launcher and its `bundle.zip`: a jar is on the module path only when the application is modular and the
    jar describes a module, so a `pom.xml` application without a module has everything on its class path. A
    project that declares a [module layer](/tool/dependencies/#keeping-a-dependency-private) gets a
    `modulepath.<layer>` list beside them, and a `classpath.<layer>` when the layer holds jars that name no
-   module.
+   module. The `--add-reads`, `--add-exports`, `--add-opens` and `--enable-native-access` lines of
+   `process-java.properties` become the `addReads`, `addExports`, `addOpens` and `enableNativeAccess` keys,
+   and an `--enable-native-access=ALL-UNNAMED` becomes the manifest's `Enable-Native-Access` attribute.
 4. **The manifest names the launcher** as `Main-Class: build.jenesis.launcher.Launcher`, so `java -jar` starts
    the launcher.
 5. **The jar gets a bill of materials of its own** when the module gets one (see
-   *[Supply-chain features](/tool/supply-chain/)*): a CycloneDX document at `META-INF/sbom/<artifact>.cdx.json`, which the
+   *[Supply-chain features](/tool/supply-chain/)*): a CycloneDX document at the module's own path in `META-INF/sbom/`, which the
    manifest names with `Sbom-Format` and `Sbom-Location`. It lists what the module's document lists and adds the
    launcher as a dependency of the project, which it describes as an `application`. The module's own document
    stays in the folder of the application's own jar.
 
 That is the complete set. The other descriptor keys and manifest attributes the launcher understands -
-bundled agents, module-access grants, signer reconstruction - are for a jar you assemble yourself; the
+bundled agents and signer reconstruction - are for a jar you assemble yourself; the
 [*Reference*](/launcher/reference/) chapter lists them.
 
 <div class="note">
@@ -84,13 +86,15 @@ runs the jar.
 ## The launcher is pinned like any dependency
 
 The build resolves the launcher as a normal dependency, in its own `launcher` group, kept apart from your
-application's dependencies. Until you pin it, it floats to the latest release. Run `pin` and the build records
+application's dependencies. Until you pin it, it floats to the latest release. The build needs launcher 0.6.0
+or later, the first to read the descriptor from `META-INF/jenesis/`, and refuses an older one, naming the version
+it found and the pin that fixes it. Run `pin` and the build records
 the exact version and checksum next to your other pins - in a modular project:
 
 ```java
 /**
  * @jenesis.main sample.Sample
- * @jenesis.pin launcher/maven/build.jenesis/build.jenesis.launcher 0.4.0 SHA-256/e56603eb…
+ * @jenesis.pin launcher/maven/build.jenesis/build.jenesis.launcher 0.6.0 SHA-256/38a0381e…
  */
 module demo.modular.executable {
     requires org.slf4j;
