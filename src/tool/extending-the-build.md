@@ -74,6 +74,7 @@ point runs as `custom/<name>`, in the module build itself:
 | `binary` | Within the module's compile toolchain, handed what the toolchain reads. |
 | `artifact` | Once the module's jar is built, handed it with the module's dependencies. |
 | `observed` | With the module's tests, beside the stock observers such as coverage. |
+| `observe` | Attached to the JVM the module's tests run in, by a plugin that provides an `ObservabilityFactory`; its report runs as `observed/observations/<name>`, handed the tests' output. |
 | `documentation/generate` | Beside the stock documentation generators. |
 | `documentation` | Within the documentation build, handed the compiled module. |
 | *(none)* | In the module build itself, handed everything the module reads. |
@@ -470,6 +471,38 @@ module index does not serve, as one named by an `Automatic-Module-Name` alone, i
 `@jenesis.pin` lines apply to the plugin's dependencies as in a project. Every jar of the plugin's layer is a
 module of its own, so a jar that declares no module name at all, or two jars that share a package, cannot load:
 exclude it, or pin a version of it that names its module.
+
+### Observing the tests
+
+A plugin of the hook point `observe` joins the JVM the tests run in, as a coverage agent does, and reports over what
+that run recorded. It provides an `ObservabilityFactory` rather than a `BuildModuleFactory`, is handed the same,
+and returns an `Observation`: the `ObservabilityEngine` that names the agent's coordinates and the JVM options of the
+test run, and the module that reads what the run left in its output.
+
+```java
+public class LoadedFactory implements ObservabilityFactory {
+
+    @Override
+    public Observation create(Environment environment,
+                              SequencedMap<String, String> properties,
+                              Semaphore permits,
+                              String group,
+                              Map<String, Repository> repositories,
+                              Map<String, Resolver> resolvers) {
+        return new Observation(new ClassLoading(group),
+                (executor, inherited) -> executor.addStep("loaded", new Loaded(prefix(properties)),
+                        inherited.sequencedKeySet()));
+    }
+}
+```
+
+The engine is part of what decides whether the tests run again, so it holds its settings as serialisable fields,
+and a changed value runs the tests anew. Its coordinates resolve with the test runtime in the group it is named
+after, the plugin's name. The plugin is built before the tests, under `observed/observers/<name>`, and its report
+runs as `observed/observations/<name>`; it takes values but binds no files. Only a module that runs tests is
+observed.
+
+{% demos 60 %}
 
 ### A worked example: classes rewritten with Byte Buddy
 
