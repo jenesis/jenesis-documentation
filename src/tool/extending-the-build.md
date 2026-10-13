@@ -94,7 +94,7 @@ A plugin of a project hook point runs under the goal it belongs to, at the same 
 | `stage/transform` | After the stock staging, handed every staged tree; what it writes under a tree's name joins that tree. |
 | `stage/inspect` | After the transforms of stage, handed the staged trees with what they added. |
 | `export` | With `export`, beside the stock export steps, handed everything staged. |
-| `release` | With `release`, beside JReleaser, handed everything staged. |
+| `release` | With `release`, beside the stock release steps, only where its `plugin-<name>.properties` is found; handed everything staged, the project's root and its resolved metadata. |
 | `plugin` | Only when `plugin/<name>` is named, handed only what it binds; nothing waits for it and it waits for nothing. |
 
 The module hook points run while the module is built, so everything after them sees what they add;
@@ -208,7 +208,7 @@ seeing what the ones before it added, and the inspections run after all of them.
 
 A **transform of stage** writes into a folder named after a staged tree - `maven/`, `modular/`, `packages/`,
 `project/` and the others under `target/stage/` - and what it writes joins that tree where it stands, so
-`export`, `release`, a `jreleaser.yml` and their plugins take it like anything else staged: checksums or
+`export`, `release` and their plugins take it like anything else staged: checksums or
 signatures beside every file, repository metadata, a manifest of what ships. A file the tree holds already fails
 the build rather than being replaced. An **inspection of stage** then checks the staged trees with what was added,
 and nothing is exported or released past one that fails.
@@ -243,6 +243,24 @@ in a file name, a dash after a name always introduces a profile, as in `jenesis-
 Since the plugins in `build` run with every build, one that takes long is best switched off in `jenesis.properties` with
 `jenesis.plugin.<name>=false` and switched back on in the profile that ships. `-Djenesis.project.plugins=false`
 leaves out every plugin at once, those of the module hook points included.
+
+### A plugin of release
+
+A plugin of `release` is the exception. It runs only where a configuration folder holds its
+`plugin-<name>.properties`, as a plugin of a module does, and it takes its values and binds its inputs from
+that file rather than from `jenesis.plugins.arguments.properties`, which refuses a line for it. Placed in the
+folder of a profile, such as `build.jenesis/release/`, the file keeps every build but a release from running the
+plugin.
+
+Beside everything staged, such a plugin is handed two files that tell it where the project lies and what it is:
+
+| File | Holds |
+| --- | --- |
+| `root.properties` | `root`, the project's root folder, and `stage.<tree>`, the folder of each staged tree, such as `stage.maven`. |
+| `metadata.properties` | The project's metadata as the build resolved it, the version `-Djenesis.project.version` sets included. |
+
+A release tool runs in the project's checkout, which is why this is the one place a plugin is told where the
+project lies.
 
 ### What a transform and an inspection see, and what they may add
 

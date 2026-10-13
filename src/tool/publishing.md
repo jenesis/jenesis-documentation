@@ -423,7 +423,7 @@ and any other answer than success stops it, naming the address and the status.
 
 <div class="warning">
   Maven Central is refused by name: it takes a release signed and through its own publishing service, which is
-  what a <code>jreleaser.yml</code> describes, as the next section shows. <code>jenesis.deploy.uri</code>
+  what the JReleaser plugin runs, as the next section shows. <code>jenesis.deploy.uri</code>
   names a repository of your own.
 </div>
 
@@ -444,40 +444,49 @@ independently of how the build produces artifacts.
 
 You can still reach that tool through the same selector vocabulary as everything else. `release` is a target on
 every layout, and it depends on `stage`, so what a release tool uploads is always the tree this build just
-produced:
+produced. The JReleaser plugin runs JReleaser there, in the build's own JVM. Name it in
+`jenesis.plugins.properties`:
 
-```bash
-java build/jenesis/Make.java release
+```properties
+jreleaser+release=build.jenesis.plugin.jreleaser
 ```
 
-The target exists whether or not anything is configured; the *tool* is what a file activates. A `jreleaser.yml`
-(or `.yaml`, `.toml`, `.json`) **at the project root** adds a `release/jreleaser` step - a project-root lookup
-rather than the usual per-module configuration folder, because JReleaser resolves every path in its
-configuration against one base directory. `-Djenesis.jreleaser.config=<path>` names a different file.
+A plugin of `release` runs only where a configuration folder holds its `plugin-<name>.properties`. Place that
+file in the folder of a profile, so that only a release switches the plugin on:
 
-It contributes two steps. The first writes an `environment/jreleaser.properties` holding
-`JRELEASER_PROJECT_VERSION`, the version `jenesis.project.version` names, and the second hands that variable to
-the JReleaser process it starts. The version is thereby stated once rather than passed to two tools
-that can then disagree. The build reads no version off what it staged, the `<version>` of a `pom.xml` and the
-`version` of `project.properties` included, so a release whose JReleaser configuration names none sets
-`-Djenesis.project.version`. A CI job that hands off to a release action of its own reads the version from
-`target/release/jreleaser/environment/output/environment/jreleaser.properties`. The second step runs the
-`jreleaser` executable found in the environment, forwarding the process environment as well. Every
-`JRELEASER_*` credential is therefore read by JReleaser itself and never touched, logged, or stored by the
-build.
+```properties
+# build.jenesis/release/plugin-jreleaser.properties
+@jreleaser=jreleaser.yml
+dry=false
+```
+
+```bash
+java -Djenesis.make.profiles=release -Djenesis.project.version=1.0.0 build/jenesis/Make.java release
+```
+
+| Value | Meaning |
+| --- | --- |
+| `@jreleaser=<file>` | The JReleaser configuration: a `jreleaser.yml`, `.yaml`, `.toml` or `.json`. |
+| `command` | The JReleaser command to run, `full-release` by default. |
+| `dry` | `true` by default, which runs JReleaser with `--dry-run`; `false` releases. |
+| `JRELEASER_*` | A setting JReleaser reads, handed to it as its settings file. |
+
+JReleaser is resolved and pinned like any other tool, and it runs in the project's root. It releases the version
+the build resolved, `-Djenesis.project.version` included, so the version is stated once. The build reads no
+version off what it staged, so a release whose configuration names none sets `-Djenesis.project.version`. Every
+value of the project's metadata and the folder of every staged tree are template properties of the
+configuration. Each is named in camel case after a `jenesis` prefix: `{{ jenesisStageMaven }}` is the staged
+Maven tree, and `{{ jenesisScmUrl }}` the `scm.url` of `project.properties`.
+
+JReleaser reads its credentials from its `JRELEASER_*` environment variables, as on the command line. A
+`JRELEASER_*` line can name one as well, such as `JRELEASER_GITHUB_TOKEN=@github.token`, which reads
+`jenesis.variable.github.token` from your own `~/.jenesis/jenesis.properties`. Once the plugin hands JReleaser a
+settings file - the version alone makes one - that file stands in for `~/.jreleaser/config.properties`.
 
 <div class="warning">
-  <code>release</code> is a <strong>dry run by default</strong>: every local phase runs and every remote one is
-  skipped. A real release needs <code>-Djenesis.jreleaser.dry=false</code>, the single switch that separates
-  a rehearsal from a publication - so no combination of selectors alone can publish.
-</div>
-
-<div class="note">
-  JReleaser is expected from the environment rather than resolved as a dependency, the way
-  <code>native-image</code> is. Every tool that <em>shapes</em> an artifact - a compiler, a linter - is pinned,
-  because reproducing a build means reproducing it exactly. A release tool shapes nothing: it transmits a
-  finished, already-reproducible tree. What it needs instead is credentials, network access, and a git identity,
-  which belong to the release environment.
+  The plugin runs JReleaser as a <strong>dry run by default</strong>: every local phase runs and every remote one
+  is skipped. A real release needs <code>dry=false</code> in its file, so no combination of selectors alone can
+  publish.
 </div>
 
 <div class="tip">

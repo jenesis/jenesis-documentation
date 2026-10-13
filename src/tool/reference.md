@@ -48,7 +48,7 @@ property). The top-level targets the shipped layouts register:
 | `build` | Compile, check, test, and package every module (the default). |
 | `stage` | Materialise the release tree under `target/stage/…` (see *[Publishing](/tool/publishing/)*). |
 | `export` | Publish the staged tree - into the local Maven repository (`~/.m2`), the local module repository (`~/.jenesis`), or both, depending on the layout. |
-| `release` | Put the staged trees into the repositories `jenesis.release.uri` and `jenesis.deploy.uri` name, and hand them to a release tool a `jreleaser.yml` configures, as a dry run unless told otherwise (see *[Publishing](/tool/publishing/)*). |
+| `release` | Put the staged trees into the repositories `jenesis.release.uri` and `jenesis.deploy.uri` name, and run the plugins of the hook point `release` (see *[Publishing](/tool/publishing/)*). |
 | `plugin/<name>` | Run a plugin the project names under the hook point `plugin`, which runs only when named (see *[Extending the build](/tool/extending-the-build/#plugins-for-the-whole-project)*). |
 | `pin` | Rewrite every `pom.xml` / `module-info.java` so the transitive closure is pinned at source (see *[Pinning &amp; bills of materials](/tool/pinning/)*). |
 | `dependencies` | Print each module's resolved dependency graph with licences; named alone, it runs no tests unless `-Djenesis.test.skip=false` asks. |
@@ -333,10 +333,6 @@ Read by the `release` target - see *[Publishing](/tool/publishing/)*.
 | `jenesis.release.token` (`JENESIS_RELEASE_TOKEN`) | *(unset)* | `Authorization` header sent to that repository, as given. Command line, `~/.jenesis/jenesis.properties` or the environment only. It travels only to a `jenesis.release.uri` named in the environment, on the command line or there, never to one a project's own file named. Its environment variable is not the one sent to the resolving repositories. |
 | `jenesis.deploy.uri` (`MAVEN_RELEASE_URI`) | *(unset)* | The Maven repository `release` puts the staged Maven tree into, every file at `<group path>/<artifactId>/<version>/<file>` with its `.md5`, `.sha1`, `.sha256` and `.sha512`, then each artifact's `maven-metadata.xml` merged with the one the repository holds; a `-SNAPSHOT` version under a unique timestamped name beside its own `maven-metadata.xml`, as Maven deploys one. Nothing is signed, and Maven Central is refused, as a `jreleaser.yml` releases there. Unset, `release` puts nothing there. Its environment variable is not the one a build resolves through. |
 | `jenesis.deploy.token` (`MAVEN_RELEASE_TOKEN`) | *(unset)* | `Authorization` header sent to that repository, as given, so it names its scheme, as `Basic <credentials>` or `Bearer <token>`. Command line, `~/.jenesis/jenesis.properties` or the environment only. It travels only to a `jenesis.deploy.uri` named in the environment, on the command line or there, never to one a project's own file named. |
-| `jenesis.jreleaser.config` | *(discovered)* | The release-tool configuration file; must exist when named. |
-| `jenesis.jreleaser.dry` | `true` | Perform every local phase and skip every remote one; `false` publishes. |
-| `jenesis.jreleaser.executable` | `jreleaser` | The executable to locate. Command line or `~/.jenesis/jenesis.properties` only. |
-| `jenesis.jreleaser.command` | `full-release` | The subcommand to run. |
 
 Read by the signing step - see *[Publishing](/tool/publishing/)*. Naming any of them says the project signs
 its jar, and the build then stops rather than producing an unsigned one if the key store, the alias or the
@@ -370,7 +366,6 @@ password location is missing.
 | `jenesis.print.pins` | `false` | Print a `[KEPT]` line per pin a refresh kept although no closure resolved it. |
 | `jenesis.print.divergence` | `false` | Print a `[DIVERGED]` line per coordinate the project pins at more than one version; `divergence.properties` is written either way. |
 | `jenesis.print.aliases` | `false` | Print an `[ALIAS]` line per `@jenesis.alias` whose target already declares that module name. |
-| `jenesis.print.jreleaser` | `false` | Stream the release tool's output. |
 | `jenesis.print.reproduce` | `true` | Name the steps that did not reproduce under `jenesis.project.reproduce`, beside the summary line. |
 | `jenesis.tree.format` | `full` | The `dependencies` tree rendering: `full` or `compact`. |
 | `jenesis.tree.merge` | `true` | Print one `dependencies` tree per module whose every node names the scopes it is resolved in; `false` prints one tree per module and scope. |

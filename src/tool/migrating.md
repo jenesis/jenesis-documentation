@@ -215,9 +215,9 @@ resolved higher in `<dependencyManagement>`.
 ## Retiring the old build
 
 Remove what Jenesis now replaces: the plugin configuration, the wrapper, and the CI steps that called them. A CI job that built now builds under strict pinning. One that published to Maven Central runs the
-[`release`](/tool/publishing/#driving-the-release-tool-from-the-build) selector with
-`-Djenesis.jreleaser.dry=false` and the version as `-Djenesis.project.version` on a runner with JReleaser, its
-credentials in the `JRELEASER_*` variables; one that deployed to a
+[`release`](/tool/publishing/#driving-the-release-tool-from-the-build) selector with the JReleaser plugin, its
+file in a release profile with `dry=false`, and the version as `-Djenesis.project.version`, its credentials in
+the `JRELEASER_*` variables; one that deployed to a
 [repository of its own](/tool/publishing/#releasing-into-a-maven-repository-of-your-own) names it in
 `MAVEN_RELEASE_URI` and its key in `MAVEN_RELEASE_TOKEN` instead. Then let the `ide` selector
 write the IntelliJ IDEA, VS Code or Eclipse project. A project in the `maven` layout keeps its `pom.xml` files,

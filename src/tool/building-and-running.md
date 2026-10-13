@@ -585,8 +585,7 @@ Four names take such a file:
 A JDK tool such as `javac` or `javadoc` takes none, as it may run inside the build's own JVM, and a file naming
 one fails the build. `native-image` is handed the variables its C compiler reads without a file: `INCLUDE`,
 `LIB` and `LIBPATH` from a Visual Studio developer prompt, `CPATH`, `C_INCLUDE_PATH`, `LIBRARY_PATH` and
-`SDKROOT`. A release run by the build hands JReleaser every `JRELEASER_*` variable, where it reads its
-credentials. The program `Execute.java` or `jpx` runs is the one you asked for rather than a step of the
+`SDKROOT`. The program `Execute.java` or `jpx` runs is the one you asked for rather than a step of the
 build, so it is handed your whole environment, as from a shell.
 
 ### Values from the command line
