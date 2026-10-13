@@ -381,7 +381,7 @@ documents the generated classes, and the sources jar carries their source files 
 from, as Maven's does. The sources jar also holds the module's resources, those `jenesis.project.resources`
 places among them included, as Maven's and Gradle's sources jars do.
 
-{% demos 71 %}
+{% demos 72 %}
 
 ### Reproducible archives
 
