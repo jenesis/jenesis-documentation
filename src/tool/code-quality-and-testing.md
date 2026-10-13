@@ -206,34 +206,38 @@ same shape a Kotlin compiler plugin uses, and `javac` reads that group into its 
 Prone plugin such as NullAway is another line of exactly the same form. A coordinate written without a
 version, as here, takes the newest release until `pin` records one.
 
-An `errorprone.properties` in the configuration folder is what turns the plugin on, and carries its flags:
+What turns the plugin on are `javac`'s own options, in a `process-javac.properties` of the configuration
+folder like any other compiler option. Each key is one option, so the `=`, `:` and space inside one are escaped:
 
 ```properties
-# build.jenesis/errorprone.properties
-arguments=-Xep:ReferenceEquality:ERROR
+# build.jenesis/process-javac.properties
+-XDcompilePolicy\=simple
+--should-stop\=ifError\=FLOW
+-J--add-exports\=jdk.compiler/com.sun.tools.javac.api\=ALL-UNNAMED
+-J--add-exports\=jdk.compiler/com.sun.tools.javac.file\=ALL-UNNAMED
+-J--add-exports\=jdk.compiler/com.sun.tools.javac.main\=ALL-UNNAMED
+-J--add-exports\=jdk.compiler/com.sun.tools.javac.model\=ALL-UNNAMED
+-J--add-exports\=jdk.compiler/com.sun.tools.javac.parser\=ALL-UNNAMED
+-J--add-exports\=jdk.compiler/com.sun.tools.javac.processing\=ALL-UNNAMED
+-J--add-exports\=jdk.compiler/com.sun.tools.javac.tree\=ALL-UNNAMED
+-J--add-exports\=jdk.compiler/com.sun.tools.javac.util\=ALL-UNNAMED
+-J--add-opens\=jdk.compiler/com.sun.tools.javac.code\=ALL-UNNAMED
+-J--add-opens\=jdk.compiler/com.sun.tools.javac.comp\=ALL-UNNAMED
+-Xplugin\:ErrorProne\ -Xep\:ReferenceEquality\:ERROR
 ```
 
-`arguments` is appended to the `-Xplugin:ErrorProne` option, so every Error Prone flag applies -
-`-Xep:<Check>:OFF|WARN|ERROR` to set one check's severity, `-XepAllErrorsAsWarnings`,
-`-XepDisableWarningsInGeneratedCode`. An empty file runs the default set of checks, where most findings are
-warnings and a handful are errors.
+| Option | Why Error Prone needs it |
+| --- | --- |
+| `-Xplugin:ErrorProne` | Runs the plugin, which `javac` does only when an option names it. What follows the name are Error Prone's own flags: `-Xep:<Check>:OFF\|WARN\|ERROR`, `-XepAllErrorsAsWarnings`, `-XepDisableWarningsInGeneratedCode`. |
+| `-XDcompilePolicy=simple` | Has `javac` analyse every class completely before it generates code, so the checks see the analysed code rather than code already partly lowered. |
+| `--should-stop=ifError=FLOW` | Keeps `javac` going through its flow analysis after an error, so the plugin reports beside the compiler. |
+| `-J--add-exports`, `-J--add-opens` | Grant the plugin the compiler's internal packages, which `jdk.compiler` does not export. They are options of the JVM that runs `javac`, so `javac` runs in a JVM of its own. |
 
-The two halves are independent on purpose, and each fails loudly without the other: with the tag but no
-configuration file the plugin resolves and sits unused, because `javac` runs a plugin only when it is named;
-with the file but no tag the build stops and names the `@jenesis.plugin` line that is missing. A `pom.xml`
-project declares the plugin as a `<!--jenesis.plugin javac maven/com.google.errorprone/error_prone_core-->`
-comment, in the module's POM or in a parent POM in the project, and the build names that comment instead.
-
-<div class="note">
-  Error Prone reads <code>com.sun.tools.javac</code> internals that <code>jdk.compiler</code> does not
-  export. Only the JVM that runs the compiler can grant them, through <code>-J</code> options that exist
-  only for a <code>javac</code> of its own, so the compile step forks while Error Prone is active whatever
-  <code>jenesis.process.factory</code> says. Every processor also stays on the processor class path, where
-  <code>--add-exports ...=ALL-UNNAMED</code> can reach the plugin.
-</div>
-
-`-Djenesis.compile.errorprone=false` keeps the file and the declaration in place but compiles without the
-plugin.
+`javac` reads the first two when it starts, and the exports must be in place before it does, so neither the plugin
+nor an annotation processor can supply them itself. Without the `-Xplugin` line the declared plugin resolves and
+sits unused. A `pom.xml` project declares the plugin as a
+`<!--jenesis.plugin javac maven/com.google.errorprone/error_prone_core-->` comment, in the module's POM or in a
+parent POM in the project.
 
 {% demos 15 %}
 

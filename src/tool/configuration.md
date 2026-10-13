@@ -126,7 +126,7 @@ What these folders can hold - presence activates, contents configure:
 
 - **Code quality**: `checkstyle.xml`, `pmd.xml`, `spotbugs-exclude.xml`, `forbiddenapis.properties`, `jdeps.properties`,
   `jdeprscan.properties`, `detekt.yml`, `codenarc.xml`,
-  `scalastyle-config.xml`, `errorprone.properties`.
+  `scalastyle-config.xml`.
 - **Generated sources**: `xjc.properties`, `protoc.properties`, `avro.properties`, `wsimport.properties`,
   `openapi.properties`, `antlr.properties`.
 - **Formatting**: `javaformat.properties`, `.editorconfig`, `ktfmt.properties`, `.scalafmt.conf`, `licenseheader.properties`.
