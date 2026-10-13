@@ -101,9 +101,9 @@ because a JVM option has to reach the JVM and therefore belongs before the main 
 
 ## Where tool configuration lives
 
-System properties are the small knobs. A tool like SpotBugs or jpackage needs its own configuration *file*,
+System properties are the small knobs. A tool like jdeps or jpackage needs its own configuration *file*,
 and those live in dedicated folders. A tool **activates on the presence of its file**: drop a
-`spotbugs-exclude.xml` in and bytecode analysis turns on; leave it out and it stays off. The folder is both the switch and the
+`jdeps.properties` in and the check for JDK internals turns on; leave it out and it stays off. The folder is both the switch and the
 settings.
 
 Every lookup walks one ordered list of folders and the **first folder that carries the file wins**. The list
@@ -126,8 +126,7 @@ What these folders can hold - presence activates, contents configure:
 
 - **Plugins**: `plugin-<name>.properties` - a plugin `jenesis.plugins.properties` names runs where its file is
   found, with its values and the files it binds, as Checkstyle's `checkstyle.xml` or the `.editorconfig` of ktlint.
-- **Code quality**: `spotbugs-exclude.xml`, `forbiddenapis.properties`, `jdeps.properties`,
-  `jdeprscan.properties`.
+- **Code quality**: `jdeps.properties`, `jdeprscan.properties`.
 - **Generated sources**: `xjc.properties`, `protoc.properties`, `avro.properties`, `wsimport.properties`,
   `openapi.properties`, `antlr.properties`.
 - **Formatting**: `licenseheader.properties`; the formatters are plugins.

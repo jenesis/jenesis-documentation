@@ -33,8 +33,8 @@ pmd+check=build.jenesis.plugin.pmd
 ```
 
 `@rules=<path>` hands the file at the path, resolved against the module's folder, to the plugin as its input
-`rules`. The tools that read compiled classes still turn on when their file is present in the configuration
-folder.
+`rules`. SpotBugs and forbiddenapis read the compiled classes, at the hook point `binary/validate`; the JDK's
+own jdeps and jdeprscan turn on when their file is present in the configuration folder.
 
 | Plugin or file | Tool | Inspects |
 | --- | --- | --- |
@@ -45,8 +45,8 @@ folder.
 | `build.jenesis.plugin.scalastyle`, binding `scalastyle-config.xml` | Scalastyle | source files |
 | `build.jenesis.plugin.scalafmt@check`, binding `.scalafmt.conf` | scalafmt (as a linter) | source files |
 | `build.jenesis.plugin.codenarc`, binding `codenarc.xml` | CodeNarc (Groovy) | source files |
-| `spotbugs-exclude.xml` | SpotBugs | compiled classes |
-| `forbiddenapis.properties` | forbiddenapis | compiled classes |
+| `build.jenesis.plugin.spotbugs`, binding `spotbugs-exclude.xml` | SpotBugs | compiled classes |
+| `build.jenesis.plugin.forbiddenapis` | forbiddenapis | compiled classes |
 | `jdeps.properties` | the JDK's jdeps | compiled classes |
 | `jdeprscan.properties` | the JDK's jdeprscan | compiled classes |
 
@@ -133,17 +133,25 @@ PMD and SpotBugs still run. `-Djenesis.plugin.<name>=false` leaves out any plugi
 
 [forbiddenapis](https://github.com/policeman-tools/forbidden-apis) finds calls that the compiled classes, the
 tests' included, should not make: a method that depends on the default locale, a deprecated API, a JDK internal
-or a call the project rules out. A `forbiddenapis.properties` names the signatures to check:
+or a call the project rules out. The plugin is named at the hook point `binary/validate`, and its
+`plugin-forbiddenapis.properties` names the signatures to check:
 
 ```properties
+# jenesis.plugins.properties
+forbiddenapis+binary/validate=build.jenesis.plugin.forbiddenapis
+```
+
+```properties
+# build.jenesis/plugin-forbiddenapis.properties
 bundled=jdk-unsafe,jdk-deprecated,jdk-non-portable,jdk-system-out
 signatures=forbidden-signatures.txt
+@signatures=../build.jenesis/forbidden-signatures.txt
 ```
 
 `bundled` names signatures that forbiddenapis ships. `jdk-unsafe`, `jdk-deprecated` and `jdk-internal` are
 written for one Java release, as `jdk-unsafe-25`, and the build appends the release the classes are compiled
-for where the name leaves it out. `signatures` names files of the project's own signatures, beside or below the
-properties file, in the format forbiddenapis reads:
+for where the name leaves it out. `signatures` names files of the project's own signatures, each bound into the
+input `signatures` by a line of its own, in the format forbiddenapis reads:
 
 ```text
 @defaultMessage Name a thread: an unnamed one is hard to tell apart in a thread dump
@@ -160,8 +168,7 @@ java.lang.Thread#<init>(java.lang.Runnable)
 | `allowmissingclasses` | `failOnMissingClasses=false` | `true` lets a class missing from the class path pass |
 | `ignoresignaturesofmissingclasses` | `ignoreSignaturesOfMissingClasses` | `true` skips a signature whose class is missing |
 
-Any other key fails the build, and so does a file named under `signatures` that is missing or outside the
-folder. The report, `reports/forbiddenapis/forbiddenapis.txt`, holds one line per finding: the call, the
+Any other key fails the build, and so does a file named under `signatures` that no line binds. The report, `reports/forbiddenapis/forbiddenapis.txt`, holds one line per finding: the call, the
 reason and where it was made.
 
 ### JDK internals and removals

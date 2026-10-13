@@ -222,8 +222,8 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.compliance.vulnerability` | `true` | Run the vulnerability check a `vulnerability.properties` activates; `false` skips it. |
 | `jenesis.source.<tool>` | `report` | What the findings of a linter plugin do (`checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc`), read by the plugin: `report` records them, `strict` fails the build on them, as the linter's own exit code decides - scalafmt on a source it would format differently, CodeNarc on any finding - and `ignore` skips the linter. Any other value is refused. |
 | `jenesis.pmd.priority` | `5` | The lowest rule priority the PMD plugin runs, from `1`, the highest, to `5`, the lowest, as maven-pmd-plugin's `minimumPriority`; any other value is refused. |
-| `jenesis.validator.spotbugs` | `report` | What SpotBugs does when its filter file is present: `report` records its findings, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
-| `jenesis.validator.forbiddenapis` | `report` | What forbiddenapis does when a `forbiddenapis.properties` is present: `report` records its findings, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
+| `jenesis.validator.spotbugs` | `report` | What the SpotBugs plugin does, read by the plugin: `report` records its findings, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
+| `jenesis.validator.forbiddenapis` | `report` | What the forbiddenapis plugin does, read by the plugin: `report` records its findings, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.validator.jdeps` | `report` | What jdeps does when a `jdeps.properties` is present: `report` records the JDK internal APIs the classes use, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.validator.jdeprscan` | `report` | What jdeprscan does when a `jdeprscan.properties` is present: `report` records the uses of APIs deprecated for removal, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.format.license` | `true` | The licence header check a `licenseheader.properties` activates, with its `text` or, without one, SPDX lines naming the declared licence and copyright. |
@@ -237,7 +237,7 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.generate.<tool>` | `true` | Per-generator switch (`xjc`, `protoc`, `avro`, `wsimport`, `openapi`, `antlr`, `ksp`). |
 | `jenesis.generate.classpath` | `true` | Write `META-INF/services` files, and `Enable-Native-Access` for a module granting itself, from `module-info` when a `classpath.properties` is present - see *[A modular jar on the class path](/tool/packaging/#a-modular-jar-on-the-class-path)*. |
 
-The quality and packaging *files* these keys gate (`spotbugs-exclude.xml`, `packaging.properties`, and the like)
+The quality and packaging *files* these keys gate (`jdeps.properties`, `packaging.properties`, and the like)
 are covered in *[Code quality &amp; testing](/tool/code-quality-and-testing/)*, *[Generating
 sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chain/)*, and
 *[Packaging](/tool/packaging/)*.
@@ -397,7 +397,7 @@ in the linked chapter.
 | `binary` | The Java toolchain for one module; its `compiled`, `classes`, `validate`, and `artifacts` steps sit beneath it. |
 | `compiled` | Compiled classes from sources and the compile class path (`javac`, or a language compiler). |
 | `classes` | The version-stamped classes exposed to downstream consumers. |
-| `validate` | Byte-code analysis (SpotBugs, forbiddenapis, jdeps and jdeprscan, as `validate/<tool>`). |
+| `validate` | Byte-code analysis (jdeps and jdeprscan, as `validate/<tool>`, and plugins such as SpotBugs and forbiddenapis, as `validate/custom/<name>`). |
 | `classpath` | The `META-INF/services` files and manifest attribute that let a modular jar run on the class path, when a `classpath.properties` is present (as `classpath/services`). |
 | `artifacts` | The packaged jar. |
 | `check` | Static-analysis findings (Checkstyle, PMD, detekt, …). |
