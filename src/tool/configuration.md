@@ -130,7 +130,8 @@ What these folders can hold - presence activates, contents configure:
 - **Generated sources**: `xjc.properties`, `protoc.properties`, `avro.properties`, `wsimport.properties`,
   `openapi.properties`, `antlr.properties`.
 - **Formatting**: `javaformat.properties`, `.editorconfig`, `ktfmt.properties`, `.scalafmt.conf`, `licenseheader.properties`.
-- **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`.
+- **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`,
+  `classifiers.properties`.
 - **Compliance**: `licensing.properties`, `vulnerability.properties`, `spdx.properties`.
 - **Tests**: `test.properties`, naming the engine a module's tests run on.
 - **Test observability**: `jacoco.properties`, `graal.properties`, `pitest.properties`.

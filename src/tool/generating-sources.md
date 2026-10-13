@@ -205,6 +205,8 @@ go in `process-ksp.properties`, as `-language-version=2.2` when the module's Kot
 KSP is built for, which it otherwise takes. A `-J<option>` line or a `-D` line goes to the JVM that runs KSP
 instead, as it does for `kotlinc`.
 
+{% demos 48 %}
+
 ## Turning one off
 
 Each generator has a switch, on by default:

@@ -33,7 +33,7 @@ requires the module by name, and the local repositories are read before any remo
 the latest export, with a pinned version that version's build. A consumer does not notice a new export on its
 own; it takes one when it is rebuilt with `-Djenesis.executor.rebuild=true`.
 
-{% demos 68 %}
+{% demos 71 %}
 
 ## Staging the release tree
 
@@ -221,7 +221,56 @@ that is not a 40-character Git tree id fails the build. When
 notation SPDX uses for a download location: `git+https://github.com/jenesis/jenesis.git@<revision>`. A tag of
 `HEAD`, which a `pom.xml` declares for the root of its repository, counts as no tag there.
 
-{% demos 69 %}
+{% demos 72 %}
+
+## Publishing variants of a jar
+
+Some libraries publish more than one jar under their coordinate: the jar itself, and variants told apart by a
+classifier, each adding what one platform needs, such as a native library. A `classifiers.properties` in a
+module's configuration folder declares them, one line per classifier naming the folders whose files the
+variant adds to the module's jar:
+
+```properties
+platform-a=../variants/platform-a,library/platform-a
+legacy=
+```
+
+A variant is the module's jar plus those files, each at its path inside its folder, so
+`variants/platform-a/variant.txt` becomes `variant.txt`. A `META-INF/MANIFEST.MF` among them is merged over the
+jar's manifest, its value winning for each attribute it names. A variant only adds: a file the jar holds
+already fails the build. A line naming no folder, as `legacy=`, publishes the jar as it is under that
+classifier. `tests`, `sources` and `javadoc` are the build's own and cannot be declared.
+
+`stage` lays each variant out beside the jar, in both trees:
+
+```text
+target/stage/modular/output/demo.natives/demo.natives-platform-a.jar
+target/stage/maven/output/demo/natives/demo.natives/0-SNAPSHOT/demo.natives-0-SNAPSHOT-platform-a.jar
+```
+
+`export` and a release to a Maven repository publish the variants with the rest of the Maven tree. A release
+into a Jenesis module repository puts each module's jar alone, so the variants stay in the staged tree.
+
+### Folders a plugin writes
+
+A folder is named from the module's folder and must lie inside the project. A name the project does not hold
+is the folder a [plugin](/tool/extending-the-build/) of the module wrote, named as the plugin writes it in its
+own output. That is how a variant carries a native library: a plugin at `binary/compiled` runs `cargo`, `cmake`
+or `make` and writes the library as `library/linux-x86_64/libnatives.so`, and the line
+`linux-x86_64=library/linux-x86_64` adds it to the variant as `libnatives.so`. The module's own jar does not
+hold it. A name that is both a folder of the project and one a plugin wrote gives the variant the files of both,
+refusing a file the two share; a name neither provides fails the build when the variant is made. The compiler is
+the one installed on the machine, as it is for Maven and Gradle.
+
+### One variant per platform
+
+Kept in a [profile's](/tool/configuration/#profiles) folder, such as `META-INF/build.jenesis/linux-x86_64/`, the
+file decides which variants a machine builds: activating the profile builds that platform's variant, and an
+empty `classifiers.properties` declares none. A release that gathers several platforms builds each on a machine
+of its own. A module of the same build [selects a variant](/tool/pinning/#pinning-one-variant-of-a-module) by
+its classifier, which then takes the jar's place on every path that module is built and run with.
+
+{% demos 65 %}
 
 ## Publishing a bill of materials
 
@@ -338,7 +387,7 @@ detached signature made afterwards covers the signed bytes.
   delete <code>target/</code> after a key rotation.
 </div>
 
-{% demos 67 %}
+{% demos 70 %}
 
 ## Releasing into a Jenesis module repository
 
@@ -427,7 +476,7 @@ and any other answer than success stops it, naming the address and the status.
   names a repository of your own.
 </div>
 
-{% demos 69 %}
+{% demos 72 %}
 
 ## The last mile: signing and uploading
 

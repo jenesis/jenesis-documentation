@@ -175,7 +175,7 @@ the same input fails the build.
   <em><a href="/tool/build-performance-and-isolation/#what-runs-on-the-host">What runs on the host</a></em>).
 </div>
 
-{% demos 60, 61 %}
+{% demos 61, 62 %}
 
 ## Plugins for the whole project
 
@@ -289,7 +289,7 @@ any plugin:
 java -Djenesis.project.plugins=false build/jenesis/Make.java pin
 ```
 
-{% demos 63 %}
+{% demos 64 %}
 
 ## Writing a build step
 
@@ -577,7 +577,7 @@ Byte Buddy resolves into the plugin's own module layer, and what the plugin rewr
  */
 ```
 
-{% demos 62 %}
+{% demos 63 %}
 
 ### Forking a tool that cannot be a module
 
@@ -594,6 +594,29 @@ Hand such a step only the inputs it reads, `executor.addStep(name, step, inputs)
 the map `accept` is handed, since each input is part of the step's key: a generator handed `sources/` runs
 again on every edit. The keys are relative paths, as `../../../../../../../dependencies/artifacts`, so pick an
 input by how its key ends.
+
+### Compiling native code
+
+A native method is implemented in a library the module loads at run time, and the C side compiles against a
+JNI header that `javac -h` writes. A plugin at `binary/compiled` builds both with two steps:
+
+1. The build's own `javac` step, asked for the headers alone:
+   `new Javac(ProcessHandler.Factory.of()).headers(true)`. It compiles the module's sources as the module's
+   compiler does, but hands on nothing but a `headers/` folder, with one header for each class that declares a
+   native method. The classes it compiles stay with the step, so they never join the jar a second time.
+2. A step of the plugin's own that forks the machine's C compiler, extending `EnvironmentalProcessBuildStep`.
+   It puts the JDK's `include/` folder, the folder for the operating system below it and `headers/` on the
+   include path. It writes the library below `classes/`, where it joins the module's jar.
+
+The C sources reach the plugin as an input, bound with `@c=<folder>` in its `plugin-<name>.properties`, as in
+*[Handing a plugin files of the project](#handing-a-plugin-files-of-the-project)*. A library is built for the
+machine that builds it. A project that publishes one for several platforms builds each on its own machine and
+writes the library into a folder that its
+[`classifiers.properties`](/tool/publishing/#publishing-variants-of-a-jar) names, instead of below `classes/`.
+Loading a library is a restricted method, so the application grants native access to the module that loads it,
+as *[Granting native access](/tool/building-and-running/#granting-native-access)* describes.
+
+{% demos 66 %}
 
 ## Writing an entry point of your own
 
@@ -683,7 +706,7 @@ points at `preprocess`. `javac`, the jar step, and the tests all consume the tra
 of the build is untouched. Any pass that produces a `sources/` tree - template expansion, code generation,
 licence-header stamping - fits the same shape.
 
-{% demos 58, 59 %}
+{% demos 59, 60 %}
 
 ### Starting on the selected JDK
 
@@ -725,7 +748,7 @@ This is a middle ground: no layout, no goals, no `Project`, yet you did not wire
 no generated POM). For full control - a custom repository, strict pinning, a different digest, or emitting a
 POM as well - switch to the longer `make(...)` overload that `Project` itself uses.
 
-{% demos 64, 65 %}
+{% demos 67, 68 %}
 
 ### Wiring the graph by hand
 
@@ -749,7 +772,7 @@ cached outputs whose inputs are unchanged. The `generate` step above synthesises
 There is no phase lifecycle to fit into: a build is just steps wired to steps, and here you wire them
 yourself.
 
-{% demos 66 %}
+{% demos 69 %}
 
 ## Running a build inside another program
 
@@ -789,5 +812,5 @@ The tools are found by name when `build.jenesis` is a resolved module or a jar o
 mode registers no service, so a program there constructs `new MakeTool()`, `new ExecuteTool()` or
 `new JpxTool()` itself; the contract is the same.
 
-{% demos 74 %}
+{% demos 77 %}
 
