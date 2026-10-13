@@ -380,6 +380,7 @@ password location is missing.
 | `jenesis.executor.events` | `true` | Write each step's outcome of the latest build to `target/.jenesis.events.jsonl`, one JSON object per line (see *[Building &amp; running](/tool/building-and-running/#reading-a-build-s-outcome)*). |
 | `jenesis.executor.concurrency` | `0` | The most build steps that run at once across the whole build; `0` means no limit, while `jenesis.process.concurrency` still bounds the tools they run. |
 | `jenesis.process.factory` | `tool` | How JDK tool steps launch: `tool` (in-process) or `fork`; a `-J` option in `process-javac.properties` runs `javac` in a JVM of its own either way. |
+| `jenesis.process.warm` | `true` | Run the main method of a tool a plugin starts through `ofJavaMain()` in a JVM kept for the next call with the same class path, options and environment; an idle one ends after ten minutes. `false` starts a JVM for every call. |
 | `jenesis.process.tail` | `200` | How many of the last lines of a failed tool's output and of its error the failure prints, beside how many there were and the file under `supplement/` that holds all of them; `0` prints every line. |
 | `jenesis.process.concurrency` | *(processor count)* | The most tool runs - a compiler, a JDK tool, a forked JVM such as a test run - that happen at once across the whole build; `0` means no limit. |
 | `JAVA_HOME` (env) | *(from `java.home`)* | Locates the JDK binaries when the runtime is not a JDK. |

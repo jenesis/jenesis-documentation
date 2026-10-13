@@ -696,6 +696,14 @@ module names it in a group of its own with `@jenesis.plugin <group> maven/<group
 `/dependencies/artifacts`, where `Dependencies.select(folder, "<group>", "plugin")` lists them for the
 `java -cp` the step runs.
 
+A step that forks `java -cp <jars> <class or Launcher.java> <arguments>` builds its handler with
+`ProcessHandler.OfProcess.ofJavaMain()` rather than `ofJavaHome("bin/java")`. Its tool's main method then runs in a
+JVM kept warm for the next call with the same class path, options and environment, which compiles a `.java`
+launcher once. What one call prints is that call's output, a call that returns ends with `0`, and one that calls
+`System.exit` ends with that code and takes its JVM with it. A command line of another shape - a module path,
+`-jar`, an argument file - is forked as before, and `jenesis.process.warm=false` forks every call, for a tool whose
+static state must not outlive one.
+
 Hand such a step only the inputs it reads, `executor.addStep(name, step, inputs)` naming them among the keys of
 the map `accept` is handed, since each input is part of the step's key: a generator handed `sources/` runs
 again on every edit. The keys are relative paths, as `../../../../../../../dependencies/artifacts`, so pick an
