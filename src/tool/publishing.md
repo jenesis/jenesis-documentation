@@ -340,6 +340,24 @@ detached signature made afterwards covers the signed bytes.
 
 {% demos 67 %}
 
+## Rehearsing and publishing a release
+
+`release` is a dry run unless the command line asks for more. It stages, checks what it would release and names
+each file it would put, and runs the plugins of `release` dry, JReleaser with `--dry-run`, so no repository
+receives anything:
+
+```text
+[DRY RUN]   https://repo.example.com/.../com/example/library/1.0.0/library-1.0.0.jar
+```
+
+`-Djenesis.release.publish=true` makes the same run publish. Only the command line may pass it: `jenesis.properties`,
+a profile and your own `~/.jenesis/jenesis.properties` refuse it, so no file makes every release publish. A dry
+release needs no network and checks what a real one would refuse, a missing version or a plaintext address
+among them.
+
+Because a release is dry unless asked otherwise, [`pin`](/tool/pinning/) runs one as well. It runs last, after
+`stage` and a dry `release`, so the tool a plugin of `release` resolves is pinned with the rest.
+
 ## Releasing into a Jenesis module repository
 
 A destination the tool publishes to by itself is a Jenesis module repository, the layout a modular build
@@ -352,6 +370,7 @@ the same address a build names in `jenesis.module.uri`:
 java -Djenesis.project.version=1.0.0 \
      -Djenesis.release.uri=https://repo.example.com/repository/releases/<repo>/ \
      -Djenesis.release.token=<key> \
+     -Djenesis.release.publish=true \
      build/jenesis/Make.java release
 ```
 
@@ -362,8 +381,8 @@ whose `jenesis.module.uri` names the same address then resolves the module by it
 refuses to run in the `maven` layout, which stages no modular tree.
 
 A release needs a version: a module staged without one, as when `jenesis.project.version` is not set, fails
-the release before anything is put into the repository, and so does a module staged at more than one
-version.
+the release, dry or not, before anything is put into the repository, and so does a module staged at more than
+one version.
 
 The key is sent as the `Authorization` header, exactly as given. Where the settings are not given, a release
 reads the `JENESIS_RELEASE_URI` and `JENESIS_RELEASE_TOKEN` environment variables - never the variables naming
@@ -389,6 +408,7 @@ repository, or Gradle's `maven-publish` with a repository of its own:
 java -Djenesis.project.version=1.0.0 \
      -Djenesis.deploy.uri=https://repo.example.com/repository/maven-releases/ \
      -Djenesis.deploy.token="Basic <credentials>" \
+     -Djenesis.release.publish=true \
      build/jenesis/Make.java release
 ```
 
@@ -417,7 +437,7 @@ environment, and is never sent to a repository a file of the project named.
 
 `release` does this in the `maven` and `modular_to_maven` layouts, and refuses to run in the `modular` layout,
 which stages no Maven tree. A plaintext `http:` address is refused unless `-Djenesis.repository.insecure=true`
-allows it, and so is a release while `jenesis.repository.offline` is set. A repository that refuses the key
+allows it, and so is a release that publishes while `jenesis.repository.offline` is set. A repository that refuses the key
 fails the release naming the setting, one that already holds other content at a path asks for a new version,
 and any other answer than success stops it, naming the address and the status.
 
@@ -451,24 +471,21 @@ produced. The JReleaser plugin runs JReleaser there, in the build's own JVM. Nam
 jreleaser+release=build.jenesis.plugin.jreleaser
 ```
 
-A plugin of `release` runs only where a configuration folder holds its `plugin-<name>.properties`. Place that
-file in the folder of a profile, so that only a release switches the plugin on:
+A plugin of `release` runs where a configuration folder holds its `plugin-<name>.properties`:
 
 ```properties
-# build.jenesis/release/plugin-jreleaser.properties
+# build.jenesis/plugin-jreleaser.properties
 @jreleaser=jreleaser.yml
-dry=false
 ```
 
 ```bash
-java -Djenesis.make.profiles=release -Djenesis.project.version=1.0.0 build/jenesis/Make.java release
+java -Djenesis.release.publish=true -Djenesis.project.version=1.0.0 build/jenesis/Make.java release
 ```
 
 | Value | Meaning |
 | --- | --- |
 | `@jreleaser=<file>` | The JReleaser configuration: a `jreleaser.yml`, `.yaml`, `.toml` or `.json`. |
 | `command` | The JReleaser command to run, `full-release` by default. |
-| `dry` | `true` by default, which runs JReleaser with `--dry-run`; `false` releases. |
 | `JRELEASER_*` | A setting JReleaser reads, handed to it as its settings file. |
 
 JReleaser is resolved and pinned like any other tool, and it runs in the project's root. It releases the version
@@ -485,8 +502,9 @@ settings file - the version alone makes one - that file stands in for `~/.jrelea
 
 <div class="warning">
   The plugin runs JReleaser as a <strong>dry run by default</strong>: every local phase runs and every remote one
-  is skipped. A real release needs <code>dry=false</code> in its file, so no combination of selectors alone can
-  publish.
+  is skipped. A real release needs <code>-Djenesis.release.publish=true</code> on the command line, which no file
+  may set, so no configuration and no combination of selectors alone can publish. Every <code>pin</code> runs
+  this dry release, which is how it pins JReleaser.
 </div>
 
 <div class="tip">
