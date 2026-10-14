@@ -303,7 +303,10 @@ plugin-notice/module/build.jenesis=0.14.0 SHA-256/...
 ```
 
 `pin` writes the file and pins every plugin of the whole project the file names, including one a setting
-switches off, so a plugin that only a profile switches on is pinned all the same. The plugins run with
+switches off, so a plugin that only a profile switches on is pinned all the same. A releaser resolves its own tool
+only when the project releases, so `pin` does not pin that tool. A line in the same file does, such as
+`jreleaser/maven/org.jreleaser/jreleaser-tool-provider=1.26.0 SHA-256/...` with the checksum of the jar a release
+resolved, and `pin` keeps such a line for every plugin the file names. The plugins run with
 everything that builds, `pin` among it, so an inspection that fails stops `pin` too. This pins without running
 any plugin:
 
