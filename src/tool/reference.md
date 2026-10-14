@@ -157,9 +157,9 @@ compiled is held between calls. What is held is a warm JIT, and a build spends i
 a JVM that has already compiled a few modules runs faster. The daemon therefore pays in proportion to how
 much a build compiles: nothing on a build that compiles little, where the socket costs more than the warm
 code saves, and about a third off a five-module project. Compiling the build sources once, which is on by
-default, is what removes the large fixed cost; the daemon is the increment after that. A daemon also keeps the JVMs that run a
-plugin's tools between builds, as `jenesis.process.warm` keeps them within one, so a build that lints or generates
-in every module gains more from it than from a warm JIT alone.
+default, is what removes the large fixed cost; the daemon is the increment after that. A daemon also turns on
+`jenesis.process.warm`, which keeps the JVMs that run a plugin's tools for the next call and the next build, so a
+build that lints or generates in every module gains more from it than from a warm JIT alone.
 
 Only `jenesis.*` properties travel with a call to a daemon, which clears and sets them again around every
 build. Everything a running JVM cannot change is the daemon's identity instead - the build sources, the
@@ -379,7 +379,7 @@ password location is missing.
 | `jenesis.executor.events` | `true` | Write each step's outcome of the latest build to `target/.jenesis.events.jsonl`, one JSON object per line (see *[Building &amp; running](/tool/building-and-running/#reading-a-build-s-outcome)*). |
 | `jenesis.executor.concurrency` | `0` | The most build steps that run at once across the whole build; `0` means no limit, while `jenesis.process.concurrency` still bounds the tools they run. |
 | `jenesis.process.factory` | `tool` | How JDK tool steps launch: `tool` (in-process) or `fork`; a `-J` option in `process-javac.properties` runs `javac` in a JVM of its own either way. |
-| `jenesis.process.warm` | `true` | Run the main method of a tool a plugin starts through `ofJavaMain()`, and `javac` where a `-J` option forks it, in one JVM that runs its compilations side by side, as it runs the calls a plugin marks `shared`, kept for the next call with the same jars on its class path, wherever a module resolved them, and the same options and environment; an idle one ends after ten minutes. `false` starts a JVM for every call. |
+| `jenesis.process.warm` | `false` | Run the main method of a tool a plugin starts through `ofJavaMain()`, and `javac` where a `-J` option forks it, in one JVM that runs its compilations side by side, as it runs the calls a plugin marks `shared`, kept for the next call with the same jars on its class path, wherever a module resolved them, and the same options and environment; an idle one ends after ten minutes. The daemon turns it on for the builds it runs unless it is set; `false` starts a JVM for every call, so a build without the daemon leaves no JVM running. |
 | `jenesis.process.tail` | `200` | How many of the last lines of a failed tool's output and of its error the failure prints, beside how many there were and the file under `supplement/` that holds all of them; `0` prints every line. |
 | `jenesis.process.concurrency` | *(processor count)* | The most tool runs - a compiler, a JDK tool, a forked JVM such as a test run - that happen at once across the whole build; `0` means no limit. |
 | `JAVA_HOME` (env) | *(from `java.home`)* | Locates the JDK binaries when the runtime is not a JDK. |

@@ -443,7 +443,7 @@ module demo.plugin {
 
 The factory creates the `BuildExecutorModule` that adds the steps the plugin contributes, as a stock module does.
 It is handed the settings of the build, the values of its `plugin-<name>.properties` or its lines of
-`jenesis.plugins.arguments.properties` in the file's order, the permits that bound the processes the build runs
+`jenesis.plugins.arguments.properties` in the file's order, the `Permits` that bound the processes the build runs
 at once, the dependency group to resolve a tool in, and the build's repositories and resolvers:
 
 ```java
@@ -452,7 +452,7 @@ public class GreetingFactory implements BuildModuleFactory {
     @Override
     public BuildExecutorModule create(Environment environment,
                                       SequencedMap<String, String> properties,
-                                      Semaphore permits,
+                                      Permits permits,
                                       String group,
                                       Map<String, Repository> repositories,
                                       Map<String, Resolver> resolvers) {
@@ -519,7 +519,7 @@ public class LoadedFactory implements ObservabilityFactory {
     @Override
     public Observation create(Environment environment,
                               SequencedMap<String, String> properties,
-                              Semaphore permits,
+                              Permits permits,
                               String group,
                               Map<String, Repository> repositories,
                               Map<String, Resolver> resolvers) {
@@ -711,14 +711,15 @@ module names it in a group of its own with `@jenesis.plugin <group> maven/<group
 `java -cp` the step runs.
 
 A step that forks `java -cp <jars> <class or Launcher.java> <arguments>` builds its handler with
-`ProcessHandler.OfProcess.ofJavaMain()` rather than `ofJavaHome("bin/java")`. Its tool's main method then runs in a
-JVM kept warm for the next call with the same jars on its class path and the same options and environment, which
-compiles a `.java` launcher once. A jar is matched by the file rather than its path, so every module of a build that
+`ProcessHandler.OfProcess.ofJavaMain()` rather than `ofJavaHome("bin/java")`. Under `jenesis.process.warm`, which the
+build daemon turns on and which is off otherwise, its tool's main method then runs in a JVM kept warm for the next
+call with the same jars on its class path and the same options and environment, which compiles a `.java` launcher
+once. A jar is matched by the file rather than its path, so every module of a build that
 resolves the same tool shares that JVM. What one call prints is that call's output, a call that returns ends with `0`, or with the `int` a main
 method declared to return one hands back, and one that calls `System.exit` ends with that code and takes its JVM
 with it. A command line of another shape - a module path,
-`-jar`, an argument file - is forked as before, and `jenesis.process.warm=false` forks every call, for a tool whose
-static state must not outlive one. A JVM runs one call at a time, because few tools allow more; a tool whose main
+`-jar`, an argument file - is forked as before, and so is every call while the setting is off, which also serves a
+tool whose static state must not outlive one. A JVM runs one call at a time, because few tools allow more; a tool whose main
 method keeps its state per call - a compiler driven through its own API - asks for `.shared(true)` on the handler,
 and its calls then run side by side in one JVM, sharing its JIT, each printing only what it printed itself.
 
