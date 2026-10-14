@@ -134,7 +134,7 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | `fork` with `meminitial`, `maxmem` or `-J` options | `-J<option>=` in `process-javac.properties`, which runs `javac` in a JVM of its own |
 | A multi-release jar's sources in `src/main/java<N>`, a compiler execution with `multiReleaseOutput`, a Gradle `java<N>` source set | The same sources moved below `src/main/java/META-INF/versions/<N>/`, compiled as a [multi-release overlay](/tool/building-and-running/#one-jar-several-java-versions) |
 | `annotationProcessorPaths` | A dependency of `<type>processor</type>`; one named without a version takes it from `<dependencyManagement>` |
-| Gradle's `com.google.devtools.ksp` plugin and its `ksp(...)` dependencies | A [`ksp.properties`](/tool/generating-sources/#kotlin-symbol-processing), with each processor as `@jenesis.plugin ksp <coordinate>` |
+| Gradle's `com.google.devtools.ksp` plugin and its `ksp(...)` dependencies | The [KSP plugin](/tool/generating-sources/#kotlin-symbol-processing), `ksp+binary/generated=build.jenesis.plugin.ksp`, with each processor as `@jenesis.plugin ksp <coordinate>` and its arguments in `plugin-ksp.properties` |
 | Surefire includes and groups | `-Djenesis.test.filter`, `-Djenesis.test.tag` |
 | Surefire excludes | `-Djenesis.test.exclude`, as `.*IntegrationTest` |
 | `argLine`, `jvmArgs` of the tests | `process-test.properties` |
@@ -142,6 +142,7 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | `forkCount` with `reuseForks=false`, `forkEvery` | A test module of its own, since each test module runs in a JVM of its own |
 | The environment of the tests | `environment-test.properties` |
 | The Checkstyle, PMD, detekt, ktlint, Scalastyle, scalafmt or CodeNarc plugin | A line `<name>+check=build.jenesis.plugin.<name>` of `jenesis.plugins.properties`, and a `plugin-<name>.properties` that binds its configuration as `@rules=<path>` |
+| The jaxb2, protobuf, avro, jaxws, openapi-generator or antlr4 Maven plugin | A line `<name>+binary/generated=build.jenesis.plugin.<name>` of `jenesis.plugins.properties` for `xjc`, `protoc`, `avro`, `wsimport`, `openapi` or `antlr`, and a `plugin-<name>.properties` that binds the contracts |
 | The spotbugs-maven-plugin, forbiddenapis, japicmp or revapi | A line `<name>+binary/validate=build.jenesis.plugin.<name>`, or `+artifact` for japicmp and revapi, of `jenesis.plugins.properties`, and a `plugin-<name>.properties` with its values and bindings |
 | Spotless, the fmt-maven-plugin or the formatter-maven-plugin | A line `<name>+format=build.jenesis.plugin.<name>` of `jenesis.plugins.properties` for google-java-format (`googlejavaformat`), Palantir (`palantir`), Eclipse (`eclipse`), ktfmt (`ktfmt`), or ktlint and scalafmt with `@format` |
 | Checkstyle's `propertyExpansion`, `configProperties` | Values of `plugin-checkstyle.properties` |

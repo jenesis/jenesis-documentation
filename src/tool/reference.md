@@ -233,7 +233,6 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.observe.jfr` | `true` | Record the test JVM with Java Flight Recorder when a `jfr.properties` is present. |
 | `jenesis.mutate.pitest` | `true` | Run PIT mutation testing when its file is present. |
 | `jenesis.artifact.revapi` | `report` | What the revapi plugin does, read by the plugin: `report` records the differences that reach its severity, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
-| `jenesis.generate.<tool>` | `true` | Per-generator switch (`xjc`, `protoc`, `avro`, `wsimport`, `openapi`, `antlr`, `ksp`). |
 | `jenesis.generate.classpath` | `true` | Write `META-INF/services` files, and `Enable-Native-Access` for a module granting itself, from `module-info` when a `classpath.properties` is present - see *[A modular jar on the class path](/tool/packaging/#a-modular-jar-on-the-class-path)*. |
 
 The quality and packaging *files* these keys gate (`jdeps.properties`, `packaging.properties`, and the like)

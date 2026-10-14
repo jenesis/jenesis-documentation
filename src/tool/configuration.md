@@ -127,8 +127,6 @@ What these folders can hold - presence activates, contents configure:
 - **Plugins**: `plugin-<name>.properties` - a plugin `jenesis.plugins.properties` names runs where its file is
   found, with its values and the files it binds, as Checkstyle's `checkstyle.xml` or the `.editorconfig` of ktlint.
 - **Code quality**: `jdeps.properties`, `jdeprscan.properties`.
-- **Generated sources**: `xjc.properties`, `protoc.properties`, `avro.properties`, `wsimport.properties`,
-  `openapi.properties`, `antlr.properties`.
 - **Formatting**: `licenseheader.properties`; the formatters are plugins.
 - **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`.
 - **Compliance**: `licensing.properties`, `vulnerability.properties`, `spdx.properties`.
