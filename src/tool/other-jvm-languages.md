@@ -139,8 +139,8 @@ instead, as the `kotlinc` command passes them, so the last line gives that JVM `
 ## Compiling incrementally
 
 `-Djenesis.kotlin.incremental=true` compiles Kotlin incrementally, as Gradle does by default: after an edit, only
-the sources the change reaches are compiled again. The compiler runs in the Kotlin daemon through the Kotlin Build
-Tools API, which needs Kotlin 2.3 or newer. `-Djenesis.scala.incremental=true` compiles Scala with Zinc, the
+the sources the change reaches are compiled again. The compiler runs through the Kotlin Build Tools API, which needs
+Kotlin 2.3 or newer, in a JVM the build keeps warm as `jenesis.process.warm` describes, rather than in Kotlin's own daemon. `-Djenesis.scala.incremental=true` compiles Scala with Zinc, the
 incremental compiler sbt is built on, in a JVM forked per compile.
 
 {% demos 45, 48 %}
