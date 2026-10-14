@@ -403,7 +403,7 @@ in the linked chapter.
 | `observed` | The coverage- or trace-wrapped test run. |
 | `compliance` | The licence and vulnerability check results. |
 | `sbom` | The CycloneDX bill of materials. |
-| `documentation` | The javadoc (or Dokka) output and its jar. |
+| `documentation` | The javadoc output, with that of a language plugin, and its jar. |
 | `pom` | The emitted `pom.xml`. |
 
 ### Packaging
