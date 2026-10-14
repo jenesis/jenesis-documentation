@@ -371,11 +371,18 @@ same way.
 
 ## Code coverage
 
-Coverage is a **test observation**: JaCoCo wraps the test run and records which code the tests touched. Turn
-it on by placing a `jacoco.properties` file in the configuration folder. The project-wide `build.jenesis/`
-works for every layout; a `pom.xml` project can also scope it to its tests with `src/test/build.jenesis/`.
+Coverage is a **test observation**: JaCoCo wraps the test run and records which code the tests touched. The
+JaCoCo plugin is named at the hook point `observe`, and runs where its `plugin-jacoco.properties` is found:
 
-With the file present, the test step is launched with the JaCoCo agent attached as a `-javaagent`. It
+```properties
+# jenesis.plugins.properties
+jacoco+observe=build.jenesis.plugin.jacoco
+```
+
+The project-wide `build.jenesis/` works for every layout; a `pom.xml` project can also scope the file to its tests
+with `src/test/build.jenesis/`.
+
+With the plugin in place, the test step is launched with the JaCoCo agent attached as a `-javaagent`. It
 instruments the run without touching your sources and writes its execution data (`jacoco.exec`); a downstream
 report step renders an HTML and XML report under `reports/jacoco/`, over the classes of the code under test,
 never the compiled tests themselves. Open the `index.html` to browse coverage
@@ -384,7 +391,7 @@ The agent writes the data the CLI reads, so it follows the release the group pin
 `jacoco/maven/org.jacoco/org.jacoco.cli` alone runs the tests under that version's agent as well, until `pin`
 records both.
 
-An empty `jacoco.properties` only reports: a method your tests never reach shows up as uncovered, and the build
+An empty `plugin-jacoco.properties` only reports: a method your tests never reach shows up as uncovered, and the build
 stays green. Lines in the file set limits on the module's coverage, as the `check` goal of jacoco-maven-plugin
 does for a bundle:
 
@@ -401,7 +408,7 @@ a covered ratio of 0.9 of methods is not met: 2 of 3 covered, a ratio of 0.6667
 ```
 
 A counter with nothing to count, such as `branch` in code without a branch, meets every limit. An unknown key, or a
-value that is no ratio or count, fails the build naming the valid ones. Set `-Djenesis.observe.jacoco=false` to
+value that is no ratio or count, fails the build naming the valid ones. Set `-Djenesis.plugin.jacoco=false` to
 suppress coverage even when the file is present.
 
 ## Recording the tests with Java Flight Recorder
@@ -570,11 +577,17 @@ return value is replaced with a constant), re-runs the tests against each mutant
 the tests **killed** and which **survived**. A surviving mutant is a change to the program that no test
 noticed.
 
-Like the linters, PIT is discovered from a config file: a `pitest.properties` in a tested module wires a
-`mutate` step alongside the normal test run, so the suite runs as usual *and* PIT then assesses how good it is.
-Unlike a bare marker, this file carries real configuration - the options PIT needs:
+PIT is a plugin at the hook point `observed`, which runs over the tests' run, so the suite runs as usual *and*
+PIT then assesses how good it is. It runs in a tested module where its `plugin-pitest.properties` is found, and
+that file carries the options PIT needs:
 
 ```properties
+# jenesis.plugins.properties
+pitest+observed=build.jenesis.plugin.pitest
+```
+
+```properties
+# build.jenesis/plugin-pitest.properties
 targetClasses=calc.Calculator   # which classes to mutate
 targetTests=calctest.*          # which tests to run against the mutants
 outputFormats=XML,HTML          # report formats (an optional `mutators` key selects a mutator set)
@@ -592,7 +605,7 @@ An unknown key, or a format that is not one of the three, fails the build naming
 
 PIT and its JUnit 5 plugin resolve in their own `pitest` group; the plugin's version is taken from the
 project's own resolved `junit-platform`, so it always lines up with the test framework you use. The report
-lands under `reports/pitest/`, and `-Djenesis.mutate.pitest=false` suppresses the run while keeping the file in
+lands under `reports/pitest/`, and `-Djenesis.plugin.pitest=false` suppresses the run while keeping the file in
 place.
 
 {% demos 41 %}

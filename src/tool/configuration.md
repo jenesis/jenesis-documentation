@@ -131,7 +131,7 @@ What these folders can hold - presence activates, contents configure:
 - **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`.
 - **Compliance**: `licensing.properties`, `vulnerability.properties`, `spdx.properties`.
 - **Tests**: `test.properties`, naming the engine a module's tests run on.
-- **Test observability**: `jacoco.properties`, `graal.properties`, `pitest.properties`.
+- **Test observability**: `graal.properties`, `jfr.properties`.
 - **Forked-tool arguments**: `process-<command>.properties` - extra flags for `javac`, `kotlinc`, `jar`, and
   the like (see *[Building & running](/tool/building-and-running/)*).
 - **Forked-program environment**: `environment-<command>.properties` - variables for the test run, a forked

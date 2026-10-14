@@ -228,10 +228,8 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.validator.jdeprscan` | `report` | What jdeprscan does when a `jdeprscan.properties` is present: `report` records the uses of APIs deprecated for removal, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.format.license` | `true` | The licence header check a `licenseheader.properties` activates, with its `text` or, without one, SPDX lines naming the declared licence and copyright. |
 | `jenesis.format.rewrite` | `false` | Rewrite sources in place instead of verifying. |
-| `jenesis.observe.jacoco` | `true` | Run JaCoCo coverage when its file is present. |
 | `jenesis.observe.native` | `true` | Run the GraalVM tracing agent when its file is present. |
 | `jenesis.observe.jfr` | `true` | Record the test JVM with Java Flight Recorder when a `jfr.properties` is present. |
-| `jenesis.mutate.pitest` | `true` | Run PIT mutation testing when its file is present. |
 | `jenesis.artifact.revapi` | `report` | What the revapi plugin does, read by the plugin: `report` records the differences that reach its severity, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.generate.classpath` | `true` | Write `META-INF/services` files, and `Enable-Native-Access` for a module granting itself, from `module-info` when a `classpath.properties` is present - see *[A modular jar on the class path](/tool/packaging/#a-modular-jar-on-the-class-path)*. |
 
@@ -403,7 +401,6 @@ in the linked chapter.
 | `dependencies` | The resolved, fetched dependency closure. |
 | `test` (`executed`) | The test run and its reports. |
 | `observed` | The coverage- or trace-wrapped test run. |
-| `mutate` | The mutation-testing report (PIT). |
 | `compliance` | The licence and vulnerability check results. |
 | `sbom` | The CycloneDX bill of materials. |
 | `documentation` | The javadoc (or Dokka) output and its jar. |
