@@ -113,7 +113,11 @@ heap for the JVM it ran, as an `-Xmx` in `process-test.properties` for the tests
 For a failed test run, the output the build prints ends with what the runner printed about each failed
 test - for the JUnit Platform, a `Failures` section naming the test with its stack trace, then the run's
 counts. A test run writes no report unless `-Djenesis.test.reporting=true` asks for one in the module's
-`reports/tests/`.
+`reports/tests/`, and a failed run then also names that folder, above the runner's output:
+
+```text
+The reports of the test run are in target/build/.../test/executed~/output/reports/tests
+```
 
 The progress lines, the dependency tree and every other line the build prints are coloured with ANSI escape
 sequences. To read them as plain text, from a file or a pipe, pass `-Djenesis.palette.colors=none`.
