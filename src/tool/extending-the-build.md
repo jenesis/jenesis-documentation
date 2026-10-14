@@ -86,8 +86,7 @@ hook point, as the build log shows it under `build/maven/compose/module/` or `bu
 
 A plugin of a project hook point runs under the goal it belongs to, at the same path in every project:
 `build/preprocess/custom/<name>`, `build/postprocess/transform/<name>` and `build/postprocess/inspect/<name>`,
-`stage/transform/<name>` and `stage/inspect/<name>`, `export/custom/<name>`, `release/custom/<name>`, and
-`plugin/<name>`:
+`stage/transform/<name>` and `stage/inspect/<name>`, `release/custom/<name>`, and `plugin/<name>`:
 
 | Project hook point | When a plugin runs, and what it is handed |
 | --- | --- |
@@ -96,7 +95,6 @@ A plugin of a project hook point runs under the goal it belongs to, at the same 
 | `postprocess/inspect` | After the transforms, handed the same with what they added; fails the build by throwing. |
 | `stage/transform` | After the stock staging, handed every staged tree; what it writes under a tree's name joins that tree. |
 | `stage/inspect` | After the transforms of stage, handed the staged trees with what they added. |
-| `export` | With `export`, beside the stock export steps, handed everything staged. |
 | `release` | With `release`, beside the stock release steps, only where its `plugin-<name>.properties` is found; handed everything staged, the project's root and its resolved metadata. |
 | `plugin` | Only when `plugin/<name>` is named, handed only what it binds; nothing waits for it and it waits for nothing. |
 
@@ -216,10 +214,11 @@ signatures beside every file, repository metadata, a manifest of what ships. A f
 the build rather than being replaced. An **inspection of stage** then checks the staged trees with what was added,
 and nothing is exported or released past one that fails.
 
-An **exporter** and a **releaser** deliver what was staged - to an internal repository, a bucket, a registry, a
-release page. Naming `export/custom` or `release/custom` runs the plugins alone, without the steps Jenesis runs
-there itself. Such a step writes outside the build, so it overrides `shouldRun` to run every time it is selected,
-as the stock export steps do, rather than only when what it reads has changed.
+A **releaser** delivers what was staged - to an internal repository, a bucket, a registry, a release page. Naming
+`release/custom` runs the releasers alone, without the steps Jenesis runs there itself. Such a step writes outside
+the build, so it overrides `shouldRun` to run every time it is selected, as the stock release steps do, rather than
+only when what it reads has changed. `export` has no hook point: it only installs what was staged into this
+machine's local repositories, and what it installs is shaped by the plugins of `stage`.
 
 A plugin under **`plugin`** belongs to no goal and starts at once, as
 `java build/jenesis/Make.java plugin/lines`: a report over the project's own files, a task run by hand. What
@@ -288,7 +287,7 @@ does a key two transforms add, or an attachment whose file name the build stages
 
 What belongs to no module - an aggregated report, a site, a distribution of every module - a transform writes into
 a **`project/`** folder of its own output, laid out as it sees fit. `stage` copies it as it stands into
-`target/stage/project/output/`, where exporters and releasers find it with the rest, and a file two transforms
+`target/stage/project/output/`, where `export` and releasers find it with the rest, and a file two transforms
 place at the same path fails the build. A transform that brings
 its own SBOM, say, attaches it as `cyclonedx` once `-Djenesis.sbom.cyclonedx=false` has switched off the stock
 one. An inspection reads the same inventories plus what the transforms added, and fails the build by throwing.
