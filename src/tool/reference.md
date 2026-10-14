@@ -156,7 +156,9 @@ compiled is held between calls. What is held is a warm JIT, and a build spends i
 a JVM that has already compiled a few modules runs faster. The daemon therefore pays in proportion to how
 much a build compiles: nothing on a build that compiles little, where the socket costs more than the warm
 code saves, and about a third off a five-module project. Compiling the build sources once, which is on by
-default, is what removes the large fixed cost; the daemon is the increment after that.
+default, is what removes the large fixed cost; the daemon is the increment after that. A daemon also keeps the JVMs that run a
+plugin's tools between builds, as `jenesis.process.warm` keeps them within one, so a build that lints or generates
+in every module gains more from it than from a warm JIT alone.
 
 Only `jenesis.*` properties travel with a call to a daemon, which clears and sets them again around every
 build. Everything a running JVM cannot change is the daemon's identity instead - the build sources, the

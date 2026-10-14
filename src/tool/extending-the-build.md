@@ -700,8 +700,9 @@ A step that forks `java -cp <jars> <class or Launcher.java> <arguments>` builds 
 `ProcessHandler.OfProcess.ofJavaMain()` rather than `ofJavaHome("bin/java")`. Its tool's main method then runs in a
 JVM kept warm for the next call with the same jars on its class path and the same options and environment, which
 compiles a `.java` launcher once. A jar is matched by the file rather than its path, so every module of a build that
-resolves the same tool shares that JVM. What one call prints is that call's output, a call that returns ends with `0`, and one that calls
-`System.exit` ends with that code and takes its JVM with it. A command line of another shape - a module path,
+resolves the same tool shares that JVM. What one call prints is that call's output, a call that returns ends with `0`, or with the `int` a main
+method declared to return one hands back, and one that calls `System.exit` ends with that code and takes its JVM
+with it. A command line of another shape - a module path,
 `-jar`, an argument file - is forked as before, and `jenesis.process.warm=false` forks every call, for a tool whose
 static state must not outlive one.
 
