@@ -34,7 +34,9 @@ pmd+check=build.jenesis.plugin.pmd
 
 `@rules=<path>` hands the file at the path, resolved against the module's folder, to the plugin as its input
 `rules`. SpotBugs and forbiddenapis read the compiled classes, at the hook point `binary/validate`; the JDK's
-own jdeps and jdeprscan turn on when their file is present in the configuration folder.
+own jdeps and jdeprscan turn on when their file is present in the configuration folder. Every check runs in its
+module's `verify` phase, once the module is built: the modules that depend on it build and run their tests
+without waiting for its checks, and a failed check still fails the build.
 
 | Plugin or file | Tool | Inspects |
 | --- | --- | --- |

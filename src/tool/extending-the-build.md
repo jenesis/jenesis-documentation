@@ -58,29 +58,31 @@ configures it; a **project** hook point runs it once for the whole project. `pre
 built and the other project hook points after every module is, so the module hook points sit between them; each
 table lists its hook points in the order the build reaches them.
 
-A plugin of a module hook point runs as `<hook point>/custom/<name>` within each module's build, as the build log
-shows it under `build/maven/` or `build/modules/` - `binary/generated/custom/<name>`, say - and a plugin with no hook
-point runs as `custom/<name>`, in the module build itself:
+A plugin of a module hook point runs as `<hook point>/custom/<name>` within the phase of each module that holds its
+hook point, as the build log shows it under `build/maven/compose/module/` or `build/modules/compose/module/` -
+`build-module-app/produce/assemble/binary/generated/custom/<name>` in the module's `build`, say, or
+`verify-module-app/check/custom/<name>` in its `verify`, where a plugin of `binary/validate` runs as
+`validate/custom/<name>`. A plugin with no hook point runs as `custom/<name>`, in the module's build itself:
 
 | Module hook point | When a plugin runs, and what it is handed |
 | --- | --- |
-| `check` | Beside the stock source checks, handed the module's sources and manifests. |
-| `format` | Beside the stock formatters, handed the same. |
-| `compliance` | Beside the licence and vulnerability checks, handed the manifests and the resolved dependencies. |
+| `check` | In the module's `verify` phase, beside the stock source checks, handed the module's sources and manifests. |
+| `format` | In `verify`, beside the stock formatters, handed the same. |
+| `compliance` | In `verify`, beside the licence and vulnerability checks, handed the manifests and the resolved dependencies. |
 | `binary/generated` | Before compilation, beside the stock generators; a `sources/` tree it writes is compiled with the module, and a `resources/` tree, such as a service file, joins the module's jar. |
 | `binary/compiled` | Beside the stock compilers, handed what they compile; what it writes below `classes/` joins the module's jar, and a class that two compilers or plugins both write fails the build, naming both. |
 | `binary/transform` | After the compilers, handed the module's compiled classes first and the module's inputs after them; what it writes below `classes/` replaces the class of that name. Several plugins run in the order the file names them, each handed what the one before wrote. |
-| `binary/validate` | After compilation, beside the bytecode checks, handed the compiled classes. |
+| `binary/validate` | In `verify`, beside the bytecode checks, handed the compiled classes. |
 | `binary` | Within the module's compile toolchain, handed what the toolchain reads. |
-| `artifact` | Once the module's jar is built, handed it with the module's dependencies. |
+| `artifact` | In `verify`, handed the module's jar with its dependencies. |
 | `observed` | With the module's tests, beside the stock observers such as coverage. |
 | `observe` | Attached to the JVM the module's tests run in, by a plugin that provides an `ObservabilityFactory`; its report runs as `observed/observations/<name>`, handed the tests' output. |
 | `test` | The framework the module's tests run on, from a plugin that provides a `TestFrameworkFactory`, consulted before the built-in frameworks. |
 | `language` | A language of its own, from a plugin that provides a `LanguageFactory`: compiled before or after javac, and documented, wherever a module holds a file of its extensions. |
-| `documentation/generate` | Beside the stock documentation generators. |
-| `documentation` | Within the documentation build, handed the compiled module. |
+| `documentation/generate` | In the module's `document` phase, beside the stock documentation generators. |
+| `documentation` | In `document`, within the documentation build, handed the compiled module. |
 | *(none)* | In the module build itself, handed everything the module reads. |
-| `package` | When the module is packaged, handed its jar, its dependencies and the stock images; what it writes into `packages/` is staged in `stage/packages/`. |
+| `package` | In the module's `package` phase, handed its jar, its dependencies and the stock images; what it writes into `packages/` is staged in `stage/packages/`. |
 
 A plugin of a project hook point runs under the goal it belongs to, at the same path in every project:
 `build/preprocess/custom/<name>`, `build/postprocess/transform/<name>` and `build/postprocess/inspect/<name>`,
@@ -741,7 +743,7 @@ InferredMultiProjectAssembler stock = InferredMultiProjectAssembler.ofEnvironmen
 Project project = Project.ofEnvironment(environment, Path.of("."))
         .assembler((descriptor, repositories, resolvers) -> stock
                 .apply(descriptor, repositories, resolvers)
-                .mapBuild(build -> (sub, inherited) -> {
+                .map(AssemblyDescriptor.BUILD, "assemble", build -> (sub, inherited) -> {
                     sub.addModule("assemble", build, inherited.sequencedKeySet().stream());
                     sub.addStep("sign", (executor, context, arguments) -> {
                         // read the jars in each argument's folder, write their signatures into context.next()
@@ -751,8 +753,9 @@ Project project = Project.ofEnvironment(environment, Path.of("."))
 System.exit(new Execution(project).execute(args));
 ```
 
-`mapBuild` decorates only the module's build phase - here registering the stock output under `assemble` and
-chaining a `sign` step onto it. `Execution` builds the project and runs the module that declares a main class,
+`map` decorates one phase of each module - here its `build`, registering the stock output under `assemble`, the
+place the second argument names, and chaining a `sign` step onto it. The module's other phases, such as `verify`,
+still read the build's output under the names the stock build gave it. `Execution` builds the project and runs the module that declares a main class,
 as `build/jenesis/Execute.java` does for the stock build.
 
 The stock modules take additional steps and modules in code as well, through the same `custom` namespace a plugin is

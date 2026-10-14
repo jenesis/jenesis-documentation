@@ -52,13 +52,25 @@ a build of fifty are the same machinery at different scales.
 
 {% demos 4 %}
 
+### A module builds in phases
+
+Each module builds in phases, and each phase is a module of the graph of its own, named `<phase>-<module>`:
+`build` resolves the module's dependencies, compiles it, jars it, and runs the tests of a test module; `verify`
+runs its checks; `document` and `source` write its javadoc and sources jars where
+`jenesis.project.documentation` and `jenesis.project.sources` ask for them; and `package` packages it.
+
+A phase starts as soon as what it reads is built. A module's `build` waits for the builds of the modules it
+depends on and for nothing else, so the checks of a library never hold up the application that uses it. A
+failed check still fails the build once the rest is done. `-Djenesis.project.await=verify` makes a build wait
+for the checks of the modules it depends on as well.
+
 ### Selectors: choosing what to run
 
 *Getting started* showed that a positional argument after `build/jenesis/Make.java` is a **selector**, and that with none
 the default target (`build`) runs. A selector is really a path through the graph. Two things make that precise:
 
-- A `+<module>` selector builds one module's subtree. `+greeter` builds the `greeter` module and whatever it
-  depends on, and nothing unrelated. The name after `+` is the module's **folder** name. In a modular
+- A `+<module>` selector builds one module's subtree. `+greeter` builds the `greeter` module - its `build`
+  phase - and whatever it depends on, and nothing unrelated. The name after `+` is the module's **folder** name. In a modular
   project the tests live in a separate module, which the next chapters show how to write. So `+greeter` runs
   *no* tests; you select the test module by its own folder, `+greeter-test`.
 - Under the hood every selector is a slash-delimited path of `module/step` identities, with two wildcards:

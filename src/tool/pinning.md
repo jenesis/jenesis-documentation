@@ -190,7 +190,7 @@ Strict pinning is checked in a step of its own, `pinned`, over what the resoluti
 switching it on or off resolves nothing again. The step names the first coordinate without a checksum:
 
 ```text
-[FAILED]   build/maven/compose/module/module-/dependencies/artifacts/pinned: java.lang.IllegalStateException: No checksum pinned for maven/org.apache.commons/commons-lang3/3.14.0 (strict pinning is enabled)
+[FAILED]   build/maven/compose/module/build-module-/dependencies/artifacts/pinned: java.lang.IllegalStateException: No checksum pinned for maven/org.apache.commons/commons-lang3/3.14.0 (strict pinning is enabled)
 ```
 
 Strict mode pairs well with the `managed` resolution strategy from
