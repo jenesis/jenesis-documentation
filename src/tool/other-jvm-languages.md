@@ -103,7 +103,7 @@ Every language compiler resolves in **the dependency group named after its plugi
 `groovy` - kept completely apart from your module's own `main`-group dependencies. That separation matters: the
 running compiler is locked independently of the standard library your module ships against, so pinning a
 different `kotlin-stdlib` for your code can never downgrade the `kotlinc` that compiles it. The documentation
-tools and Zinc resolve beside them, in `kotlin-dokka`, `scala-scaladoc` and `scala-zinc`; Groovydoc shares the
+tools and Zinc resolve beside them, in `kotlin:dokka`, `scala:scaladoc` and `scala:zinc`; Groovydoc shares the
 `groovy` group.
 
 The compilers float a latest version by default. Run the `pin` step to record each resolved compiler jar with its

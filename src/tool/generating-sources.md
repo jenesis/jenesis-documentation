@@ -208,7 +208,7 @@ moshi.generated=javax.annotation.processing.Generated
 Unlike the six generators above, KSP binds no contract and reads the module's sources and its compile
 dependencies, which is what lets a processor resolve the types the code uses. It runs before the compilers,
 so the sources it writes are compiled with the module's own and the resources it writes, as a service file
-or ProGuard rules, join the jar. KSP itself resolves in the group `ksp-runtime`, apart from the processors in
+or ProGuard rules, join the jar. KSP itself resolves in the group `ksp:runtime`, apart from the processors in
 `ksp`, because a processor brings a Kotlin standard library of its own that KSP does not use. Its arguments
 go in `process-ksp.properties`.
 

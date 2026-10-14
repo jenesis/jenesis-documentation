@@ -128,7 +128,15 @@ The plugin's dependencies are pinned like any other, in the dependency group nam
  */
 ```
 
-A plugin found in the local export is built on your machine and is not checked against a pinned checksum.
+A plugin found in the local export is pinned and checked like one from a repository: build it again and its
+checksum changes, so the build refuses it until `-Djenesis.dependency.pin=versions` with `pin` records what the
+export now holds.
+
+The tool a plugin runs is pinned in the group the plugin is handed, its name, as
+`xjc/maven/org.glassfish.jaxb/jaxb-xjc`. A plugin that resolves more than one closure names each further group
+`<name>:<purpose>`, as `kotlin:dokka` for the Kotlin plugin's Dokka, so every pin a plugin needs sorts under its
+name. A `.properties` file escapes the colon in a key, so `pin` writes such a pin there as
+`kotlin\:dokka/maven/…`.
 
 `-Djenesis.plugin.<name>=false` leaves a plugin out, as the stock tools are switched off, without editing the
 file, and `-Djenesis.project.plugins=false` leaves out every plugin the file names.
