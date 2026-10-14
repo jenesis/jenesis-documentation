@@ -110,14 +110,10 @@ A forked process that ends with exit code 137 was killed with `SIGKILL`, possibl
 killer, and the failure says so. Fewer tools at once, with a lower `jenesis.process.concurrency`, or a smaller
 heap for the JVM it ran, as an `-Xmx` in `process-test.properties` for the tests, makes it need less memory.
 
-A failed test run first names its failed tests, up to twenty, read from the reports every run writes -
-under `supplement/reports/`, or in the module's `reports/tests/` with `-Djenesis.test.reporting=true` -
-whatever reached the console:
-
-```text
-1 test failed, as reported in target/build/.../test/executed~/supplement/reports:
-  demo.BrokenTest#fails()
-```
+For a failed test run, the output the build prints ends with what the runner printed about each failed
+test - for the JUnit Platform, a `Failures` section naming the test with its stack trace, then the run's
+counts. A test run writes no report unless `-Djenesis.test.reporting=true` asks for one in the module's
+`reports/tests/`.
 
 The progress lines, the dependency tree and every other line the build prints are coloured with ANSI escape
 sequences. To read them as plain text, from a file or a pipe, pass `-Djenesis.palette.colors=none`.
