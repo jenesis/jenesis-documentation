@@ -107,6 +107,9 @@ classifier. **Each platform therefore needs its own checksum pin**, guarded by p
 Linux and a build on macOS fetch different bytes. `plugins=<name>=<groupId>/<artifactId>` resolves a protoc
 plugin the same way, in its own `protoc-<name>` group; `classifier=<value>` overrides the detected platform.
 
+A version pinned for the artifact itself, `protoc/maven/com.google.protobuf/protoc <version>`, sets the version of
+every platform's executable, but its checksum is that of another file, so each platform still pins its own.
+
 `pin` refreshes only the line of the platform it runs on. To add another platform from one machine, write its
 line yourself, guarded by that platform's tokens, with the SHA-256 of the executable Maven Central publishes
 for its classifier, `protoc-<version>-<classifier>.exe`:
