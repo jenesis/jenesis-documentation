@@ -707,7 +707,9 @@ resolves the same tool shares that JVM. What one call prints is that call's outp
 method declared to return one hands back, and one that calls `System.exit` ends with that code and takes its JVM
 with it. A command line of another shape - a module path,
 `-jar`, an argument file - is forked as before, and `jenesis.process.warm=false` forks every call, for a tool whose
-static state must not outlive one.
+static state must not outlive one. A JVM runs one call at a time, because few tools allow more; a tool whose main
+method keeps its state per call - a compiler driven through its own API - asks for `.shared(true)` on the handler,
+and its calls then run side by side in one JVM, sharing its JIT, each printing only what it printed itself.
 
 Hand such a step only the inputs it reads, `executor.addStep(name, step, inputs)` naming them among the keys of
 the map `accept` is handed, since each input is part of the step's key: a generator handed `sources/` runs
