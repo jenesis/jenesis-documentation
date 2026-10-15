@@ -21,7 +21,7 @@ describes a [Java agent](#bundled-java-agents) rather than an application.
 
 | Key | Value | Written by the build tool |
 | --- | --- | --- |
-| `mainClass` | Fully qualified class whose `main` the launcher invokes. Absent → the jar is an agent, not an application. | yes |
+| `mainClass` | Fully qualified class whose `main` the launcher invokes, static or not, with `String[]` or no parameters. Absent → the jar is an agent, not an application. | yes |
 | `mainModule` | The module owning `mainClass`, when the application is modular. | yes, for a modular application |
 | `classpath` | Comma-separated `jars/` entry names to read as the unnamed module, in the order to search them. | yes |
 | `modulepath` | Comma-separated `jars/` entry names to resolve as modules. | yes, empty when nothing is modular |
@@ -98,7 +98,8 @@ Entries are split on `,` first, so an agent's arguments cannot contain a comma. 
 agent's `premain` in declaration order **before the main class is loaded**, so a `ClassFileTransformer`
 registered in `premain` still sees the main class being defined - exactly what `-javaagent` guarantees. As
 the JVM does, it prefers `premain(String, Instrumentation)` and falls back to `premain(String)`. Agents are
-loaded from the application's own loader, so they may live on the class path or the module path.
+loaded from the application's own loader, so they may live on the class path or the module path, in a
+module that exports and opens nothing as well.
 
 ### Capturing an `Instrumentation`
 
