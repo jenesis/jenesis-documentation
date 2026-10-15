@@ -752,19 +752,26 @@ InferredMultiProjectAssembler stock = InferredMultiProjectAssembler.ofEnvironmen
 Project project = Project.ofEnvironment(environment, Path.of("."))
         .assembler((descriptor, repositories, resolvers) -> stock
                 .apply(descriptor, repositories, resolvers)
-                .map(AssemblyDescriptor.BUILD, "assemble", build -> (sub, inherited) -> {
-                    sub.addModule("assemble", build, inherited.sequencedKeySet().stream());
-                    sub.addStep("sign", (executor, context, arguments) -> {
-                        // read the jars in each argument's folder, write their signatures into context.next()
-                        return CompletableFuture.completedStage(new BuildStepResult(true));
-                    }, "assemble");
-                }));
+                .andThen("sign", (sub, inherited) -> sub.addStep("sign", (executor, context, arguments) -> {
+                    // read the jars in each argument's folder, write their signatures into context.next()
+                    return CompletableFuture.completedStage(new BuildStepResult(true));
+                }, inherited.sequencedKeySet().stream()), AssemblyRequirement.of().after(AssemblyDescriptor.BUILD)));
 System.exit(new Execution(project).execute(args));
 ```
 
-`map` decorates one phase of each module - here its `build`, registering the stock output under `assemble`, the
-place the second argument names, and chaining a `sign` step onto it. The module's other phases, such as `verify`,
-still read the build's output under the names the stock build gave it. `Execution` builds the project and runs the module that declares a main class,
+`andThen` adds a phase to each module - here `sign`, registered as `sign-<module>` beside the stock `build`,
+`verify` and the others. Its `AssemblyRequirement` names what it waits for and is handed:
+
+| Requirement | The phase is handed |
+|---|---|
+| `after(phase)` | that phase of its own module, declared before it |
+| `upstream(phase)` | that phase of every module its module depends on, directly or not |
+| `tested(phase)` | that phase of every module that tests its module |
+
+`andThen` on a phase that is declared already extends it: the module's steps run after the phase's own, and the
+requirement adds to the phase's. A step that must run before the stock build, as a preprocessor of the sources,
+uses `nest(AssemblyDescriptor.BUILD, "", build -> ...)` instead: it hands over the stock phase as a module, and the
+module it returns adds its own step and then the stock one. `Execution` builds the project and runs the module that declares a main class,
 as `build/jenesis/Execute.java` does for the stock build.
 
 The stock modules take additional steps and modules in code as well, through the same `custom` namespace a plugin is
