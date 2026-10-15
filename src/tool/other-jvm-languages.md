@@ -99,12 +99,12 @@ module path with no hand-written wiring.
 
 ## Pinning the compiler
 
-Every language compiler resolves in **the dependency group named after its plugin** - `kotlin`, `scala` or
-`groovy` - kept completely apart from your module's own `main`-group dependencies. That separation matters: the
+Every language compiler resolves in **the tool group of its plugin** - `kotlin:tool`, `scala:tool` or
+`groovy:tool` - kept completely apart from your module's own `main`-group dependencies. That separation matters: the
 running compiler is locked independently of the standard library your module ships against, so pinning a
 different `kotlin-stdlib` for your code can never downgrade the `kotlinc` that compiles it. The documentation
 tools and Zinc resolve beside them, in `kotlin:dokka`, `scala:scaladoc` and `scala:zinc`; Groovydoc shares the
-`groovy` group.
+`groovy:tool` group.
 
 The compilers float a latest version by default. Run the `pin` step to record each resolved compiler jar with its
 version and SHA-256, exactly as it pins your Java compilers and dependencies (see *[Pinning & bills of materials](/tool/pinning/)*):
@@ -163,17 +163,17 @@ rather than on `javac`'s processor path.
 
 ```java
 /**
- * @jenesis.plugin kotlin maven/org.jetbrains.kotlin/kotlin-serialization-compiler-plugin
+ * @jenesis.plugin kotlin:tool maven/org.jetbrains.kotlin/kotlin-serialization-compiler-plugin
  */
 module demo.serialize {
     requires kotlinx.serialization.core;
 }
 ```
 
-Jenesis resolves the compiler plugin under the `kotlin` group, and the Kotlin compiler picks up the jar and loads
+Jenesis resolves the compiler plugin under the `kotlin:tool` group, and the Kotlin compiler picks up the jar and loads
 it itself - you never name an entry point. Above, the `kotlinx.serialization` plugin generates a `@Serializable`
 class's `serializer()`, and the `requires` provides the annotation and the runtime types the generated code
-references. The Scala path is identical: `@jenesis.plugin scala <coordinate>` resolves in the `scala`
+references. The Scala path is identical: `@jenesis.plugin scala:tool <coordinate>` resolves in the `scala:tool`
 group, and `scalac` loads the plugin the same way.
 
 <div class="warning">

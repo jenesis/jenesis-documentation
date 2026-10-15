@@ -105,9 +105,9 @@ copying the file into the project.
 protoc is a native executable rather than a jar, resolved per operating system and chipset from a Maven
 classifier. **Each platform therefore needs its own checksum pin**, guarded by platform token - a build on
 Linux and a build on macOS fetch different bytes. `plugins=<name>=<groupId>/<artifactId>` resolves a protoc
-plugin the same way, in its own `protoc-<name>` group; `classifier=<value>` overrides the detected platform.
+plugin the same way, in its own `protoc:<name>` group beside protoc's `protoc:tool`; `classifier=<value>` overrides the detected platform.
 
-A version pinned for the artifact itself, `protoc/maven/com.google.protobuf/protoc <version>`, sets the version of
+A version pinned for the artifact itself, `protoc:tool/maven/com.google.protobuf/protoc <version>`, sets the version of
 every platform's executable, but its checksum is that of another file, so each platform still pins its own.
 
 `pin` refreshes only the line of the platform it runs on. To add another platform from one machine, write its
@@ -115,7 +115,7 @@ line yourself, guarded by that platform's tokens, with the SHA-256 of the execut
 for its classifier, `protoc-<version>-<classifier>.exe`:
 
 ```text
-@jenesis.pin protoc/maven/com.google.protobuf/protoc/exe/osx-aarch_64 <version> SHA-256/<hash> (macos,aarch64)
+@jenesis.pin protoc:tool/maven/com.google.protobuf/protoc/exe/osx-aarch_64 <version> SHA-256/<hash> (macos,aarch64)
 ```
 
 ### Avro
@@ -187,16 +187,16 @@ KSP is Kotlin's counterpart of annotation processing: a processor reads the modu
 sources and writes new ones beside them, as Moshi's code generator writes a JSON adapter for each class
 annotated `@JsonClass(generateAdapter = true)`. The KSP plugin, `ksp+binary/generated=build.jenesis.plugin.ksp`,
 runs where its `plugin-ksp.properties` is found, and the processors are declared like `javac`'s, by coordinate
-in the group of the plugin's name:
+in the plugin's processor group, `ksp:processor`:
 
 ```java
 /**
- * @jenesis.plugin ksp maven/com.squareup.moshi/moshi-kotlin-codegen
+ * @jenesis.plugin ksp:processor maven/com.squareup.moshi/moshi-kotlin-codegen
  */
 module demo.json { ... }
 ```
 
-or, in a `pom.xml`, as the comment `<!--jenesis.plugin ksp maven/com.squareup.moshi/moshi-kotlin-codegen-->`.
+or, in a `pom.xml`, as the comment `<!--jenesis.plugin ksp:processor maven/com.squareup.moshi/moshi-kotlin-codegen-->`.
 Each line of `plugin-ksp.properties` is an option handed to the processors, the `arg(...)` of Gradle's `ksp { }`
 block; an empty file runs them without any:
 

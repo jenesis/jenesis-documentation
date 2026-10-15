@@ -651,7 +651,7 @@ such a module without a version takes that module's own version.
   processor silently stops running; the class it generates is never produced and the build fails to compile.
 </div>
 
-The same tag, with a language plugin's name in front (`@jenesis.plugin kotlin <coordinate>`), declares a
+The same tag, with a language plugin's tool group in front (`@jenesis.plugin kotlin:tool <coordinate>`), declares a
 compiler plugin for another language - covered in *Other JVM languages*.
 
 {% demos 14, 42 %}

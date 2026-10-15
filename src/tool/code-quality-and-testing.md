@@ -112,8 +112,8 @@ A bound file may lie outside the project, so that several projects share one con
 ```
 
 A jar of custom checks or filters, a dependency of the Checkstyle plugin in Maven, joins Checkstyle's class path
-when `@jenesis.plugin checkstyle maven/<groupId>/<artifactId>` names it in `module-info.java`, or
-`<!--jenesis.plugin checkstyle maven/<groupId>/<artifactId>-->` in a `pom.xml`.
+when `@jenesis.plugin checkstyle:tool maven/<groupId>/<artifactId>` names it in `module-info.java`, or
+`<!--jenesis.plugin checkstyle:tool maven/<groupId>/<artifactId>-->` in a `pom.xml`.
 
 PMD runs the rules of every priority in `pmd.xml`. `jenesis.pmd.priority` names the lowest priority it
 runs, from `1`, the highest, to `5`, the default, as the Maven plugin's `minimumPriority` does; any other
@@ -388,9 +388,9 @@ With the plugin in place, the test step is launched with the JaCoCo agent attach
 instruments the run without touching your sources and writes its execution data (`jacoco.exec`); a downstream
 report step renders an HTML and XML report under `reports/jacoco/`, over the classes of the code under test,
 never the compiled tests themselves. Open the `index.html` to browse coverage
-line by line. JaCoCo, like every tool here, resolves in its own group (`jacoco`) apart from your dependencies.
-The agent writes the data the CLI reads, so it follows the release the group pins for the CLI: a pin of
-`jacoco/maven/org.jacoco/org.jacoco.cli` alone runs the tests under that version's agent as well, until `pin`
+line by line. JaCoCo, like every tool here, resolves in its own group (`jacoco:tool`) apart from your dependencies,
+and its agent in `jacoco:agent`. The agent writes the data the CLI reads, so it follows the release the tool group
+pins for the CLI: a pin of `jacoco:tool/maven/org.jacoco/org.jacoco.cli` alone runs the tests under that version's agent as well, until `pin`
 records both.
 
 An empty `plugin-jacoco.properties` only reports: a method your tests never reach shows up as uncovered, and the build

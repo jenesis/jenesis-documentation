@@ -134,7 +134,7 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | `fork` with `meminitial`, `maxmem` or `-J` options | `-J<option>=` in `process-javac.properties`, which runs `javac` in a JVM of its own |
 | A multi-release jar's sources in `src/main/java<N>`, a compiler execution with `multiReleaseOutput`, a Gradle `java<N>` source set | The same sources moved below `src/main/java/META-INF/versions/<N>/`, compiled as a [multi-release overlay](/tool/building-and-running/#one-jar-several-java-versions) |
 | `annotationProcessorPaths` | A dependency of `<type>processor</type>`; one named without a version takes it from `<dependencyManagement>` |
-| The kotlin-maven-plugin, scala-maven-plugin or GMavenPlus, Gradle's `kotlin("jvm")`, `scala` or `groovy` plugin | A line `<name>+language=build.jenesis.plugin.<name>` of `jenesis.plugins.properties` for `kotlin`, `scala` or `groovy`, which compiles the module's sources of that language; a compiler plugin is `@jenesis.plugin kotlin <coordinate>` or `@jenesis.plugin scala <coordinate>` |
+| The kotlin-maven-plugin, scala-maven-plugin or GMavenPlus, Gradle's `kotlin("jvm")`, `scala` or `groovy` plugin | A line `<name>+language=build.jenesis.plugin.<name>` of `jenesis.plugins.properties` for `kotlin`, `scala` or `groovy`, which compiles the module's sources of that language; a compiler plugin is `@jenesis.plugin kotlin:tool <coordinate>` or `@jenesis.plugin scala:tool <coordinate>` |
 | The dokka-maven-plugin or Gradle's Dokka plugin | The `dokka.` values of a `plugin-kotlin.properties` |
 | Gradle's `com.google.devtools.ksp` plugin and its `ksp(...)` dependencies | The [KSP plugin](/tool/generating-sources/#kotlin-symbol-processing), `ksp+binary/generated=build.jenesis.plugin.ksp`, with each processor as `@jenesis.plugin ksp <coordinate>` and its arguments in `plugin-ksp.properties` |
 | Surefire includes and groups | `-Djenesis.test.filter`, `-Djenesis.test.tag` |
@@ -162,13 +162,13 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | `maven.deploy.skip`, `maven.install.skip` | `stage=false` in the module's `packaging.properties`, which keeps it out of `export` and `release` alike |
 | The flatten-maven-plugin's `flattenDependencyMode=all` | None: a published POM names what the module declares, and a consumer's resolution decides the rest - see [what the published POM names](/tool/publishing/#what-the-published-pom-names) |
 
-A tool resolves in a group named after it, such as `checkstyle` or `jacoco`, once per module. A `pom.xml` pins
+A tool resolves in a group named after its plugin, such as `checkstyle:tool` or `jacoco:tool`, once per module. A `pom.xml` pins
 it with a `<!--jenesis.pin-->` comment, a child of `<project>` with one coordinate per line, which `pin`
 completes with the tool's closure:
 
 ```xml
 <!--jenesis.pin
-checkstyle/maven/<groupId>/<artifactId> <version>
+checkstyle:tool/maven/<groupId>/<artifactId> <version>
 -->
 ```
 

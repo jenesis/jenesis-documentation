@@ -119,12 +119,11 @@ is created:
 greeting=Hello from a generated source
 ```
 
-The plugin's dependencies are pinned like any other, in the dependency group named after the plugin,
-`plugin-<name>`:
+The plugin's dependencies are pinned like any other, in the dependency group of the plugin's name:
 
 ```java
 /**
- * @jenesis.pin plugin-greeting/module/org.json 20260522 SHA-256/...
+ * @jenesis.pin greeting/module/org.json 20260522 SHA-256/...
  */
 ```
 
@@ -132,11 +131,11 @@ A plugin found in the local export is pinned and checked like one from a reposit
 checksum changes, so the build refuses it until `-Djenesis.dependency.pin=versions` with `pin` records what the
 export now holds.
 
-The tool a plugin runs is pinned in the group the plugin is handed, its name, as
-`xjc/maven/org.glassfish.jaxb/jaxb-xjc`. A plugin that resolves more than one closure names each further group
-`<name>:<purpose>`, as `kotlin:dokka` for the Kotlin plugin's Dokka, so every pin a plugin needs sorts under its
-name. A `.properties` file escapes the colon in a key, so `pin` writes such a pin there as
-`kotlin\:dokka/maven/…`.
+Everything a plugin resolves itself is pinned in a group `<name>:<purpose>`: the tool it runs in `<name>:tool`, as
+`xjc:tool/maven/org.glassfish.jaxb/jaxb-xjc`, and a closure that must not share versions with it in a group of its
+own, as `kotlin:dokka` for the Kotlin plugin's Dokka. Every pin a plugin needs therefore sorts under its name, and
+the build fails a plugin that resolves in a group of another name. A `.properties` file escapes the colon in a
+key, so `pin` writes such a pin there as `xjc\:tool/maven/…`.
 
 `-Djenesis.plugin.<name>=false` leaves a plugin out, as the stock tools are switched off, without editing the
 file, and `-Djenesis.project.plugins=false` leaves out every plugin the file names.
@@ -307,14 +306,14 @@ These plugins belong to no module, so their pins live beside the file that names
 **`jenesis.plugins.pin.properties`**, one line for each module in each plugin's closure:
 
 ```properties
-plugin-audit/module/build.jenesis=0.14.0 SHA-256/...
-plugin-notice/module/build.jenesis=0.14.0 SHA-256/...
+audit/module/build.jenesis=0.14.0 SHA-256/...
+notice/module/build.jenesis=0.14.0 SHA-256/...
 ```
 
 `pin` writes the file and pins every plugin of the whole project the file names, including one a setting
 switches off, so a plugin that only a profile switches on is pinned all the same. `pin` runs last, after a dry
 release, so it also writes the tool a releaser resolves, such as
-`jreleaser/maven/org.jreleaser/jreleaser-tool-provider=1.26.0 SHA-256/...`. A releaser reads
+`jreleaser\:tool/maven/org.jreleaser/jreleaser-tool-provider=1.26.0 SHA-256/...`. A releaser reads
 `jenesis.release.publish` from the environment it is handed and publishes nothing without it. Where a releaser
 does not run - its file sits in a profile `pin` was not given - `pin` keeps the lines that pin its tool as they
 stand. The plugins run with
@@ -688,12 +687,12 @@ own properties file, and runs nothing it did not name.
 
 Byte Buddy resolves into the plugin's own module layer, and what the plugin rewrote refers to nothing but
 `java.base`, so it never reaches the running application. `pin` records the plugin's closure in the project's
-`module-info.java`, in the group named after the plugin:
+`module-info.java`, in the group of the plugin's name:
 
 ```java
 /**
- * @jenesis.pin plugin-enhance/module/build.jenesis <version> SHA-256/...
- * @jenesis.pin plugin-enhance/module/net.bytebuddy <version> SHA-256/...
+ * @jenesis.pin enhance/module/build.jenesis <version> SHA-256/...
+ * @jenesis.pin enhance/module/net.bytebuddy <version> SHA-256/...
  */
 ```
 
