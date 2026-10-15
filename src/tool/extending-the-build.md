@@ -716,9 +716,18 @@ call with the same jars on its class path and the same options and environment, 
 once. A jar is matched by the file rather than its path, so every module of a build that
 resolves the same tool shares that JVM. What one call prints is that call's output, a call that returns ends with `0`, or with the `int` a main
 method declared to return one hands back, and one that calls `System.exit` ends with that code and takes its JVM
-with it. A command line of another shape - a module path,
-`-jar`, an argument file - is forked as before, and so is every call while the setting is off, which also serves a
-tool whose static state must not outlive one. A JVM runs one call at a time, because few tools allow more; a tool whose main
+with it. While the setting is off, which also serves a tool whose static state must not outlive a call, every call
+runs in a JVM of its own, and a class's main method still ends the call as described: the code it returns is the
+code, and a thread the tool leaves running ends with the JVM. A command line of another shape - a module path,
+`-jar`, an argument file - is forked as it stands.
+
+A tool whose main method calls `System.exit` on a call the build accepts takes its warm JVM with it every time.
+Run it through a driver instead: a class of your plugin with a `public static int main(String[])` that calls the
+entry point the tool offers short of its main method and returns the code. Compile it against the tool with
+`requires static`, so your plugin's own dependencies do not include the tool, and put the folder that
+`ProcessHandler.OfProcess.driver(<Driver>.class)` writes ahead of the tool's jars on the class path. That folder
+holds the class files of the driver and the classes it nests alone, so the driver uses nothing else of your plugin,
+and it runs against the version of the tool the project pinned. A JVM runs one call at a time, because few tools allow more; a tool whose main
 method keeps its state per call - a compiler driven through its own API - asks for `.shared(true)` on the handler,
 and its calls then run side by side in one JVM, sharing its JIT, each printing only what it printed itself.
 
