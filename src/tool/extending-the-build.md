@@ -710,7 +710,7 @@ module names it in a group of its own with `@jenesis.plugin <group> maven/<group
 `java -cp` the step runs.
 
 A step that forks `java -cp <jars> <class or Launcher.java> <arguments>` builds its handler with
-`ProcessHandler.OfProcess.ofJavaMain()` rather than `ofJavaHome("bin/java")`. Under `jenesis.process.warm`, which the
+`ProcessHandler.OfProcess.ofJavaMain()` rather than `ofJavaHome("bin/java")`. Under `jenesis.process.daemon`, which the
 build daemon turns on and which is off otherwise, its tool's main method then runs in a JVM kept warm for the next
 call with the same jars on its class path and the same options and environment, which compiles a `.java` launcher
 once. A jar is matched by the file rather than its path, so every module of a build that
@@ -718,8 +718,9 @@ resolves the same tool shares that JVM. What one call prints is that call's outp
 method declared to return one hands back, and one that calls `System.exit` ends with that code and takes its JVM
 with it. While the setting is off, which also serves a tool whose static state must not outlive a call, every call
 runs in a JVM of its own, and a class's main method still ends the call as described: the code it returns is the
-code, and a thread the tool leaves running ends with the JVM. A command line of another shape - a module path,
-`-jar`, an argument file - is forked as it stands.
+code, and a thread the tool leaves running ends with the JVM. Under `jenesis.process.aot`, which `jenesis.make.aot`
+sets, that JVM starts from an ahead-of-time cache of the tool, trained on its first call. A command line of another
+shape - a module path, `-jar`, an argument file - is forked as it stands.
 
 A tool whose main method calls `System.exit` on a call the build accepts takes its warm JVM with it every time.
 Run it through a driver instead: a class of your plugin with a `public static int main(String[])` that calls the
