@@ -784,8 +784,8 @@ InferredMultiProjectAssembler checked = stock.check(check -> check.custom("place
 
 The plugins of the whole project are a value of the project rather than of the assembler: `plugins()`
 answers the `ProjectPlugins` that `jenesis.plugins.properties` declared, and `preprocess(name, step)`,
-`transform(name, step)`, `inspect(name, step)`, `stageTransform(name, step)`, `stageInspect(name, step)`,
-`export(name, step)`, `release(name, step)` and `goal(name, step)` add one more, a
+`transform(name, step)`, `inspect(name, step)`, `supplement(name, step)` for `stage/transform`,
+`audit(name, step)` for `stage/inspect`, `release(name, step)` and `goal(name, step)` add one more, a
 step or a module, refusing a name that is taken already. Here
 `ReleaseAudit` is a `BuildStep` of the project that throws when a module's inventory lacks what every release must
 carry:
