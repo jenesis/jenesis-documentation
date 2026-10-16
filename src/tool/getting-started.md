@@ -248,7 +248,7 @@ Nothing was configured to get that: the coordinate comes from the module name. T
 so the module stays unversioned - that is what `jar --describe-module` reports and why the modular tree has no
 version folder - while the POM, which cannot omit one, carries the `0-SNAPSHOT` placeholder.
 
-{% demos 1, 2, 3, 4 %}
+{% demos 1, 2, 3, 4, 5 %}
 
 ## What drives a build
 

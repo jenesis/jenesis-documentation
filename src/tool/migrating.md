@@ -90,7 +90,9 @@ A `pom.xml` is read for what it declares, not for how Maven builds it:
   module the build builds; `<dependencyManagement>` with imported BOMs; `maven.compiler.release`, or else
   `target` or `source`, with `testRelease` and `enablePreview`; the metadata of the module and its parents;
   source and resource directories, a local parent's where the module names none, and
-  `src/{main,test}/{kotlin,groovy}` where they exist; the `<!--jenesis.plugin-->`
+  `src/{main,test}/<name>` where they exist for each name `jenesis.maven.sources` lists - a project that keeps
+  Kotlin or Groovy in `src/main/kotlin` or `src/main/groovy` sets `jenesis.maven.sources=kotlin,groovy` in its
+  `jenesis.properties`; the `<!--jenesis.plugin-->`
   and `<!--jenesis.alias-->` comments of the module and of a local parent, and its own `<!--jenesis.pin-->`;
   and a profile of any POM that Maven activates by `<jdk>` or by `<activeByDefault>`. An unclosed `<jdk>` range such as `[9,`
   or `[9` reads as `[9,)`; a range that is none leaves the profile of a fetched POM inactive and fails the
@@ -129,17 +131,24 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | In Maven or Gradle | In Jenesis |
 | --- | --- |
 | `compilerArgs`, `options.compilerArgs` | `process-javac.properties` |
-| `fork` with `meminitial`, `maxmem` or `-J` options | `jenesis.process.factory=fork` in `jenesis.properties`, with `-J<option>=` in `process-javac.properties` |
+| `fork` with `meminitial`, `maxmem` or `-J` options | `-J<option>=` in `process-javac.properties`, which runs `javac` in a JVM of its own |
 | A multi-release jar's sources in `src/main/java<N>`, a compiler execution with `multiReleaseOutput`, a Gradle `java<N>` source set | The same sources moved below `src/main/java/META-INF/versions/<N>/`, compiled as a [multi-release overlay](/tool/building-and-running/#one-jar-several-java-versions) |
 | `annotationProcessorPaths` | A dependency of `<type>processor</type>`; one named without a version takes it from `<dependencyManagement>` |
-| Gradle's `com.google.devtools.ksp` plugin and its `ksp(...)` dependencies | A [`ksp.properties`](/tool/generating-sources/#kotlin-symbol-processing), with each processor as `@jenesis.plugin ksp <coordinate>` |
+| The kotlin-maven-plugin, scala-maven-plugin or GMavenPlus, Gradle's `kotlin("jvm")`, `scala` or `groovy` plugin | A line `<name>+language=build.jenesis.plugin.<name>` of `jenesis.plugins.properties` for `kotlin`, `scala` or `groovy`, which compiles the module's sources of that language; a compiler plugin is `@jenesis.plugin kotlin:tool <coordinate>` or `@jenesis.plugin scala:tool <coordinate>` |
+| The dokka-maven-plugin or Gradle's Dokka plugin | The `dokka.` values of a `plugin-kotlin.properties` |
+| Gradle's `com.google.devtools.ksp` plugin and its `ksp(...)` dependencies | The [KSP plugin](/tool/generating-sources/#kotlin-symbol-processing), `ksp+binary/generated=build.jenesis.plugin.ksp`, with each processor as `@jenesis.plugin ksp <coordinate>` and its arguments in `plugin-ksp.properties` |
 | Surefire includes and groups | `-Djenesis.test.filter`, `-Djenesis.test.tag` |
 | Surefire excludes | `-Djenesis.test.exclude`, as `.*IntegrationTest` |
 | `argLine`, `jvmArgs` of the tests | `process-test.properties` |
 | Surefire's `rerunFailingTestsCount`, Gradle's `test-retry` plugin | A retry of the test framework, such as JUnit Pioneer's `@RetryingTest` |
 | `forkCount` with `reuseForks=false`, `forkEvery` | A test module of its own, since each test module runs in a JVM of its own |
 | The environment of the tests | `environment-test.properties` |
-| Checkstyle's `propertyExpansion`, `configProperties` | A `checkstyle.properties` beside `checkstyle.xml` |
+| The Checkstyle, PMD, detekt, ktlint, Scalastyle, scalafmt or CodeNarc plugin | A line `<name>+check=build.jenesis.plugin.<name>` of `jenesis.plugins.properties`, and a `plugin-<name>.properties` that binds its configuration as `@rules=<path>` |
+| The jacoco-maven-plugin or pitest-maven | A line `jacoco+observe=build.jenesis.plugin.jacoco` or `pitest+observed=build.jenesis.plugin.pitest` of `jenesis.plugins.properties`, and its `plugin-<name>.properties` |
+| The jaxb2, protobuf, avro, jaxws, openapi-generator or antlr4 Maven plugin | A line `<name>+binary/generated=build.jenesis.plugin.<name>` of `jenesis.plugins.properties` for `xjc`, `protoc`, `avro`, `wsimport`, `openapi` or `antlr`, and a `plugin-<name>.properties` that binds the contracts |
+| The spotbugs-maven-plugin, forbiddenapis, japicmp or revapi | A line `<name>+binary/validate=build.jenesis.plugin.<name>`, or `+artifact` for japicmp and revapi, of `jenesis.plugins.properties`, and a `plugin-<name>.properties` with its values and bindings |
+| Spotless, the fmt-maven-plugin or the formatter-maven-plugin | A line `<name>+format=build.jenesis.plugin.<name>` of `jenesis.plugins.properties` for google-java-format (`googlejavaformat`), Palantir (`palantir`), Eclipse (`eclipse`), ktfmt (`ktfmt`), or ktlint and scalafmt with `@format` |
+| Checkstyle's `propertyExpansion`, `configProperties` | Values of `plugin-checkstyle.properties` |
 | PMD's `minimumPriority`, `rulesMinimumPriority` | `-Djenesis.pmd.priority` |
 | The `mainClass` of the jar, shade or exec plugin | A `<mainClass>` property |
 | `manifestEntries`, `jar.manifest.attributes` | A `META-INF/MANIFEST.MF` among the resources |
@@ -157,13 +166,13 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | `maven.deploy.skip`, `maven.install.skip` | `stage=false` in the module's `packaging.properties`, which keeps it out of `export` and `release` alike |
 | The flatten-maven-plugin's `flattenDependencyMode=all` | None: a published POM names what the module declares, and a consumer's resolution decides the rest - see [what the published POM names](/tool/publishing/#what-the-published-pom-names) |
 
-A tool resolves in a group named after it, such as `checkstyle` or `jacoco`, once per module. A `pom.xml` pins
+A tool resolves in a group named after its plugin, such as `checkstyle:tool` or `jacoco:tool`, once per module. A `pom.xml` pins
 it with a `<!--jenesis.pin-->` comment, a child of `<project>` with one coordinate per line, which `pin`
 completes with the tool's closure:
 
 ```xml
 <!--jenesis.pin
-checkstyle/maven/<groupId>/<artifactId> <version>
+checkstyle:tool/maven/<groupId>/<artifactId> <version>
 -->
 ```
 
@@ -219,9 +228,9 @@ resolved higher in `<dependencyManagement>`.
 ## Retiring the old build
 
 Remove what Jenesis now replaces: the plugin configuration, the wrapper, and the CI steps that called them. A CI job that built now builds under strict pinning. One that published to Maven Central runs the
-[`release`](/tool/publishing/#driving-the-release-tool-from-the-build) selector with
-`-Djenesis.jreleaser.dry=false` and the version as `-Djenesis.project.version` on a runner with JReleaser, its
-credentials in the `JRELEASER_*` variables; one that deployed to a
+[`release`](/tool/publishing/#driving-the-release-tool-from-the-build) selector with the JReleaser plugin and
+`-Djenesis.release.publish=true`, and the version as `-Djenesis.project.version`, its credentials in
+the `JRELEASER_*` variables; one that deployed to a
 [repository of its own](/tool/publishing/#releasing-into-a-maven-repository-of-your-own) names it in
 `MAVEN_RELEASE_URI` and its key in `MAVEN_RELEASE_TOKEN` instead. Then let the `ide` selector
 write the IntelliJ IDEA, VS Code or Eclipse project. A project in the `maven` layout keeps its `pom.xml` files,

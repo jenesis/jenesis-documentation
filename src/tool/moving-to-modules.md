@@ -31,7 +31,7 @@ void main() throws IOException {
     try (var files = Files.walk(Path.of("target/build"))) {
         for (var jar : files.filter(file -> file.toString().endsWith(".jar")
                 && file.getParent().endsWith("resolved")
-                && file.toString().contains("test-module-")).toList()) {
+                && file.toString().contains("testmodule-")).toList()) {
             try (var zip = new ZipFile(jar.toFile())) {
                 zip.stream().map(ZipEntry::getName)
                         .filter(name -> name.endsWith(".class") && name.contains("/")

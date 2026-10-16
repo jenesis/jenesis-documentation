@@ -24,7 +24,9 @@ It is opt-in - not part of `build` - and it writes into your project tree rather
 `@jenesis.pin` tag per dependency in a **modular** project, a `<dependencyManagement>` block with a
 `<!--Checksum/…-->` comment per entry in a **`pom.xml`** project. Commit the result and the pin set travels
 with the project. `pin` runs the build it pins, so whatever the changed versions reach is built again, a
-module's tests included; `-Djenesis.test.skip=true` leaves the tests to the next build. A managed entry that `pin` rewrites keeps its `<exclusions>`, those an imported bill of
+module's tests included; `-Djenesis.test.skip=true` leaves the tests to the next build. It runs last, after `stage`
+and a [dry release](/tool/publishing/#rehearsing-and-publishing-a-release), so the tool a release plugin resolves is
+pinned too. A managed entry that `pin` rewrites keeps its `<exclusions>`, those an imported bill of
 materials declares for it included, and the `<scope>` such a bill of materials gives it. The main code and the tests of a `pom.xml` share its one
 `<dependencyManagement>`, so where they resolve a coordinate at different versions, its entry takes the version
 the POM declares itself, which the other half then resolves as well. A module of a `pom.xml` project inherits the `<!--jenesis.plugin-->` comments
@@ -209,7 +211,7 @@ Strict pinning is checked in a step of its own, `pinned`, over what the resoluti
 switching it on or off resolves nothing again. The step names the first coordinate without a checksum:
 
 ```text
-[FAILED]   build/maven/compose/module/module-/dependencies/artifacts/pinned: java.lang.IllegalStateException: No checksum pinned for maven/org.apache.commons/commons-lang3/3.14.0 (strict pinning is enabled)
+[FAILED]   build/maven/compose/module/build-module-/dependencies/artifacts/pinned: java.lang.IllegalStateException: No checksum pinned for maven/org.apache.commons/commons-lang3/3.14.0 (strict pinning is enabled)
 ```
 
 Strict mode pairs well with the `managed` resolution strategy from

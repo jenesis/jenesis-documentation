@@ -58,31 +58,35 @@ configures it; a **project** hook point runs it once for the whole project. `pre
 built and the other project hook points after every module is, so the module hook points sit between them; each
 table lists its hook points in the order the build reaches them.
 
-A plugin of a module hook point runs as `<hook point>/custom/<name>` within each module's build, as the build log
-shows it under `build/maven/` or `build/modules/` - `binary/generated/custom/<name>`, say - and a plugin with no hook
-point runs as `custom/<name>`, in the module build itself:
+A plugin of a module hook point runs as `<hook point>/custom/<name>` within the phase of each module that holds its
+hook point, as the build log shows it under `build/maven/compose/module/` or `build/modules/compose/module/` -
+`build-module-app/produce/assemble/binary/generated/custom/<name>` in the module's `build`, say, or
+`verify-module-app/check/custom/<name>` in its `verify`, where a plugin of `binary/validate` runs as
+`validate/custom/<name>`. A plugin with no hook point runs as `custom/<name>`, in the module's build itself:
 
 | Module hook point | When a plugin runs, and what it is handed |
 | --- | --- |
-| `check` | Beside the stock source checks, handed the module's sources and manifests. |
-| `format` | Beside the stock formatters, handed the same. |
-| `compliance` | Beside the licence and vulnerability checks, handed the manifests and the resolved dependencies. |
+| `check` | In the module's `verify` phase, beside the stock source checks, handed the module's sources and manifests. |
+| `format` | In `verify`, beside the stock formatters, handed the same. |
+| `compliance` | In `verify`, beside the licence and vulnerability checks, handed the manifests and the resolved dependencies. |
 | `binary/generated` | Before compilation, beside the stock generators; a `sources/` tree it writes is compiled with the module, and a `resources/` tree, such as a service file, joins the module's jar. |
 | `binary/compiled` | Beside the stock compilers, handed what they compile; what it writes below `classes/` joins the module's jar, and a class that two compilers or plugins both write fails the build, naming both. |
 | `binary/transform` | After the compilers, handed the module's compiled classes first and the module's inputs after them; what it writes below `classes/` replaces the class of that name. Several plugins run in the order the file names them, each handed what the one before wrote. |
-| `binary/validate` | After compilation, beside the bytecode checks, handed the compiled classes. |
+| `binary/validate` | In `verify`, beside the bytecode checks, handed the compiled classes. |
 | `binary` | Within the module's compile toolchain, handed what the toolchain reads. |
-| `artifact` | Once the module's jar is built, handed it with the module's dependencies. |
+| `artifact` | In `verify`, handed the module's jar with its dependencies. |
 | `observed` | With the module's tests, beside the stock observers such as coverage. |
-| `documentation/generate` | Beside the stock documentation generators. |
-| `documentation` | Within the documentation build, handed the compiled module. |
+| `observe` | Attached to the JVM the module's tests run in, by a plugin that provides an `ObservabilityFactory`; its report runs as `observed/observations/<name>`, handed the tests' output. |
+| `test` | The framework the module's tests run on, from a plugin that provides a `TestFrameworkFactory`, consulted before the built-in frameworks. |
+| `language` | A language of its own, from a plugin that provides a `LanguageFactory`: compiled before or after javac, and documented, wherever a module holds a file of its extensions. |
+| `documentation/generate` | In the module's `document` phase, beside the stock documentation generators. |
+| `documentation` | In `document`, within the documentation build, handed the compiled module. |
 | *(none)* | In the module build itself, handed everything the module reads. |
-| `package` | When the module is packaged, handed its jar, its dependencies and the stock images; what it writes into `packages/` is staged in `stage/packages/`. |
+| `package` | In the module's `package` phase, handed its jar, its dependencies and the stock images; what it writes into `packages/` is staged in `stage/packages/`. |
 
 A plugin of a project hook point runs under the goal it belongs to, at the same path in every project:
 `build/preprocess/custom/<name>`, `build/postprocess/transform/<name>` and `build/postprocess/inspect/<name>`,
-`stage/transform/<name>` and `stage/inspect/<name>`, `export/custom/<name>`, `release/custom/<name>`, and
-`plugin/<name>`:
+`stage/transform/<name>` and `stage/inspect/<name>`, `release/custom/<name>`, and `plugin/<name>`:
 
 | Project hook point | When a plugin runs, and what it is handed |
 | --- | --- |
@@ -91,8 +95,7 @@ A plugin of a project hook point runs under the goal it belongs to, at the same 
 | `postprocess/inspect` | After the transforms, handed the same with what they added; fails the build by throwing. |
 | `stage/transform` | After the stock staging, handed every staged tree; what it writes under a tree's name joins that tree. |
 | `stage/inspect` | After the transforms of stage, handed the staged trees with what they added. |
-| `export` | With `export`, beside the stock export steps, handed everything staged. |
-| `release` | With `release`, beside JReleaser, handed everything staged. |
+| `release` | With `release`, beside the stock release steps, only where its `plugin-<name>.properties` is found; handed everything staged, the project's root and its resolved metadata. |
 | `plugin` | Only when `plugin/<name>` is named, handed only what it binds; nothing waits for it and it waits for nothing. |
 
 The module hook points run while the module is built, so everything after them sees what they add;
@@ -116,16 +119,23 @@ is created:
 greeting=Hello from a generated source
 ```
 
-The plugin's dependencies are pinned like any other, in the dependency group named after the plugin,
-`plugin-<name>`:
+The plugin's dependencies are pinned like any other, in the dependency group of the plugin's name:
 
 ```java
 /**
- * @jenesis.pin plugin-greeting/module/org.json 20260522 SHA-256/...
+ * @jenesis.pin greeting/module/org.json 20260522 SHA-256/...
  */
 ```
 
-A plugin found in the local export is built on your machine and is not checked against a pinned checksum.
+A plugin found in the local export is pinned and checked like one from a repository: build it again and its
+checksum changes, so the build refuses it until `-Djenesis.dependency.pin=versions` with `pin` records what the
+export now holds.
+
+Everything a plugin resolves itself is pinned in a group `<name>:<purpose>`: the tool it runs in `<name>:tool`, as
+`xjc:tool/maven/org.glassfish.jaxb/jaxb-xjc`, and a closure that must not share versions with it in a group of its
+own, as `kotlin:dokka` for the Kotlin plugin's Dokka. Every pin a plugin needs therefore sorts under its name, and
+the build fails a plugin that resolves in a group of another name. A `.properties` file escapes the colon in a
+key, so `pin` writes such a pin there as `xjc\:tool/maven/…`.
 
 `-Djenesis.plugin.<name>=false` leaves a plugin out, as the stock tools are switched off, without editing the
 file, and `-Djenesis.project.plugins=false` leaves out every plugin the file names.
@@ -161,10 +171,11 @@ and folders. A single file keeps its name unless a target renames it. Editing a 
 A value whose key really starts with `@` is written with two: `@@name=value` hands the plugin `@name=value`.
 
 In a module's `plugin-<name>.properties`, a path is resolved against the module's own folder, the one holding its
-`module-info.java` or `pom.xml`. It has
+`module-info.java` or `pom.xml`. A folder has
 to stay within the project, symbolic links included, and a plugin folder named as `./<folder>` must lie within
-the project as well. A path that leaves the project, does not exist, or shares a target with another binding of
-the same input fails the build.
+the project as well. A file may lie outside it, so that several projects share one configuration, and a path
+written as `@<key>` names one through the setting `-Djenesis.variable.<key>`. A folder that leaves the project, a
+path that does not exist, or one that shares a target with another binding of the same input fails the build.
 
 <div class="note">
   A plugin runs code the project chooses - compiled from its own sources, or resolved by a module name it
@@ -205,15 +216,16 @@ seeing what the ones before it added, and the inspections run after all of them.
 
 A **transform of stage** writes into a folder named after a staged tree - `maven/`, `modular/`, `packages/`,
 `project/` and the others under `target/stage/` - and what it writes joins that tree where it stands, so
-`export`, `release`, a `jreleaser.yml` and their plugins take it like anything else staged: checksums or
+`export`, `release` and their plugins take it like anything else staged: checksums or
 signatures beside every file, repository metadata, a manifest of what ships. A file the tree holds already fails
 the build rather than being replaced. An **inspection of stage** then checks the staged trees with what was added,
 and nothing is exported or released past one that fails.
 
-An **exporter** and a **releaser** deliver what was staged - to an internal repository, a bucket, a registry, a
-release page. Naming `export/custom` or `release/custom` runs the plugins alone, without the steps Jenesis runs
-there itself. Such a step writes outside the build, so it overrides `shouldRun` to run every time it is selected,
-as the stock export steps do, rather than only when what it reads has changed.
+A **releaser** delivers what was staged - to an internal repository, a bucket, a registry, a release page. Naming
+`release/custom` runs the releasers alone, without the steps Jenesis runs there itself. Such a step writes outside
+the build, so it overrides `shouldRun` to run every time it is selected, as the stock release steps do, rather than
+only when what it reads has changed. `export` has no hook point: it only installs what was staged into this
+machine's local repositories, and what it installs is shaped by the plugins of `stage`.
 
 A plugin under **`plugin`** belongs to no goal and starts at once, as
 `java build/jenesis/Make.java plugin/lines`: a report over the project's own files, a task run by hand. What
@@ -241,6 +253,24 @@ Since the plugins in `build` run with every build, one that takes long is best s
 `jenesis.plugin.<name>=false` and switched back on in the profile that ships. `-Djenesis.project.plugins=false`
 leaves out every plugin at once, those of the module hook points included.
 
+### A plugin of release
+
+A plugin of `release` is the exception. It runs only where a configuration folder holds its
+`plugin-<name>.properties`, as a plugin of a module does, and it takes its values and binds its inputs from
+that file rather than from `jenesis.plugins.arguments.properties`, which refuses a line for it. Placed in the
+folder of a profile, such as `build.jenesis/release/`, the file keeps every build but a release from running the
+plugin.
+
+Beside everything staged, such a plugin is handed two files that tell it where the project lies and what it is:
+
+| File | Holds |
+| --- | --- |
+| `root.properties` | `root`, the project's root folder, and `stage.<tree>`, the folder of each staged tree, such as `stage.maven`. |
+| `metadata.properties` | The project's metadata as the build resolved it, the version `-Djenesis.project.version` sets included. |
+
+A release tool runs in the project's checkout, which is why this is the one place a plugin is told where the
+project lies.
+
 ### What a transform and an inspection see, and what they may add
 
 Each of them is handed the inventory of every module: its jar, sources and documentation, its POM, and every
@@ -264,7 +294,7 @@ does a key two transforms add, or an attachment whose file name the build stages
 
 What belongs to no module - an aggregated report, a site, a distribution of every module - a transform writes into
 a **`project/`** folder of its own output, laid out as it sees fit. `stage` copies it as it stands into
-`target/stage/project/output/`, where exporters and releasers find it with the rest, and a file two transforms
+`target/stage/project/output/`, where `export` and releasers find it with the rest, and a file two transforms
 place at the same path fails the build. A transform that brings
 its own SBOM, say, attaches it as `cyclonedx` once `-Djenesis.sbom.cyclonedx=false` has switched off the stock
 one. An inspection reads the same inventories plus what the transforms added, and fails the build by throwing.
@@ -276,12 +306,17 @@ These plugins belong to no module, so their pins live beside the file that names
 **`jenesis.plugins.pin.properties`**, one line for each module in each plugin's closure:
 
 ```properties
-plugin-audit/module/build.jenesis=0.14.0 SHA-256/...
-plugin-notice/module/build.jenesis=0.14.0 SHA-256/...
+audit/module/build.jenesis=0.14.0 SHA-256/...
+notice/module/build.jenesis=0.14.0 SHA-256/...
 ```
 
 `pin` writes the file and pins every plugin of the whole project the file names, including one a setting
-switches off, so a plugin that only a profile switches on is pinned all the same. The plugins run with
+switches off, so a plugin that only a profile switches on is pinned all the same. `pin` runs last, after a dry
+release, so it also writes the tool a releaser resolves, such as
+`jreleaser\:tool/maven/org.jreleaser/jreleaser-tool-provider=1.26.0 SHA-256/...`. A releaser reads
+`jenesis.release.publish` from the environment it is handed and publishes nothing without it. Where a releaser
+does not run - its file sits in a profile `pin` was not given - `pin` keeps the lines that pin its tool as they
+stand. The plugins run with
 everything that builds, `pin` among it, so an inspection that fails stops `pin` too. This pins without running
 any plugin:
 
@@ -303,13 +338,18 @@ CompletionStage<BuildStepResult> apply(Executor executor,
                                        SequencedMap<String, BuildStepArgument> arguments);
 ```
 
-The `context` gives you three folder slots:
+The `context` gives you four folder slots:
 
 - **`next`** - the folder this run writes into. It is created fresh every time; your step writes here and
   nowhere else.
 - **`previous`** - the same step's output from the prior run, or `null` on a first run. You may *read* it to
   hard-link or copy unchanged files instead of regenerating them, but never write into it.
 - **`supplement`** - scratch space for intermediate files you do not want to publish in `next`.
+- **`persistent`** - state your step keeps for its own next run, such as an incremental compiler's caches. It
+  is the folder the last successful run left, handed over whenever `previous` is, and empty otherwise: on a first
+  run, after a failed run, when the step changed, or when the build cache supplied the last output. It is not
+  part of the output, so dependents never see it, it is not cached and it does not change the step's key. Your
+  step must write the same output with an empty folder as with a full one.
 
 The `arguments` map carries one entry per predecessor you wired in. Each exposes the folder to read
 (`argument.folder()`) and a per-file change status - `ADDED`, `ALTERED`, `REMOVED`, or `RETAINED` - computed
@@ -394,32 +434,41 @@ immediately rather than silently breaking cache invalidation. If you see it, hol
 
 ## Writing a plugin
 
-A plugin is a **build module**: a named Java module that `provides` a build-executor service, which Jenesis
-discovers through that declaration alone:
+A plugin is a named Java module that `provides` a `BuildModuleFactory`, which Jenesis discovers through that
+declaration alone:
 
 ```java
 module demo.plugin {
     requires build.jenesis;
     requires org.json;
-    provides build.jenesis.BuildExecutorModule with demo.plugin.GreetingModule;
+    provides build.jenesis.BuildModuleFactory with demo.plugin.GreetingFactory;
 }
 ```
 
-Its `BuildExecutorModule` adds the steps it contributes, as a stock module does. The values of its
-`plugin-<name>.properties`, or its lines of `jenesis.plugins.arguments.properties`, reach it through a public
-constructor taking a `SequencedMap<String, String>` of them, in the file's order. `javac` requires every service provider to keep a public constructor without
-arguments as well, which the build uses when the file is empty. A file with values for a provider that takes
-none fails the build, rather than the values being dropped:
+The factory creates the `BuildExecutorModule` that adds the steps the plugin contributes, as a stock module does.
+It is handed the settings of the build, the values of its `plugin-<name>.properties` or its lines of
+`jenesis.plugins.arguments.properties` in the file's order, the `Permits` that bound the processes the build runs
+at once, the dependency group to resolve a tool in, and the build's repositories and resolvers:
 
 ```java
-public GreetingModule() {
-    this(Collections.emptyNavigableMap());
-}
+public class GreetingFactory implements BuildModuleFactory {
 
-public GreetingModule(SequencedMap<String, String> properties) {
-    greeting = properties.getOrDefault("greeting", "Hello from a generated source!");
+    @Override
+    public BuildExecutorModule create(Environment environment,
+                                      SequencedMap<String, String> properties,
+                                      Permits permits,
+                                      String group,
+                                      Map<String, Repository> repositories,
+                                      Map<String, Resolver> resolvers) {
+        return new GreetingModule(properties);
+    }
 }
 ```
+
+A value arrives resolved: `@<key>` stands for the setting `-Djenesis.variable.<key>`, `@<key>/<default>` falls
+back to what follows the slash, and `@@` writes a literal `@`. A value is never a path - a file the plugin reads
+is bound as an input, as [Handing a plugin files of the project](#handing-a-plugin-files-of-the-project) shows. A factory refuses a value it does not take, naming those it
+does, rather than dropping it.
 
 The steps a plugin adds are handed their inputs as arguments. An input bound with `@<input>` arrives as the
 argument `../inputs/<input>`, and a transform or an inspection finds each module's inventory as an
@@ -460,6 +509,81 @@ module index does not serve, as one named by an `Automatic-Module-Name` alone, i
 `@jenesis.pin` lines apply to the plugin's dependencies as in a project. Every jar of the plugin's layer is a
 module of its own, so a jar that declares no module name at all, or two jars that share a package, cannot load:
 exclude it, or pin a version of it that names its module.
+
+### Observing the tests
+
+A plugin of the hook point `observe` joins the JVM the tests run in, as a coverage agent does, and reports over what
+that run recorded. It provides an `ObservabilityFactory` rather than a `BuildModuleFactory`, is handed the same,
+and returns an `Observation`: the `ObservabilityEngine` that names the agent's coordinates and the JVM options of the
+test run, and the module that reads what the run left in its output.
+
+```java
+public class LoadedFactory implements ObservabilityFactory {
+
+    @Override
+    public Observation create(Environment environment,
+                              SequencedMap<String, String> properties,
+                              Permits permits,
+                              String group,
+                              Map<String, Repository> repositories,
+                              Map<String, Resolver> resolvers) {
+        return new Observation(new ClassLoading(group),
+                (executor, inherited) -> executor.addStep("loaded", new Loaded(prefix(properties)),
+                        inherited.sequencedKeySet()));
+    }
+}
+```
+
+The engine is part of what decides whether the tests run again, so it holds its settings as serialisable fields,
+and a changed value runs the tests anew. Its coordinates resolve with the test runtime in the group it is named
+after, the plugin's name. The plugin is built before the tests, under `observed/observers/<name>`, and its report
+runs as `observed/observations/<name>`; it takes values but binds no files. Only a module that runs tests is
+observed.
+
+### Running the tests on a framework of your own
+
+A plugin of the hook point `test` provides a `TestFrameworkFactory`, is handed the same, and returns a
+`TestFramework`: the runner the tests' JVM starts, the arguments it takes, and the modules that mark a test module as
+its own. The frameworks a project declares are consulted first, in the order `jenesis.plugins.properties` names
+them, and the built-in JUnit Platform, JUnit 4 and TestNG after them, so the first framework a module of the tests
+marks runs them. A `framework=<name>` line in `test.properties` names a declared framework by its plugin name, as it
+names a built-in one.
+
+A framework is part of what decides whether the tests run again, so it holds its settings as serialisable fields. It
+may delegate to a built-in one, as a framework that runs on the JUnit Platform but hands the tests a system property
+of its own does:
+
+```java
+@Override
+public Map<String, String> systemProperties() {
+    Map<String, String> properties = new LinkedHashMap<>(platform.systemProperties());
+    properties.put("demo.framework", name);
+    return properties;
+}
+```
+
+### Compiling a language of your own
+
+A plugin of the hook point `language` provides a `LanguageFactory`, is handed the same, and returns a `Language`:
+the file extensions it compiles, the module that compiles them, whether that runs before or after javac, and the
+module that documents them, or `null`. It needs no `plugin-<name>.properties`: it runs in every module that holds a
+file of its extensions, and takes its values from that file where one is found.
+
+| A language's | Is handed, and writes |
+| --- | --- |
+| compiler before javac | the module's sources and dependencies, and the classes of the compilers before it; javac compiles against the `classes/` it writes. |
+| compiler after javac | the same, and the classes javac wrote. |
+| documentation | the module's sources; the `javadoc/` it writes joins the module's documentation, at its root where the language is the module's only one and under `javadoc/<name>/` beside others. |
+
+A file of the language's extensions is no resource, so it never reaches the jar. A `pom.xml` project compiles a
+folder beside `src/main/java`, such as `src/main/kotlin`, only where `jenesis.maven.sources` names it:
+
+```properties
+# jenesis.properties
+jenesis.maven.sources=kotlin
+```
+
+{% demos 60 %}
 
 ### A worked example: classes rewritten with Byte Buddy
 
@@ -568,12 +692,12 @@ own properties file, and runs nothing it did not name.
 
 Byte Buddy resolves into the plugin's own module layer, and what the plugin rewrote refers to nothing but
 `java.base`, so it never reaches the running application. `pin` records the plugin's closure in the project's
-`module-info.java`, in the group named after the plugin:
+`module-info.java`, in the group of the plugin's name:
 
 ```java
 /**
- * @jenesis.pin plugin-enhance/module/build.jenesis <version> SHA-256/...
- * @jenesis.pin plugin-enhance/module/net.bytebuddy <version> SHA-256/...
+ * @jenesis.pin enhance/module/build.jenesis <version> SHA-256/...
+ * @jenesis.pin enhance/module/net.bytebuddy <version> SHA-256/...
  */
 ```
 
@@ -589,6 +713,29 @@ module names it in a group of its own with `@jenesis.plugin <group> maven/<group
 `binary/generated` hands the jars over among the resolved dependencies, the input whose key ends in
 `/dependencies/artifacts`, where `Dependencies.select(folder, "<group>", "plugin")` lists them for the
 `java -cp` the step runs.
+
+A step that forks `java -cp <jars> <class or Launcher.java> <arguments>` builds its handler with
+`ProcessHandler.OfProcess.ofJavaMain()` rather than `ofJavaHome("bin/java")`. Under `jenesis.process.mode=daemon`, which the
+build daemon sets and which is `fork` otherwise, its tool's main method then runs in a JVM kept warm for the next
+call with the same jars on its class path and the same options and environment, which compiles a `.java` launcher
+once. A jar is matched by the file rather than its path, so every module of a build that
+resolves the same tool shares that JVM. What one call prints is that call's output, a call that returns ends with `0`, or with the `int` a main
+method declared to return one hands back, and one that calls `System.exit` ends with that code and takes its JVM
+with it. While the setting is not `daemon`, which also serves a tool whose static state must not outlive a call, every call
+runs in a JVM of its own, and a class's main method still ends the call as described: the code it returns is the
+code, and a thread the tool leaves running ends with the JVM. Under `jenesis.process.mode=aot`, which `jenesis.make.mode=aot`
+sets, that JVM starts from an ahead-of-time cache of the tool in `.jenesis/aot/`, trained on its first call. A command line of another
+shape - a module path, `-jar`, an argument file - is forked as it stands.
+
+A tool whose main method calls `System.exit` on a call the build accepts takes its warm JVM with it every time.
+Run it through a driver instead: a class of your plugin with a `public static int main(String[])` that calls the
+entry point the tool offers short of its main method and returns the code. Compile it against the tool with
+`requires static`, so your plugin's own dependencies do not include the tool, and put the folder that
+`ProcessHandler.OfProcess.driver(<Driver>.class)` writes ahead of the tool's jars on the class path. That folder
+holds the class files of the driver and the classes it nests alone, so the driver uses nothing else of your plugin,
+and it runs against the version of the tool the project pinned. A JVM runs one call at a time, because few tools allow more; a tool whose main
+method keeps its state per call - a compiler driven through its own API - asks for `.shared(true)` on the handler,
+and its calls then run side by side in one JVM, sharing its JIT, each printing only what it printed itself.
 
 Hand such a step only the inputs it reads, `executor.addStep(name, step, inputs)` naming them among the keys of
 the map `accept` is handed, since each input is part of the step's key: a generator handed `sources/` runs
@@ -643,18 +790,26 @@ InferredMultiProjectAssembler stock = InferredMultiProjectAssembler.ofEnvironmen
 Project project = Project.ofEnvironment(environment, Path.of("."))
         .assembler((descriptor, repositories, resolvers) -> stock
                 .apply(descriptor, repositories, resolvers)
-                .mapBuild(build -> (sub, inherited) -> {
-                    sub.addModule("assemble", build, inherited.sequencedKeySet().stream());
-                    sub.addStep("sign", (executor, context, arguments) -> {
-                        // read the jars in each argument's folder, write their signatures into context.next()
-                        return CompletableFuture.completedStage(new BuildStepResult(true));
-                    }, "assemble");
-                }));
+                .andThen("sign", (sub, inherited) -> sub.addStep("sign", (executor, context, arguments) -> {
+                    // read the jars in each argument's folder, write their signatures into context.next()
+                    return CompletableFuture.completedStage(new BuildStepResult(true));
+                }, inherited.sequencedKeySet().stream()), AssemblyRequirement.of().after(AssemblyDescriptor.BUILD)));
 System.exit(new Execution(project).execute(args));
 ```
 
-`mapBuild` decorates only the module's build phase - here registering the stock output under `assemble` and
-chaining a `sign` step onto it. `Execution` builds the project and runs the module that declares a main class,
+`andThen` adds a phase to each module - here `sign`, registered as `sign-<module>` beside the stock `build`,
+`verify` and the others. Its `AssemblyRequirement` names what it waits for and is handed:
+
+| Requirement | The phase is handed |
+|---|---|
+| `after(phase)` | that phase of its own module, declared before it |
+| `upstream(phase)` | that phase of every module its module depends on, directly or not |
+| `tested(phase)` | that phase of every module that tests its module |
+
+`andThen` on a phase that is declared already extends it: the module's steps run after the phase's own, and the
+requirement adds to the phase's. A step that must run before the stock build, as a preprocessor of the sources,
+uses `nest(AssemblyDescriptor.BUILD, "", build -> ...)` instead: it hands over the stock phase as a module, and the
+module it returns adds its own step and then the stock one. `Execution` builds the project and runs the module that declares a main class,
 as `build/jenesis/Execute.java` does for the stock build.
 
 The stock modules take additional steps and modules in code as well, through the same `custom` namespace a plugin is
@@ -674,8 +829,8 @@ InferredMultiProjectAssembler checked = stock.check(check -> check.custom("place
 
 The plugins of the whole project are a value of the project rather than of the assembler: `plugins()`
 answers the `ProjectPlugins` that `jenesis.plugins.properties` declared, and `preprocess(name, step)`,
-`transform(name, step)`, `inspect(name, step)`, `stageTransform(name, step)`, `stageInspect(name, step)`,
-`export(name, step)`, `release(name, step)` and `goal(name, step)` add one more, a
+`transform(name, step)`, `inspect(name, step)`, `supplement(name, step)` for `stage/transform`,
+`audit(name, step)` for `stage/inspect`, `release(name, step)` and `goal(name, step)` add one more, a
 step or a module, refusing a name that is taken already. Here
 `ReleaseAudit` is a `BuildStep` of the project that throws when a module's inventory lacks what every release must
 carry:

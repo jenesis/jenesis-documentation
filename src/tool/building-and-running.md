@@ -50,8 +50,8 @@ script or a coding agent reads it instead of parsing the console:
 
 ```
 {"status":"started","target":"/.../demo-01-java-pom/target","directory":"/.../demo-01-java-pom","run":"20261005T180707.205894Z"}
-{"status":"resolved","module":"build","seconds":0.067}
-{"status":"skipped","step":"build/maven/identifier/prepare","folder":"/.../target/build/maven/identifier/prepare","run":"20261005T180659.583809Z"}
+{"status":"resolved","module":"build","start":0.001,"seconds":0.067}
+{"status":"skipped","step":"build/maven/identifier/prepare","start":0.071,"folder":"/.../target/build/maven/identifier/prepare","run":"20261005T180659.583809Z"}
 {"status":"completed","seconds":0.342,"executed":1,"skipped":18,"failed":0}
 ```
 
@@ -60,12 +60,16 @@ Every object leads with its `status`:
 | `status` | Written for | Beside it |
 | --- | --- | --- |
 | `started` | the build, first line | `target`, the `directory` the build ran in, and the `run` |
-| `executed` | a step that ran | `step`, `seconds` and `folder`, which holds the step's `output/` |
-| `skipped` | a step none of whose inputs changed | `step`, `folder`, and the earlier `run` that produced the folder |
+| `executed` | a step that ran | `step`, `start`, `seconds` and `folder`, which holds the step's `output/` |
+| `skipped` | a step none of whose inputs changed | `step`, `start`, `folder`, and the earlier `run` that produced the folder |
 | `loaded`, `stored` | a step's output fetched from or stored in the build cache | `step` and `seconds` |
-| `resolved` | a module | `module` and `seconds` |
-| `failed` | a step or a module that failed | `step` or `module`, the `error` class and its `message`; a failed step also its `folder` |
+| `resolved` | a module | `module`, `start` and `seconds` |
+| `failed` | a step or a module that failed | `step` or `module`, its `start`, the `error` class and its `message`; a failed step also its `folder` |
 | `completed`, `failed` | the build, last line | `seconds` and how many steps `executed`, `skipped` and `failed`; a failed build adds its `error` and `message` |
+
+A `start` is the seconds from the beginning of the build to the moment the step or module began, so `start` and
+`seconds` together place it on the build's timeline: which steps ran side by side, and which one the build waited
+for.
 
 Every build is a run, named on the `started` line by the moment it began, in UTC. A step that executed is this
 run's. A skipped step names the earlier run whose output it kept, so a test report in its folder is that run's
@@ -106,13 +110,13 @@ A forked process that ends with exit code 137 was killed with `SIGKILL`, possibl
 killer, and the failure says so. Fewer tools at once, with a lower `jenesis.process.concurrency`, or a smaller
 heap for the JVM it ran, as an `-Xmx` in `process-test.properties` for the tests, makes it need less memory.
 
-A failed test run first names its failed tests, up to twenty, read from the reports every run writes -
-under `supplement/reports/`, or in the module's `reports/tests/` with `-Djenesis.test.reporting=true` -
-whatever reached the console:
+For a failed test run, the output the build prints ends with what the runner printed about each failed
+test - for the JUnit Platform, a `Failures` section naming the test with its stack trace, then the run's
+counts. A test run writes no report unless `-Djenesis.test.reporting=true` asks for one in the module's
+`reports/tests/`, and a failed run then also names that folder, above the runner's output:
 
 ```text
-1 test failed, as reported in target/build/.../test/executed~/supplement/reports:
-  demo.BrokenTest#fails()
+The reports of the test run are in target/build/.../test/executed~/output/reports/tests
 ```
 
 The progress lines, the dependency tree and every other line the build prints are coloured with ANSI escape
@@ -449,6 +453,38 @@ afterwards is no part of the build. A project's own files name only a folder ins
 
 {% demos 36 %}
 
+### Recording a module's ABI
+
+`-Djenesis.abi.mode` has every module record the ABI of its classes - what code compiling against the module can
+see - as an `abi.properties` with one hash per class file:
+
+    java -Djenesis.abi.mode=modular build/jenesis/Make.java
+
+    module-info.class=870132835338581573e842fae025a98d37da623eb44a05dfb7a67051922f57d4
+    sample/greeter/Greeter.class=68cc9cb2e4968617d195d7fec4abb639102b0ef95584f15e5f5a073a04ed5d2c
+
+A hash covers a class's type, supertypes and generic signature, its fields and methods with their annotations, the
+exceptions they declare and the values of constants, and for `module-info.class` the exports and the modules it
+requires transitively. Method bodies and private members are no part of it, so a change confined to them leaves the
+file as it was. The mode decides what counts:
+
+| Mode | What is hashed |
+| --- | --- |
+| `modular` | The public classes of the packages a module exports, with their public and protected members - what another module reads on the module path. A class an exported class inherits members from is hashed as well, wherever it lies. A module without a `module-info` exports every package. |
+| `classpath` | Every package, with its package-private classes and members as well - what a class on the class path reaches, sharing a package with the module's own. |
+
+Private, local and anonymous classes are never hashed. A module reads again only the class files that changed since
+its last build and keeps the hash of every other one; changing the mode reads them all.
+
+With an ABI recorded, a module whose required modules changed only below their ABI - a method body, a private member
+- is not compiled again; the build prints its `javac` step as `[SKIPPED]`. A change to the ABI of a required module
+compiles it again, as does any change to an annotation processor, and a test module is compiled again whenever the
+module it tests changed, since a test reaches that module's package-private members. The mode is the build's to choose:
+`modular` matches modules that read each other on the module path, `classpath` a project whose modules are on the
+class path.
+
+{% demos 4 %}
+
 ## Passing extra arguments to a tool
 
 Jenesis picks sensible flags for `javac` and the other tools it forks, but sometimes you need one more. You
@@ -494,8 +530,8 @@ applies to *every* forked `java` process, the program `Execute` runs included, w
 
 `javac` and `jar` run inside the build's own JVM unless `jenesis.process.factory=fork` is set, on the command
 line or in `jenesis.properties`. A `-J` option for the compiler's JVM, written as `-J-Xmx2g=` in
-`process-javac.properties`, needs that setting: only a forked `javac` has a JVM of its own to hand it to, and
-an in-process one refuses the flag.
+`process-javac.properties`, runs `javac` in a JVM of its own whatever that setting says, as the build's JVM is
+running already and cannot take it.
 
 `javadoc` runs with `-Xdoclint:none`, so a missing comment or tag is not reported. An `-Xdoclint` flag in
 `process-javadoc.properties` replaces that default, and `-Werror=` makes a warning fail the build:
@@ -585,8 +621,7 @@ Four names take such a file:
 A JDK tool such as `javac` or `javadoc` takes none, as it may run inside the build's own JVM, and a file naming
 one fails the build. `native-image` is handed the variables its C compiler reads without a file: `INCLUDE`,
 `LIB` and `LIBPATH` from a Visual Studio developer prompt, `CPATH`, `C_INCLUDE_PATH`, `LIBRARY_PATH` and
-`SDKROOT`. A release run by the build hands JReleaser every `JRELEASER_*` variable, where it reads its
-credentials. The program `Execute.java` or `jpx` runs is the one you asked for rather than a step of the
+`SDKROOT`. The program `Execute.java` or `jpx` runs is the one you asked for rather than a step of the
 build, so it is handed your whole environment, as from a shell.
 
 ### Values from the command line
@@ -648,8 +683,8 @@ such a module without a version takes that module's own version.
   processor silently stops running; the class it generates is never produced and the build fails to compile.
 </div>
 
-The same tag, with a compiler name in front (`@jenesis.plugin kotlinc <coordinate>`), declares a compiler
-plugin for another language - covered in *Other JVM languages*.
+The same tag, with a language plugin's tool group in front (`@jenesis.plugin kotlin:tool <coordinate>`), declares a
+compiler plugin for another language - covered in *Other JVM languages*.
 
 {% demos 14, 42 %}
 
