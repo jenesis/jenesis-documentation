@@ -338,13 +338,18 @@ CompletionStage<BuildStepResult> apply(Executor executor,
                                        SequencedMap<String, BuildStepArgument> arguments);
 ```
 
-The `context` gives you three folder slots:
+The `context` gives you four folder slots:
 
 - **`next`** - the folder this run writes into. It is created fresh every time; your step writes here and
   nowhere else.
 - **`previous`** - the same step's output from the prior run, or `null` on a first run. You may *read* it to
   hard-link or copy unchanged files instead of regenerating them, but never write into it.
 - **`supplement`** - scratch space for intermediate files you do not want to publish in `next`.
+- **`persistent`** - state your step keeps for its own next run, such as an incremental compiler's caches. It
+  is the folder the last successful run left, handed over whenever `previous` is, and empty otherwise: on a first
+  run, after a failed run, when the step changed, or when the build cache supplied the last output. It is not
+  part of the output, so dependents never see it, it is not cached and it does not change the step's key. Your
+  step must write the same output with an empty folder as with a full one.
 
 The `arguments` map carries one entry per predecessor you wired in. Each exposes the folder to read
 (`argument.folder()`) and a per-file change status - `ADDED`, `ALTERED`, `REMOVED`, or `RETAINED` - computed
