@@ -715,16 +715,16 @@ module names it in a group of its own with `@jenesis.plugin <group> maven/<group
 `java -cp` the step runs.
 
 A step that forks `java -cp <jars> <class or Launcher.java> <arguments>` builds its handler with
-`ProcessHandler.OfProcess.ofJavaMain()` rather than `ofJavaHome("bin/java")`. Under `jenesis.process.daemon`, which the
-build daemon turns on and which is off otherwise, its tool's main method then runs in a JVM kept warm for the next
+`ProcessHandler.OfProcess.ofJavaMain()` rather than `ofJavaHome("bin/java")`. Under `jenesis.process.mode=daemon`, which the
+build daemon sets and which is `fork` otherwise, its tool's main method then runs in a JVM kept warm for the next
 call with the same jars on its class path and the same options and environment, which compiles a `.java` launcher
 once. A jar is matched by the file rather than its path, so every module of a build that
 resolves the same tool shares that JVM. What one call prints is that call's output, a call that returns ends with `0`, or with the `int` a main
 method declared to return one hands back, and one that calls `System.exit` ends with that code and takes its JVM
-with it. While the setting is off, which also serves a tool whose static state must not outlive a call, every call
+with it. While the setting is not `daemon`, which also serves a tool whose static state must not outlive a call, every call
 runs in a JVM of its own, and a class's main method still ends the call as described: the code it returns is the
-code, and a thread the tool leaves running ends with the JVM. Under `jenesis.process.aot`, which `jenesis.make.aot`
-turns on, that JVM starts from an ahead-of-time cache of the tool in `.jenesis/aot/`, trained on its first call. A command line of another
+code, and a thread the tool leaves running ends with the JVM. Under `jenesis.process.mode=aot`, which `jenesis.make.mode=aot`
+sets, that JVM starts from an ahead-of-time cache of the tool in `.jenesis/aot/`, trained on its first call. A command line of another
 shape - a module path, `-jar`, an argument file - is forked as it stands.
 
 A tool whose main method calls `System.exit` on a call the build accepts takes its warm JVM with it every time.

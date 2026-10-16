@@ -143,10 +143,8 @@ order of precedence.
 | --- | --- | --- |
 | `jenesis.make.root` | `.` | The directory scanned for `module-info.java` / `pom.xml`. Command-line only. |
 | `jenesis.make.profiles` | *(unset)* | Comma-separated **profile** names to activate. |
-| `jenesis.make.compile` | `true` | Compile the build sources once and run the build from those classes, over a class loader of their own. One batch compile beats the launcher compiling class by class as it loads them, so this is faster even for a build that runs a single time. |
+| `jenesis.make.mode` | `compiled` | How the engine runs. `source` runs it from the build sources, which the launcher compiles class by class as it loads them. `compiled` compiles them once and runs the build from those classes, over a class loader of their own; one batch compile beats the launcher, so this is faster even for a build that runs a single time. `aot` starts those classes from an ahead-of-time cache, trained by the first build and read by every later one. `daemon` hands the build to a reused JVM, which keeps a warm JIT between calls; `--stop` as the sole selector shuts it down. |
 | `jenesis.make.classes` | `.jenesis/classes` | Where those classes land, relative to the project root. They go under `.jenesis/` with the rest of the build's by-products, so nothing lands in the sources. A project's own file names only a folder inside the project. |
-| `jenesis.make.daemon` | `false` | Hand the build to a reused JVM, which keeps a warm JIT between calls. `--stop` as the sole selector shuts it down. |
-| `jenesis.make.aot` | `false` | Start the build from an ahead-of-time cache of the engine, trained by the first build and read by every later one. Refused beside `jenesis.make.daemon` and beside `jenesis.make.compile=false`. |
 | `jenesis.toolchain.version` | *(unset)* | The JDK the build runs on, as `25`, `25.0.3` or `25-temurin`. `Make.java` and `Execute.java` start again on a matching installed JDK when the running one does not match (see *[Building &amp; running](/tool/building-and-running/#the-jdk-a-build-runs-on)*). |
 | `jenesis.toolchain.searchpath` | `@` | Comma-separated folders searched for that JDK, absolute or under `~`, with `*` for any one folder name; `@` stands for the operating system's usual locations, and empty only checks the running JDK. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.toolchain.installer` (`JENESIS_TOOLCHAIN_INSTALLER`) | *(unset)* | A program run with the version as its last argument when no JDK on the search path matches, such as `jenesis-jdk`; a name is looked up on the `PATH`, a path is absolute or starts with `~`. Command line, `~/.jenesis/jenesis.properties` or the environment only, and an empty value runs none; the `jenesis` command sets the variable to its own `jenesis-jdk`, for the run it starts, where SDKMAN, mise or Scoop installed it and the variable is unset (see *[Building &amp; running](/tool/building-and-running/#installing-a-missing-jdk)*). |
@@ -157,8 +155,8 @@ compiled is held between calls. What is held is a warm JIT, and a build spends i
 a JVM that has already compiled a few modules runs faster. The daemon therefore pays in proportion to how
 much a build compiles: nothing on a build that compiles little, where the socket costs more than the warm
 code saves, and about a third off a five-module project. Compiling the build sources once, which is on by
-default, is what removes the large fixed cost; the daemon is the increment after that. A daemon also turns on
-`jenesis.process.daemon`, which keeps the JVMs that run a plugin's tools for the next call and the next build, so a
+default, is what removes the large fixed cost; the daemon is the increment after that. A daemon also sets
+`jenesis.process.mode` to `daemon`, which keeps the JVMs that run a plugin's tools for the next call and the next build, so a
 build that lints or generates in every module gains more from it than from a warm JIT alone.
 
 Only `jenesis.*` properties travel with a call to a daemon, which clears and sets them again around every
@@ -173,7 +171,7 @@ rather than being served by one configured for something else.
 
 An ahead-of-time cache answers the same cost without a process. It is a file of the engine's classes, already
 loaded and linked, which a starting JVM maps instead of loading them again: nothing stays resident between
-builds, there is no idle timeout, and the cache survives a reboot. The first build with `jenesis.make.aot`
+builds, there is no idle timeout, and the cache survives a reboot. The first build with `jenesis.make.mode=aot`
 trains it, which takes a build of a few seconds and some 20 MB on disk, and every later build starts from it.
 It applies where the engine runs compiled, as the installed `jenesis` command runs it, which is where it saves
 the most - a no-op build of a one-class project falls from 0.69 to 0.43 seconds. From the classes in
@@ -182,7 +180,8 @@ less of the saving. The engine in source mode is out of its reach, because `java
 JVM that started before the cache could be named. The `jenesis-make` tool, which runs inside another program's JVM,
 refuses it.
 
-The same setting gives the tools a build forks caches of their own, in source mode as well. A plugin's tool that
+The same setting gives the tools a build forks caches of their own, by setting `jenesis.process.mode` to `aot`, in
+source mode as well. A plugin's tool that
 would start a JVM for every call - a linter, a formatter, a code generator - trains a cache on its first run and
 starts from it on every later one, for as long as its jars, the JVM and its options stay the same. In the
 code quality demo, the runs of google-java-format and forbiddenapis fall by more than half and those of PMD and
@@ -201,7 +200,6 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | --- | --- | --- |
 | `jenesis.aot.folder` | `.jenesis/aot` | The folder of every cache, the engine's and the tools', relative to the project root. A project's own file names only a location inside the project. |
 | `jenesis.aot.lifetime` | *(unset)* | An ISO-8601 age, such as `PT12H` or `P7D`, after which the folder is cleared and every cache in it trained again; unset keeps it until the engine or the JVM changes. |
-| `jenesis.process.aot` | `false` | Start every tool the build runs in a JVM of its own from a cache of its own in that folder. `jenesis.make.aot` turns it on unless it is set; `false` leaves the tools uncached. |
 
 | Property | Default | Effect |
 | --- | --- | --- |
@@ -389,7 +387,7 @@ password location is missing.
 | `jenesis.executor.events` | `true` | Write each step's outcome of the latest build to `target/.jenesis.events.jsonl`, one JSON object per line (see *[Building &amp; running](/tool/building-and-running/#reading-a-build-s-outcome)*). |
 | `jenesis.executor.concurrency` | `0` | The most build steps that run at once across the whole build; `0` means no limit, while `jenesis.process.concurrency` still bounds the tools they run. |
 | `jenesis.process.factory` | `tool` | How JDK tool steps launch: `tool` (in-process) or `fork`; a `-J` option in `process-javac.properties` runs `javac` in a JVM of its own either way. |
-| `jenesis.process.daemon` | `false` | Run the main method of a tool a plugin starts through `ofJavaMain()`, and `javac` where a `-J` option forks it, in one JVM that runs its compilations side by side, as it runs the calls a plugin marks `shared`, kept for the next call with the same jars on its class path, wherever a module resolved them, and the same options and environment; an idle one ends after ten minutes. The daemon turns it on for the builds it runs unless it is set; `false` starts a JVM for every call, so a build without the daemon leaves no JVM running. |
+| `jenesis.process.mode` | `fork` | How a tool a plugin starts through `ofJavaMain()`, and `javac` where a `-J` option forks it, runs. `fork` starts a JVM for every call, so a build without the daemon leaves no JVM running. `aot` starts that JVM from an ahead-of-time cache of the tool in `jenesis.aot.folder`, trained by its first run. `daemon` runs it in one JVM that runs its compilations side by side, as it runs the calls a plugin marks `shared`, kept for the next call with the same jars on its class path, wherever a module resolved them, and the same options and environment; an idle one ends after ten minutes. `jenesis.make.mode=aot` and `jenesis.make.mode=daemon` set it to the same unless it is set. |
 | `jenesis.process.tail` | `200` | How many of the last lines of a failed tool's output and of its error the failure prints, beside how many there were and the file under `supplement/` that holds all of them; `0` prints every line. |
 | `jenesis.process.concurrency` | *(processor count)* | The most tool runs - a compiler, a JDK tool, a forked JVM such as a test run - that happen at once across the whole build; `0` means no limit. |
 | `JAVA_HOME` (env) | *(from `java.home`)* | Locates the JDK binaries when the runtime is not a JDK. |

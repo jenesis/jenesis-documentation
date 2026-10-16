@@ -255,7 +255,7 @@ folder like any other compiler option. Each key is one option, so the `=`, `:` a
 | `-Xplugin:ErrorProne` | Runs the plugin, which `javac` does only when an option names it. What follows the name are Error Prone's own flags: `-Xep:<Check>:OFF\|WARN\|ERROR`, `-XepAllErrorsAsWarnings`, `-XepDisableWarningsInGeneratedCode`. |
 | `-XDcompilePolicy=simple` | Has `javac` analyse every class completely before it generates code, so the checks see the analysed code rather than code already partly lowered. |
 | `--should-stop=ifError=FLOW` | Keeps `javac` going through its flow analysis after an error, so the plugin reports beside the compiler. |
-| `-J--add-exports`, `-J--add-opens` | Grant the plugin the compiler's internal packages, which `jdk.compiler` does not export. They are options of the JVM that runs `javac`, so `javac` runs in a JVM of its own: one per compilation, or, in the daemon or under `jenesis.process.daemon=true`, one that every compilation with the same options shares, side by side and kept warm. |
+| `-J--add-exports`, `-J--add-opens` | Grant the plugin the compiler's internal packages, which `jdk.compiler` does not export. They are options of the JVM that runs `javac`, so `javac` runs in a JVM of its own: one per compilation, or, in the daemon or under `jenesis.process.mode=daemon`, one that every compilation with the same options shares, side by side and kept warm. |
 
 `javac` reads the first two when it starts, and the exports must be in place before it does, so neither the plugin
 nor an annotation processor can supply them itself. Without the `-Xplugin` line the declared plugin resolves and
