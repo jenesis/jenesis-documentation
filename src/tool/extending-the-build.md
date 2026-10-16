@@ -724,7 +724,7 @@ method declared to return one hands back, and one that calls `System.exit` ends 
 with it. While the setting is off, which also serves a tool whose static state must not outlive a call, every call
 runs in a JVM of its own, and a class's main method still ends the call as described: the code it returns is the
 code, and a thread the tool leaves running ends with the JVM. Under `jenesis.process.aot`, which `jenesis.make.aot`
-sets, that JVM starts from an ahead-of-time cache of the tool, trained on its first call. A command line of another
+turns on, that JVM starts from an ahead-of-time cache of the tool in `.jenesis/aot/`, trained on its first call. A command line of another
 shape - a module path, `-jar`, an argument file - is forked as it stands.
 
 A tool whose main method calls `System.exit` on a call the build accepts takes its warm JVM with it every time.

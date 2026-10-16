@@ -186,22 +186,22 @@ The same setting gives the tools a build forks caches of their own, in source mo
 would start a JVM for every call - a linter, a formatter, a code generator - trains a cache on its first run and
 starts from it on every later one, for as long as its jars, the JVM and its options stay the same. In the
 code quality demo, the runs of google-java-format and forbiddenapis fall by more than half and those of PMD and
-SpotBugs by about a third, while the first run of each takes a few seconds longer to train. The caches live in
-`.jenesis/process/`, one folder per tool and version, which holds links to the tool's jars rather than copies and
-may be deleted at any time. The daemon keeps
+SpotBugs by about a third, while the first run of each takes a few seconds longer to train. The daemon keeps
 those JVMs warm instead, so under it no tool trains a cache.
 
-The engine and the JVM a cache was trained for are hashed into its name, as `engine-<hex>.aot`, so a changed
-engine or an upgraded JDK trains a new one and the one that no longer fits is removed. `help`, `skill`,
+Every cache lives in one folder, `.jenesis/aot/`: the engine's, and one subfolder per tool and version, which
+holds links to the tool's jars rather than copies. `aot.properties` in it records the engine and the JVM the
+folder was started for, so a changed engine or an upgraded JDK clears the whole folder at once and every cache is
+trained again; the folder may also be deleted by hand at any time. `help`, `skill`,
 `prompt`, `configuration` and `properties` only print, so they neither train nor use a cache. The daemon keeps a warm JIT
 the cache does not, so it stays ahead in a tight edit-build loop on a large project; where builds are frequent
 and small, or a machine builds many projects now and then, the cache is the better trade.
 
 | Property | Default | Effect |
 | --- | --- | --- |
-| `jenesis.aot.file` | `.jenesis/engine.aot` | Where the cache lives, relative to the project root; the hash is written before the extension. A project's own file names only a location inside the project. |
-| `jenesis.aot.lifetime` | *(unset)* | An ISO-8601 age, such as `PT12H` or `P7D`, after which the cache is trained again; unset keeps it until the engine or the JVM changes. |
-| `jenesis.process.aot` | *(unset)* | A folder, relative to the project root, in which every tool the build runs in a JVM of its own starts from a cache of its own. `jenesis.make.aot` sets it to `.jenesis/process/` unless it is set, and an empty value leaves the tools uncached. A project's own file names only a location inside the project. |
+| `jenesis.aot.folder` | `.jenesis/aot` | The folder of every cache, the engine's and the tools', relative to the project root. A project's own file names only a location inside the project. |
+| `jenesis.aot.lifetime` | *(unset)* | An ISO-8601 age, such as `PT12H` or `P7D`, after which the folder is cleared and every cache in it trained again; unset keeps it until the engine or the JVM changes. |
+| `jenesis.process.aot` | `false` | Start every tool the build runs in a JVM of its own from a cache of its own in that folder. `jenesis.make.aot` turns it on unless it is set; `false` leaves the tools uncached. |
 
 | Property | Default | Effect |
 | --- | --- | --- |
