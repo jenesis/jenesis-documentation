@@ -212,6 +212,8 @@ or ProGuard rules, join the jar. KSP itself resolves in the group `ksp:runtime`,
 `ksp`, because a processor brings a Kotlin standard library of its own that KSP does not use. Its arguments
 go in `process-ksp.properties`.
 
+{% demos 48 %}
+
 ## Turning one off
 
 Each generator is switched off by the plugin switch, which keeps its configuration in place:

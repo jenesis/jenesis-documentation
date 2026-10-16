@@ -76,10 +76,15 @@ Running `java -jar app.jar` starts the launcher's `main`, which then:
    bytes, only the index.
 4. **reconstructs the module layer**, if `modulepath` names any entries. An in-memory module finder resolves
    them and defines a **child `ModuleLayer`** against the boot layer, mapping every module to that *same*
-   loader. When a `mainModule` is declared, the layer grants the launcher access to the main class's
-   package, so `main` runs even if the package is not exported - exactly as `java -m module/Class` allows.
-5. **invokes `main`** - it sets the thread context class loader, runs any bundled agents, and calls the main
-   method.
+   loader.
+5. **invokes `main`** - it sets the thread context class loader, then runs any bundled agents and calls the
+   main method from a module of their own. That module is the only one the packages of the main class and
+   of the agents are opened to, so `main` runs even if its package is not exported - exactly as
+   `java -m module/Class` allows - while the launcher itself is granted nothing.
+
+The main method is any that `java` runs: `main(String[])`, or else `main()`, static or not, declared by the
+class or inherited from a superclass or an interface, and not private. An instance `main` runs on an
+instance made by the class's constructor without parameters.
 
 ### Which modules are resolved
 

@@ -119,11 +119,11 @@ transparency log, with no key to fetch first:
 
 ```bash
 cosign verify \
-  --certificate-identity-regexp '^https://github\.com/jenesis/jenesis-repository/\.github/workflows/publish-images\.yml@' \
+  --certificate-identity-regexp '^https://github\.com/jenesis/jenesis-repository/\.github/workflows/release\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   docker.io/jenesisbuild/jenesis-repository:<version>
 cosign verify-attestation --type cyclonedx \
-  --certificate-identity-regexp '^https://github\.com/jenesis/jenesis-repository/\.github/workflows/publish-images\.yml@' \
+  --certificate-identity-regexp '^https://github\.com/jenesis/jenesis-repository/\.github/workflows/release\.yml@' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
   docker.io/jenesisbuild/jenesis-repository:<version>
 ```

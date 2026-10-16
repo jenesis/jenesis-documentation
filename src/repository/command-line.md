@@ -58,7 +58,7 @@ know in the console has its command under the same heading:
 | **Lifecycle** | `retention`, `cleanup`, `pins`, `lifecycle`, `webhook`, `export`, `forget-ecosystem` |
 | **Build cache** | `projects` |
 | **Access** | `credentials`, `members`, `groups`, `roles`, `trusts`, `policy`, `audit`, `keylogin` |
-| **Operations** | `metrics`, `posture`, `caches`, `walks`, `consistency`, `logs` |
+| **Operations** | `metrics`, `posture`, `caches`, `walks`, `signals`, `scanners`, `consistency`, `logs`, `discovery` |
 | **Settings** | `settings`, `setup`, `tenants`, `repos`, `upstreams`, `limits`, `capabilities`, `spi`, `config`, `purge` |
 
 `jenrepo help <command>` shows every form a command takes, and `jenrepo capabilities` says what this deployment

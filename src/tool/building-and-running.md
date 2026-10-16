@@ -385,7 +385,7 @@ documents the generated classes, and the sources jar carries their source files 
 from, as Maven's does. The sources jar also holds the module's resources, those `jenesis.project.resources`
 places among them included, as Maven's and Gradle's sources jars do.
 
-{% demos 69 %}
+{% demos 72 %}
 
 ### Reproducible archives
 
@@ -757,7 +757,7 @@ java -Djenesis.execute.module=tools \
   current project is the job of <a href="/jpx/">jpx</a>.
 </div>
 
-{% demos 9, 10, 53 %}
+{% demos 9, 10, 54 %}
 
 ## Attaching a Java agent
 
@@ -804,7 +804,7 @@ module demo.agents.test {
   are ordinary dependencies otherwise: they resolve, pin, and appear in the bill of materials like any other.
 </div>
 
-{% demos 52 %}
+{% demos 53 %}
 
 ## Granting native access
 
@@ -896,7 +896,7 @@ build on it:
 java -Djenesis.dependency.native=warn build/jenesis/Make.java
 ```
 
-{% demos 53, 54 %}
+{% demos 54, 55 %}
 
 ## Watch mode
 

@@ -24,157 +24,116 @@ file; reading it costs a build one request per vendor.
 
 ## Do you suggest not having a central repository?
 
-No. A central repository that keeps every version ever published, immutable and in one place, has real value. It
-is also a great way to distribute a small open-source project released now and then: one account and one upload,
-and every build finds the library, with no hosting for its author to keep alive. That low barrier to entry is
-worth keeping.
+No. A central repository that keeps every version ever published, immutable and in one place, has real value, and
+one account and one upload is a low barrier for a small project. What this proposal questions is that there is
+only one such repository, and that every library has to pass through it. Today, that is Maven Central -
+[Maven's default repository](https://maven.apache.org/ref/current/maven-model-builder/super-pom.html).
 
-What this proposal questions is that there is only one such repository, and that every library has to pass
-through it. Today, that repository is Maven Central -
-[Maven's default repository](https://maven.apache.org/ref/current/maven-model-builder/super-pom.html), and the
-one most Java builds resolve from.
+The proposal changes who does what. Authors publish to the ecosystem rather than to one repository. Central
+repositories, as many as care to run one, collect what authors publish and offer the guarantees an author cannot
+give to the users who need them.
 
 ### The trouble with a single repository
 
-Maven Central is, in effect, a monopoly: one repository, run by one company, that every build looks to and that
-no build replaces on its own. That is a problem in itself, whatever its operator does today:
+Every build looks to Maven Central, and no build replaces it on its own:
 
 - **It is a single point of failure.** When Central cannot be reached, neither can any library published nowhere
-  else. Its own [terms of service](https://central.sonatype.org/terms.html) state that outages may occur and
-  that Sonatype is under no obligation to store or back up what is published.
-- **It answers to no community.** Under the same terms, Sonatype decides at its sole discretion what it accepts,
-  and may change the terms at any time without notice.
-  [Google's mirror](https://storage-download.googleapis.com/maven-central/index.html), like those companies run,
-  copies what Central holds, but publishing goes through Sonatype alone. The rest of the Java ecosystem is
-  governed otherwise: the language through the [Java Community Process](https://jcp.org/en/home/index), the JDK
-  under the [OpenJDK bylaws](https://openjdk.org/bylaws), and Maven at the
+  else. Its [terms of service](https://central.sonatype.org/terms.html) state that outages may occur and that
+  Sonatype is under no obligation to store or back up what is published.
+- **It is run by one company.** Sonatype, a private firm majority-owned by
+  [Vista Equity Partners](https://www.vistaequitypartners.com/companies/sonatype/) since
+  [2019](https://www.sonatype.com/press-releases/vista-acquires-majority-interest-in-sonatype), decides what Central
+  accepts and may change its terms at any time. The rest of the Java ecosystem is governed by its community: the
+  language through the [Java Community Process](https://jcp.org/en/home/index), the JDK under the
+  [OpenJDK bylaws](https://openjdk.org/bylaws), and Maven at the
   [Apache Software Foundation](https://www.apache.org/foundation/how-it-works/).
-- **It can change course quickly.** Sonatype is a private firm, majority-owned since
-  [2019](https://www.sonatype.com/press-releases/vista-acquires-majority-interest-in-sonatype) by the private
-  equity firm [Vista Equity Partners](https://www.vistaequitypartners.com/companies/sonatype/). Such a firm can
-  change direction fast, all the more after a change of ownership, and the Java ecosystem has no say in either.
-- **Its priorities become the ecosystem's.** Java modules have named a library the Java-native way since
-  [Java 9](https://openjdk.org/projects/jdk9/) in 2017, almost ten years, yet Central
-  [finds an artifact](https://central.sonatype.org/search/rest-api-guide/) by its coordinate, a class name or a
-  checksum, never by its module name. A build cannot resolve a `requires` from Central without a mapping kept
-  elsewhere, such as the [Jenesis Module Index](/modules/) - one reason modules are adopted slowly.
-
-An alternative is therefore a contribution merely by existing: the textbook check on a monopoly is not that it
-behaves well, but that its users could go elsewhere.
+- **Its priorities become the ecosystem's.** Java modules have named a library since
+  [Java 9](https://openjdk.org/projects/jdk9/) in 2017, yet Central
+  [finds an artifact](https://central.sonatype.org/search/rest-api-guide/) by its coordinate, never by its module
+  name. A build cannot resolve a `requires` from Central without a mapping kept elsewhere, such as the
+  [Jenesis Module Index](/modules/).
 
 ### Where the costs lead
 
-The infrastructure is expensive, and Central is under constant pressure to pay for itself. Since October 2026,
-publishing an artifact of a commercial nature requires Sonatype's paid
+Since October 2026, publishing an artifact of a commercial nature requires Sonatype's paid
 [Publisher Pro](https://central.sonatype.org/news/20260908_publisher_tiers_commercial_use/), and so does
 publishing beyond [monthly quotas](https://central.sonatype.org/publish/maven-central-publishing-limits/) on file
-count, release count and release size, which
-[took effect](https://community.sonatype.com/t/maven-central-publishing-limits-are-now-in-effect/16675) the same
-month. The quotas start where the busiest tenth of publishers begin, count every signature, checksum, POM,
-sources and javadoc jar as a file, and may be adjusted over time; community projects can ask for an exemption.
+count, release count and release size. The quotas count every signature, checksum, POM, sources and javadoc jar as
+a file, per organisation. A [release of Byte Buddy](https://repo1.maven.org/maven2/net/bytebuddy/) publishes
+about 120 files and close to 70 MB, so a second release in a month passes the size quota. Byte Buddy is exempt,
+but every community project has to apply for an exemption of its own, an approach that does not scale with the
+number of projects.
 
-For a company, this puts a price on shipping a Java SDK. Sonatype counts an artifact as
-[commercial](https://central.sonatype.org/news/20260908_publisher_tiers_commercial_use/) if it supports the
-adoption, integration or operation of a commercial product or service, naming service-dependent SDKs and generated
-clients, however few files they hold. Other ecosystems do not charge for this: npm gives organisations
-[unlimited public packages](https://docs.npmjs.com/creating-an-organization) on its free plan,
-[NuGet.org](https://learn.microsoft.com/en-us/nuget/nuget-org/publish-a-package) publishes from a free account, and
-PyPI charges companies only for its optional [organisation features](https://docs.pypi.org/organization-accounts/).
-Nor is there a way around it: a company can host its own Maven repository, but only Maven Central is available to
-every build by default. That is an entry barrier the other major ecosystems do not have, and it is bound to damage
-the adoption and the reputation of Java over time - a vendor that chooses the languages to offer an SDK for now
-finds one where shipping it takes a subscription.
+For a company, this puts a price on shipping a Java SDK: Sonatype counts service-dependent SDKs and generated
+clients as commercial, however few files they hold. npm gives organisations
+[unlimited public packages](https://docs.npmjs.com/creating-an-organization) on its free plan, and
+[NuGet.org](https://learn.microsoft.com/en-us/nuget/nuget-org/publish-a-package) publishes from a free account. A
+company can host its own Maven repository, but only Maven Central is available to every build by default.
 
-Byte Buddy would mostly have stayed within today's quotas, but a
-[release of it](https://repo1.maven.org/maven2/net/bytebuddy/) now publishes about 120 files and close to 70 MB,
-so a second release in a month passes the size quota - as in about half the months since 2023 in which it
-released. And quotas tighten. Sonatype's own repository manager was
-[open source](https://github.com/sonatype/nexus-public) and without usage limits as Nexus Repository OSS, until
-[version 3.77.0](https://community.sonatype.com/t/sonatype-nexus-repository-oss-is-now-community-edition/14324)
-replaced it in 2025 with a
-[Community Edition](https://www.sonatype.com/blog/sonatype-nexus-repository-community-edition): free of charge,
-but not open source, used under an
-[end-user licence agreement](https://www.sonatype.com/dnt/usage/community-edition-eula), and capped, with a
-[paid Pro licence](https://help.sonatype.com/en/usage-center.html) required beyond the caps. A
-[later release](https://community.sonatype.com/t/sonatype-nexus-repository-3-87-0-released/15852) cut those caps
-to 40,000 components and 100,000 requests a day. Only a core with three formats remains open source.
+An author who nears the quotas can only publish less: merge small modules, release fixes less often, or stop
+publishing a second project. And publishing more is what lies ahead.
+[Commits to GitHub grew by a quarter in 2025](https://github.blog/news-insights/octoverse/octoverse-a-new-developer-joins-github-every-second-as-ai-leads-typescript-to-1/),
+a pace agent-supported development is likely to raise, and
+[published CVE records by 21%](https://github.blog/security/supply-chain-security/a-year-of-open-source-vulnerability-trends-cves-advisories-and-malware/) -
+every fix asks for a release.
 
-Central's quotas count per organisation, across all of its namespaces, and every release must carry
-[sources, javadoc, signatures and checksums](https://central.sonatype.org/publish/requirements/). An author who
-nears them can only publish less: merge small modules or drop them, release fixes less often, or stop publishing
-a second project of the same organisation. Each choice is reasonable for one author. Together they leave less on
-offer, a cost every user of the ecosystem pays, though no invoice shows it.
+### Publishing to the ecosystem
 
-And the restrictions come at an inconvenient time. The pace of publication is likely to accelerate with
-agent-supported development: developers pushed
-[nearly a billion commits to GitHub in 2025](https://github.blog/news-insights/octoverse/octoverse-a-new-developer-joins-github-every-second-as-ai-leads-typescript-to-1/),
-a quarter more than the year before, and more code means more releases. Central is already strained - by
-[Sonatype's own analysis](https://www.sonatype.com/blog/maven-central-and-the-tragedy-of-the-commons), 1% of IP
-addresses consume 83% of its bandwidth - and with more releases and more builds, that strain will likely grow out
-of proportion, with serious consequences for an ecosystem that depends on one repository. At the same time,
-security issues in libraries are found at a far greater pace -
-[published CVE records grew by 21% in 2025](https://github.blog/security/supply-chain-security/a-year-of-open-source-vulnerability-trends-cves-advisories-and-malware/) -
-and every fix asks for a release, so authors must publish more often just as publishing more is what the quotas
-restrict.
+With a discovery file, an author releases where they already distribute their work and says so once, on their
+domain. Every build and every central repository then finds the release by its name, without an upload, an
+account or a quota. The author decides how finely and how often to publish, and every download their hosting
+serves is one Central does not.
 
-### Publishing beside it
+Some projects already publish outside Central, such as
+[OpenSAML](https://shibboleth.atlassian.net/wiki/spaces/DEV/pages/1123844333) and
+[Jenkins](https://www.jenkins.io/doc/developer/publishing/artifact-repository/); today a build finds them only
+once its user configures their repository. Other ecosystems already work this way: Go
+[asks the domain of a module path](https://go.dev/ref/mod#vcs-find) where its code lives, with a
+[proxy and a checksum database](https://go.dev/ref/mod#private-module-privacy) as a cache and a ledger, not as a
+place every module must be uploaded to.
 
-The discovery file lets authors distribute what they build themselves, beside a central repository rather than
-instead of it, and frees them from fitting their work to someone else's quota. Some already publish elsewhere:
-[the Shibboleth project does not publish OpenSAML to Maven Central](https://shibboleth.atlassian.net/wiki/spaces/DEV/pages/1123844333),
-because its terms require an indemnification its developers will not take on personally, and
-[Jenkins releases its plugins and libraries](https://www.jenkins.io/doc/developer/publishing/artifact-repository/)
-from its own repository. Today, a build finds them only once its user configures that repository; with a
-discovery file, they are found by their name.
+The file also lets the community adopt new coordinates without waiting for a central repository to support them.
+A reader ignores the keys it does not know, so a new convention needs only authors who publish it and tools that
+read it. This proposal already resolves a library by its module name, through the
+[`module` key](#pure-module-repositories). Other conventions could follow, such as a key naming the
+[JBang catalog](https://www.jbang.dev/documentation/jbang/latest/alias_catalogs.html) of a domain's scripts, or one
+resolving a bundle by its [OSGi symbolic name](https://docs.osgi.org/specification/osgi.core/8.0.0/framework.module.html#framework.module.bsn).
 
-Other ecosystems already work this way. Go [asks the domain of a module path](https://go.dev/ref/mod#vcs-find)
-where its code lives, and adds a [proxy and a checksum database](https://go.dev/ref/mod#private-module-privacy)
-as a cache and a ledger, not as a place every module must be uploaded to. Homebrew
-[formulae](https://docs.brew.sh/Formula-Cookbook) download each package from wherever its project hosts it, and
-[taps](https://docs.brew.sh/Taps) let anyone publish formulae of their own.
+A discovery file may name Maven Central itself, so nothing changes for an author who publishes there. And a
+project can move elsewhere by changing the file, as a website moves to another host without changing its address.
 
-- **Authors decide** where they publish, how finely and how often, and may remove an outdated version to save
-  hosting, without a subscription.
-- **The load is shared.** Every download an author's hosting serves is one Central does not serve.
-- **Trust stays with the build.** Sonatype grants a group ID to whoever proves, by a
-  [DNS record](https://central.sonatype.org/register/namespace/), that they own the domain it reverses to - the
-  domain whose file a build reads. In 2024,
+### What a central repository adds
+
+Maven Central does two jobs in one: it distributes a release, and it vouches for it. Publishing to the ecosystem
+separates them. The author distributes; a central repository collects what authors publish, much as a build
+fetches it, and adds what an author cannot vouch for in their own work:
+
+- **Retention.** It keeps every version it has seen, after the author drops it or lets the domain lapse.
+- **Immutability.** It records each file as first fetched and refuses a later file that does not match, so an
+  artifact cannot be swapped under an existing version.
+- **Signature validation.** It checks each signature, and notices when a new version is signed with another key -
+  as a release from a lapsed domain bought by someone else would be, the attack
   [MavenGate](https://oversecured.com/blog/introducing-mavengate-a-supply-chain-attack-method-for-java-and-android-applications)
-  showed how lapsed domains could be bought to take over group IDs; Sonatype
-  [answered](https://thehackernews.com/2024/01/hackers-hijack-popular-java-and-android.html) that its checks
-  prevent it. A discovery file always speaks for whoever owns the domain now, so what protects a build is what it
-  recorded: declared signatures, and pinned checksums as Jenesis,
-  [Maven](https://maven.apache.org/resolver/expected-checksums.html),
-  [Gradle](https://docs.gradle.org/current/userguide/dependency_verification.html) and
-  [Bazel](https://github.com/bazel-contrib/rules_jvm_external) record them, compared
-  [side by side](/why/tool/#verify-what-the-build-downloads).
+  described in 2024.
+- **Scanning.** It checks each release for malware and known vulnerabilities, and marks the versions a later CVE
+  affects.
+- **Availability.** It serves the release when the author's hosting is down.
 
-### Many central repositories
+### Who pays for the guarantees
 
-Once authors say where they publish, a central repository no longer depends on uploads to be complete. It could
-populate itself by monitoring the authors' distribution servers: follow the latest links of the modules and
-artifacts it knows, notice each new release as it appears, and fetch it as a build would. It could keep every
-version as first fetched, close to publication, so that a version once seen never changes. Or it could keep only
-the checksums it recorded then and refuse any later file that does not match - the guarantee of central storage,
-without storing the artifacts. A discovery file may name Maven Central itself, so nothing changes for an author
-who publishes there. And as a project grows into different needs, its author can move it elsewhere by
-changing the file, as the owner of a domain moves a website to another host without changing its address.
+Today, the cost of a central repository falls on whoever publishes to it. Here, it falls on whoever needs its
+guarantees.
 
-Anyone could run such a repository, so there need not be only one. Several could exist side by side, competing on
-availability, on the record they keep and on the checks they run, and offering proxying and supply chain
-security as a service - a market that a single central repository does not allow for today.
+Open-source projects can do most of these checks in their own build - pin checksums, verify signatures, scan
+dependencies - and pay nothing. Enterprises typically want more: a compliance guarantee from a party that answers
+for it, and software shipped years ago that still builds from exactly the dependencies it was built with. Keeping
+old software running is how much software earns its money, and a repository that keeps old versions available,
+unchanged and vetted sells exactly that.
 
-Such a market also lets the Java ecosystem face a question it will have to entertain at some point: whether
-every version must be kept forever. Maven Central
-[never removes what was published](https://central.sonatype.org/faq/can-i-change-a-component/), but no one can
-hoard all code forever, and the constraints of recent years show where that premise leads. With several
-repositories, an author can drop an outdated version from their own hosting, and a repository that still keeps
-it can charge for doing so. A build that relies on Byte Buddy 0.1, a pre-release from 2014, would then pay a
-premium to keep it available - and that cost is an incentive to migrate away once the legacy has become too
-expensive.
-
-Hosting thereby moves back towards the authors who produce the code, and the choice of whom to trust towards the
-users who run it.
+Anyone could run such a repository, so several could compete on availability, on the checks they run and on
+price. Not every version then needs to be kept forever for free: an author can drop an outdated version, and a
+repository that still keeps it can charge for doing so. A build that relies on Byte Buddy 0.1, a pre-release from
+2014, would pay a premium to keep it available - an incentive to migrate once the legacy costs too much.
 
 ## Describing Maven artifacts
 
@@ -316,7 +275,7 @@ jenesis.module.uri=
 
 A location over plain `http` is followed only where `jenesis.repository.insecure` allows it.
 
-{% demos 72 %}
+{% demos 75 %}
 
 ## From modules to Maven artifacts
 
@@ -377,7 +336,7 @@ as the latest link too, `https://repo.jenesis.build/module/{module}/{module}.jar
 A key that does not answer leaves the request to the other, so a domain that publishes both `module` and
 `moduletomaven` serves either kind of build.
 
-{% demos 71 %}
+{% demos 74 %}
 
 ## The sources of a release
 
@@ -397,7 +356,7 @@ the [CycloneDX](https://cyclonedx.org/docs/1.6/json/#components_items_externalRe
 build, as the `source-distribution` reference of each dependency the file answers for, so whoever reads the SBOM
 finds the code each jar was built from.
 
-{% demos 71 %}
+{% demos 74 %}
 
 ## Publishing everything a build may ask for
 

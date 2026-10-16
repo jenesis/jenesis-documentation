@@ -466,7 +466,7 @@ already uses. This is the whole vocabulary:
 | `@jenesis.attach <token> [<options>]` | A library to attach as a Java agent (`<!--jenesis.attach-->` in a POM). | *[Building &amp; running](/tool/building-and-running/)* |
 | `@jenesis.native <token>…` | Native access for the modules named, this one only when it names itself; a module in a layer is granted with `@jenesis.layer <name> native` instead (`<!--jenesis.native-->` in a POM). | *[Building &amp; running](/tool/building-and-running/#granting-native-access)* |
 | `@jenesis.exclude <module> <group>/<artifact>…` | Transitives to prune from a requirement (`<exclusions>` in a POM). | *[Dependencies](/tool/dependencies/)* |
-| `@jenesis.alias <module> <group>/<artifact>[/<type>[/<classifier>]]` | A module name for an artifact that has none. | *[Dependencies](/tool/dependencies/)* |
+| `@jenesis.alias <module> <group>/<artifact>[/<type>]` | A module name for an artifact that has none. | *[Dependencies](/tool/dependencies/)* |
 | `@jenesis.override <module> <module>…` | A module to replace with the modules that already carry its packages. | *[Dependencies](/tool/dependencies/)* |
 | `@jenesis.layer <name> api <module>` | The one module this module shares with the layer `<name>`. | *[Dependencies](/tool/dependencies/#keeping-a-dependency-private)* |
 | `@jenesis.layer <name> provider <token>` | A root the layer `<name>` isolates, with its whole closure: a module name or a `<repository>/<coordinate>`. Repeat for more roots. | *[Dependencies](/tool/dependencies/#keeping-a-dependency-private)* |

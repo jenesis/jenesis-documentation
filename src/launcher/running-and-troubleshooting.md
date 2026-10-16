@@ -79,6 +79,9 @@ itself raises, and what each means:
 | `Malformed Jenesis-Aliases entry '<entry>' in <jar>` | A bundled jar's manifest carries an alias entry that is not of the form `<module>=<groupId>/<artifactId>`. |
 | `<key> names <entry>, which this bundle does not hold` | A descriptor key names a jar that `jars/` does not hold. A name is refused rather than skipped. |
 | `This bundle holds <n> jars and names none of them: …` | The descriptor names no class path, module path or module layer, so none of the shipped jars would be read. |
+| `The main class <class> declares or inherits no main method …` | The class has no non-private `void main(String[])` or `void main()`, static or not, of its own or inherited. A `main` that returns a value, or a static `main` of an interface the class implements, is none either. |
+| `The main class <class> is abstract or an interface but its main method is not static …` | An instance `main` needs an instance: make the class concrete, or the method static. |
+| `The main class <class> has an instance main method but no non-private constructor without parameters …` | Declare such a constructor, make an inner class `static`, or make the method static. |
 
 A jar you assemble yourself can also meet these, which a build-produced jar never does:
 
@@ -89,7 +92,7 @@ A jar you assemble yourself can also meet these, which a build-produced jar neve
 | `Layer <layer> holds no module <name> to enable native access for` | `enableNativeAccess.<layer>` or `jlayer.enableNativeAccess.<layer>` names a module the layer does not hold. |
 | `Target module not found: <name>` | A grant's target is neither a bundled nor a boot module, nor `ALL-UNNAMED`. |
 | `Agent class <name> declares no static premain(String) …` | An `agentClass` entry names a class without a matching `premain` or `agentmain`; the message says when a manifest attribute is missing to capture an `Instrumentation`. |
-| `Cannot access <class>.main(String[]); …` | The main class sits in a package its module neither exports nor opens, and `mainModule` does not name that module. |
+| `Cannot access the main method of <class>, …` | `mainClass` names a class that is neither on the class path nor in a bundled module, such as a class of the JDK. |
 
 One further failure comes from the JVM rather than the launcher. **A bundled module `requires` a JDK module
 that is not resolved by default** - `jdk.incubator.*`, or a module reachable only through qualified exports.

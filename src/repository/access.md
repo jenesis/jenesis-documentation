@@ -144,8 +144,8 @@ for a short-lived key instead of storing one. **Access → Keyless CI** names wh
 | Field | Example |
 | --- | --- |
 | Issuer | `https://token.actions.githubusercontent.com` |
-| Audience (optional) | `jenesis` |
-| Subject glob (optional) | `repo:acme/app:*` - only this repository's workflows |
+| Audience | `jenesis` - the `aud` claim your tokens carry |
+| Subject glob | `repo:acme/app:*` - only this repository's workflows |
 | Project and rights | `libraries`, `repository:read,repository:write` |
 | Lifetime | `PT15M` |
 
@@ -156,6 +156,10 @@ KEY=$(curl -s -X POST -H "Authorization: Bearer $ID_TOKEN" https://repo.example.
 ```
 
 A token no trust matches is answered `401`.
+
+Every field but the lifetime is required. A CI platform signs tokens for every one of its users, so the subject
+is what says whose jobs a trust admits. Write `*` only for an issuer that signs for your organisation alone. A trust
+stored without a subject matches no token, and **Security posture** names it until a subject is set.
 
 ## What a refused caller is told
 

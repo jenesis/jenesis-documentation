@@ -128,7 +128,8 @@ What these folders can hold - presence activates, contents configure:
   found, with its values and the files it binds, as Checkstyle's `checkstyle.xml` or the `.editorconfig` of ktlint.
 - **Code quality**: `jdeps.properties`, `jdeprscan.properties`.
 - **Formatting**: `licenseheader.properties`; the formatters are plugins.
-- **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`.
+- **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`,
+  `classifiers.properties`.
 - **Compliance**: `licensing.properties`, `vulnerability.properties`, `spdx.properties`.
 - **Tests**: `test.properties`, naming the engine a module's tests run on.
 - **Test observability**: `graal.properties`, `jfr.properties`.

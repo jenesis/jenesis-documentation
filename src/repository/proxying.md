@@ -1,7 +1,7 @@
 ---
 order: 6
 title: Proxying upstreams
-description: Serving what the repository does not hold yet from Maven Central, npm, Docker Hub or a private registry - format upstreams, a repository's routing with fallbacks and groups, upstream credentials, how a fetched artifact is checked and kept, how long an upstream's documents are remembered, and what a repository that both hosts and proxies answers.
+description: Serving what the repository does not hold yet from Maven Central, npm, Docker Hub or a private registry - format upstreams, a repository's routing with fallbacks and groups, upstreams a module's or group's own domain names, upstream credentials, how a fetched artifact is checked and kept, how long an upstream's documents are remembered, and what a repository that both hosts and proxies answers.
 ---
 
 A repository is most useful as a build's **single front door**: it serves your own packages and, on a miss,
@@ -113,6 +113,49 @@ What the deployment can hold instead is a **definition** of a repository name, u
 Repository routing**, written the same way: it routes the repository of that name in every tenant, and a
 repository's own routing wins over it. A definition can also be a startup setting, `repositories.<name>`.
 
+## A discovered upstream
+
+A module name or a Maven group ID is a reversed domain, and a domain can say where its modules and artifacts are
+published: in a file at `https://<domain>/.well-known/java-repository.properties`, which the
+[discovery chapter](/tool/discovery/) of the build tool describes. A repository routed `fallback discovered` fetches
+each miss from where that file says, instead of from one upstream:
+
+```
+writable fallback discovered fallback https://repo1.maven.org/maven2/
+```
+
+serves what was published here, then what the domain of each name says, and then Maven Central for names whose
+domain publishes no file. `discovered` takes the options an upstream URL takes, and works in a Maven repository and
+in a `jenesis` module repository.
+
+What a domain's file names is fetched, checked, screened and kept as any upstream's files are:
+
+- **A file of a version** - a jar, a POM, a module's jar - is fetched from the location the file names and kept.
+  Where the file names a template, the file it fills in is checked against the strongest `.sha512`, `.sha256` or
+  `.sha1` published beside it, and a mismatch is neither kept nor served; under a root - a Maven repository or a
+  module service - a file is fetched as from any upstream of that kind.
+- **A module's own jar** must declare the module it is asked for, in its `module-info` or as its
+  `Automatic-Module-Name`, or it is neither kept nor served, so a domain cannot answer for one module with another.
+- **A version list** comes from a root itself, and for a template from what its latest link names - the versions a
+  `maven-metadata.xml` lists, or the one version a redirect names. A module's latest pointer is served as the domain
+  answers it now and never kept.
+- **A version the file does not serve** - one before its `.since`, or with a qualifier its `.suffixes` leave out -
+  and a name whose domain publishes no file are left to the next fallback.
+
+Each domain's file is read once an hour on each node, and an absent file is remembered as absent for as long;
+`discovery-ttl` changes the period. A file is only read over `https`, and only from a public address, as an
+upstream is: a domain that resolves to a private, loopback or cloud-metadata address is not asked, and a file
+naming such a location is refused, unless `proxy-allow-internal` permits it. A file that breaks the format's rules -
+a key without a value, a location that is not `https` - fails the requests it would answer with `502` and is
+logged, rather than being read as no file.
+
+To see what a name's domains say now, and where a request path would go, a super-admin asks under **Operations →
+Discovery**, or from the command line:
+
+```bash
+jenrepo discovery check build.jenesis --path /maven/build/jenesis/build.jenesis/0.15.5/build.jenesis-0.15.5.jar
+```
+
 ## Private upstreams
 
 An upstream that needs credentials gets them under **Settings → Upstreams → Upstream credentials**: the host name,
@@ -123,6 +166,10 @@ fetches from it.
 An upstream must be `https` on a public address: a plaintext URL, or one that resolves to a private, loopback or
 cloud-metadata address, is refused unless `proxy-allow-internal` permits it - a fetch carries your credentials,
 and an unscreened address would turn the proxy into a way into your own network.
+
+An upstream that is your own - another instance this repository's builds publish to - can be marked so with the
+repository's `upstream-internal` setting. A copy fetched from it is then judged as a version published here is: asked
+of no advisory feed, and held to the publishing licence and signature rules. Leave it off for a public registry.
 
 ## What happens on a miss
 
@@ -135,8 +182,9 @@ A request is always answered locally first. On a miss, the repository fetches fr
 - **keeps it**, so the next request is a local hit that never reaches the upstream.
 
 The digests checked are the ones a registry advertises: an npm version's `integrity` or `shasum`, the `#sha256=` a
-PyPI page links a file with, the checksum a Debian `Packages` index or an RPM repository's `primary.xml` lists, a
-Helm chart's `digest`, the checksum database's hash of a Go module, an image layer's `sha256:` name, and their kind.
+PyPI page links a file with, the checksum a Debian `Packages` or `Sources` index or an RPM repository's
+`primary.xml` lists, a Helm chart's `digest`, the checksum database's hash of a Go module, an image layer's `sha256:`
+name, and their kind.
 A fetched file that does not match is not kept, not served, and fetched again on the next request. A checksum the
 *publisher* uploaded beside a file - a Maven or Ivy `.sha1`, a Conan `conanmanifest.txt` - is not one of them: it is
 relayed as the upstream serves it, for the client to check, and the file is kept without it being read. A definite
@@ -145,7 +193,10 @@ does not flood the upstream.
 
 A fetch that stalls is given up rather than held open: an upstream that delivers less than 16 KiB over any minute
 spent waiting on it is abandoned, as one that goes silent is, while a large file on a slow but steady link still
-lands. `proxy-throughput-floor` changes the floor, and `0` removes it.
+lands. `proxy-throughput-floor` changes the floor, and `0` removes it. An upstream that has not started answering
+within a minute is treated as unreachable (`proxy-request-timeout`), and a fetch is abandoned, nothing of it kept,
+once one artifact passes 100 GiB (`proxy-artifact-limit`, `0` for no limit), so an endless body cannot fill the
+store.
 
 Where an index names each artifact's download URL, the served copy points those URLs back at this repository, so
 a client installs through it rather than straight from the upstream. A Helm chart repository is one: the
@@ -189,6 +240,10 @@ key when every metadata file it names carries its checksum in its name, as `crea
 of those files is gone upstream, the node forgets the family and fetches the current one. A suite or repository that
 cannot be pinned this way is relayed fresh on every read. So is the RubyGems compact index: `/versions` names each
 gem's `info` file by a digest no upstream address serves it by, so the two can only agree when read at one moment.
+
+A raw repository keeps every file it fetches, except the ones named in its `raw-moving` setting - globs under
+its root, comma-separated, such as `**/latest.json` for the document naming Grype's current database. Those are
+files the upstream rewrites in place, so they are relayed and remembered as a document is, and never kept.
 
 A Hugging Face branch is resolved to its commit, and that resolution is remembered for the same six hours, so a
 burst of downloads from one branch costs the upstream one lookup, and a branch that moved resolves again once it is
