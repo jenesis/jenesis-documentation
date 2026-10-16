@@ -453,6 +453,31 @@ afterwards is no part of the build. A project's own files name only a folder ins
 
 {% demos 36 %}
 
+### Recording a module's ABI
+
+`-Djenesis.abi.mode` has every module record the ABI of its classes - what code compiling against the module can
+see - as an `abi.properties` with one hash per class file:
+
+    java -Djenesis.abi.mode=modular build/jenesis/Make.java
+
+    module-info.class=870132835338581573e842fae025a98d37da623eb44a05dfb7a67051922f57d4
+    sample/greeter/Greeter.class=68cc9cb2e4968617d195d7fec4abb639102b0ef95584f15e5f5a073a04ed5d2c
+
+A hash covers a class's type, supertypes and generic signature, its fields and methods with their annotations, the
+exceptions they declare and the values of constants, and for `module-info.class` the exports and the modules it
+requires transitively. Method bodies and private members are no part of it, so a change confined to them leaves the
+file as it was. The mode decides what counts:
+
+| Mode | What is hashed |
+| --- | --- |
+| `modular` | The public classes of the packages a module exports, with their public and protected members - what another module reads on the module path. A class an exported class inherits members from is hashed as well, wherever it lies. A module without a `module-info` exports every package. |
+| `classpath` | Every package, with its package-private classes and members as well - what a class on the class path reaches, sharing a package with the module's own. |
+
+Private, local and anonymous classes are never hashed. A module reads again only the class files that changed since
+its last build and keeps the hash of every other one; changing the mode reads them all.
+
+{% demos 4 %}
+
 ## Passing extra arguments to a tool
 
 Jenesis picks sensible flags for `javac` and the other tools it forks, but sometimes you need one more. You

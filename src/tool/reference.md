@@ -243,6 +243,7 @@ and small, or a machine builds many projects now and then, the cache is the bett
 | `jenesis.observe.jfr` | `true` | Record the test JVM with Java Flight Recorder when a `jfr.properties` is present. |
 | `jenesis.artifact.revapi` | `report` | What the revapi plugin does, read by the plugin: `report` records the differences that reach its severity, `strict` fails the build on any of them, and `ignore` skips it. Any other value is refused. |
 | `jenesis.generate.classpath` | `true` | Write `META-INF/services` files, and `Enable-Native-Access` for a module granting itself, from `module-info` when a `classpath.properties` is present - see *[A modular jar on the class path](/tool/packaging/#a-modular-jar-on-the-class-path)*. |
+| `jenesis.abi.mode` | *(unset)* | Record each module's ABI as an `abi.properties` with one hash per class file: `modular` for the public and protected members of the packages a module exports, `classpath` for every package with its package-private members as well; unset records none - see *[Recording a module's ABI](/tool/building-and-running/#recording-a-module-s-abi)*. |
 
 The quality and packaging *files* these keys gate (`jdeps.properties`, `packaging.properties`, and the like)
 are covered in *[Code quality &amp; testing](/tool/code-quality-and-testing/)*, *[Generating
@@ -407,6 +408,7 @@ in the linked chapter.
 | `classes` | The version-stamped classes exposed to downstream consumers. |
 | `validate` | Byte-code analysis (jdeps and jdeprscan, as `validate/<tool>`, and plugins such as SpotBugs and forbiddenapis, as `validate/custom/<name>`). |
 | `classpath` | The `META-INF/services` files and manifest attribute that let a modular jar run on the class path, when a `classpath.properties` is present (as `classpath/services`). |
+| `abi` | The `abi.properties` with one hash per class file, when `jenesis.abi.mode` is set (as `abi/extract`). |
 | `artifacts` | The packaged jar. |
 | `check` | Static-analysis findings (Checkstyle, PMD, detekt, …). |
 | `format` | Formatting verification, or an in-place rewrite. |
