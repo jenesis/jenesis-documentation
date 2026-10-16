@@ -476,6 +476,13 @@ file as it was. The mode decides what counts:
 Private, local and anonymous classes are never hashed. A module reads again only the class files that changed since
 its last build and keeps the hash of every other one; changing the mode reads them all.
 
+With an ABI recorded, a module whose required modules changed only below their ABI - a method body, a private member
+- is not compiled again; the build prints its `javac` step as `[SKIPPED]`. A change to the ABI of a required module
+compiles it again, as does any change to an annotation processor, and a test module is compiled again whenever the
+module it tests changed, since a test reaches that module's package-private members. The mode is the build's to choose:
+`modular` matches modules that read each other on the module path, `classpath` a project whose modules are on the
+class path.
+
 {% demos 4 %}
 
 ## Passing extra arguments to a tool
