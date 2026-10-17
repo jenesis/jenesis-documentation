@@ -100,7 +100,10 @@ curl -fsSL https://get.jenesis.build | JENESIS_MODE=submodule bash
 That adds the submodule at `build/.upstream`, records it as shallow, checks it out at the version you asked
 for, links `build/jenesis` into it, and stages all of it for you to commit. Jenesis is read at its pinned
 commit and its history is never browsed from your project, so the shallow flag keeps every fresh checkout
-cheap.
+cheap. The installer also checks out only the engine's `sources/` folder and fetches none of the repository's
+tests and demos, so the download is about the size of the vendored copy. `git -C build/.upstream
+sparse-checkout disable` brings in the rest, and a fresh clone's `git submodule update` checks out the whole
+commit.
 
 The pinned commit is a hash of the tree it names, and your git client checks it on every fetch and checkout,
 so this route verifies what it brings in the same way the `jenesis` command verifies a vendored copy - a
