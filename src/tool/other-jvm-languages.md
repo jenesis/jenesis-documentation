@@ -152,6 +152,11 @@ hands `kotlinc` the tested module's jar as a friend path when it compiles the te
 Maven plugin do. A test that calls an `internal` function compiles without an argument of its own, in a
 `pom.xml` build's test sources and in a module that names its tested module with `@jenesis.test`.
 
+The build names a module for `kotlinc` after its artifact ID, as the Kotlin Maven plugin does, or after its
+module name where it publishes no artifact, and its tests after that name with `_test` appended. It is the name
+of the `META-INF/<name>.kotlin_module` file and the suffix of the binary name of an `internal` member. A
+`-module-name` line in `process-kotlinc.properties` names the module otherwise.
+
 {% demos 45 %}
 
 ## A compiler plugin

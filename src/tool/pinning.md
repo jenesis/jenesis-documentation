@@ -26,7 +26,10 @@ It is opt-in - not part of `build` - and it writes into your project tree rather
 with the project. `pin` runs the build it pins, so whatever the changed versions reach is built again, a
 module's tests included; `-Djenesis.test.skip=true` leaves the tests to the next build. It runs last, after `stage`
 and a [dry release](/tool/publishing/#rehearsing-and-publishing-a-release), so the tool a release plugin resolves is
-pinned too. A managed entry that `pin` rewrites keeps its `<exclusions>`, those an imported bill of
+pinned too. In a `<dependencyManagement>`, `pin` updates an entry it resolves where it stands and adds the others
+at its end; every other entry, an imported bill of materials, the entry of a module the build builds and every
+comment stays as written. A `-SNAPSHOT` is given no checksum, as it is published again under its version, and an
+entry that carries a checksum `pin` wrote but that nothing resolves any longer is dropped. A managed entry that `pin` rewrites keeps its `<exclusions>`, those an imported bill of
 materials declares for it included, and the `<scope>` such a bill of materials gives it. An entry whose
 `<version>` is a property, such as `${kotlin.version}`, keeps the property, and its comment names the version the
 checksum was taken of (`<!--Checksum/SHA-256/… 2.2.20-->`): once the property names another version, the

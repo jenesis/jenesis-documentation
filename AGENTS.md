@@ -124,7 +124,7 @@ than a heading and must match the id the repository server emits, not the wordin
   `classpath.<layer>` (when non-empty), `enableNativeAccess`, and `addReads`, `addExports` and `addOpens` from
   the lines of `process-java.properties`, plus the manifest's `Main-Class` - nothing else; the other descriptor
   keys and manifest attributes are launcher capabilities for jars assembled by other means. A subfolder is
-  named after the module its jar carries, or the URL-encoded coordinate for a jar that declares none; the
+  named after the module its jar carries, or the coordinate with its segments joined by `~` for a jar that declares none; the
   application's own classes sit under `classes.jar/`.
 - **Module index.** Every URL needs the trailing file segment (`/module/<name>/<name>.jar`); `/module/`,
   `/sources/` and `/documentation/` serve named modules only, `/artifact/` also automatic ones; an unknown
