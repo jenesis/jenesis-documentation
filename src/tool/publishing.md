@@ -549,6 +549,12 @@ JReleaser reads its credentials from its `JRELEASER_*` environment variables, as
 `jenesis.variable.github.token` from your own `~/.jenesis/jenesis.properties`. Once the plugin hands JReleaser a
 settings file - the version alone makes one - that file stands in for `~/.jreleaser/config.properties`.
 
+JReleaser releases a version without `-SNAPSHOT`. The staged Maven tree names a snapshot as Maven installs one,
+`library-1.0.0-SNAPSHOT.jar`, without the timestamp that JReleaser's Maven deployers read from every file name,
+and they fail on it. A snapshot is released into a repository of your own with `jenesis.deploy.uri`, as
+[releasing into a Maven repository of your own](#releasing-into-a-maven-repository-of-your-own) describes, which
+stamps every file as Maven deploys it. Maven Central's snapshot repository is refused there, as Central is.
+
 <div class="warning">
   The plugin runs JReleaser as a <strong>dry run by default</strong>: every local phase runs and every remote one
   is skipped. A real release needs <code>-Djenesis.release.publish=true</code> on the command line, which no file
