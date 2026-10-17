@@ -490,10 +490,10 @@ allows it, and so is a release that publishes while `jenesis.repository.offline`
 fails the release naming the setting, one that already holds other content at a path asks for a new version,
 and any other answer than success stops it, naming the address and the status.
 
-<div class="warning">
-  Maven Central is refused by name: it takes a release signed and through its own publishing service, which is
-  what the JReleaser plugin runs, as the next section shows. <code>jenesis.deploy.uri</code>
-  names a repository of your own.
+<div class="tip">
+  A release to Maven Central goes through the JReleaser plugin, as the next section shows: Central takes a
+  release only signed and through its own publishing service, and <code>jenesis.deploy.uri</code> signs nothing.
+  Central's snapshot repository takes a snapshot from <code>jenesis.deploy.uri</code> as any repository does.
 </div>
 
 {% demos 72 %}
@@ -513,27 +513,21 @@ independently of how the build produces artifacts.
 
 You can still reach that tool through the same selector vocabulary as everything else. `release` is a target on
 every layout, and it depends on `stage`, so what a release tool uploads is always the tree this build just
-produced. The JReleaser plugin runs JReleaser there, in the build's own JVM. Name it in
-`jenesis.plugins.properties`:
-
-```properties
-jreleaser+release=build.jenesis.plugin.jreleaser
-```
-
-A plugin of `release` runs where a configuration folder holds its `plugin-<name>.properties`:
-
-```properties
-# build.jenesis/plugin-jreleaser.properties
-@jreleaser=jreleaser.yml
-```
+produced. Where the project's root holds a `jreleaser.yml` (or a `.yaml`, `.toml` or `.json`), `release` runs
+JReleaser there, in the build's own JVM, through the JReleaser plugin of
+[jenesis-plugins](https://github.com/jenesis/jenesis-plugins). The build resolves the plugin by itself, so
+nothing names it:
 
 ```bash
 java -Djenesis.release.publish=true -Djenesis.project.version=1.0.0 build/jenesis/Make.java release
 ```
 
+An optional `jreleaser.properties` in the configuration folder holds its values, and
+`-Djenesis.release.jreleaser=false` leaves the plugin out. A `jreleaser` line of `jenesis.plugins.properties` is
+refused while the file is at the root, as it would take the plugin's name.
+
 | Value | Meaning |
 | --- | --- |
-| `@jreleaser=<file>` | The JReleaser configuration: a `jreleaser.yml`, `.yaml`, `.toml` or `.json`. |
 | `command` | The JReleaser command to run, `full-release` by default. |
 | `JRELEASER_*` | A setting JReleaser reads, handed to it as its settings file. |
 
@@ -545,7 +539,7 @@ configuration. Each is named in camel case after a `jenesis` prefix: `{{ jenesis
 Maven tree, and `{{ jenesisScmUrl }}` the `scm.url` of `project.properties`.
 
 JReleaser reads its credentials from its `JRELEASER_*` environment variables, as on the command line. A
-`JRELEASER_*` line can name one as well, such as `JRELEASER_GITHUB_TOKEN=@github.token`, which reads
+`JRELEASER_*` line of `jreleaser.properties` can name one as well, such as `JRELEASER_GITHUB_TOKEN=@github.token`, which reads
 `jenesis.variable.github.token` from your own `~/.jenesis/jenesis.properties`. Once the plugin hands JReleaser a
 settings file - the version alone makes one - that file stands in for `~/.jreleaser/config.properties`.
 
@@ -553,7 +547,7 @@ JReleaser releases a version without `-SNAPSHOT`. The staged Maven tree names a 
 `library-1.0.0-SNAPSHOT.jar`, without the timestamp that JReleaser's Maven deployers read from every file name,
 and they fail on it. A snapshot is released into a repository of your own with `jenesis.deploy.uri`, as
 [releasing into a Maven repository of your own](#releasing-into-a-maven-repository-of-your-own) describes, which
-stamps every file as Maven deploys it. Maven Central's snapshot repository is refused there, as Central is.
+stamps every file as Maven deploys it, into Maven Central's snapshot repository as into any other.
 
 <div class="warning">
   The plugin runs JReleaser as a <strong>dry run by default</strong>: every local phase runs and every remote one
