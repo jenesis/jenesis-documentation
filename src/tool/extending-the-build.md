@@ -727,6 +727,10 @@ code, and a thread the tool leaves running ends with the JVM. Under `jenesis.pro
 sets, that JVM starts from an ahead-of-time cache of the tool in `.jenesis/aot/`, trained on its first call. A command line of another
 shape - a module path, `-jar`, an argument file - is forked as it stands.
 
+A handler marked `shared(true)`, as a compiler's is, runs its calls side by side in one JVM in every mode, as long as
+`jenesis.process.shared` is not `false`: under `fork` and `aot` that JVM ends with the build, and under `daemon` it is
+kept for the next one. Each call's output is still its own, which the JVM routes by the thread that runs the call.
+
 A tool whose main method calls `System.exit` on a call the build accepts takes its warm JVM with it every time.
 Run it through a driver instead: a class of your plugin with a `public static int main(String[])` that calls the
 entry point the tool offers short of its main method and returns the code. Compile it against the tool with
