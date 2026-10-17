@@ -3,7 +3,7 @@
 ![deploy](https://github.com/jenesis/jenesis-documentation/actions/workflows/deploy.yml/badge.svg)
 
 > ### [Jenesis](https://jenesis.build) - a modern Java build tool
-> _Java-native config, plugin-free, with `module-info.java` treated as a feature, not an afterthought._
+> _Java-native config, everything the JDK provides built in, with `module-info.java` treated as a feature, not an afterthought._
 
 The documentation site for the Jenesis product family, published at **[jenesis.build](https://jenesis.build)**.
 

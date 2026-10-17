@@ -10,8 +10,9 @@ every build is driven by. Everything later in this section assumes only what is 
 
 ## Prerequisites
 
-Jenesis needs **a JDK, version 25 or newer, and nothing else** - no wrapper, no plugin tree to download. A
-build is an ordinary Java program that the JDK launches directly, so if `java --version` reports 25 or
+Jenesis needs **a JDK, version 25 or newer, and nothing else** - no wrapper to install. Everything the JDK
+provides is built in, and a tool a build has to download anyway, such as a linter or another language's compiler,
+is fetched only by a project that uses it. A build is an ordinary Java program that the JDK launches directly, so if `java --version` reports 25 or
 above, you are ready. What a project carries is under two megabytes of readable Java, where a build tool
 distributed as binaries is megabytes of compiled code downloaded from a server you do not control.
 
