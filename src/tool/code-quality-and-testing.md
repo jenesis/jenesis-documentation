@@ -204,7 +204,7 @@ Both use the tool of the JDK the build runs on. Running a build on a newer JDK, 
 removal before the code runs on it. Their reports are `reports/jdeps/jdeps.txt` and
 `reports/jdeprscan/jdeprscan.txt`, one finding per line.
 
-{% demos 37, 46, 50, 52 %}
+{% demos 37, 47, 51, 53 %}
 
 ## Analysis inside the compiler
 
@@ -354,7 +354,7 @@ After a rewrite, a plain build passes the verify gate again.
   project's <code>codenarc.xml</code> lints but nothing reformats.
 </div>
 
-{% demos 37, 46 %}
+{% demos 37, 47 %}
 
 ## Where the reports land
 
@@ -434,7 +434,7 @@ Because the file lives in a configuration folder, a profile switches the recordi
 file runs the tests again. Set `-Djenesis.observe.jfr=false` to suppress the recording even when the file is
 present.
 
-{% demos 39 %}
+{% demos 41 %}
 
 ## Narrowing a test run
 
@@ -569,7 +569,7 @@ on every save and a narrowed test pass keeps the feedback loop tight.
   the whole suite - a plain <code>build</code> with selection off.
 </div>
 
-{% demos 40 %}
+{% demos 39 %}
 
 ## Mutation testing
 
@@ -610,7 +610,7 @@ project's own resolved `junit-platform`, so it always lines up with the test fra
 lands under `reports/pitest/`, and `-Djenesis.plugin.pitest=false` suppresses the run while keeping the file in
 place.
 
-{% demos 41 %}
+{% demos 42 %}
 
 ## API compatibility
 
@@ -711,7 +711,7 @@ classification, and a `[FINDINGS]` line counts them.
 fails it on any difference reported, and `ignore` skips revapi. It resolves in its own `revapi` group, with
 `revapi-java`, `revapi-basic-features` and `revapi-reporter-json` and what they depend on, beside the baseline.
 
-{% demos 44 %}
+{% demos 45 %}
 
 ## Seeing every failure at once
 

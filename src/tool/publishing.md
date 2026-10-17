@@ -33,7 +33,7 @@ requires the module by name, and the local repositories are read before any remo
 the latest export, with a pinned version that version's build. A consumer does not notice a new export on its
 own; it takes one when it is rebuilt with `-Djenesis.executor.rebuild=true`.
 
-{% demos 71 %}
+{% demos 72 %}
 
 ## Staging the release tree
 
@@ -221,7 +221,7 @@ that is not a 40-character Git tree id fails the build. When
 notation SPDX uses for a download location: `git+https://github.com/jenesis/jenesis.git@<revision>`. A tag of
 `HEAD`, which a `pom.xml` declares for the root of its repository, counts as no tag there.
 
-{% demos 72 %}
+{% demos 73 %}
 
 ## Publishing variants of a jar
 
@@ -270,7 +270,7 @@ empty `classifiers.properties` declares none. A release that gathers several pla
 of its own. A module of the same build [selects a variant](/tool/pinning/#pinning-one-variant-of-a-module) by
 its classifier, which then takes the jar's place on every path that module is built and run with.
 
-{% demos 65 %}
+{% demos 66 %}
 
 ## Publishing a bill of materials
 
@@ -387,7 +387,7 @@ detached signature made afterwards covers the signed bytes.
   delete <code>target/</code> after a key rotation.
 </div>
 
-{% demos 70 %}
+{% demos 71 %}
 
 ## Rehearsing and publishing a release
 
@@ -496,7 +496,7 @@ and any other answer than success stops it, naming the address and the status.
   Central's snapshot repository takes a snapshot from <code>jenesis.deploy.uri</code> as any repository does.
 </div>
 
-{% demos 72 %}
+{% demos 73 %}
 
 ## The last mile: signing and uploading
 
