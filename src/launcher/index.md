@@ -24,7 +24,7 @@ dependencies' class bytes are never copied into memory or unpacked to disk.
 
 ## When to use it
 
-A launcher jar is the right form when you want **one file that runs on any Java 25 or newer** with nothing
+A launcher jar is the right form when you want **one file that runs on any Java 11 or newer** with nothing
 installed beside it: a command-line tool, a service started with a plain `java -jar`, an artifact you hand to
 someone else. It carries no Java runtime of its own. When the runtime should travel with the program, the
 build tool's jpackage image and native image are the alternatives; its
@@ -33,7 +33,8 @@ build tool's jpackage image and native image are the alternatives; its
 ## What it is
 
 The launcher is a small library, published to Maven Central as `build.jenesis:build.jenesis.launcher` and
-compiled for Java 25. You never call it yourself. The Jenesis build tool resolves it, copies its classes into
+compiled for Java 11, so the release the application's own classes target decides the oldest JVM its jar
+starts on. You never call it yourself. The Jenesis build tool resolves it, copies its classes into
 the jar it produces, and names it as that jar's `Main-Class`. A single `launcher=true` line in
 `packaging.properties` is the whole switch - *[Producing a launcher jar](/launcher/producing-a-launcher-jar/)*
 shows it.

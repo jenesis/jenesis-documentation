@@ -176,7 +176,9 @@ through the lookup the module asking for the layer passes, so the JDK checks tha
 native access of its own, it is warned about or refused as if it had granted the layer itself. The build
 tool writes all three from the `@jenesis.native` declarations of the module it packages, and from the
 `@jenesis.layer <name> native` lines of each module it grants - see
-[*Building &amp; running*](/tool/building-and-running/#granting-native-access).
+[*Building &amp; running*](/tool/building-and-running/#granting-native-access). On a JVM older than Java 22,
+which restricts no native code, the launcher grants nothing, but a name that is not among the modules is still
+refused.
 
 ## Emulating a signed jar
 A dependency that shipped as a *signed* jar loses its signer identity when exploded: its signature files

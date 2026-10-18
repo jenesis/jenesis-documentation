@@ -15,7 +15,7 @@ repositories next to this one; the paths below are relative to such a checkout.
 | Section | Tool | Repository | Where to look | How to verify |
 |---|---|---|---|---|
 | `src/tool/` | Jenesis, the build tool | [jenesis/jenesis](https://github.com/jenesis/jenesis) | `sources/build/jenesis/**`, `demo/**` (one README per demo), `install.sh`, `jreleaser.yml`, `sdk/` | `grep -rn` over `sources/`; run a demo with `java build/jenesis/Project.java`; the tool's own `help` output |
-| `src/jpx/` | jpx, the module runner | [jenesis/jenesis](https://github.com/jenesis/jenesis) | `sources/build/jenesis/Jpx.java`, `sources/build/jenesis/docker/`, `sdk/jpx/`, `demo/demo-76-jpx` | `java build/jenesis/Jpx.java <target>` from a project that carries `build/jenesis/` |
+| `src/jpx/` | jpx, the module runner | [jenesis/jenesis](https://github.com/jenesis/jenesis) | `sources/build/jenesis/Jpx.java`, `sources/build/jenesis/docker/`, `sdk/jpx/`, `demo/demo-77-jpx` | `java build/jenesis/Jpx.java <target>` from a project that carries `build/jenesis/` |
 | `src/launcher/` | Jenesis Launcher | [jenesis/jenesis-launcher](https://github.com/jenesis/jenesis-launcher) | `sources/build/jenesis/launcher/**`; what the build writes into a jar is `sources/build/jenesis/step/Launcher.java` in jenesis/jenesis | `demo-09` and `demo-10` ship a `build/DemoLauncher.java` |
 | `src/modules/` | the Jenesis Module Index | [jenesis/jenesis-modules](https://github.com/jenesis/jenesis-modules) | `worker/index.js` (the service), `sources/build/jenesis/crawler/**`, `data/**`, `.github/workflows/` (schedules) | `curl -sI https://repo.jenesis.build/...` - the live service answers |
 | `src/repository/` | Jenesis Repository | [jenesis/jenesis-repository](https://github.com/jenesis/jenesis-repository) | `source/**`, `test/**`, `Dockerfile`, `source/bundle/module-info.java`, each module's `application.properties`, `RepositoryProperties.java` | `docker run jenesisbuild/jenesis-repository` (or a local build of it), then the console and the clients against it |
@@ -124,7 +124,7 @@ than a heading and must match the id the repository server emits, not the wordin
   `classpath.<layer>` (when non-empty), `enableNativeAccess`, and `addReads`, `addExports` and `addOpens` from
   the lines of `process-java.properties`, plus the manifest's `Main-Class` - nothing else; the other descriptor
   keys and manifest attributes are launcher capabilities for jars assembled by other means. A subfolder is
-  named after the module its jar carries, or the URL-encoded coordinate for a jar that declares none; the
+  named after the module its jar carries, or the coordinate with its segments joined by `~` for a jar that declares none; the
   application's own classes sit under `classes.jar/`.
 - **Module index.** Every URL needs the trailing file segment (`/module/<name>/<name>.jar`); `/module/`,
   `/sources/` and `/documentation/` serve named modules only, `/artifact/` also automatic ones; an unknown

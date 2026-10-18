@@ -217,7 +217,7 @@ execution and Gradle a second `Test` task. Each run is a module of its own: two 
 holds the tests, scan it, and pass their own JVM options and system properties in their own
 `process-test.properties`.
 
-{% demos 43 %}
+{% demos 40 %}
 
 ### Tests that read their resources as files
 
@@ -357,7 +357,7 @@ with `maven.compiler.release` at `8`, the descriptor lives in `src/main/java/MET
 that declares none is given its module name by a `<!--jenesis.alias <module> <groupId>/<artifactId>-->`
 comment in the POM.
 
-{% demos 12, 45 %}
+{% demos 12, 46 %}
 
 ### Source and API-documentation jars
 
@@ -385,7 +385,7 @@ documents the generated classes, and the sources jar carries their source files 
 from, as Maven's does. The sources jar also holds the module's resources, those `jenesis.project.resources`
 places among them included, as Maven's and Gradle's sources jars do.
 
-{% demos 72 %}
+{% demos 73 %}
 
 ### Reproducible archives
 
@@ -686,7 +686,7 @@ such a module without a version takes that module's own version.
 The same tag, with a language plugin's tool group in front (`@jenesis.plugin kotlin:tool <coordinate>`), declares a
 compiler plugin for another language - covered in *Other JVM languages*.
 
-{% demos 14, 42 %}
+{% demos 14, 43, 44 %}
 
 ## Running a module's main
 
@@ -757,7 +757,7 @@ java -Djenesis.execute.module=tools \
   current project is the job of <a href="/jpx/">jpx</a>.
 </div>
 
-{% demos 9, 10, 54 %}
+{% demos 9, 10, 55 %}
 
 ## Attaching a Java agent
 
@@ -804,7 +804,7 @@ module demo.agents.test {
   are ordinary dependencies otherwise: they resolve, pin, and appear in the bill of materials like any other.
 </div>
 
-{% demos 53 %}
+{% demos 54 %}
 
 ## Granting native access
 
@@ -896,7 +896,7 @@ build on it:
 java -Djenesis.dependency.native=warn build/jenesis/Make.java
 ```
 
-{% demos 54, 55 %}
+{% demos 55, 56 %}
 
 ## Watch mode
 

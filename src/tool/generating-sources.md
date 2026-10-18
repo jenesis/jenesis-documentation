@@ -212,7 +212,7 @@ or ProGuard rules, join the jar. KSP itself resolves in the group `ksp:runtime`,
 `ksp`, because a processor brings a Kotlin standard library of its own that KSP does not use. Its arguments
 go in `process-ksp.properties`.
 
-{% demos 48 %}
+{% demos 49 %}
 
 ## Turning one off
 

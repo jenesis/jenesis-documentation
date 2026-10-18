@@ -55,7 +55,7 @@ already produced.
   <code>.java</code> sources for resolution.
 </div>
 
-{% demos 45, 49, 51 %}
+{% demos 46, 50, 52 %}
 
 ## Which packages you can export
 
@@ -140,10 +140,10 @@ instead, as the `kotlinc` command passes them, so the last line gives that JVM `
 
 `-Djenesis.kotlin.incremental=true` compiles Kotlin incrementally, as Gradle does by default: after an edit, only
 the sources the change reaches are compiled again. The compiler runs through the Kotlin Build Tools API, which needs
-Kotlin 2.3 or newer, in a JVM of its own, or in one the build keeps warm under `jenesis.process.mode=daemon`, rather than in Kotlin's own daemon. `-Djenesis.scala.incremental=true` compiles Scala with Zinc, the
+Kotlin 2.3 or newer, in the JVM every compilation of the build shares, rather than in Kotlin's own daemon. That JVM ends with the build, unless `jenesis.process.mode=daemon` keeps it for the next one. `-Djenesis.scala.incremental=true` compiles Scala with Zinc, the
 incremental compiler sbt is built on, in the same way.
 
-{% demos 45, 48 %}
+{% demos 46, 49 %}
 
 ## Tests and internal declarations
 
@@ -152,7 +152,12 @@ hands `kotlinc` the tested module's jar as a friend path when it compiles the te
 Maven plugin do. A test that calls an `internal` function compiles without an argument of its own, in a
 `pom.xml` build's test sources and in a module that names its tested module with `@jenesis.test`.
 
-{% demos 45 %}
+The build names a module for `kotlinc` after its artifact ID, as the Kotlin Maven plugin does, or after its
+module name where it publishes no artifact, and its tests after that name with `_test` appended. It is the name
+of the `META-INF/<name>.kotlin_module` file and the suffix of the binary name of an `internal` member. A
+`-module-name` line in `process-kotlinc.properties` names the module otherwise.
+
+{% demos 46 %}
 
 ## A compiler plugin
 
@@ -185,7 +190,7 @@ group, and `scalac` loads the plugin the same way.
 The plugin's version is pinned the usual way, coordinated to the compiler - the `pin` step writes back its
 `@jenesis.pin` line for you.
 
-{% demos 47 %}
+{% demos 48 %}
 
 ## API documentation
 
@@ -227,4 +232,4 @@ dokka.footer-message=Documented by Dokka, built by Jenesis
 
 Dokka failing, including on a warning under `dokka.fail-on-warning=true`, fails the build.
 
-{% demos 45 %}
+{% demos 46 %}
