@@ -135,7 +135,7 @@ function listed(path, count, generated, note) {
   return { path, count, generated, note, lines: null };
 }
 
-const JENESIS = { key: "jenesis", name: "Jenesis", release: "Jenesis 0.15.3" };
+const JENESIS = { key: "jenesis", name: "Jenesis", release: "Jenesis 0.16.1" };
 const MAVEN = { key: "maven", name: "Maven", release: "Maven 3.9.16" };
 const GRADLE = { key: "gradle", name: "Gradle", release: "Gradle 9.8.0" };
 const BAZEL = { key: "bazel", name: "Bazel", release: "Bazel 9.2.0" };
