@@ -9,7 +9,7 @@ rm -rf target
 java build/jenesis/Make.java stage
 cmp build/first.cdx.json "$sbom"
 rm build/first.cdx.json
-unzip -p "$jar" META-INF/sbom/app.cdx.json | cmp - "$sbom"
+unzip -p "$jar" META-INF/sbom/demo/app.cdx.json | cmp - "$sbom"
 grep -F '"supplier": { "name": "Example Org"' "$sbom"
 grep -F '"manufacturer": { "name": "Example Org"' "$sbom"
 grep -F '"publisher": "Example Org"' "$sbom"

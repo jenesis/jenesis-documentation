@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-digest() { (cd "$1" && find target/stage -type f -exec sha256sum {} + | sort -k 2 | sha256sum); }
+digest() { (cd "$1" && find target/stage/*/output -type f -exec sha256sum {} + | sort -k 2 | sha256sum); }
 rm -rf target
 java build/jenesis/Make.java stage
 second=target/second
