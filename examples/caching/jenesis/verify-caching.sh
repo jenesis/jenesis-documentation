@@ -8,7 +8,7 @@ cp "$main" "$greeter" "$saved"
 trap 'cp "$saved"/Main.java "$main"; cp "$saved"/Greeter.java "$greeter"; rm -rf "$saved"' EXIT
 rm -rf target .jenesis/cache
 
-compile=module-sources/produce/assemble/binary/compiled/compile/javac
+compile=build-module-sources/produce/assemble/binary/compiled/compile/javac
 
 build() {
     echo "\$ java build/jenesis/Make.java    # $1"

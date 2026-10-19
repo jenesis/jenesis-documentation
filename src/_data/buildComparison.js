@@ -135,7 +135,7 @@ function listed(path, count, generated, note) {
   return { path, count, generated, note, lines: null };
 }
 
-const JENESIS = { key: "jenesis", name: "Jenesis", release: "Jenesis 0.15.3" };
+const JENESIS = { key: "jenesis", name: "Jenesis", release: "Jenesis 0.16.1" };
 const MAVEN = { key: "maven", name: "Maven", release: "Maven 3.9.16" };
 const GRADLE = { key: "gradle", name: "Gradle", release: "Gradle 9.8.0" };
 const BAZEL = { key: "bazel", name: "Bazel", release: "Bazel 9.2.0" };
@@ -162,14 +162,14 @@ export default {
         jenesis: {
           status: "built",
           badge: "Source",
-          verdict: "Embedded in the repository as source: <code>build/jenesis/</code>, 2.3 MB. A clean build downloads nothing more: 189 files in total.",
+          verdict: "Embedded in the repository as source: <code>build/jenesis/</code>, a 0.6 MB download as a sources jar or a git submodule. A clean build downloads nothing more.",
           files: [
             file("hello/jenesis", "sources/module-info.java"),
             file("hello/jenesis", "sources/demo/hello/Main.java"),
           ],
           terminal: [
             "$ java build/jenesis/Execute.java",
-            "[COMPLETED] Finished in 2.65 seconds",
+            "[COMPLETED] Finished in 0.99 seconds",
             "Hello, world!",
           ],
           notes: [
@@ -180,7 +180,7 @@ export default {
         maven: {
           status: "manual",
           badge: "Download",
-          verdict: "The Maven Wrapper downloads a 9.4 MB binary release, and a clean build then 20 MB of plugins: about 13,400 files in total, counting those inside jars.",
+          verdict: "The Maven Wrapper downloads a 9.4 MB binary release, and a clean build then 20 MB of plugins: 30 MB in total.",
           files: [
             file("hello/maven", "pom.xml"),
             file("hello/maven", ".mvn/wrapper/maven-wrapper.properties", { generated: "mvn wrapper:wrapper" }),
@@ -196,7 +196,7 @@ export default {
         gradle: {
           status: "manual",
           badge: "Download",
-          verdict: "The Gradle Wrapper, a 47 KB jar in the repository, downloads a 152 MB binary release, and this build needs no plugin beyond it: about 102,800 files in total, counting those inside jars.",
+          verdict: "The Gradle Wrapper, a 47 KB jar in the repository, downloads a 152 MB binary release, and this build needs no plugin beyond it: 152 MB in total.",
           files: [
             file("hello/gradle", "build.gradle.kts"),
             file("hello/gradle", "settings.gradle.kts"),
@@ -212,7 +212,7 @@ export default {
         },
         bazel: {
           status: "none",
-          verdict: "The repository cannot bootstrap Bazel: every machine installs Bazelisk first, 7 MB, which downloads the 66 MB Bazel binary <code>.bazelversion</code> names. A clean build then downloads 131 MB: about 76,300 files in total, counting those inside jars.",
+          verdict: "The repository cannot bootstrap Bazel: every machine installs Bazelisk first, 7 MB, which downloads the 66 MB Bazel binary <code>.bazelversion</code> names. A clean build then downloads 131 MB: 204 MB in total.",
           files: [
             file("hello/bazel", "MODULE.bazel"),
             file("hello/bazel", "BUILD.bazel", { note: "Without the toolchain, rules_java downloads a JDK 25 of its own to compile with." }),
@@ -226,7 +226,7 @@ export default {
             "INFO: Build completed successfully, 9 total actions",
             "Hello, world!",
           ],
-          notes: ["The sizes are for Linux. On first use the Bazel binary unpacks a further 195 MB, and the clean build's 131 MB hold a Python interpreter and the rulesets. The file count includes both."],
+          notes: ["The sizes are for Linux. The clean build's 131 MB hold a Python interpreter and the rulesets."],
         },
       },
     },
@@ -347,17 +347,17 @@ export default {
           terminal: [
             "$ java build/jenesis/Make.java",
             "tests >>>>       └─ greets() ✔",
-            "[COMPLETED] Finished in 3.01 seconds",
+            "[COMPLETED] Finished in 4.13 seconds",
             "$ java build/jenesis/Make.java    # nothing changed",
-            "[COMPLETED] Finished in 0.53 seconds",
+            "[COMPLETED] Finished in 0.91 seconds",
             "$ java build/jenesis/Make.java    # Main.java edited",
-            "[COMPLETED] Finished in 1.96 seconds",
+            "[COMPLETED] Finished in 2.54 seconds",
             "$ java build/jenesis/Make.java    # Greeter.java edited",
             "tests >>>>       └─ greets() ✔",
-            "[COMPLETED] Finished in 2.76 seconds",
+            "[COMPLETED] Finished in 3.85 seconds",
             "$ rm -rf target",
             "$ java build/jenesis/Make.java",
-            "[COMPLETED] Finished in 0.58 seconds",
+            "[COMPLETED] Finished in 1.10 seconds",
           ],
           notes: [
             "<code>GreeterTest</code> reaches <code>Greeter</code> but not <code>Main</code>. The terminal shows the test each build ran and its last line; <code>-Djenesis.print.tests=true</code> prints the tests.",
@@ -497,13 +497,14 @@ export default {
       id: "kotlin-with-a-compiler-plugin",
       title: "Kotlin with a compiler plugin",
       lede: `<p>Kotlin sources and the kotlinx.serialization compiler plugin, targeting JVM 25. Jenesis sees the
-        <code>.kt</code> files and runs the Kotlin compiler before <code>javac</code>; the plugin is one
-        <code>@jenesis.plugin</code> line, resolved in the compiler's own dependency group. The compiler and the
-        plugin are pinned here.</p>`,
+        <code>.kt</code> files and runs the Kotlin compiler before <code>javac</code>, through an official plugin it
+        fetches without being asked; the compiler plugin is one <code>@jenesis.plugin</code> line, resolved in the
+        compiler's own dependency group. The compiler and the compiler plugin are pinned here.</p>`,
       tools: {
         jenesis: {
-          status: "built",
-          verdict: "The compiler is inferred; the plugin is one line.",
+          status: "plugin",
+          badge: "Official plugin",
+          verdict: "The compiler is inferred from the sources; the compiler plugin is one line.",
           files: [file("kotlin/jenesis", "sources/module-info.java")],
         },
         maven: {
@@ -533,16 +534,17 @@ export default {
       id: "classes-from-an-avro-schema",
       title: "Classes from an Avro schema",
       lede: `<p>A schema compiled into Java as part of the build, next to a hand-written class that uses it. With
-        Jenesis the schema sits in the build's own folder beside the sources, and an empty
-        <code>avro.properties</code> switches the generator on. The schema is an input to the build and is not
-        copied into the jar.</p>`,
+        Jenesis the schema sits in the build's own folder beside the sources, and a one-line
+        <code>avro.properties</code> binds it and switches on the generator, an official plugin the build fetches
+        without being asked. The schema is an input to the build and is not copied into the jar.</p>`,
       tools: {
         jenesis: {
-          status: "built",
-          verdict: "An empty file switches the generator on.",
+          status: "plugin",
+          badge: "Official plugin",
+          verdict: "One line binds the schemas and switches the generator on.",
           files: [
             file("avro/jenesis", "sources/module-info.java"),
-            listed("sources/META-INF/build.jenesis/avro.properties", 0, null, "Empty."),
+            file("avro/jenesis", "sources/META-INF/build.jenesis/avro.properties"),
             file("avro/jenesis", "sources/META-INF/build.jenesis/user.avsc"),
           ],
         },
@@ -583,12 +585,12 @@ export default {
           files: [],
           terminal: [
             "$ java build/jenesis/Make.java stage",
-            "$ find target/stage -type f -exec sha256sum {} + | sort -k 2 | sha256sum",
-            "e4c3ec9fbe45ebfda664de841e667dd517233c2990558333e596c5f76ccdc3cd  -",
+            "$ find target/stage/*/output -type f -exec sha256sum {} + | sort -k 2 | sha256sum",
+            "8793305d00474bb3180ae4441790b5cc63a6e058782784e9a12b67d1c650348b  -",
             "$ rm -rf target",
             "$ java build/jenesis/Make.java stage",
-            "$ find target/stage -type f -exec sha256sum {} + | sort -k 2 | sha256sum",
-            "e4c3ec9fbe45ebfda664de841e667dd517233c2990558333e596c5f76ccdc3cd  -",
+            "$ find target/stage/*/output -type f -exec sha256sum {} + | sort -k 2 | sha256sum",
+            "8793305d00474bb3180ae4441790b5cc63a6e058782784e9a12b67d1c650348b  -",
           ],
           notes: ["<code>jenesis.archive.timestamp</code> sets another date, such as the last commit's."],
         },
