@@ -1,14 +1,14 @@
 ---
 order: 10
 title: Code quality & testing
-description: The linters, the compiler plugin, formatters, coverage, test selection, mutation testing and API-compatibility checks Jenesis runs for you - each turned on by its configuration file or a line naming its plugin, with no build script.
+description: The linters, the compiler plugin, formatters, recipes, coverage, profiling, test selection, mutation testing and API-compatibility checks Jenesis runs for you - each turned on by its file in a configuration folder, with no build script.
 ---
 
 A healthy codebase runs more than a compiler over its sources. Jenesis wires in the usual quality tools
-(static analysis, formatters, coverage, mutation testing) and a faster inner test loop. A tool of the build
-turns itself on when its configuration file is present, and stays off when it is not; a plugin runs where
-`jenesis.plugins.properties` names it and its `plugin-<name>.properties` is found. This chapter is the set of
-tools and how each one behaves.
+(static analysis, formatters, coverage, profiling, mutation testing) and a faster inner test loop. Each tool
+turns itself on when a configuration folder holds its file, and stays off when none does. A tool the build
+downloads is an official plugin, which the build resolves by itself wherever it finds that file: no line of
+`jenesis.plugins.properties` names it. This chapter is the set of tools and how each one behaves.
 
 Every file below lives in a **configuration folder** (`build.jenesis/` by default). *[Configuration](/tool/configuration/)* covers
 where those folders sit and how per-module and profile overrides work; here we only care about which file
@@ -16,144 +16,133 @@ switches on which tool.
 
 ## Static analysis
 
-The linters of the sources are plugins. A line of `jenesis.plugins.properties`, beside `jenesis.properties`,
-names each at the hook point `check`, which runs it beside the module's own checks. The plugin runs in a module
-where its `plugin-<name>.properties` is found in a configuration folder, and that file binds the configuration
-its tool reads:
+Each linter is switched on by a properties file named after it, such as `checkstyle.properties`. The file names
+the tool's own configuration as `configuration=<path>`, resolved against the folder of the properties file, and
+the build hands that file to the tool under the name the tool reads, whatever it is called. The other lines of
+the file are the plugin's values:
 
 ```properties
-# jenesis.plugins.properties
-checkstyle+check=build.jenesis.plugin.checkstyle
-pmd+check=build.jenesis.plugin.pmd
+# build.jenesis/checkstyle.properties
+configuration=checkstyle.xml
+checkstyle.severity=warning
 ```
 
-```properties
-# build.jenesis/plugin-pmd.properties
-@rules=../build.jenesis/pmd.xml
+Where no configuration folder holds the properties, the tool's own file under its conventional name switches
+the tool on alone and is handed to it as it stands, as a `pmd.xml` in `build.jenesis/` runs PMD. A file at the
+project root never switches a tool on.
+
+| Properties file | Or, alone | Tool | Inspects |
+| --- | --- | --- | --- |
+| `checkstyle.properties` | `checkstyle.xml` | Checkstyle | Java sources |
+| `pmd.properties` | `pmd.xml` | PMD | Java sources |
+| `detekt.properties` | `detekt.yml` | detekt | Kotlin sources |
+| `ktlint.properties` | `.editorconfig` | ktlint | Kotlin sources |
+| `scalastyle.properties` | `scalastyle-config.xml` | Scalastyle | Scala sources |
+| `scalafmt.properties` | `.scalafmt.conf` | scalafmt, as a check | Scala sources |
+| `codenarc.properties` | `codenarc.xml` | CodeNarc | Groovy sources |
+| `spotbugs.properties` | `spotbugs-exclude.xml` | SpotBugs | compiled classes |
+| `forbiddenapis.properties` | | forbiddenapis | compiled classes |
+| `jdeps.properties` | | the JDK's jdeps | compiled classes |
+| `jdeprscan.properties` | | the JDK's jdeprscan | compiled classes |
+
+Where a configuration folder holds the properties, the conventional file is never read in their place.
+Properties that leave out `configuration` fail the build, naming the key to add:
+
+```text
+.../build.jenesis/checkstyle.properties names no configuration - add configuration=checkstyle.xml, the file relative to checkstyle.properties
 ```
 
-`@rules=<path>` hands the file at the path, resolved against the module's folder, to the plugin as its input
-`rules`. SpotBugs and forbiddenapis read the compiled classes, at the hook point `binary/validate`; the JDK's
-own jdeps and jdeprscan turn on when their file is present in the configuration folder. Every check runs in its
-module's `verify` phase, once the module is built: the modules that depend on it build and run their tests
-without waiting for its checks, and a failed check still fails the build.
+A `configuration` naming a file that does not exist fails the build as well. SpotBugs runs without a filter, so
+a `spotbugs.properties` may leave `configuration` out and report every finding.
 
-| Plugin or file | Tool | Inspects |
-| --- | --- | --- |
-| `build.jenesis.plugin.checkstyle`, binding `checkstyle.xml` | Checkstyle | source files |
-| `build.jenesis.plugin.pmd`, binding `pmd.xml` | PMD | source files |
-| `build.jenesis.plugin.detekt`, binding `detekt.yml` | detekt (Kotlin) | source files |
-| `build.jenesis.plugin.ktlint@check`, binding `.editorconfig` | ktlint (Kotlin) | source files |
-| `build.jenesis.plugin.scalastyle`, binding `scalastyle-config.xml` | Scalastyle | source files |
-| `build.jenesis.plugin.scalafmt@check`, binding `.scalafmt.conf` | scalafmt (as a linter) | source files |
-| `build.jenesis.plugin.codenarc`, binding `codenarc.xml` | CodeNarc (Groovy) | source files |
-| `build.jenesis.plugin.spotbugs`, binding `spotbugs-exclude.xml` | SpotBugs | compiled classes |
-| `build.jenesis.plugin.forbiddenapis` | forbiddenapis | compiled classes |
-| `jdeps.properties` | the JDK's jdeps | compiled classes |
-| `jdeprscan.properties` | the JDK's jdeprscan | compiled classes |
+Every check runs in its module's `verify` phase, once the module is built: the modules that depend on it build
+and run their tests without waiting for its checks, and a failed check still fails the build. Each downloaded
+tool resolves in the tool group of its plugin, such as `checkstyle:tool`, kept apart from your project's own
+dependencies, floats a `RELEASE` version until pinned, and runs in a JVM of its own. A tool whose language is
+not present skips itself: detekt in a pure-Java project does nothing.
 
-The ktlint and scalafmt plugins also format, so `@check` selects their checker. The source linters run **in
-parallel with compilation**, since they read sources rather than classes; SpotBugs, forbiddenapis, jdeps and
-jdeprscan run once the classes exist. Each tool resolves in its own dependency group (named after the tool or
-the plugin, kept apart from your project's own dependencies), floats a `RELEASE` version until pinned, and runs
-in a JVM of its own. A tool whose language is not present skips itself: the detekt plugin in a pure-Java
-project does nothing.
+### Reporting or failing on findings
 
-### Report, strict or ignore
-
-Each linter has one setting that says what its findings do: `jenesis.source.<tool>` for the source linters and
-`jenesis.validator.<tool>` for the tools that read compiled classes, set on the command line or in `jenesis.properties`.
-
-| Value | The linter |
-| --- | --- |
-| `report` *(the default)* | runs and records its findings, but never fails the build |
-| `strict` | runs and fails the build on its findings |
-| `ignore` | does not run, though its configuration is in place |
-
-Any other value is refused, naming these three. Reporting by default makes it safe to turn a tool on across an
-existing codebase without an immediate red build. A linter that found something says so in one line, with the
-number of findings and where its report is:
+A linter **reports** by default: it runs and records its findings, but never fails the build. That makes it
+safe to turn a tool on across an existing codebase without an immediate red build. A linter that found
+something says so in one line, with the number of findings and where its report is:
 
 ```text
 [FINDINGS]  checkstyle found 2 findings, reported in target/build/.../reports/checkstyle/checkstyle-report.xml
 ```
 
-`-Djenesis.print.findings=false` leaves that line out, whatever the linter's setting. Under `strict`, as
-`-Djenesis.source.checkstyle=strict`, Checkstyle, PMD, detekt, ktlint, Scalastyle and scalafmt fail as their own
-exit code decides, so a Checkstyle finding at severity `warning` is reported but does not fail the build.
-SpotBugs, CodeNarc, forbiddenapis, jdeps and jdeprscan fail on any finding their report holds.
+`-Djenesis.print.findings=false` leaves that line out. To fail the build on a linter's findings, set its
+`jenesis.strict.<tool>` to `true`, on the command line or in `jenesis.properties`, as
+`-Djenesis.strict.checkstyle=true`. The setting exists for `checkstyle`, `pmd`, `detekt`, `ktlint`,
+`scalastyle`, `scalafmt`, `codenarc`, `spotbugs`, `forbiddenapis`, `jdeps` and `jdeprscan`. Like every boolean
+setting, it is `true` when named with no value, and any value other than `true` or `false` is refused.
+
+Under a strict setting, Checkstyle, PMD, detekt, ktlint, Scalastyle and scalafmt fail as their own exit code
+decides, so a Checkstyle finding at severity `warning` is reported but does not fail the build. SpotBugs,
+CodeNarc, forbiddenapis, jdeps and jdeprscan fail on any finding their report holds.
 
 Reporting covers findings, not a tool that never ran. A linter that fails on its own configuration, and so
 writes no complete report, fails its step either way.
 
 ### Checkstyle and PMD
 
-Checkstyle reads `${config_loc}` as the folder of `checkstyle.xml`, as the Maven and Gradle plugins define
-it. A file the configuration names as `${config_loc}/<path>`, such as a suppressions file beside it, is bound
-into the same input, as `@rules/suppressions.xml=<path>`, and changing that file runs the check again.
+Checkstyle reads `${config_loc}` as the folder of its configuration, as the Maven and Gradle plugins define it.
+A file the configuration names as `${config_loc}/<path>` beside or below it, such as a suppressions file, is
+handed to Checkstyle along with the configuration, and changing that file runs the check again. A path that
+leaves the folder fails the build.
 
-Every other `${<property>}` the configuration names is a line of `plugin-checkstyle.properties`, which takes the
-place of the Maven plugin's `propertyExpansion` and Gradle's `configProperties`. Without the line, Checkstyle
-fails to load the configuration. `config_loc` is the one property the file cannot set. A value `@<key>` stands
-for the setting `-Djenesis.variable.<key>`, `@<key>/<default>` gives it a default, and `@@` writes a literal `@`:
+Every other `${<property>}` the configuration names is a line of `checkstyle.properties`, which takes the place
+of the Maven plugin's `propertyExpansion` and Gradle's `configProperties`. Without the line, Checkstyle fails to
+load the configuration. `config_loc` is the one property the file cannot set. In the example above,
+`checkstyle.xml` reads its severity as `<property name="severity" value="${checkstyle.severity}"/>`.
 
-```properties
-# build.jenesis/plugin-checkstyle.properties  →  read by <property name="severity" value="${checkstyle.severity}"/>
-@rules=../build.jenesis/checkstyle.xml
-checkstyle.severity=warning
-```
-
-A bound file may lie outside the project, so that several projects share one configuration.
-`@rules/checkstyle.xml=<path>` hands it to Checkstyle as `checkstyle.xml`, whatever it is called:
+`configuration` may name a file outside the project, so that several projects share one configuration, and
+Checkstyle still reads it as `checkstyle.xml`:
 
 ```properties
-# build.jenesis/plugin-checkstyle.properties
-@rules/checkstyle.xml=../../shared/company.xml
+# build.jenesis/checkstyle.properties
+configuration=../../shared/company.xml
 ```
 
 A jar of custom checks or filters, a dependency of the Checkstyle plugin in Maven, joins Checkstyle's class path
 when `@jenesis.plugin checkstyle:tool maven/<groupId>/<artifactId>` names it in `module-info.java`, or
 `<!--jenesis.plugin checkstyle:tool maven/<groupId>/<artifactId>-->` in a `pom.xml`.
 
-PMD runs the rules of every priority in `pmd.xml`. `jenesis.pmd.priority` names the lowest priority it
+PMD runs the rules of every priority in its rule set. `jenesis.pmd.priority` names the lowest priority it
 runs, from `1`, the highest, to `5`, the default, as the Maven plugin's `minimumPriority` does; any other
 value is refused.
 
 ### Switching a tool off
 
-`ignore` skips a linter without deleting its configuration:
+A tool found by its file can be switched off without deleting the file. Every such setting is a boolean,
+`true` by default, and `false` leaves the tool out. It is named after the part of the build the tool runs in:
 
-| Property | Covers |
+| Setting | Covers |
 | --- | --- |
-| `jenesis.source.<tool>` | `checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc` |
-| `jenesis.validator.<tool>` | `spotbugs`, `forbiddenapis`, `jdeps`, `jdeprscan` |
+| `jenesis.check.<tool>` | `checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc` |
+| `jenesis.validate.<tool>` | `spotbugs`, `forbiddenapis`, `jdeps`, `jdeprscan` |
 
-For example, `-Djenesis.source.checkstyle=ignore` keeps `checkstyle.xml` in place but skips Checkstyle, while
-PMD and SpotBugs still run. `-Djenesis.plugin.<name>=false` leaves out any plugin the file names.
+For example, `-Djenesis.check.checkstyle=false` keeps `checkstyle.properties` in place but skips Checkstyle,
+while PMD and SpotBugs still run. Every other tool that a file of this chapter switches on has a setting of the
+same kind, which its section names. A plugin of the project's own, which `jenesis.plugins.properties` names, is switched off by
+`-Djenesis.plugin.<name>=false` instead, so it shares no setting with an official plugin, whatever it is named.
 
 ### Forbidden API calls
 
 [forbiddenapis](https://github.com/policeman-tools/forbidden-apis) finds calls that the compiled classes, the
 tests' included, should not make: a method that depends on the default locale, a deprecated API, a JDK internal
-or a call the project rules out. The plugin is named at the hook point `binary/validate`, and its
-`plugin-forbiddenapis.properties` names the signatures to check:
+or a call the project rules out. A `forbiddenapis.properties` switches it on and names the signatures to check:
 
 ```properties
-# jenesis.plugins.properties
-forbiddenapis+binary/validate=build.jenesis.plugin.forbiddenapis
-```
-
-```properties
-# build.jenesis/plugin-forbiddenapis.properties
+# build.jenesis/forbiddenapis.properties
 bundled=jdk-unsafe,jdk-deprecated,jdk-non-portable,jdk-system-out
 signatures=forbidden-signatures.txt
-@signatures=../build.jenesis/forbidden-signatures.txt
 ```
 
 `bundled` names signatures that forbiddenapis ships. `jdk-unsafe`, `jdk-deprecated` and `jdk-internal` are
 written for one Java release, as `jdk-unsafe-25`, and the build appends the release the classes are compiled
-for where the name leaves it out. `signatures` names files of the project's own signatures, each bound into the
-input `signatures` by a line of its own, in the format forbiddenapis reads:
+for where the name leaves it out. `signatures` names files of the project's own signatures, relative to
+`forbiddenapis.properties`, in the format forbiddenapis reads:
 
 ```text
 @defaultMessage Name a thread: an unnamed one is hard to tell apart in a thread dump
@@ -170,8 +159,9 @@ java.lang.Thread#<init>(java.lang.Runnable)
 | `allowmissingclasses` | `failOnMissingClasses=false` | `true` lets a class missing from the class path pass |
 | `ignoresignaturesofmissingclasses` | `ignoreSignaturesOfMissingClasses` | `true` skips a signature whose class is missing |
 
-Any other key fails the build, and so does a file named under `signatures` that no line binds. The report, `reports/forbiddenapis/forbiddenapis.txt`, holds one line per finding: the call, the
-reason and where it was made.
+At least one of `bundled` and `signatures` is required. Any other key fails the build, and so does a file named
+under `signatures` that does not exist. The report, `reports/forbiddenapis/forbiddenapis.txt`, holds one line per
+finding: the call, the reason and where it was made.
 
 ### JDK internals and removals
 
@@ -268,47 +258,122 @@ parent POM in the project.
 ## Formatting
 
 Formatters are the rewriting counterpart to the linters: where a linter reads your sources and writes a
-report, a formatter reads them and can rewrite them in place. The formatters are plugins of the hook point
-`format`, which runs them after the licence header is checked or written:
+report, a formatter reads them and can rewrite them in place. Each formatter is switched on by a properties file
+named after it, whose lines are its values; an empty file formats with the defaults:
 
 ```properties
-# jenesis.plugins.properties
-googlejavaformat+format=build.jenesis.plugin.googlejavaformat
+# build.jenesis/googlejavaformat.properties
+reflow=false
 ```
 
-Each runs where its `plugin-<name>.properties` is found. The file may be empty, or hold the formatter's options,
-and an option the formatter does not have fails the build, naming the ones it has:
+A value the formatter does not take fails the build, naming the ones it takes, and a changed value verifies
+every source again:
 
-| Plugin | Value | Meaning |
+| File | Value | Meaning |
 | --- | --- | --- |
-| `build.jenesis.plugin.googlejavaformat` | `style` | `google`, the default, or `aosp` for the Android Open Source Project's four-space style |
+| `googlejavaformat.properties` | `style` | `google`, the default, or `aosp` for the Android Open Source Project's four-space style |
 | | `reflow` | `false` leaves long strings as they are written |
 | | `javadoc` | `false` leaves Javadoc as it is written |
 | | `imports` | what happens to the imports: `sort,remove`, the default, `sort`, `remove` or `none` |
-| `build.jenesis.plugin.palantir` | `reflow`, `imports` | as for google-java-format |
-| `build.jenesis.plugin.eclipse` | `@profile/eclipse-formatter.xml=<path>` | binds the formatter profile Eclipse exports |
-| `build.jenesis.plugin.ktlint@format` | `@rules=<path>` | binds the `.editorconfig` that drives ktlint |
-| `build.jenesis.plugin.ktfmt` | `style` | `meta`, the default, `google` or `kotlinlang` |
+| `palantir.properties` | `reflow`, `imports` | as for google-java-format |
+| `eclipse.properties` | `configuration` | the formatter profile Eclipse exports, relative to the file; without it, the Eclipse formatter's defaults |
+| `ktlint.properties` | `configuration` | the `.editorconfig` that drives ktlint |
+| `ktfmt.properties` | `style` | `meta`, the default, `google` or `kotlinlang` |
 | | `imports` | `sort` keeps unused imports; `sort,remove`, the default, removes them as well |
-| `build.jenesis.plugin.scalafmt@format` | `@rules=<path>` | binds `.scalafmt.conf` |
+| `scalafmt.properties` | `configuration` | the `.scalafmt.conf` that drives scalafmt |
 
-The ktlint and scalafmt plugins also check, so their linter and their formatter are named apart, as
-`ktlint+check=build.jenesis.plugin.ktlint@check` and `ktlintformat+format=build.jenesis.plugin.ktlint@format`. Two
-formatters would fight over the same sources, so a profile that brings one in switches the other off with
-`jenesis.plugin.<name>=false` in its `jenesis-<profile>.properties`.
+Where no configuration folder holds an `eclipse.properties`, an `eclipse-formatter.xml` in a configuration folder
+switches the Eclipse formatter on alone, as its profile. The formatter runs from `org.eclipse.jdt.core` in a plain
+JVM, with no Eclipse installation.
+
+ktlint and scalafmt both check and format, and the one file of each, or its conventional `.editorconfig` or
+`.scalafmt.conf`, switches on both. They are switched off apart: `jenesis.check.ktlint=false` leaves out the
+linting and `jenesis.format.ktlint=false` the formatting, and the same holds for scalafmt.
+
+Two formatters would fight over the same sources. A build that finds the files of two Java formatters fails,
+naming them, and so does a `ktfmt.properties` beside a ktlint that formats the same Kotlin sources. A profile that
+brings in one formatter therefore switches the other off in its `jenesis-<profile>.properties`, as
+`jenesis.format.googlejavaformat=false` or `jenesis.format.ktlint=false`. Each formatter has its setting of
+`jenesis.format.<tool>`: `googlejavaformat`, `palantir`, `eclipse`, `ktlint`, `ktfmt` and `scalafmt`.
+
+### Verify mode, and how to reformat
+
+Every formatter runs in **verify mode** by default, so a normal build never touches your sources. Instead it
+**fails the build when a file is not already formatted**, which makes it a continuous-integration gate. Indent
+a source file with a few spare spaces and rebuild: the `format` step fails.
+
+To apply the formatter and rewrite your sources in place, run the build with the rewrite switch:
+
+```bash
+java -Djenesis.format.rewrite=true build/jenesis/Make.java
+```
+
+The switch flips every formatter from verifying to rewriting, and the same switch applies OpenRewrite's
+recipes and writes the licence headers. After a rewrite, a plain build passes the verify gate again.
+
+<div class="note">
+  Groovy has no formatter: no suitable Maven-published formatter exists for it, so a Groovy
+  project's <code>codenarc.xml</code> lints but nothing reformats.
+</div>
+
+### Rewriting with recipes
+
+[OpenRewrite](https://docs.openrewrite.org) applies recipes to the Java sources: a method renamed, an API
+migrated, an unused import removed. Its own file, a `rewrite.yml` in a configuration folder, switches it on and
+declares the recipes the project runs:
+
+```yaml
+# build.jenesis/rewrite.yml
+type: specs.openrewrite.org/v1beta/recipe
+name: demo.Modernize
+recipeList:
+  - org.openrewrite.java.ChangeMethodName:
+      methodPattern: java.lang.String trim()
+      newMethodName: strip
+```
+
+OpenRewrite runs before the Java formatter, so what a recipe writes is formatted afterwards. Like a formatter
+it verifies by default: a source a recipe would change fails the build, printing the change as a diff, and
+`-Djenesis.format.rewrite=true` applies it.
+
+```text
+-    return name.trim();
++    return name.strip();
+The recipes demo.Modernize change 1 file - run with -Djenesis.format.rewrite=true to apply them
+```
+
+An `openrewrite.properties` takes the place of the file where more is wanted:
+
+| Key | Meaning |
+| --- | --- |
+| `configuration` | a `rewrite.yml`, relative to `openrewrite.properties`, every recipe of which runs |
+| `recipes` | the recipes to run, comma-separated, instead of every recipe of the `rewrite.yml`: recipes of OpenRewrite, of a recipe library the module names, or of the `rewrite.yml` |
+
+At least one of them is required, and any other key is refused. With `recipes` and no `configuration`,
+OpenRewrite runs a recipe of its own, as `recipes=org.openrewrite.java.RemoveUnusedImports`.
+
+A recipe of OpenRewrite's own Java module needs nothing more. A recipe library is named for the plugin to load
+beside OpenRewrite, as `@jenesis.plugin openrewrite:tool maven/org.openrewrite.recipe/rewrite-static-analysis`
+in `module-info.java`, and resolves with it in the group `openrewrite:tool`. The module's dependencies are
+OpenRewrite's class path, so a recipe that matches a type of a library the module uses finds it. A recipe that
+would add, delete or move a file fails the build, and `-Djenesis.format.openrewrite=false` switches OpenRewrite
+off.
 
 ### Licence headers
 
 A `licenseheader.properties` in a configuration folder holds, as its `text` key, the header every Java, Kotlin,
-Scala and Groovy source of the module starts with, written as plain text or already as a comment. `\n` separates
-its lines, and a trailing `\` continues the value on the next line:
+Scala and Groovy source of the module starts with, `module-info.java` and `package-info.java` included. A header
+written as plain text starts a source as a block comment, and one written as a comment already starts it as it
+stands. `\n` separates its lines, and a trailing `\` continues the value on the next line:
 
 ```properties
 text=Copyright 2026 the original author or authors.\n\n\
   Licensed under the Apache License, Version 2.0.
 ```
 
-The file takes no other key. The header is taken exactly as it stands, a year included: a source without it, or with a different one, fails the build, as a formatter does. Under
+The file takes no other key. The header is taken exactly as it stands, a year included: a source without it, or
+with a different one, fails the build, naming the file. The header is checked or written before any formatter
+runs. Under
 `-Djenesis.format.rewrite=true` the header is inserted as it stands, or replaces a leading comment that names a
 copyright or a licence, so a rewrite gives the same sources whenever it runs. Generated sources are not checked,
 and `jenesis.format.license=false` switches the check off.
@@ -333,34 +398,13 @@ starts every source with these two lines:
 A project that declares no licence, more than one, or one without a known SPDX identifier fails the build, naming
 what it found. An `alias/<licence name>=<id>` line in `spdx.properties` gives a licence its identifier.
 
-### Verify mode, and how to reformat
-
-Every formatter runs in **verify mode** by default, so a normal build never touches your sources. Instead it
-**fails the build when a file is not already formatted**, which makes it a continuous-integration gate. Indent
-a source file with a few spare spaces and rebuild: the `format` step fails.
-
-To apply the formatter and rewrite your sources in place, run the build with the rewrite switch:
-
-```bash
-java -Djenesis.format.rewrite=true build/jenesis/Make.java
-```
-
-The switch flips the whole chain - the licence headers and every formatter plugin - from verifying to
-rewriting.
-After a rewrite, a plain build passes the verify gate again.
-
-<div class="note">
-  Groovy has no formatter: no suitable Maven-published formatter exists for it, so a Groovy
-  project's <code>codenarc.xml</code> lints but nothing reformats.
-</div>
-
-{% demos 37, 47 %}
+{% demos 37, 47, 51 %}
 
 ## Where the reports land
 
 Every tool writes its findings into a `reports/<kind>/` folder under its step's output, for example
-`reports/checkstyle/checkstyle-report.xml`, `reports/pmd/`, `reports/spotbugs/`, `reports/forbiddenapis/`, `reports/jdeps/`. You rarely need the exact
-path, because a **`stage` build collects every report from every module into one place**, each kind in its own
+`reports/checkstyle/checkstyle-report.xml`, `reports/pmd/`, `reports/spotbugs/`, `reports/forbiddenapis/`,
+`reports/jdeps/`. You rarely need the exact path, because a **`stage` build collects every report from every module into one place**, each kind in its own
 subfolder:
 
 ```
@@ -373,28 +417,28 @@ same way.
 
 ## Code coverage
 
-Coverage is a **test observation**: JaCoCo wraps the test run and records which code the tests touched. The
-JaCoCo plugin is named at the hook point `observe`, and runs where its `plugin-jacoco.properties` is found:
+Coverage is a **test observation**: JaCoCo wraps the test run and records which code the tests touched. A
+`jacoco.properties` in a configuration folder switches it on, in every test module where the file is found:
 
 ```properties
-# jenesis.plugins.properties
-jacoco+observe=build.jenesis.plugin.jacoco
+# build.jenesis/jacoco.properties
+minimum.method=0.6
 ```
 
 The project-wide `build.jenesis/` works for every layout; a `pom.xml` project can also scope the file to its tests
 with `src/test/build.jenesis/`.
 
-With the plugin in place, the test step is launched with the JaCoCo agent attached as a `-javaagent`. It
+With coverage on, the test step is launched with the JaCoCo agent attached as a `-javaagent`. It
 instruments the run without touching your sources and writes its execution data (`jacoco.exec`); a downstream
 report step renders an HTML and XML report under `reports/jacoco/`, over the classes of the code under test,
 never the compiled tests themselves. Open the `index.html` to browse coverage
-line by line. JaCoCo, like every tool here, resolves in its own group (`jacoco:tool`) apart from your dependencies,
-and its agent in `jacoco:agent`. The agent writes the data the CLI reads, so it follows the release the tool group
-pins for the CLI: a pin of `jacoco:tool/maven/org.jacoco/org.jacoco.cli` alone runs the tests under that version's agent as well, until `pin`
-records both.
+line by line. JaCoCo's CLI resolves in the tool group of its plugin, `jacoco:tool`, apart from your
+dependencies, and its agent in `jacoco:agent`. The agent writes the data the CLI reads, so it follows the release the tool group
+pins for the CLI: a pin of `jacoco:tool/maven/org.jacoco/org.jacoco.cli` alone runs the tests under that
+version's agent as well, until `pin` records both.
 
-An empty `plugin-jacoco.properties` only reports: a method your tests never reach shows up as uncovered, and the build
-stays green. Lines in the file set limits on the module's coverage, as the `check` goal of jacoco-maven-plugin
+An empty `jacoco.properties` only reports: a method your tests never reach shows up as uncovered, and the
+build stays green. Lines in the file set limits on the module's coverage, as the `check` goal of jacoco-maven-plugin
 does for a bundle:
 
 | Key | Limit |
@@ -410,7 +454,7 @@ a covered ratio of 0.9 of methods is not met: 2 of 3 covered, a ratio of 0.6667
 ```
 
 A counter with nothing to count, such as `branch` in code without a branch, meets every limit. An unknown key, or a
-value that is no ratio or count, fails the build naming the valid ones. Set `-Djenesis.plugin.jacoco=false` to
+value that is no ratio or count, fails the build naming the valid ones. Set `-Djenesis.observe.jacoco=false` to
 suppress coverage even when the file is present.
 
 ## Recording the tests with Java Flight Recorder
@@ -433,6 +477,32 @@ Because the file lives in a configuration folder, a profile switches the recordi
 `build.jenesis/profiling/jfr.properties` records only under `-Djenesis.make.profiles=profiling`. Changing the
 file runs the tests again. Set `-Djenesis.observe.jfr=false` to suppress the recording even when the file is
 present.
+
+## Profiling the tests with async-profiler
+
+[async-profiler](https://github.com/async-profiler/async-profiler) samples what the test JVM spends its time on.
+An `asyncprofiler.properties` in a configuration folder attaches it to the JVM the tests run in, in every test
+module where the file is found. Each line is an option of the profiler, as `event=cpu` or `interval=1ms`, or an
+option without a value, as `threads`:
+
+```properties
+# build.jenesis/profiling/asyncprofiler.properties
+event=cpu
+interval=1ms
+threads
+```
+
+The build names the file the profile is written to, so a `file` line is refused, and so is a value holding a
+comma. It writes `reports/asyncprofiler/tests.html`, a flame graph to open in a browser, staged under
+`target/stage/reports/output/asyncprofiler/<module>/`. An option that selects another format writes
+`tests.jfr`, `tests.collapsed`, `tests.txt` or `tests.otlp` instead (`jfr`, `collapsed`, `flat`, `traces`,
+`summary`, `otlp`).
+
+The agent, `tools.profiler:async-profiler`, carries the profiler's native library and resolves in the group
+`asyncprofiler:agent`; the tests' JVM is granted native access for it. async-profiler ships its library for Linux
+on x64 and arm64 and for macOS, and elsewhere the build fails. Kept in a profile folder, as above, the file
+profiles only the builds run with `-Djenesis.make.profiles=profiling`, and `-Djenesis.observe.asyncprofiler=false`
+switches it off.
 
 {% demos 41 %}
 
@@ -579,17 +649,12 @@ return value is replaced with a constant), re-runs the tests against each mutant
 the tests **killed** and which **survived**. A surviving mutant is a change to the program that no test
 noticed.
 
-PIT is a plugin at the hook point `observed`, which runs over the tests' run, so the suite runs as usual *and*
-PIT then assesses how good it is. It runs in a tested module where its `plugin-pitest.properties` is found, and
-that file carries the options PIT needs:
+A `pitest.properties` in a configuration folder switches PIT on, in every test module where the file is found:
+the suite runs as usual *and* PIT then re-runs it against mutants of the code under test, to assess how good it
+is. The file carries the options PIT needs:
 
 ```properties
-# jenesis.plugins.properties
-pitest+observed=build.jenesis.plugin.pitest
-```
-
-```properties
-# build.jenesis/plugin-pitest.properties
+# build.jenesis/pitest.properties
 targetClasses=calc.Calculator   # which classes to mutate
 targetTests=calctest.*          # which tests to run against the mutants
 outputFormats=XML,HTML          # report formats (an optional `mutators` key selects a mutator set)
@@ -605,10 +670,10 @@ outputFormats=XML,HTML          # report formats (an optional `mutators` key sel
 
 An unknown key, or a format that is not one of the three, fails the build naming the ones that exist.
 
-PIT and its JUnit 5 plugin resolve in their own `pitest` group; the plugin's version is taken from the
-project's own resolved `junit-platform`, so it always lines up with the test framework you use. The report
-lands under `reports/pitest/`, and `-Djenesis.plugin.pitest=false` suppresses the run while keeping the file in
-place.
+PIT and its JUnit 5 plugin resolve in the tool group of the PIT plugin, `pitest:tool`, apart from your
+dependencies. PIT runs the tests with the JUnit Platform launcher of the version the test module pins or
+resolved, so it lines up with the test framework you use. The report lands under `reports/pitest/`, and
+`-Djenesis.observe.pitest=false` suppresses the run while keeping the file in place.
 
 {% demos 42 %}
 
@@ -620,26 +685,19 @@ you are about to publish still works for everyone who compiled against the last 
 a caller linked against class files, so a removed method, a narrowed return type or a tightened modifier is
 what breaks them.
 
-The japicmp plugin is named at the hook point `artifact`, and runs where its `plugin-japicmp.properties` is
-found:
-
-```properties
-# jenesis.plugins.properties
-japicmp+artifact=build.jenesis.plugin.japicmp
-```
-
-Its `plugin-japicmp.properties` may be empty. Then it compares the module's fresh jar
+A `japicmp.properties` in a configuration folder switches japicmp on, in every module but a test module where
+the file is found. The file may be empty. Then japicmp compares the module's fresh jar
 against the last release of **that module's own coordinate**, so the check follows your releases rather than
 being re-pointed by hand. A `baseline` key names another artifact, read by how many slashes it carries:
 
 ```properties
 baseline=com.example/library                           # the latest release
 baseline=com.example/library/1.2.3                     # that version
-baseline=modular/com.example/library/1.2.3             # served from a named repository
+baseline=<repository>/com.example/library/1.2.3       # that version, from the repository of that name
 ```
 
 A module with no Maven coordinate has nothing to default to and says so. The file is read per module, so a
-project-wide `plugin-japicmp.properties` without a `baseline` gives every module its own coordinate - a `baseline`
+project-wide `japicmp.properties` without a `baseline` gives every module its own coordinate - a `baseline`
 there would point them all at one artifact, so a per-module baseline belongs in that module's own
 configuration folder. A test module, such as the tests of a `pom.xml` project, has no release of its own and is
 never compared.
@@ -665,35 +723,34 @@ Like the linters, the check only **reports** by default: it writes `reports/japi
 keeps the build green, so you see what changed before you decide to enforce it. Turning on a gate makes the
 failure name the change that caused it:
 
-```
-E: There is at least one incompatibility:
-   library.Library.farewell(java.lang.String):METHOD_REMOVED
+```text
+E: There is at least one incompatibility: library.Library.farewell(java.lang.String):METHOD_REMOVED
 ```
 
-japicmp and the baseline artifact resolve in their own `japicmp` group, kept apart from the module's own
+japicmp and the baseline artifact resolve in the tool group of the japicmp plugin, `japicmp:tool`, kept apart from the module's own
 dependencies; the baseline resolves **without** its transitive dependencies, because only its own byte code
 is compared. It is a released artifact like any other, so `pin` records it with a checksum alongside the
 tool - one line, not a closure. The plugin resolves both with the project's repositories.
-`-Djenesis.plugin.japicmp=false` suppresses the comparison while keeping the file in place.
+`-Djenesis.artifact.japicmp=false` suppresses the comparison while keeping the file in place.
 
 ### revapi beside japicmp
 
 [revapi](https://revapi.org) compares the same two jars and classifies every difference by how severe it is for
-a caller, binary and source alike. The revapi plugin, `revapi+artifact=build.jenesis.plugin.revapi`, compares
-against the same baseline: its `baseline` key reads exactly as japicmp's, and without one it is the last release of the
-module's own coordinate. A test module is never compared.
+a caller, binary and source alike. A `revapi.properties` switches it on, in every module but a test module where
+the file is found, and revapi compares against the same baseline: its `baseline` key reads exactly as japicmp's, and without one it is the last release of the
+module's own coordinate.
 
 ```properties
-# build.jenesis/plugin-revapi.properties
+# build.jenesis/revapi.properties
 severity=non-breaking
-@analysis/revapi.json=../build.jenesis/revapi.json
+configuration=revapi.json
 ```
 
 | Key | Effect | Default |
 | --- | --- | --- |
 | `baseline` | the artifact to compare against, as for japicmp | the module's own last release |
 | `severity` | the least severe difference reported: `equivalent`, `non-breaking`, `potentially-breaking` or `breaking` | `potentially-breaking` |
-| `@analysis/revapi.json=<path>` | binds a JSON file holding revapi's own configuration | none |
+| `configuration` | a JSON file holding revapi's own configuration, relative to `revapi.properties` | none |
 
 That file is revapi's own, an array of `{"extension": ..., "configuration": ...}` objects, so the
 differences a release accepts stay in revapi's notation, as a `revapi.differences` list:
@@ -704,12 +761,14 @@ differences a release accepts stay in revapi's notation, as a `revapi.difference
      "justification": "Deprecated for two releases."}]}}]
 ```
 
-Any other key fails the build, as does a bound `revapi.json` that is no JSON array. revapi reports like a linter: `reports/revapi/revapi.json` holds one entry per difference, with its code and
-classification, and a `[FINDINGS]` line counts them.
+Any other key fails the build, as does a `configuration` naming a file that is no JSON array. revapi reports like
+a linter: `reports/revapi/revapi.json` holds one entry per difference, with its code and classification, and a
+`[FINDINGS]` line counts them.
 
-`jenesis.artifact.revapi` decides what the findings do. `report`, the default, keeps the build green; `strict`
-fails it on any difference reported, and `ignore` skips revapi. It resolves in its own `revapi` group, with
-`revapi-java`, `revapi-basic-features` and `revapi-reporter-json` and what they depend on, beside the baseline.
+The build stays green on those findings unless `-Djenesis.strict.revapi=true` fails it on any difference
+reported, and `-Djenesis.artifact.revapi=false` skips revapi. It resolves in the tool group of its plugin,
+`revapi:tool`, with `revapi-java`, `revapi-basic-features` and `revapi-reporter-json` and what they depend on,
+beside the baseline.
 
 {% demos 45 %}
 
@@ -730,8 +789,11 @@ failures aggregate.
 
 ## Pinning the tool chain
 
-Every tool above floats a `RELEASE` version in its own dependency group until you pin it, so a first build
-downloads the latest and later builds reuse the cache. For a reproducible, checksum-verified tool chain, run
+Every tool above that the build downloads floats a `RELEASE` version in the tool group of its plugin until you
+pin it, so a first build downloads the latest and later builds reuse the cache; a plugin's own jars are pinned
+apart, in the group of its name. jdeps, jdeprscan, Java Flight Recorder and the licence header check resolve
+nothing. For a reproducible, checksum-verified tool chain, run
 `java build/jenesis/Make.java pin`: it records each resolved tool jar with its SHA-256 exactly as it pins
 your compilers and dependencies (see *[Pinning & bills of materials](/tool/pinning/)*). Expect a long list -
-a linter's own closure can run to a hundred artifacts - which is what makes the tool chain reproducible.
+a linter's own closure can run to a hundred artifacts - which is what makes the tool chain reproducible. A
+tool that only a profile turns on is pinned by running `pin` with that profile active.

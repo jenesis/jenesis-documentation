@@ -1,26 +1,27 @@
 ---
 order: 8
 title: Other JVM languages
-description: Compiling Kotlin, Scala and Groovy through their language plugins - alone or mixed with Java in one module - the compile order that decides which packages you can export, the standard-library dependency each needs, and enabling a Kotlin or Scala compiler plugin.
+description: Compiling Kotlin, Scala and Groovy, each resolved as an official plugin wherever a module holds its sources - alone or mixed with Java in one module - the compile order that decides which packages you can export, the standard-library dependency each needs, and enabling a Kotlin or Scala compiler plugin.
 ---
 
-Jenesis is not a Java-only build tool. Name a language plugin, drop `.kt`, `.scala` or `.groovy` sources into
-a module, and the build resolves the matching compiler and builds them, mixed freely with Java, into one modular
-jar and its generated POM, with **no build script to write**. One line of `jenesis.plugins.properties` names
-each language at the hook point `language`:
+Jenesis is not a Java-only build tool. Drop `.kt`, `.scala` or `.groovy` sources into a module, and the build
+resolves the matching compiler and builds them, mixed freely with Java, into one modular jar and its generated
+POM, with **no build script to write** and no file to switch a language on.
 
-```properties
-# jenesis.plugins.properties
-kotlin+language=build.jenesis.plugin.kotlin
-scala+language=build.jenesis.plugin.scala
-groovy+language=build.jenesis.plugin.groovy
-```
+Kotlin, Scala and Groovy are official plugins: the build resolves each by itself, as `build.jenesis.plugin.kotlin`,
+`build.jenesis.plugin.scala` or `build.jenesis.plugin.groovy`, in every module that holds a source of its
+extension, and wires its compiler into the same step graph *[Core concepts](/tool/core-concepts/)* described. No
+line of `jenesis.plugins.properties` names them.
 
-A language plugin needs no `plugin-<name>.properties`. It runs in every module that holds a source of its
-extension, and wires its compiler into the same step graph *[Core concepts](/tool/core-concepts/)* described.
-The build compiles no language but Java itself, so a module holding a `.kt`, `.scala` or `.groovy` source
-without the plugin of its language fails, naming the line to add. A `pom.xml` project reads a folder beside its source directories, such as `src/main/kotlin` and
-`src/test/kotlin`, only where `jenesis.maven.sources` names it - `jenesis.maven.sources=kotlin,groovy` in
+| Language | Extension | Switched off by |
+| --- | --- | --- |
+| Kotlin | `.kt` | `jenesis.language.kotlin=false` |
+| Scala | `.scala` | `jenesis.language.scala=false` |
+| Groovy | `.groovy` | `jenesis.language.groovy=false` |
+
+Each of these compilers comes from its plugin alone, so a module holding a source of a language switched off
+fails the build, naming the extension and the setting. A `pom.xml` project reads a folder beside its source
+directories, such as `src/main/kotlin` and `src/test/kotlin`, only where `jenesis.maven.sources` names it - `jenesis.maven.sources=kotlin,groovy` in
 `jenesis.properties` reads the folders the Kotlin and GMavenPlus plugins read by default.
 
 This chapter covers what changes when a module holds more than Java: how two compilers share one module, the one
@@ -29,7 +30,7 @@ to run a compiler plugin.
 
 ## One module, two compilers
 
-A mixed module is compiled by **two compilers in sequence**. The build runs the language plugin's compiler
+A mixed module is compiled by **two compilers in sequence**. The build runs the language's compiler
 and `javac` in a fixed order over the same sources, each producing its own classes into the module. Because both
 write into one module, the exported jar looks exactly like a single-language one - a consumer never sees the
 seam.
@@ -163,8 +164,8 @@ of the `META-INF/<name>.kotlin_module` file and the suffix of the binary name of
 
 A Kotlin or Scala compiler plugin is declared exactly like a Java annotation processor
 (*[Building & running](/tool/building-and-running/)*),
-with one addition: **name the language plugin first**, so the compiler plugin resolves in that plugin's own group
-rather than on `javac`'s processor path.
+with one addition: **lead with the tool group of the language**, as `kotlin:tool`, so the compiler plugin resolves
+beside that compiler rather than on `javac`'s processor path.
 
 ```java
 /**
@@ -182,8 +183,8 @@ references. The Scala path is identical: `@jenesis.plugin scala:tool <coordinate
 group, and `scalac` loads the plugin the same way.
 
 <div class="warning">
-  A plugin runs <strong>only because it is declared</strong>. Delete the <code>@jenesis.plugin</code> line and
-  the plugin is no longer handed to the compiler - the generated code is never produced and the build fails to
+  A plugin runs <strong>only because it is declared</strong>. Without the <code>@jenesis.plugin</code> line
+  the plugin is not handed to the compiler - the generated code is never produced and the build fails to
   compile whatever referenced it. Nothing on the class or module path is scanned for plugins implicitly.
 </div>
 
@@ -194,42 +195,38 @@ The plugin's version is pinned the usual way, coordinated to the compiler - the 
 
 ## API documentation
 
-When you build documentation jars (`jenesis.project.documentation`, *Building & running*), each language plugin
+When you build documentation jars (`jenesis.project.documentation`, *Building & running*), each language
 documents its own sources: Dokka for Kotlin, `scaladoc` for Scala, `groovydoc` for Groovy, beside `javadoc` for
 Java. A module with one language and no Java is documented by that language's tool at the root of the
 archive. Where a module mixes languages, `javadoc` renders the Java at the root and each other language renders
-in a folder named after its plugin - `kotlin/`, `scala/` or `groovy/`. Either way the produced `-javadoc.jar`
+in a folder named after its language - `kotlin/`, `scala/` or `groovy/`. Either way the produced `-javadoc.jar`
 always has a root `index.html`, so it satisfies a repository like Maven Central.
-
-The Groovy plugin documents the module's Java sources with Groovydoc as well where its
-`plugin-groovy.properties` sets `include-java=true`.
 
 ### Configuring Dokka
 
-The `dokka.` values of a `plugin-kotlin.properties` in the module's configuration folder take the options the
-Dokka Gradle plugin and the `dokka-maven-plugin` take. Every value is optional, and an unknown one fails the
-build:
+A `dokka.properties` in a configuration folder takes the options the Dokka Gradle plugin and the
+`dokka-maven-plugin` take, one per line. Every value is optional, and an unknown one fails the build:
 
 | Value | Meaning |
 | --- | --- |
-| `dokka.module-name` | the name the pages give the module, `documentation` unless set |
-| `dokka.format` | `html`, the default, or `javadoc` for javadoc-styled pages |
-| `dokka.documented-visibilities` | any of `public`, `protected`, `internal`, `private` and `package` |
-| `dokka.suppress-obvious-functions`, `dokka.skip-empty-packages` | `true` unless set to `false` |
-| `dokka.suppress-inherited-members`, `dokka.skip-deprecated`, `dokka.report-undocumented` | `false` unless set to `true` |
-| `dokka.suppressed-packages` | regular expressions of packages to leave out, comma-separated |
-| `dokka.fail-on-warning` | `true` fails the build on a warning of Dokka's |
-| `dokka.jdk-version` | the Java feature release the JDK links point at |
-| `dokka.source-link`, `dokka.source-link-suffix` | the URL of the module's sources, and the line suffix, `#L` unless set |
-| `dokka.external-link.<name>`, `dokka.external-link.<name>.package-list` | documentation to link to, and its package list |
-| `dokka.footer-message` | the footer of every page |
+| `module-name` | the name the pages give the module, `documentation` unless set |
+| `format` | `html`, the default, or `javadoc` for javadoc-styled pages |
+| `documented-visibilities` | any of `public`, `protected`, `internal`, `private` and `package` |
+| `suppress-obvious-functions`, `skip-empty-packages` | `true` unless set to `false` |
+| `suppress-inherited-members`, `skip-deprecated`, `report-undocumented` | `false` unless set to `true` |
+| `suppressed-packages` | regular expressions of packages to leave out, comma-separated |
+| `fail-on-warning` | `true` fails the build on a warning of Dokka's |
+| `jdk-version` | the Java feature release the JDK links point at |
+| `source-link`, `source-link-suffix` | the URL of the module's sources, and the line suffix, `#L` unless set |
+| `external-link.<name>`, `external-link.<name>.package-list` | documentation to link to, and its package list |
+| `footer-message` | the footer of every page |
 
 ```properties
-# sources/META-INF/build.jenesis/plugin-kotlin.properties
-dokka.module-name=Kotlin demo
-dokka.footer-message=Documented by Dokka, built by Jenesis
+# sources/META-INF/build.jenesis/dokka.properties
+module-name=Kotlin demo
+footer-message=Documented by Dokka, built by Jenesis
 ```
 
-Dokka failing, including on a warning under `dokka.fail-on-warning=true`, fails the build.
+Dokka failing, including on a warning under `fail-on-warning=true`, fails the build.
 
 {% demos 46 %}

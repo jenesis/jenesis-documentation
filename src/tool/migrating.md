@@ -123,10 +123,12 @@ Java Module System behaviour stay with the old build until phase two.
 
 ## Where plugin configuration goes
 
-Most plugins become a file that switches a built-in tool on, a line of `packaging.properties`, a tag or POM
-comment, or a setting. A file sits in
-a [configuration folder](/tool/configuration/#where-tool-configuration-lives) of the module, the first one
-found being the whole configuration. What lived inside a plugin's own configuration moves here:
+Most plugins become a file that switches a tool on, a line of `packaging.properties`, a tag or POM comment, or
+a setting. A file sits in a [configuration folder](/tool/configuration/#where-tool-configuration-lives) of the
+module, the first one found being the whole configuration. A tool the build downloads is switched on by its
+`<name>.properties`, whose `configuration=<path>` names the tool's own file and whose other lines are its
+values, or by that file alone where no properties are found; `jenesis.<part>.<name>=false` switches it off. What
+lived inside a plugin's own configuration moves here:
 
 | In Maven or Gradle | In Jenesis |
 | --- | --- |
@@ -134,21 +136,21 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | `fork` with `meminitial`, `maxmem` or `-J` options | `-J<option>=` in `process-javac.properties`, which runs `javac` in a JVM of its own |
 | A multi-release jar's sources in `src/main/java<N>`, a compiler execution with `multiReleaseOutput`, a Gradle `java<N>` source set | The same sources moved below `src/main/java/META-INF/versions/<N>/`, compiled as a [multi-release overlay](/tool/building-and-running/#one-jar-several-java-versions) |
 | `annotationProcessorPaths` | A dependency of `<type>processor</type>`; one named without a version takes it from `<dependencyManagement>` |
-| The kotlin-maven-plugin, scala-maven-plugin or GMavenPlus, Gradle's `kotlin("jvm")`, `scala` or `groovy` plugin | A line `<name>+language=build.jenesis.plugin.<name>` of `jenesis.plugins.properties` for `kotlin`, `scala` or `groovy`, which compiles the module's sources of that language; a compiler plugin is `@jenesis.plugin kotlin:tool <coordinate>` or `@jenesis.plugin scala:tool <coordinate>` |
-| The dokka-maven-plugin or Gradle's Dokka plugin | The `dokka.` values of a `plugin-kotlin.properties` |
-| Gradle's `com.google.devtools.ksp` plugin and its `ksp(...)` dependencies | The [KSP plugin](/tool/generating-sources/#kotlin-symbol-processing), `ksp+binary/generated=build.jenesis.plugin.ksp`, with each processor as `@jenesis.plugin ksp <coordinate>` and its arguments in `plugin-ksp.properties` |
+| The kotlin-maven-plugin, scala-maven-plugin or GMavenPlus, Gradle's `kotlin("jvm")`, `scala` or `groovy` plugin | Nothing: a module's `.kt`, `.scala` or `.groovy` sources are compiled wherever the build finds them; a compiler plugin is `@jenesis.plugin kotlin:tool <coordinate>` or `@jenesis.plugin scala:tool <coordinate>` |
+| The dokka-maven-plugin or Gradle's Dokka plugin | A `dokka.properties` |
+| Gradle's `com.google.devtools.ksp` plugin and its `ksp(...)` dependencies | A [`ksp.properties`](/tool/generating-sources/#kotlin-symbol-processing) holding the processors' arguments, with each processor as `@jenesis.plugin ksp:processor <coordinate>` |
 | Surefire includes and groups | `-Djenesis.test.filter`, `-Djenesis.test.tag` |
 | Surefire excludes | `-Djenesis.test.exclude`, as `.*IntegrationTest` |
 | `argLine`, `jvmArgs` of the tests | `process-test.properties` |
 | Surefire's `rerunFailingTestsCount`, Gradle's `test-retry` plugin | A retry of the test framework, such as JUnit Pioneer's `@RetryingTest` |
 | `forkCount` with `reuseForks=false`, `forkEvery` | A test module of its own, since each test module runs in a JVM of its own |
 | The environment of the tests | `environment-test.properties` |
-| The Checkstyle, PMD, detekt, ktlint, Scalastyle, scalafmt or CodeNarc plugin | A line `<name>+check=build.jenesis.plugin.<name>` of `jenesis.plugins.properties`, and a `plugin-<name>.properties` that binds its configuration as `@rules=<path>` |
-| The jacoco-maven-plugin or pitest-maven | A line `jacoco+observe=build.jenesis.plugin.jacoco` or `pitest+observed=build.jenesis.plugin.pitest` of `jenesis.plugins.properties`, and its `plugin-<name>.properties` |
-| The jaxb2, protobuf, avro, jaxws, openapi-generator or antlr4 Maven plugin | A line `<name>+binary/generated=build.jenesis.plugin.<name>` of `jenesis.plugins.properties` for `xjc`, `protoc`, `avro`, `wsimport`, `openapi` or `antlr`, and a `plugin-<name>.properties` that binds the contracts |
-| The spotbugs-maven-plugin, forbiddenapis, japicmp or revapi | A line `<name>+binary/validate=build.jenesis.plugin.<name>`, or `+artifact` for japicmp and revapi, of `jenesis.plugins.properties`, and a `plugin-<name>.properties` with its values and bindings |
-| Spotless, the fmt-maven-plugin or the formatter-maven-plugin | A line `<name>+format=build.jenesis.plugin.<name>` of `jenesis.plugins.properties` for google-java-format (`googlejavaformat`), Palantir (`palantir`), Eclipse (`eclipse`), ktfmt (`ktfmt`), or ktlint and scalafmt with `@format` |
-| Checkstyle's `propertyExpansion`, `configProperties` | Values of `plugin-checkstyle.properties` |
+| The Checkstyle, PMD, detekt, ktlint, Scalastyle, scalafmt or CodeNarc plugin | Its file in the configuration folder - `checkstyle.xml`, `pmd.xml`, `detekt.yml`, `.editorconfig`, `scalastyle-config.xml`, `.scalafmt.conf` or `codenarc.xml` - or a `<name>.properties` naming it as `configuration=`; `jenesis.strict.<name>=true` fails the build on a finding |
+| The jacoco-maven-plugin or pitest-maven | A `jacoco.properties` or a `pitest.properties` |
+| The jaxb2, protobuf, avro, jaxws, openapi-generator or antlr4 Maven plugin | An `xjc.properties`, `protoc.properties`, `avro.properties`, `wsimport.properties`, `openapi.properties` or `antlr.properties` that binds the contracts |
+| The spotbugs-maven-plugin, forbiddenapis, japicmp or revapi | A `spotbugs.properties`, `forbiddenapis.properties`, `japicmp.properties` or `revapi.properties` with its values |
+| Spotless, the fmt-maven-plugin or the formatter-maven-plugin | A `googlejavaformat.properties`, `palantir.properties` or `eclipse.properties` for the Java formatter, a `ktfmt.properties`, or the `.editorconfig` of ktlint and the `.scalafmt.conf` of scalafmt; `-Djenesis.format.rewrite=true` rewrites the sources |
+| Checkstyle's `propertyExpansion`, `configProperties` | The other lines of `checkstyle.properties` |
 | PMD's `minimumPriority`, `rulesMinimumPriority` | `-Djenesis.pmd.priority` |
 | The `mainClass` of the jar, shade or exec plugin | A `<mainClass>` property |
 | `manifestEntries`, `jar.manifest.attributes` | A `META-INF/MANIFEST.MF` among the resources |
@@ -164,6 +166,9 @@ found being the whole configuration. What lived inside a plugin's own configurat
 | A native build run by `exec-maven-plugin` or `maven-antrun-plugin`, Gradle's `cpp-library` | A plugin at `binary/compiled` that writes the library into a folder `classifiers.properties` names |
 | `javac -h`, as `maven-compiler-plugin`'s `<headerOutputDirectory>` or Gradle's `options.headerOutputDirectory` | The same plugin's [header step](/tool/extending-the-build/#compiling-native-code), the build's `javac` step with `headers(true)` |
 | `maven.deploy.skip`, `maven.install.skip` | `stage=false` in the module's `packaging.properties`, which keeps it out of `export` and `release` alike |
+| The maven-plugin-plugin, `<packaging>maven-plugin</packaging>` | `<packaging>jar</packaging>` and a [`mavenplugin.properties`](/tool/publishing/#a-maven-plugin) in the module's configuration folder, its `goalPrefix` as `goalprefix=` |
+| Gradle's `java-gradle-plugin` and its `gradlePlugin.plugins` | A `META-INF/gradle-plugins/<id>.properties` among the resources naming the `implementation-class`, and a [`gradleplugin.properties`](/tool/publishing/#a-gradle-plugin) in the project's configuration folder |
+| The asciidoctor-maven-plugin, Gradle's `org.asciidoctor.jvm.convert` | An [`asciidoctor.properties`](/tool/publishing/#converting-the-project-s-asciidoc-documents) naming the documents as `documents=../src/docs/asciidoc`, its `attributes` as `attribute.<name>=` lines |
 | The flatten-maven-plugin's `flattenDependencyMode=all` | None: a published POM names what the module declares, and a consumer's resolution decides the rest - see [what the published POM names](/tool/publishing/#what-the-published-pom-names) |
 
 A tool resolves in a group named after its plugin, such as `checkstyle:tool` or `jacoco:tool`, once per module. A `pom.xml` pins
@@ -227,14 +232,15 @@ resolved higher in `<dependencyManagement>`.
 
 ## Retiring the old build
 
-Remove what Jenesis now replaces: the plugin configuration, the wrapper, and the CI steps that called them. A CI job that built now builds under strict pinning. One that published to Maven Central runs the
-[`release`](/tool/publishing/#driving-the-release-tool-from-the-build) selector with the JReleaser plugin and
-`-Djenesis.release.publish=true`, and the version as `-Djenesis.project.version`, its credentials in
+Remove what Jenesis replaces: the plugin configuration, the wrapper, and the CI steps that called them. A CI job
+that built runs `java -Djenesis.dependency.pin=strict build/jenesis/Make.java`. One that published to Maven Central runs the
+[`release`](/tool/publishing/#driving-the-release-tool-from-the-build) selector with a `jreleaser.properties`
+naming the `jreleaser.yml` and `-Djenesis.release.publish=true`, and the version as `-Djenesis.project.version`, its credentials in
 the `JRELEASER_*` variables; one that deployed to a
 [repository of its own](/tool/publishing/#releasing-into-a-maven-repository-of-your-own) names it in
 `MAVEN_RELEASE_URI` and its key in `MAVEN_RELEASE_TOKEN` instead. Then let the `ide` selector
 write the IntelliJ IDEA, VS Code or Eclipse project. A project in the `maven` layout keeps its `pom.xml` files,
-which are now its build declaration.
+which are its build declaration from then on.
 
 ## Migrating with a coding agent
 
@@ -248,6 +254,6 @@ prompt, or paste what the command prints:
 The task follows `skill/migrate`, this chapter and phase two written for an agent, and `skill/registry` names
 the built-in that replaces each common plugin. The agent closes with a summary: the build declaration it chose,
 what replaced each plugin, the split packages that kept the build on `pom.xml`, each shaded dependency and what
-replaced it, what still differs from the old build, and the command CI now runs.
+replaced it, what still differs from the old build, and the command CI runs.
 
 {% demos 1, 3, 13 %}

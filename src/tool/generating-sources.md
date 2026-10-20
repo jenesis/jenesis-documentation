@@ -6,9 +6,8 @@ description: Compiling a schema, a service contract or a grammar into Java as pa
 
 Plenty of Java starts life as something that is not Java: an XML schema, a `.proto` file, an Avro record, a
 WSDL, an OpenAPI document, a grammar. Plugins compile all six into sources and hand them to the compiler in
-the same module. A line of `jenesis.plugins.properties` names each at the hook point `binary/generated`, whose
-sources the module compiles with its own, and the plugin runs in a module where its `plugin-<name>.properties`
-is found.
+the same module. Each runs in a module whose configuration folder holds its `<name>.properties`, such as
+`avro.properties`: the build resolves the official plugin by itself, and nothing else names it.
 
 The generated package is compiled into the module like any hand-written one, so `module-info.java` may export
 it, and what the generated code imports - `jakarta.xml.bind`, `protobuf-java`, `avro` - stays an ordinary
@@ -16,28 +15,23 @@ declared dependency of the module.
 
 ## The six generators
 
-```properties
-# jenesis.plugins.properties
-avro+binary/generated=build.jenesis.plugin.avro
-```
-
-| Plugin | Tool | Compiles | Binds |
+| File | Tool | Compiles | Binds |
 | --- | --- | --- | --- |
-| `build.jenesis.plugin.xjc` | JAXB binding compiler | `.xsd` schemas, with `.xjb` bindings | `@schemas/xjc=<folder>` |
-| `build.jenesis.plugin.protoc` | protoc | `.proto` definitions | `@definitions/protoc=<folder>` |
-| `build.jenesis.plugin.avro` | avro-tools | `.avsc` schemas and `.avpr` protocols | `@schemas/avro=<folder>` |
-| `build.jenesis.plugin.wsimport` | JAX-WS `wsimport` | `.wsdl` descriptions, with `.xjb` bindings | `@descriptions/wsimport=<folder>` |
-| `build.jenesis.plugin.openapi` | OpenAPI Generator | an OpenAPI document | `@specification/openapi/openapi.yaml=<file>` |
-| `build.jenesis.plugin.antlr` | ANTLR | `.g4` grammars | `@grammars/antlr=<folder>` |
+| `xjc.properties` | JAXB binding compiler | `.xsd` schemas, with `.xjb` bindings | `@schemas/xjc=<folder>` |
+| `protoc.properties` | protoc | `.proto` definitions | `@definitions/protoc=<folder>` |
+| `avro.properties` | avro-tools | `.avsc` schemas and `.avpr` protocols | `@schemas/avro=<folder>` |
+| `wsimport.properties` | JAX-WS `wsimport` | `.wsdl` descriptions, with `.xjb` bindings | `@descriptions/wsimport=<folder>` |
+| `openapi.properties` | OpenAPI Generator | an OpenAPI document | `@specification/openapi/openapi.yaml=<file>` |
+| `antlr.properties` | ANTLR | `.g4` grammars | `@grammars/antlr=<folder>` |
 
 A file that only binds the contracts is a complete configuration. This is a working Avro setup:
 
 ```
-demo/avro/build.jenesis/plugin-avro.properties   # @schemas/avro=sources/META-INF/build.jenesis
-demo/avro/sources/META-INF/build.jenesis/user.avsc
+avro/build.jenesis/avro.properties   # @schemas/avro=sources/META-INF/build.jenesis
+avro/sources/META-INF/build.jenesis/user.avsc
 ```
 
-Every generator resolves its tool in its own dependency group, named after the plugin and kept apart from your
+Every generator resolves its tool in a dependency group of its own, such as `avro:tool`, kept apart from your
 project's dependencies. The version floats `RELEASE` until you pin it - see *[Pinning &amp; bills of
 materials](/tool/pinning/)*, which is also where the checksums for these tools belong.
 
@@ -56,7 +50,7 @@ folder into the artifact**. The contract shapes the build without shipping in th
 When a contract must ship, bind the folder it ships from instead:
 
 ```properties
-# soap/META-INF/build.jenesis/plugin-wsimport.properties
+# soap/META-INF/build.jenesis/wsimport.properties
 @descriptions/wsimport=wsdl
 ```
 
@@ -80,7 +74,7 @@ Only the values listed for a tool are accepted; anything else fails the build by
 ### XML Schema
 
 ```properties
-# xml/build.jenesis/plugin-xjc.properties
+# xml/build.jenesis/xjc.properties
 package=demo.order
 @schemas/xjc=sources/META-INF/build.jenesis
 ```
@@ -91,7 +85,7 @@ is the catalog; `package=<name>` sets the generated package.
 ### Protocol buffers
 
 ```properties
-# protobuf/build.jenesis/plugin-protoc.properties
+# protobuf/build.jenesis/protoc.properties
 plugins=grpc-java=io.grpc/protoc-gen-grpc-java
 @definitions/protoc=sources/META-INF/build.jenesis
 ```
@@ -121,7 +115,7 @@ for its classifier, `protoc-<version>-<classifier>.exe`:
 ### Avro
 
 ```properties
-# avro/build.jenesis/plugin-avro.properties
+# avro/build.jenesis/avro.properties
 @schemas/avro=sources/META-INF/build.jenesis
 ```
 
@@ -130,7 +124,7 @@ Schemas and protocols compile in separate steps, so a module may carry either or
 ### WSDL
 
 ```properties
-# soap/META-INF/build.jenesis/plugin-wsimport.properties
+# soap/META-INF/build.jenesis/wsimport.properties
 package=demo.greeter
 location=/wsdl/greeter.wsdl
 @descriptions/wsimport=wsdl
@@ -143,7 +137,7 @@ build happened to read the file from into the artifact, which then fails on any 
 ### OpenAPI
 
 ```properties
-# rest/META-INF/build.jenesis/plugin-openapi.properties
+# rest/META-INF/build.jenesis/openapi.properties
 package=demo.greeting
 arguments=--library native --additional-properties useJakartaEe=true
 @specification/openapi/openapi.yaml=META-INF/build.jenesis/greeting.yaml
@@ -159,7 +153,7 @@ That folder is `src/main/java` by default; a generator that writes elsewhere is 
 ### Grammars
 
 ```properties
-# calc/build.jenesis/plugin-antlr.properties
+# calc/build.jenesis/antlr.properties
 package=demo.antlr.calc
 arguments=-visitor -no-listener
 @grammars/antlr=META-INF/build.jenesis
@@ -176,7 +170,7 @@ key the sources land in the default package, which a module declaration cannot e
 ANTLR writes `.tokens` and `.interp` files beside its sources while it runs. **Only the `.java` files survive
 the step**, so nothing but sources reaches the jar.
 
-As with every generator, the tool is not a dependency of your module. ANTLR resolves in its own `antlr`
+As with every generator, the tool is not a dependency of your module. ANTLR resolves in its own `antlr:tool`
 group, and what the generated code calls into - `org.antlr.antlr4.runtime` - stays an ordinary `requires` of
 the module, pinned separately. Upgrading the parser generator never moves the runtime your program links
 against.
@@ -185,9 +179,9 @@ against.
 
 KSP is Kotlin's counterpart of annotation processing: a processor reads the module's own Kotlin and Java
 sources and writes new ones beside them, as Moshi's code generator writes a JSON adapter for each class
-annotated `@JsonClass(generateAdapter = true)`. The KSP plugin, `ksp+binary/generated=build.jenesis.plugin.ksp`,
-runs where its `plugin-ksp.properties` is found, and the processors are declared like `javac`'s, by coordinate
-in the plugin's processor group, `ksp:processor`:
+annotated `@JsonClass(generateAdapter = true)`. The KSP plugin runs where a configuration folder holds a
+`ksp.properties`, and the processors are declared like `javac`'s, by coordinate in the plugin's processor
+group, `ksp:processor`:
 
 ```java
 /**
@@ -197,29 +191,29 @@ module demo.json { ... }
 ```
 
 or, in a `pom.xml`, as the comment `<!--jenesis.plugin ksp:processor maven/com.squareup.moshi/moshi-kotlin-codegen-->`.
-Each line of `plugin-ksp.properties` is an option handed to the processors, the `arg(...)` of Gradle's `ksp { }`
+Each line of `ksp.properties` is an option handed to the processors, the `arg(...)` of Gradle's `ksp { }`
 block; an empty file runs them without any:
 
 ```properties
-# build.jenesis/plugin-ksp.properties
+# build.jenesis/ksp.properties
 moshi.generated=javax.annotation.processing.Generated
 ```
 
 Unlike the six generators above, KSP binds no contract and reads the module's sources and its compile
 dependencies, which is what lets a processor resolve the types the code uses. It runs before the compilers,
 so the sources it writes are compiled with the module's own and the resources it writes, as a service file
-or ProGuard rules, join the jar. KSP itself resolves in the group `ksp:runtime`, apart from the processors in
-`ksp`, because a processor brings a Kotlin standard library of its own that KSP does not use. Its arguments
+or ProGuard rules, join the jar. KSP itself resolves in the group `ksp:tool`, apart from the processors in
+`ksp:processor`, because a processor brings a Kotlin standard library of its own that KSP does not use. Its arguments
 go in `process-ksp.properties`.
 
 {% demos 49 %}
 
 ## Turning one off
 
-Each generator is switched off by the plugin switch, which keeps its configuration in place:
+Each generator is switched off by `jenesis.generate.<name>=false`, which keeps its configuration in place:
 
 ```
--Djenesis.plugin.xjc=false
+-Djenesis.generate.xjc=false
 ```
 
-The same shape works for every plugin `jenesis.plugins.properties` names.
+The same shape works for `protoc`, `avro`, `wsimport`, `openapi`, `antlr` and `ksp`.

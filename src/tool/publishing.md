@@ -1,7 +1,7 @@
 ---
 order: 14
 title: Publishing
-description: Publishing locally with export, staging a correct release bundle with the metadata a repository demands, publishing a bill of materials, releasing into a Jenesis module repository or a Maven repository of your own, and driving a release tool from the build.
+description: Publishing locally with export, staging a correct release bundle with the metadata a repository demands, publishing a bill of materials, building Maven and Gradle plugins, staging the project's AsciiDoc documents, releasing into a Jenesis module repository or a Maven repository of your own, and driving a release tool from the build.
 ---
 
 A build ends at artifacts under `target/`. **Publishing** is what makes them available to somebody else: the
@@ -33,7 +33,7 @@ requires the module by name, and the local repositories are read before any remo
 the latest export, with a pinned version that version's build. A consumer does not notice a new export on its
 own; it takes one when it is rebuilt with `-Djenesis.executor.rebuild=true`.
 
-{% demos 72 %}
+{% demos 73 %}
 
 ## Staging the release tree
 
@@ -221,7 +221,7 @@ that is not a 40-character Git tree id fails the build. When
 notation SPDX uses for a download location: `git+https://github.com/jenesis/jenesis.git@<revision>`. A tag of
 `HEAD`, which a `pom.xml` declares for the root of its repository, counts as no tag there.
 
-{% demos 73 %}
+{% demos 74 %}
 
 ## Publishing variants of a jar
 
@@ -324,6 +324,106 @@ that relocates its artifact and also holds sources fails the build, since nothin
 
 {% demos 3, 21 %}
 
+## Building a Maven or Gradle plugin
+
+A plugin for another build tool is an ordinary jar with a descriptor that tool reads. Jenesis compiles the jar
+like any other, and an official plugin adds what the other tool looks the plugin up by.
+
+### A Maven plugin
+
+A module becomes a Maven plugin when its configuration folder holds a `mavenplugin.properties`, which may be
+empty. The mojos are written as for `maven-plugin-plugin`, against `maven-plugin-api` and
+`maven-plugin-annotations`, which a `pom.xml` declares in scope `provided` and a `module-info.java` by
+`requires static`. The module keeps the packaging `jar`, as Maven reads a plugin from its descriptor alone.
+
+```properties
+# src/main/build.jenesis/mavenplugin.properties
+goalprefix=greet
+```
+
+Maven's own plugin tools then write `META-INF/maven/plugin.xml` and its `plugin-help.xml` into the module's
+classes. The descriptor names each goal, its parameters, their properties and defaults, with descriptions
+taken from the javadoc of the mojos and their fields. A dependency the module compiles against alone is
+provided by Maven and left out of the descriptor's dependencies. The staged jar installs into a Maven
+repository as it stands, and Maven runs its goals:
+
+```bash
+mvn demo:greet-maven-plugin:1.0:hello -Dgreet.name=Jenesis
+```
+
+| Value | Meaning |
+| --- | --- |
+| `goalprefix` | The prefix a goal is called by, as `greet` in `greet:hello`; by default the one Maven derives from the artifact ID. |
+| `maven` | The release of Maven whose API the descriptor is generated with, `3.9.11` by default. |
+| `tools` | The release of Maven's plugin tools, `3.15.1` by default. |
+
+Any other value is refused, and `-Djenesis.artifact.mavenplugin=false` switches the descriptor off.
+
+{% demos 75 %}
+
+### A Gradle plugin
+
+A Gradle plugin is a jar that names each plugin it implements by a `META-INF/gradle-plugins/<id>.properties`
+among its resources. It compiles against the Gradle API in scope `provided`, or by `requires static`. Gradle publishes
+no API to Maven Central, so a module compiles against the community build `dev.gradleplugins:gradle-api`.
+
+```properties
+# src/main/resources/META-INF/gradle-plugins/demo.greet.properties
+implementation-class=demo.greet.GreetPlugin
+```
+
+A build that puts the jar on its `buildscript` class path applies the plugin by that ID. Gradle's `plugins`
+block finds an ID through a marker instead, the artifact `<id>:<id>.gradle.plugin`: a POM that depends on the
+jar. An empty `gradleplugin.properties` in the project's configuration folder stages that marker beside the jar,
+for every plugin a staged jar declares:
+
+```text
+target/stage/maven/output/demo/greet/demo.greet.gradle.plugin/1.0/demo.greet.gradle.plugin-1.0.pom
+```
+
+The marker carries the name, description, URL, licences, developers and SCM of the jar's own POM, as Maven
+Central requires of every artifact, so `export` and `release` ship it with the jar. A Gradle build that names
+that repository in `pluginManagement` then applies the plugin with `plugins { id 'demo.greet' version '1.0' }`.
+
+The file takes no values. An ID that is not a valid plugin ID, one in a namespace Gradle reserves (`org.gradle`,
+`com.gradleware`), a descriptor naming no `implementation-class` or a class its jar does not hold, and an ID two
+jars declare each fail the build. Publishing to the Gradle Plugin Portal takes the portal's own tooling.
+`-Djenesis.artifact.gradleplugin=false` switches the markers off.
+
+{% demos 76 %}
+
+## Converting the project's AsciiDoc documents
+
+An `asciidoctor.properties` in the project's configuration folder converts the project's AsciiDoc documents
+to HTML with Asciidoctor and stages them beside its modules. It names the folder of documents as `documents`,
+relative to itself, and properties without that line fail the build naming it:
+
+```properties
+# build.jenesis/asciidoctor.properties
+documents=../docs
+attribute.product-name=Greeter
+```
+
+The documents are converted once for the whole project, after every module is built, and staged under
+`target/stage/project/output/docs/`. Every `.adoc` file keeps its folder, so `docs/guide/getting-started.adoc`
+becomes `docs/guide/getting-started.html`, and an `xref:` between two documents links them. A file or folder
+whose name starts with `_` is a partial, which a document includes and which is never converted on its own.
+Every other file, an image or a stylesheet, is copied as it stands.
+
+| Value | Meaning |
+| --- | --- |
+| `attribute.<name>` | An AsciiDoc attribute every document reads, as `{product-name}` reads the line above. |
+| `backend` | `html5`, the default, or `docbook5`. |
+| `output` | The folder below `target/stage/project/output/` the documents go to, `docs` by default. |
+
+Any other key fails the build. The documents alone switch nothing on, so `.adoc` files kept for another tool
+stay untouched, and a project laid out for the Maven or Gradle plugins of Asciidoctor names
+`documents=../src/docs/asciidoc`. The HTML names neither the time nor the Asciidoctor version, so two builds
+stage the same bytes, and a document that includes a file that does not exist fails the build.
+`-Djenesis.documentation.asciidoctor=false` switches the conversion off.
+
+{% demos 71 %}
+
 ## Signing the jar itself
 
 There are two signatures around a published jar, and they answer different questions. The detached one the
@@ -387,7 +487,7 @@ detached signature made afterwards covers the signed bytes.
   delete <code>target/</code> after a key rotation.
 </div>
 
-{% demos 71 %}
+{% demos 72 %}
 
 ## Rehearsing and publishing a release
 
@@ -496,7 +596,7 @@ and any other answer than success stops it, naming the address and the status.
   Central's snapshot repository takes a snapshot from <code>jenesis.deploy.uri</code> as any repository does.
 </div>
 
-{% demos 73 %}
+{% demos 74 %}
 
 ## The last mile: signing and uploading
 
@@ -513,21 +613,28 @@ independently of how the build produces artifacts.
 
 You can still reach that tool through the same selector vocabulary as everything else. `release` is a target on
 every layout, and it depends on `stage`, so what a release tool uploads is always the tree this build just
-produced. Where the project's root holds a `jreleaser.yml` (or a `.yaml`, `.toml` or `.json`), `release` runs
-JReleaser there, in the build's own JVM, through the JReleaser plugin of
-[jenesis-plugins](https://github.com/jenesis/jenesis-plugins). The build resolves the plugin by itself, so
-nothing names it:
+produced. A `jreleaser.properties` in the project's configuration folder has `release` run JReleaser in the
+build's own JVM, through the JReleaser plugin of [jenesis-plugins](https://github.com/jenesis/jenesis-plugins).
+The build resolves the plugin by itself, so nothing names it. The file names the JReleaser configuration as
+`configuration`, relative to itself, and properties without that line fail the build naming it:
+
+```properties
+# build.jenesis/jreleaser.properties
+configuration=../jreleaser.yml
+```
 
 ```bash
 java -Djenesis.release.publish=true -Djenesis.project.version=1.0.0 build/jenesis/Make.java release
 ```
 
-An optional `jreleaser.properties` in the configuration folder holds its values, and
-`-Djenesis.release.jreleaser=false` leaves the plugin out. A `jreleaser` line of `jenesis.plugins.properties` is
-refused while the file is at the root, as it would take the plugin's name.
+Where no `jreleaser.properties` is found, a `jreleaser.yml` (or a `.yaml`, `.toml` or `.json`) in a
+configuration folder switches the plugin on alone. A file at the project root, where JReleaser's own command
+reads it, switches nothing on unless `configuration` names it. `-Djenesis.release.jreleaser=false` leaves the
+plugin out.
 
 | Value | Meaning |
 | --- | --- |
+| `configuration` | The JReleaser configuration, a `.yml`, `.yaml`, `.toml` or `.json`, relative to `jreleaser.properties`; required. |
 | `command` | The JReleaser command to run, `full-release` by default. |
 | `JRELEASER_*` | A setting JReleaser reads, handed to it as its settings file. |
 
@@ -535,8 +642,8 @@ JReleaser is resolved and pinned like any other tool, and it runs in the project
 the build resolved, `-Djenesis.project.version` included, so the version is stated once. The build reads no
 version off what it staged, so a release whose configuration names none sets `-Djenesis.project.version`. Every
 value of the project's metadata and the folder of every staged tree are template properties of the
-configuration. Each is named in camel case after a `jenesis` prefix: `{{ jenesisStageMaven }}` is the staged
-Maven tree, and `{{ jenesisScmUrl }}` the `scm.url` of `project.properties`.
+configuration. Each is named in camel case after a `jenesis` prefix: {% raw %}`{{ jenesisStageMaven }}`{% endraw %} is
+the staged Maven tree, and {% raw %}`{{ jenesisScmUrl }}`{% endraw %} the `scm.url` of `project.properties`.
 
 JReleaser reads its credentials from its `JRELEASER_*` environment variables, as on the command line. A
 `JRELEASER_*` line of `jreleaser.properties` can name one as well, such as `JRELEASER_GITHUB_TOKEN=@github.token`, which reads

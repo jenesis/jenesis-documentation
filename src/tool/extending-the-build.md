@@ -18,8 +18,14 @@ comes last.
 
 ## Adding plugins to the stock build
 
-A project names its plugins in `jenesis.plugins.properties`, beside `jenesis.properties` at its root, one per
-line:
+The plugins for the tools the earlier chapters describe - Checkstyle, the code generators, Kotlin, JReleaser and
+the others - are official plugins, and the build finds them by itself: each runs where a configuration folder holds
+its `<name>.properties`, or the tool's own conventional file, and a language wherever its sources are. Every one
+is switched off by `jenesis.<part>.<tool>=false`, named after the part of the build it belongs to, as
+`jenesis.check.pmd=false` or `jenesis.language.kotlin=false`.
+
+Any other plugin is named by the project in `jenesis.plugins.properties`, beside `jenesis.properties` at its root,
+one per line:
 
 ```properties
 greeting+binary/generated=./plugin
@@ -31,14 +37,32 @@ point** says where in the build the plugin joins, as the next section describes;
 adds the plugin to the module build itself, and an unknown hook point is refused. The value says where the
 plugin comes from:
 
-- a value starting with `./` is a folder of the project, compiled from source on every build, and
-- anything else is a module name, resolved as `module/<name>` from the Jenesis module repository whatever the
-  project's layout, with the local export (`~/.jenesis`) searched first. A value that is neither, such as a path
-  starting with `../`, fails the build.
+| Value | The plugin is |
+| --- | --- |
+| `./<folder>` | a folder of the project, compiled from source on every build |
+| `<module name>` | resolved as `module/<module name>` through the Jenesis Module Index whatever the project's layout, with the local export (`~/.jenesis`) searched first |
+| `module/<module name>` | the same, spelled as a coordinate |
+| `maven/<groupId>/<artifactId>` | resolved from a Maven repository with the closure its POM declares |
 
-Either may end in `@<provider>`, which selects the provider annotated `@BuildModuleName("<provider>")` when the plugin
-module provides several: `signing+artifact=demo.signing@jarsigner`. Without it, the module must provide exactly
+A coordinate is resolved by the repository its first segment names, and by that repository's resolver, as a
+dependency is anywhere else in the build. Its version comes from the pins unless the coordinate carries one, as
+`maven/demo.plugin/demo.plugin/1.0.0`. A value that is none of these, such as a path starting with `../`, fails
+the build.
+
+Any of them may end in `@<provider>`, which selects the provider annotated `@BuildModuleName("<provider>")` when the
+plugin provides several: `signing+artifact=demo.signing@jarsigner`. Without it, the plugin must provide exactly
 one unannotated provider.
+
+A plugin is loaded as `jpx` runs a program, with the JDK's own class loaders. One named by a Maven coordinate
+loads with its whole closure on a class path of its own. One named by its module loads every jar that declares a
+module name into a module layer of the plugin's own, and any other jar on a class path beneath that layer, which
+its automatic modules read. Under `-Djenesis.project.layout=modular` every jar of such a plugin loads as a
+module, and a plugin named by a Maven coordinate is refused.
+
+The file names its plugins under names of their own: a plugin it declares resolves and pins in the group
+`plugin.<name>`, and runs apart from the official plugins at every hook point, so it runs beside an official
+plugin of the same name and neither touches the other. Everything the project writes for it - the line,
+`plugin-<name>.properties`, its arguments and its selector - spells the name as the line writes it.
 
 ### Hook points
 
@@ -49,7 +73,8 @@ as input, and where what it writes goes. A plugin never inspects the build aroun
 hook point hands it, and what it writes travels onwards by the same folder conventions the stock steps follow,
 so a `sources/` tree written in `binary/generated` is compiled, and a `maven/` folder written in
 `stage/transform` joins the staged Maven tree. Every hook point keeps its plugins in a namespace of its own -
-`custom/`, `transform/`, `inspect/` or `plugin/` - beside the stock steps, so a plugin may take any name. What a
+`custom/`, `transform/`, `inspect/` or `plugin/` - beside the stock steps and the official plugins, so a plugin
+may take any name. What a
 plugin writes is added to what the stock steps write, at every hook point but `binary/transform`, whose plugins
 rewrite the compiled classes.
 
@@ -62,7 +87,9 @@ A plugin of a module hook point runs as `<hook point>/custom/<name>` within the 
 hook point, as the build log shows it under `build/maven/compose/module/` or `build/modules/compose/module/` -
 `build-module-app/produce/assemble/binary/generated/custom/<name>` in the module's `build`, say, or
 `verify-module-app/check/custom/<name>` in its `verify`, where a plugin of `binary/validate` runs as
-`validate/custom/<name>`. A plugin with no hook point runs as `custom/<name>`, in the module's build itself:
+`validate/custom/<name>`. A plugin with no hook point runs as `custom/<name>`, in the module's build itself. The
+plugins of `observe`, `test` and `language` sit as `plugin/<name>` beside the official observers, frameworks and
+languages:
 
 | Module hook point | When a plugin runs, and what it is handed |
 | --- | --- |
@@ -76,7 +103,7 @@ hook point, as the build log shows it under `build/maven/compose/module/` or `bu
 | `binary` | Within the module's compile toolchain, handed what the toolchain reads. |
 | `artifact` | In `verify`, handed the module's jar with its dependencies. |
 | `observed` | With the module's tests, beside the stock observers such as coverage. |
-| `observe` | Attached to the JVM the module's tests run in, by a plugin that provides an `ObservabilityFactory`; its report runs as `observed/observations/<name>`, handed the tests' output. |
+| `observe` | Attached to the JVM the module's tests run in, by a plugin that provides an `ObservabilityFactory`; its report runs as `observed/observations/plugin/<name>`, handed the tests' output. |
 | `test` | The framework the module's tests run on, from a plugin that provides a `TestFrameworkFactory`, consulted before the built-in frameworks. |
 | `language` | A language of its own, from a plugin that provides a `LanguageFactory`: compiled before or after javac, and documented, wherever a module holds a file of its extensions. |
 | `documentation/generate` | In the module's `document` phase, beside the stock documentation generators. |
@@ -85,8 +112,9 @@ hook point, as the build log shows it under `build/maven/compose/module/` or `bu
 | `package` | In the module's `package` phase, handed its jar, its dependencies and the stock images; what it writes into `packages/` is staged in `stage/packages/`. |
 
 A plugin of a project hook point runs under the goal it belongs to, at the same path in every project:
-`build/preprocess/custom/<name>`, `build/postprocess/transform/<name>` and `build/postprocess/inspect/<name>`,
-`stage/transform/<name>` and `stage/inspect/<name>`, `release/custom/<name>`, and `plugin/<name>`:
+`build/preprocess/custom/plugin.<name>`, `build/postprocess/transform/plugin.<name>` and
+`build/postprocess/inspect/plugin.<name>`, `stage/transform/plugin.<name>` and `stage/inspect/plugin.<name>`,
+`release/custom/plugin.<name>`, and `plugin/<name>`:
 
 | Project hook point | When a plugin runs, and what it is handed |
 | --- | --- |
@@ -119,26 +147,30 @@ is created:
 greeting=Hello from a generated source
 ```
 
-The plugin's dependencies are pinned like any other, in the dependency group of the plugin's name:
+The plugin's dependencies are pinned like any other, in the module's declaration, under the dependency group
+`plugin.<name>`:
 
 ```java
 /**
- * @jenesis.pin greeting/module/org.json 20260522 SHA-256/...
+ * @jenesis.pin plugin.greeting/module/org.json 20260522 SHA-256/...
  */
 ```
 
 A plugin found in the local export is pinned and checked like one from a repository: build it again and its
 checksum changes, so the build refuses it until `-Djenesis.dependency.pin=versions` with `pin` records what the
-export now holds.
+export holds.
 
-Everything a plugin resolves itself is pinned in a group `<name>:<purpose>`: the tool it runs in `<name>:tool`, as
-`xjc:tool/maven/org.glassfish.jaxb/jaxb-xjc`, and a closure that must not share versions with it in a group of its
-own, as `kotlin:dokka` for the Kotlin plugin's Dokka. Every pin a plugin needs therefore sorts under its name, and
-the build fails a plugin that resolves in a group of another name. A `.properties` file escapes the colon in a
-key, so `pin` writes such a pin there as `xjc\:tool/maven/…`.
+Everything a plugin resolves itself is pinned in a group `<group>:<purpose>` of the group it is handed -
+`plugin.<name>` for a plugin the file declares, the plugin's name for an official one. The tool it runs lies in
+`<group>:tool` - `plugin.<name>:tool`, or `xjc:tool/maven/org.glassfish.jaxb/jaxb-xjc` for the official xjc
+plugin - and a closure that must not share versions with it in a group of its own, as `kotlin:dokka` for the
+Kotlin plugin's Dokka. Every pin a plugin needs therefore sorts under its group, and the build fails a plugin that
+resolves in a group of another name. A `.properties` file escapes the colon in a key, so `pin` writes such a pin
+there as `xjc\:tool/maven/…`.
 
-`-Djenesis.plugin.<name>=false` leaves a plugin out, as the stock tools are switched off, without editing the
-file, and `-Djenesis.project.plugins=false` leaves out every plugin the file names.
+`-Djenesis.plugin.<name>=false` leaves out a plugin the file names, without editing the file, and
+`-Djenesis.project.plugins=false` leaves out every plugin the file names. The setting is a plugin's own: an
+official plugin of the same name is switched by `jenesis.<part>.<tool>` alone, so the two never share a setting.
 
 A plugin hands the **tests** a file the same way: in the test module's `binary/compiled`, it writes the file below
 `classes/`, where only the tests' jar holds it, and the tests read it as a resource. Its
@@ -306,14 +338,14 @@ These plugins belong to no module, so their pins live beside the file that names
 **`jenesis.plugins.pin.properties`**, one line for each module in each plugin's closure:
 
 ```properties
-audit/module/build.jenesis=0.14.0 SHA-256/...
-notice/module/build.jenesis=0.14.0 SHA-256/...
+plugin.audit/module/build.jenesis=<version> SHA-256/...
+plugin.notice/module/build.jenesis=<version> SHA-256/...
 ```
 
 `pin` writes the file and pins every plugin of the whole project the file names, including one a setting
 switches off, so a plugin that only a profile switches on is pinned all the same. `pin` runs last, after a dry
-release, so it also writes the tool a releaser resolves, such as
-`jreleaser\:tool/maven/org.jreleaser/jreleaser-tool-provider=1.26.0 SHA-256/...`. A releaser reads
+release, so it also writes the tool a releaser resolves, such as the official JReleaser plugin's
+`jreleaser\:tool/maven/org.jreleaser/jreleaser-tool-provider=<version> SHA-256/...`. A releaser reads
 `jenesis.release.publish` from the environment it is handed and publishes nothing without it. Where a releaser
 does not run - its file sits in a profile `pin` was not given - `pin` keeps the lines that pin its tool as they
 stand. The plugins run with
@@ -428,8 +460,8 @@ immediately rather than silently breaking cache invalidation. If you see it, hol
   Without an explicit one, the JVM derives it from the class structure, so adding a field or changing a method
   signature already changes the hash - but editing a method body does not. Declare a
   <code>serialVersionUID</code> and bump it whenever you change a step's behaviour without touching its
-  fields. Once you declare one, structural changes no longer shift the hash on their own, so bumping it is
-  your job from then on.
+  fields. With one declared, structural changes do not shift the hash on their own, so bumping it is
+  your job.
 </div>
 
 ## Writing a plugin
@@ -448,7 +480,8 @@ module demo.plugin {
 The factory creates the `BuildExecutorModule` that adds the steps the plugin contributes, as a stock module does.
 It is handed the settings of the build, the values of its `plugin-<name>.properties` or its lines of
 `jenesis.plugins.arguments.properties` in the file's order, the `Permits` that bound the processes the build runs
-at once, the dependency group to resolve a tool in, and the build's repositories and resolvers:
+at once, its group - `plugin.<name>`, which everything it resolves lies under - and the build's repositories and
+resolvers:
 
 ```java
 public class GreetingFactory implements BuildModuleFactory {
@@ -493,14 +526,19 @@ attributes that still hold, as `Multi-Release` while it keeps the versioned clas
 
 A plugin compiled from source lives in a project folder of its own, which carries an empty **`.jenesis.skip`**
 marker so the project's module discovery does not mistake it for a second project module. A published plugin
-is built and exported like any other module, and resolved by its module name.
+is built and exported like any other module, and resolved by its module name or its Maven coordinate. Named by
+its module, it is found through its `provides`; on the class path a Maven coordinate loads it on, it is found
+through a `META-INF/services` entry for its factory, which its build writes from the `provides` when its
+configuration folder holds an empty `classpath.properties`, as
+*[A modular jar on the class path](/tool/packaging/#a-modular-jar-on-the-class-path)* describes.
 
 <div class="note">
-  A plugin usually carries a different version of the Jenesis build API than the build running it. Each build
-  module is therefore loaded into its own <code>ModuleLayer</code> with its own class loader, and calls are
-  bridged across the boundary - so the two copies never clash and a plugin may pin its own Jenesis version,
-  as long as the API it uses lines up. The plugin itself must be an explicit named module; its
-  <em>dependencies</em> need not be, since a module layer admits automatic modules too.
+  A plugin usually carries a different version of the Jenesis build API than the build running it. Each plugin
+  is therefore loaded with class loaders of its own - into a <code>ModuleLayer</code> of its own where it loads
+  as modules - and calls are bridged across the boundary, so the two copies never clash and a plugin may pin its
+  own Jenesis version, as long as the API it uses lines up. A plugin named by its module or compiled from source
+  is an explicit named module; its <em>dependencies</em> need not be, since a module layer admits automatic
+  modules too.
 </div>
 
 A plugin compiled from source resolves its `requires` as a project's `module-info.java` does. A tool the
@@ -535,10 +573,10 @@ public class LoadedFactory implements ObservabilityFactory {
 ```
 
 The engine is part of what decides whether the tests run again, so it holds its settings as serialisable fields,
-and a changed value runs the tests anew. Its coordinates resolve with the test runtime in the group it is named
-after, the plugin's name. The plugin is built before the tests, under `observed/observers/<name>`, and its report
-runs as `observed/observations/<name>`; it takes values but binds no files. Only a module that runs tests is
-observed.
+and a changed value runs the tests anew. It is named after the group the factory is handed, `plugin.<name>`, and
+its coordinates resolve with the test runtime in `<group>:agent`. The plugin is built before the tests, under
+`observed/observers/plugin/<name>`, and its report runs as `observed/observations/plugin/<name>`; it takes values
+but binds no files. Only a module that runs tests is observed.
 
 ### Running the tests on a framework of your own
 
@@ -583,8 +621,6 @@ folder beside `src/main/java`, such as `src/main/kotlin`, only where `jenesis.ma
 jenesis.maven.sources=kotlin
 ```
 
-{% demos 61 %}
-
 ### A worked example: classes rewritten with Byte Buddy
 
 A plugin is written against a library's own Java API. This one runs [Byte Buddy](https://bytebuddy.net)'s
@@ -600,13 +636,13 @@ enhance+binary/transform=./plugin
 ```
 
 `plugin/` holds the plugin module, with an empty `.jenesis.skip` beside its declaration. It requires the
-build API and Byte Buddy, and provides its build module:
+build API and Byte Buddy, and provides its factory:
 
 ```java
 module demo.plugin {
     requires build.jenesis;
     requires net.bytebuddy;
-    provides build.jenesis.BuildExecutorModule with demo.plugin.EnhanceModule;
+    provides build.jenesis.BuildModuleFactory with demo.plugin.EnhanceFactory;
 }
 ```
 
@@ -618,9 +654,10 @@ type=sample.Greeting
 greeting=Hello from a method that Byte Buddy rewrote in a build plugin!
 ```
 
-Its values reach the provider's constructor as a `SequencedMap<String, String>`, in the file's order. The
-provider keeps what it needs, and its `accept(BuildExecutor, SequencedMap<String, Path>)` adds one step, a
-record of those two values, handed everything the hook point reads:
+Its values reach the factory's `create` as a `SequencedMap<String, String>`, in the file's order, and the factory
+hands them to the `EnhanceModule` it returns. The module keeps what it needs, and its
+`accept(BuildExecutor, SequencedMap<String, Path>)` adds one step, a record of those two values, handed everything
+the hook point reads:
 
 ```java
 public EnhanceModule(SequencedMap<String, String> properties) {
@@ -687,17 +724,17 @@ Greeting{audience=the build}
 
 Byte Buddy is configured in code here rather than discovered. Its Maven and Gradle plugins run the Byte Buddy
 plugins they find in `META-INF/net.bytebuddy/build.plugins` or that the build file names, configured in XML
-or the build's DSL. The provider above constructs the plugins it runs in Java instead, from the values of its
+or the build's DSL. The module above constructs the plugins it runs in Java instead, from the values of its
 own properties file, and runs nothing it did not name.
 
 Byte Buddy resolves into the plugin's own module layer, and what the plugin rewrote refers to nothing but
 `java.base`, so it never reaches the running application. `pin` records the plugin's closure in the project's
-`module-info.java`, in the group of the plugin's name:
+`module-info.java`, in the group `plugin.enhance`:
 
 ```java
 /**
- * @jenesis.pin enhance/module/build.jenesis <version> SHA-256/...
- * @jenesis.pin enhance/module/net.bytebuddy <version> SHA-256/...
+ * @jenesis.pin plugin.enhance/module/build.jenesis <version> SHA-256/...
+ * @jenesis.pin plugin.enhance/module/net.bytebuddy <version> SHA-256/...
  */
 ```
 
@@ -856,7 +893,7 @@ An entry point can also change *what* the stock steps consume, because the modul
 inputs in one line:
 
 ```java
-descriptor.sources("preprocess")   // stock compile now reads the preprocess step's output, not sources/
+descriptor.sources("preprocess")   // stock compile reads the preprocess step's output, not sources/
 ```
 
 That is the whole trick behind a preprocessing build: add a `preprocess` step that reads the module's
@@ -971,5 +1008,5 @@ The tools are found by name when `build.jenesis` is a resolved module or a jar o
 mode registers no service, so a program there constructs `new MakeTool()`, `new ExecuteTool()` or
 `new JpxTool()` itself; the contract is the same.
 
-{% demos 78 %}
+{% demos 81 %}
 

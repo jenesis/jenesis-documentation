@@ -124,10 +124,16 @@ the tests sits in each module's `src/test/build.jenesis/`, or in the folder of e
 
 What these folders can hold - presence activates, contents configure:
 
-- **Plugins**: `plugin-<name>.properties` - a plugin `jenesis.plugins.properties` names runs where its file is
-  found, with its values and the files it binds, as Checkstyle's `checkstyle.xml` or the `.editorconfig` of ktlint.
-- **Code quality**: `jdeps.properties`, `jdeprscan.properties`.
-- **Formatting**: `licenseheader.properties`; the formatters are plugins.
+- **Tools the build downloads**: `<name>.properties` - `checkstyle.properties`, `xjc.properties`,
+  `jacoco.properties`, `jreleaser.properties` and the like. Its `configuration=<path>`, relative to the file,
+  names the tool's own file, and its other lines are the tool's values. Where no such properties are found, the
+  tool's one conventional file in a configuration folder - `checkstyle.xml`, `pmd.xml`, `.editorconfig`,
+  `rewrite.yml`, `jreleaser.yml` - switches it on alone.
+- **Code quality**: `jdeps.properties`, `jdeprscan.properties`, and the linters' files above.
+- **Formatting**: `licenseheader.properties`, and one Java formatter's `googlejavaformat.properties`,
+  `palantir.properties` or `eclipse.properties`.
+- **Plugins of the project**: `plugin-<name>.properties` - a plugin `jenesis.plugins.properties` names runs
+  where its file is found, with its values and the files it binds.
 - **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`,
   `classifiers.properties`.
 - **Compliance**: `licensing.properties`, `vulnerability.properties`, `spdx.properties`.
@@ -139,7 +145,10 @@ What these folders can hold - presence activates, contents configure:
   JVM, PIT or `native-image` (see *[Building & running](/tool/building-and-running/#handing-a-program-environment-variables)*).
 
 Each of these is the subject of a later chapter; here the point is only *where* they go and that a file's mere
-presence switches its feature on.
+presence switches its feature on. A setting switches a tool off without removing its file:
+`jenesis.<part>.<name>=false`, named after the part of the build the tool belongs to, as
+`jenesis.check.pmd=false` or `jenesis.generate.xjc=false`, and `jenesis.plugin.<name>=false` for a plugin
+`jenesis.plugins.properties` names.
 
 <div class="warning">
   The bare project root is deliberately <strong>not</strong> a configuration folder. A conventionally named
@@ -159,7 +168,7 @@ Select profiles with the `jenesis.make.profiles` property - a comma-separated li
 - a **`jenesis-<name>.properties`** file at the project root, whose entries feed the same `jenesis.*` system
   properties, and
 - a **`<name>/` subfolder** inside each configuration folder, searched *ahead of* the folder itself - so a
-  profile can carry its own `plugin-checkstyle.properties`, `packaging.properties`, and so on.
+  profile can carry its own `checkstyle.properties`, `packaging.properties`, and so on.
 
 <div class="note">
   A <code>pin-&lt;name&gt;.properties</code> bill of materials is not searched for in a profile subfolder. It
