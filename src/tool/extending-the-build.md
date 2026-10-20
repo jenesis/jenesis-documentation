@@ -40,7 +40,7 @@ plugin comes from:
 | Value | The plugin is |
 | --- | --- |
 | `./<folder>` | a folder of the project, compiled from source on every build |
-| `<module name>` | resolved as `module/<module name>` through the Jenesis Module Index whatever the project's layout, with the local export (`~/.jenesis`) searched first |
+| `<module name>` | resolved as `module/<module name>` whatever the project's layout: from the local module repository (`~/.jenesis`) first, then from the module repositories `jenesis.module.uri` names, the Jenesis Module Index by default |
 | `module/<module name>` | the same, spelled as a coordinate |
 | `maven/<groupId>/<artifactId>` | resolved from a Maven repository with the closure its POM declares |
 

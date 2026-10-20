@@ -420,7 +420,9 @@ Any other key fails the build. The documents alone switch nothing on, so `.adoc`
 stay untouched, and a project laid out for the Maven or Gradle plugins of Asciidoctor names
 `documents=../src/docs/asciidoc`. The HTML names neither the time nor the Asciidoctor version, so two builds
 stage the same bytes, and a document that includes a file that does not exist fails the build.
-`-Djenesis.documentation.asciidoctor=false` switches the conversion off.
+`-Djenesis.documentation.asciidoctor=false` switches the conversion off. `export`, and the repositories a
+`release` puts into, take the staged Maven and module trees only, so the documents stay in the staged tree for
+a release plugin to publish.
 
 {% demos 71 %}
 
@@ -643,7 +645,8 @@ the build resolved, `-Djenesis.project.version` included, so the version is stat
 version off what it staged, so a release whose configuration names none sets `-Djenesis.project.version`. Every
 value of the project's metadata and the folder of every staged tree are template properties of the
 configuration. Each is named in camel case after a `jenesis` prefix: {% raw %}`{{ jenesisStageMaven }}`{% endraw %} is
-the staged Maven tree, and {% raw %}`{{ jenesisScmUrl }}`{% endraw %} the `scm.url` of `project.properties`.
+the staged Maven tree, {% raw %}`{{ jenesisStageProject }}`{% endraw %} the project's own files, such as the
+documents Asciidoctor converted, and {% raw %}`{{ jenesisScmUrl }}`{% endraw %} the `scm.url` of `project.properties`.
 
 JReleaser reads its credentials from its `JRELEASER_*` environment variables, as on the command line. A
 `JRELEASER_*` line of `jreleaser.properties` can name one as well, such as `JRELEASER_GITHUB_TOKEN=@github.token`, which reads

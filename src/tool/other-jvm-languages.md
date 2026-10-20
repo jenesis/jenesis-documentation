@@ -199,7 +199,8 @@ When you build documentation jars (`jenesis.project.documentation`, *Building & 
 documents its own sources: Dokka for Kotlin, `scaladoc` for Scala, `groovydoc` for Groovy, beside `javadoc` for
 Java. A module with one language and no Java is documented by that language's tool at the root of the
 archive. Where a module mixes languages, `javadoc` renders the Java at the root and each other language renders
-in a folder named after its language - `kotlin/`, `scala/` or `groovy/`. Either way the produced `-javadoc.jar`
+in a folder named after its language - `kotlin/`, `scala/` or `groovy/`. Where a module holds Java beside
+Groovy, `groovydoc` documents the Java sources as well, so its folder covers the whole module. Either way the produced `-javadoc.jar`
 always has a root `index.html`, so it satisfies a repository like Maven Central.
 
 ### Configuring Dokka
