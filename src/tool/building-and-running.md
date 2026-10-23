@@ -103,8 +103,8 @@ Output, the last 200 out of 4182 lines - target/build/.../supplement/output hold
 
 `-Djenesis.process.tail` sets how many lines, and `0` prints every one. What a tool prints is kept there as
 UTF-8. A JVM the build forks is told to print in UTF-8, by `-Dstdout.encoding` and `-Dstderr.encoding`, unless
-its `process-<tool>.properties` names another, as a `-Dstdout.encoding\=<charset>=` line does for `java`
-and `-J-Dstdout.encoding\=<charset>=` for a JDK tool. Any other program is read in the platform's encoding.
+its `process-<tool>.properties` names another, as a `-Dstdout.encoding=<charset>` line does for `java`
+and `-J-Dstdout.encoding=<charset>` for a JDK tool. Any other program is read in the platform's encoding.
 
 A forked process that ends with exit code 137 was killed with `SIGKILL`, possibly by the kernel's out-of-memory
 killer, and the failure says so. Fewer tools at once, with a lower `jenesis.process.concurrency`, or a smaller
