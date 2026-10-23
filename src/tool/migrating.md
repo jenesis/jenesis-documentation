@@ -187,8 +187,8 @@ checkstyle:tool/maven/<groupId>/<artifactId> <version>
 In a process file, a flag given more than once, as `--add-opens` is, takes one argument per line of its value,
 and a `--release` is refused, since `maven.compiler.release` declares it. A `source` and `target` without a
 release compile as `--release`, which also checks the API, so code calling a newer API behind a version check
-needs a `--source=<release>` line. `javac` runs without `-g`, so a test that reads parameter names needs
-`-g=` or `-parameters=` there. A plugin may pass flags its configuration never shows, as a convention plugin
+needs a `--source=<release>` line. `javac` runs with `-g`, as Maven and Gradle do, unless a line names a
+`-g` option of its own, such as `-g\:none=`; a test that reads parameter names needs `-parameters=` there. A plugin may pass flags its configuration never shows, as a convention plugin
 adds `-parameters`, so compare the old build's effective `javac` arguments: `mvn -X compile` prints them after
 "Command line options:", and `gradle compileJava --debug` on its "Compiler arguments:" line.
 
