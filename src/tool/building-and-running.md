@@ -478,8 +478,9 @@ its last build and keeps the hash of every other one; changing the mode reads th
 
 With an ABI recorded, a module whose required modules changed only below their ABI - a method body, a private member
 - is not compiled again; the build prints its `javac` step as `[SKIPPED]`. A change to the ABI of a required module
-compiles it again, as does any change to an annotation processor, and a test module is compiled again whenever the
-module it tests changed, since a test reaches that module's package-private members. The mode is the build's to choose:
+compiles it again, as does any change to an annotation processor. A test module reaches every package of the module it
+tests, its package-private members as well, so it is compiled again when any of those changed, whatever the mode. The
+mode is the build's to choose:
 `modular` matches modules that read each other on the module path, `classpath` a project whose modules are on the
 class path.
 
