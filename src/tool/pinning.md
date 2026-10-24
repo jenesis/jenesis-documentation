@@ -6,9 +6,9 @@ description: Freezing the resolved closure at exact versions and SHA-256 checksu
 
 *[Dependencies](/tool/dependencies/#declaring-a-dependency)* pinned a single module at a version you chose.
 Jenesis aims further: a pin for **every** dependency in the transitive closure, each with the **SHA-256
-checksum** of its jar, written for you rather than by hand and committed with your sources. A later build that
-resolves a jar whose bytes do not match the recorded checksum **fails**, so the build is resistant to a
-supply-chain swap at a coordinate you already trusted. The second half of the chapter is how to share one
+checksum** of its jar, and a checksum for every POM read to resolve it, written for you rather than by hand and
+committed with your sources. A later build that reads a jar or a POM whose bytes do not match the recorded
+checksum **fails**, so the build is resistant to a supply-chain swap at a coordinate you already trusted. The second half of the chapter is how to share one
 such record across modules and projects instead of repeating it.
 
 ## Recording the pins
@@ -21,23 +21,30 @@ java build/jenesis/Make.java pin
 ```
 
 It is opt-in - not part of `build` - and it writes into your project tree rather than under `target/`: a
-`@jenesis.pin` tag per dependency in a **modular** project, a `<dependencyManagement>` block with a
-`<!--Checksum/…-->` comment per entry in a **`pom.xml`** project. Commit the result and the pin set travels
-with the project. `pin` runs the build it pins, so whatever the changed versions reach is built again, a
-module's tests included; `-Djenesis.test.skip=true` leaves the tests to the next build. It runs last, after `stage`
-and a [dry release](/tool/publishing/#rehearsing-and-publishing-a-release), so the tool a release plugin resolves is
-pinned too. In a `<dependencyManagement>`, `pin` updates an entry it resolves where it stands and adds the others
-at its end; every other entry, an imported bill of materials, the entry of a module the build builds and every
-comment stays as written. A `-SNAPSHOT` is given no checksum, as it is published again under its version, and an
-entry that carries a checksum `pin` wrote but that nothing resolves any longer is dropped. A managed entry that `pin` rewrites keeps its `<exclusions>`, those an imported bill of
-materials declares for it included, and the `<scope>` such a bill of materials gives it. An entry whose
-`<version>` is a property, such as `${kotlin.version}`, keeps the property, and its comment names the version the
-checksum was taken of (`<!--Checksum/SHA-256/… 2.2.20-->`): once the property names another version, the
-checksum no longer applies, so a strict build asks for `pin` again rather than failing on a mismatched digest. The main code and the tests of a `pom.xml` share its one
-`<dependencyManagement>`, so where they resolve a coordinate at different versions, its entry takes the version
-the POM declares itself, which the other half then resolves as well. A module of a `pom.xml` project inherits the `<!--jenesis.plugin-->` comments
-of a parent POM within the project, but its `<!--jenesis.pin-->` comment is its own: `pin` writes one into every
-module's POM, and a parent's is not read for it.
+`@jenesis.pin` tag per dependency in a **modular** project, a line per dependency in a `<!--jenesis.pin ...-->`
+comment in a **`pom.xml`** project. Commit the result and the pin set travels with the project. `pin` runs the
+build it pins, so whatever the changed versions reach is built again, a module's tests included;
+`-Djenesis.test.skip=true` leaves the tests to the next build. It runs last, after `stage` and a
+[dry release](/tool/publishing/#rehearsing-and-publishing-a-release), so the tool a release plugin resolves is
+pinned too.
+
+In a `pom.xml`, the pins change nothing Maven resolves: `pin` writes no `<dependencyManagement>` entry, and
+removes the entries carrying a `<!--Checksum/…-->` comment that an earlier version of `pin` wrote there. Every
+other entry, an imported bill of materials and every comment stay as written. A `-SNAPSHOT` is given no
+checksum, as it is published again under its version. The main code and the tests of a `pom.xml` share its one
+comment, so where they resolve a coordinate at different versions, its line takes the version the POM declares
+itself, which the other half then resolves as well. A module of a `pom.xml` project inherits the
+`<!--jenesis.plugin-->` comments of a parent POM within the project, but its `<!--jenesis.pin-->` comment is its
+own: `pin` writes one into every module's POM, and a parent's is not read for it.
+
+```xml
+<!--jenesis.pin
+maven/org.apache.commons/commons-parent/pom 69 SHA-256/d50d...a9bb
+org.apache.commons/commons-text 1.12.0 SHA-256/de02...a15f
+maven/org.apache.commons/commons-text/pom 1.12.0 SHA-256/b2d4...334f
+maven/org.apache/apache/pom 31 SHA-256/555d...91cc
+-->
+```
 
 `pin` is project-wide, and a `+<module>` selector beside it narrows `build` rather than the pin. To pin one
 module, name its step - `<path>` is the module's folder with `+` in place of `/`, as the step's folder under
@@ -126,6 +133,29 @@ versions and the modules holding each, and `-Djenesis.print.divergence=true` pri
 That is not a failure - more than one version is legitimate until you decide otherwise - but it is the signal
 that a shared [bill of materials](#sharing-pins-a-bill-of-materials) is overdue.
 
+## Pinning the POMs
+
+A Maven dependency is resolved from more than its jar: its POM names its dependencies, its parent POM
+contributes versions and properties, and an imported bill of materials manages versions in turn. `pin`
+therefore writes a line for every POM the resolution read - a dependency's own, every parent, every imported
+bill of materials - with the coordinate's type `pom` and the checksum of that file:
+
+```java
+/**
+ * @jenesis.pin maven/org.apache.commons/commons-parent/pom 69 SHA-256/d50d...a9bb
+ * @jenesis.pin org.apache.commons/commons-text 1.12.0 SHA-256/de02...a15f
+ * @jenesis.pin maven/org.apache.commons/commons-text/pom 1.12.0 SHA-256/b2d4...334f
+ * @jenesis.pin maven/org.apache/apache/pom 31 SHA-256/555d...91cc
+ */
+```
+
+commons-text's POM names `commons-parent` 69 as its parent, which in turn names `org.apache:apache` 31. A POM
+line pins one file and selects nothing. The version a parent or an imported bill of materials is read at is
+the one the POM naming it writes, as Maven reads it, so two libraries naming two versions of the same parent
+are two files and two lines: `commons-parent` 69 imports `junit-bom` 5.10.2 while JUnit 5.11.3's own POMs
+read `junit-bom` 5.11.3, so a project testing commons-text with JUnit 5.11.3 pins a line for each. Without a checksum, a line of type `pom` keeps its other meaning: the
+version of a dependency declared with `<type>pom</type>`.
+
 ## Pinning one variant of a module
 
 Some libraries publish several jars under one coordinate - same module name, different bytes - distinguished
@@ -204,11 +234,12 @@ How strictly the recorded pins are enforced is controlled by one property,
 | `-Djenesis.dependency.pin` | Versions | Checksums |
 | --- | --- | --- |
 | *(unset - the default)* | honoured where pinned | verified where a pin carries one; a dependency with no checksum is allowed |
-| `strict` | honoured | **required** - any third-party dependency without a pinned checksum fails the build |
+| `strict` | honoured | **required** - any third-party dependency, or POM read to resolve one, without a pinned checksum fails the build |
 | `versions` | honoured | not verified |
 | `ignore` | float freely | not verified |
 
-The default already validates every checksum you have recorded; a mismatch always fails the build. **Strict**
+The default already validates every checksum you have recorded, a POM's included; a mismatch always fails
+the build. **Strict**
 mode goes further and refuses to build at all until *nothing* is left unpinned, which is what you want in CI
 once a project is fully pinned. Run `pin`, commit, then build under `-Djenesis.dependency.pin=strict` so no
 new un-vetted artifact can slip in unnoticed.
@@ -315,10 +346,10 @@ one you are importing:
 | --- | --- | --- |
 | A local file | `pin-<name>.properties` | Whatever the file records - byte-stable, so entries can carry hashes and need no pins at all. |
 | A published module BOM | `<module> [<version> [<algorithm>/<hash>]]` | The reference itself is content-verified; strict pinning requires the hash. |
-| A Maven BOM | `<groupId>/<artifactId> <version>` | The reference carries none: repositories re-serialise POMs, so a hash over one is not stable. `pin` records the resolved artifacts instead. |
+| A Maven BOM | `<groupId>/<artifactId> <version>` | The reference carries none: `pin` records the checksum of the BOM's POM, of its parents and of what it imports as [POM lines](#pinning-the-poms), beside the resolved artifacts. |
 
-All three satisfy `-Djenesis.dependency.pin=strict`, a Maven BOM by way of the artifact pins `pin` writes for
-what resolves through it. Precedence is local-first: an explicit `@jenesis.pin` always overrides a BOM entry,
+All three satisfy `-Djenesis.dependency.pin=strict`, a Maven BOM by way of the POM and artifact pins `pin`
+writes for it and for what resolves through it. Precedence is local-first: an explicit `@jenesis.pin` always overrides a BOM entry,
 and when two BOMs manage the same coordinate the **last declared wins**, so broad curation is declared first
 and local refinement last.
 

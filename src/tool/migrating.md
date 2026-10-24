@@ -220,9 +220,9 @@ Fewer dependencies for consumers means publishing the dependency as a dependency
 
 Until it is pinned, a tool the build resolves itself - the test runner, Error Prone, Checkstyle - takes its
 newest release without a pre-release qualifier, so the first `pin` settles those as well. Commit before
-running it: `pin` writes the versions and checksums it resolved into each `<dependencyManagement>`, where every
-entry it does not resolve, an imported BOM and every comment stay. A pinned entry outranks a BOM, so to move to a new BOM version, change it, delete the
-entries `pin` wrote and pin again. Then build with `-Djenesis.dependency.pin=strict`, as CI should.
+running it: `pin` writes the versions and checksums it resolved, those of every POM read among them, into a
+`<!--jenesis.pin-->` comment of each `pom.xml`, which changes nothing Maven resolves, and leaves
+`<dependencyManagement>` as written. Then build with `-Djenesis.dependency.pin=strict`, as CI should.
 
 Before retiring the old build, compare what both produce: the contents of each jar, the dependency tree
 (`dependencies` against `mvn dependency:tree` or `gradle dependencies`), the number of tests run, and the POM a
