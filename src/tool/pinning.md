@@ -156,6 +156,14 @@ are two files and two lines: `commons-parent` 69 imports `junit-bom` 5.10.2 whil
 read `junit-bom` 5.11.3, so a project testing commons-text with JUnit 5.11.3 pins a line for each. Without a checksum, a line of type `pom` keeps its other meaning: the
 version of a dependency declared with `<type>pom</type>`.
 
+<div class="note">
+  A pin checks the bytes a repository serves, and git never touches those. A Maven repository committed to the
+  project and read through a <code>file:</code> URI is the exception: git on Windows checks text files out with
+  CRLF line endings under <code>core.autocrlf</code>, and a POM checked out that way no longer matches a pin
+  written on another machine. Mark such a folder in <code>.gitattributes</code>, as <code>libs/** -text</code>,
+  so git stores and checks out its files byte for byte.
+</div>
+
 ## Pinning one variant of a module
 
 Some libraries publish several jars under one coordinate - same module name, different bytes - distinguished
