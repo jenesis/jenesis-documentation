@@ -65,8 +65,9 @@ of its own configuration folder:
 stage=false
 ```
 
-It is built and tested, but neither its jar nor its POM, sources or documentation is staged, so neither `export`
-nor `release` ships it. The line works in every layout. A `pom.xml` module's `maven.deploy.skip` and
+It is built and tested, but its jar and POM are not staged and no sources, documentation or packages are
+assembled for it, so neither `export` nor `release` ships it. A test module is unstaged the same way unless
+`-Djenesis.stage.tests=true` stages it. The line works in every layout. A `pom.xml` module's `maven.deploy.skip` and
 `maven.install.skip` are not read, so a module that sets them states the same with this line.
 
 Central also requires the POM to carry `name`, `description`, `url`, `<licenses>`, `<developers>`, and
