@@ -252,11 +252,13 @@ answers and where each one stops.
 
 ### Why strict pinning matters
 
-Only the resolved **artifacts** carry a checksum; the `pom.xml` files read during resolution are *not* pinned,
-because some servers apply harmless whitespace or line-ending changes that would produce spurious mismatches.
-That leaves one gap: a tampered POM could try to introduce a dependency the jar checksums do not cover.
-**Strict pinning closes it.** Any dependency a POM newly adds arrives as a coordinate with no pin, which
-strict mode rejects, so a manipulated POM cannot quietly pull in an unverified artifact. This is why strict
-pinning is recommended for builds in unsecured environments and for releases.
+The POMs are pinned with the jars: every POM read to resolve a dependency - its own, its parents and the
+BOMs it imports - has a checksum line of its own (see
+*[Pinning the POMs](/tool/pinning/#pinning-the-poms)*). A tampered POM fails its pin, and so does one a
+repository re-serialises, so resolve from a repository that serves the published bytes. What a recorded
+checksum cannot cover is a file nobody pinned yet. **Strict pinning closes that gap.** It rejects any
+third-party jar or POM the build reads without a pinned checksum, so a changed closure cannot quietly pull in
+something unverified. This is why strict pinning is recommended for builds in unsecured environments and for
+releases.
 
 {% demos 30 %}

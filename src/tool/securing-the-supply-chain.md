@@ -46,10 +46,10 @@ Each mechanism answers one question, and none answers another's:
 | What did we ship, and is it permitted or known-vulnerable? | SBOM, licence and vulnerability checks | every build |
 | What can a dependency reach when it executes? | container isolation | opt-in |
 
-The first two are *[Pinning](/tool/pinning/)*: a pin records an exact version and the `SHA-256` of the jar in
-your own sources, every build re-hashes what it downloads, and a mismatch fails. Strict mode additionally
-refuses any third-party coordinate without a checksum. That also blunts a tampered POM, since a dependency it
-introduces arrives unpinned and is rejected - though signature verification addresses the POM directly.
+The first two are *[Pinning](/tool/pinning/)*: a pin records an exact version and the `SHA-256` of the jar,
+and of every POM read to resolve it, in your own sources; every build re-hashes what it downloads, and a
+mismatch fails. Strict mode additionally refuses any third-party jar or POM without a checksum, so a tampered
+POM fails its own pin, and a dependency it introduces arrives unpinned and is rejected.
 
 The fourth is the *[supply-chain features](/tool/supply-chain/)* chapter, and the fifth is
 *[Build performance & isolation](/tool/build-performance-and-isolation/)*, which confines what test code and
@@ -110,9 +110,10 @@ folders.
   once, then commit it.
 </div>
 
-A coordinate's **POM is verified with its artifact** and must carry the same signer. POMs are read during
-resolution but never pinned, because some servers re-serialise them and a byte checksum would mismatch for no
-reason - so resolve from a repository that serves the published bytes.
+A coordinate's **POM is verified with its artifact** and must carry the same signer. The parents and BOMs
+that POM reads are not checked against a signature; their [checksum pins](/tool/pinning/#pinning-the-poms)
+cover them. A repository that re-serialises POMs fails both checks, so resolve from one that serves the
+published bytes.
 
 The line carries **no version**, and that is the point: one key signs every release it signs, where a checksum
 covers one file and every version bump is a fresh, unvetted trust event.
