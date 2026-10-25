@@ -21,7 +21,10 @@ The tools the steps run - a compiler, a JDK tool such as `jar` or `javadoc`, a f
 are bounded apart from it, underneath whatever step limit is in force: by default to as many at once as the
 machine has processors. `-Djenesis.process.concurrency=<n>` sets another bound, and `0` lifts it. A project
 with many test modules on a machine with little memory runs fewer at once with a low value, beside an `-Xmx` for
-the test JVM in `process-test.properties`.
+the test JVM in `process-test.properties`. Tests that share a database, a port or a file cannot run beside each
+other: `-Djenesis.test.concurrency=1` runs one module's tests at a time, as Maven does, while compiling, packaging
+and every other step keep running around them. Any other number allows that many test runs at once, and `0`, the
+default, leaves them bounded by `-Djenesis.process.concurrency` alone.
 
 - **Compile** runs `javac` over the module's sources, resolving its dependencies onto the class or module
   path, and writes the `.class` files. Other-language compiles (Kotlin, Scala, Groovy) slot into the same
@@ -215,7 +218,8 @@ read, so Surefire's `<dependenciesToScan>` configures Maven alone.
 The same key runs one set of tests twice with different settings, where Maven declares a second Surefire
 execution and Gradle a second `Test` task. Each run is a module of its own: two modules require the module that
 holds the tests, scan it, and pass their own JVM options and system properties in their own
-`process-test.properties`.
+`process-test.properties`. Where the two runs share a database or a port, `-Djenesis.test.concurrency=1` runs them
+one after the other, as described under *[The build pipeline](#the-build-pipeline)*.
 
 {% demos 40 %}
 
