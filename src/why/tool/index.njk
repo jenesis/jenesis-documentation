@@ -266,22 +266,26 @@ java build/jenesis/Make.java</code></pre></div>
     <table class="lp-matrix">
       <thead><tr><th scope="col">Project</th><th scope="col">Built with</th><th scope="col">Agent time</th><th scope="col">Full build<br>Jenesis / before</th><th scope="col">Nothing changed<br>Jenesis / before</th><th scope="col">One method edited<br>Jenesis / before</th></tr></thead>
       <tbody>
-        <tr><th scope="row">Guava</th><td>Maven</td><td>57 min</td><td>10 min 30 s / 12 min 40 s</td><td>3 s / 11 min 50 s</td><td>10 min 10 s / 12 min 40 s</td></tr>
-        <tr><th scope="row">JUnit 5</th><td>Gradle</td><td>1 h 22 min</td><td>3 min 30 s / 3 min 25 s</td><td>14 s / 6 s</td><td>2 min 35 s / 2 min 20 s</td></tr>
-        <tr><th scope="row">Mockito</th><td>Gradle</td><td>58 min</td><td>3 min 5 s / 2 min 40 s</td><td>7 s / 2 s</td><td>2 min 50 s / 2 min 15 s</td></tr>
-        <tr><th scope="row">AssertJ</th><td>Maven</td><td>1 h 7 min</td><td>75 s / 114 s</td><td>3 s / 94 s</td><td>58 s / 98 s</td></tr>
-        <tr><th scope="row">Google Auto</th><td>Maven</td><td>37 min</td><td>67 s / 82 s</td><td>3 s / 78 s</td><td>25 s / 81 s</td></tr>
-        <tr><th scope="row">Jackson Databind</th><td>Maven</td><td>44 min</td><td>57 s / 61 s</td><td>4 s / 64 s</td><td>50 s / 63 s</td></tr>
-        <tr><th scope="row">Gson</th><td>Maven</td><td>30 min</td><td>47 s / 59 s</td><td>3 s / 36 s</td><td>32 s / 53 s</td></tr>
-        <tr><th scope="row">jsoup</th><td>Maven</td><td>32 min</td><td>37 s / 47 s</td><td>3 s / 36 s</td><td>36 s / 37 s</td></tr>
+        <tr><th scope="row">Guava</th><td>Maven</td><td>57 min</td><td>10 min 25 s / 12 min 15 s</td><td>4 s / 12 min</td><td>9 min 55 s / 12 min 20 s</td></tr>
+        <tr><th scope="row">JUnit 5</th><td>Gradle</td><td>1 h 22 min</td><td>3 min 35 s / 3 min 55 s</td><td>8 s / 16 s</td><td>2 min 10 s / 2 min 40 s</td></tr>
+        <tr><th scope="row">JUnit 5, both with a daemon</th><td>Gradle</td><td></td><td>2 min 35 s / 3 min 30 s</td><td>6 s / 6 s</td><td>1 min 50 s / 2 min 30 s</td></tr>
+        <tr><th scope="row">Mockito</th><td>Gradle</td><td>58 min</td><td>3 min 5 s / 3 min 15 s</td><td>5 s / 18 s</td><td>2 min 35 s / 2 min 35 s</td></tr>
+        <tr><th scope="row">Mockito, both with a daemon</th><td>Gradle</td><td></td><td>2 min 25 s / 2 min 40 s</td><td>3 s / 3 s</td><td>2 min 5 s / 2 min 10 s</td></tr>
+        <tr><th scope="row">AssertJ</th><td>Maven</td><td>1 h 7 min</td><td>77 s / 120 s</td><td>3 s / 98 s</td><td>53 s / 105 s</td></tr>
+        <tr><th scope="row">Google Auto</th><td>Maven</td><td>37 min</td><td>66 s / 81 s</td><td>3 s / 76 s</td><td>25 s / 78 s</td></tr>
+        <tr><th scope="row">Jackson Databind</th><td>Maven</td><td>44 min</td><td>46 s / 57 s</td><td>4 s / 55 s</td><td>37 s / 56 s</td></tr>
+        <tr><th scope="row">Gson</th><td>Maven</td><td>30 min</td><td>42 s / 55 s</td><td>3 s / 34 s</td><td>16 s / 50 s</td></tr>
+        <tr><th scope="row">jsoup</th><td>Maven</td><td>32 min</td><td>32 s / 41 s</td><td>2 s / 32 s</td><td>29 s / 34 s</td></tr>
       </tbody>
     </table>
     <p class="lp-small">Each migration ran alone on a four-core machine, and every time is the median of three
-      runs, except Guava's, whose builds took longer than five minutes and ran once. Jenesis ran as it comes, Maven
-      as plain <code>mvn</code> and Gradle with its daemon. With nothing changed, Maven runs every test again, while
-      Jenesis and Gradle reuse what they ran before. After an edit, Jenesis compiled the edited module again and
-      ran the tests of every module that depends on it. Gradle is faster for JUnit 5 and Mockito, where Jenesis
-      also wrote coverage reports and SBOMs on every run. Guava, Gson, jsoup and Google
+      runs, except Guava's, whose builds took longer than five minutes and ran once. Each pair of builds ran in the
+      same way: without a daemon, Jenesis as it comes, Maven as plain <code>mvn</code> and Gradle with
+      <code>--no-daemon</code>; in the rows with a daemon, Gradle with its own and Jenesis under
+      <code>jenesis.make.mode=daemon</code>. With nothing changed, Maven runs every test again, while Jenesis and
+      Gradle reuse what they ran before. After an edit, Jenesis compiled the edited module again and ran the tests of
+      every module that depends on it; each edit was a new one, so no build cache held its result. For JUnit 5 and
+      Mockito, Jenesis also wrote coverage reports and SBOMs on every run. Guava, Gson, jsoup and Google
       Auto compile for Java 8 and stayed on <code>pom.xml</code>; AssertJ and Jackson Databind also moved to
       <code>module-info.java</code>, and their tests of package-private code, 2&nbsp;% and 6&nbsp;% of all, run
       with Maven only. Elsewhere the two builds ran the same tests to within about 1&nbsp;%. Both Guava builds
