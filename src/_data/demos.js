@@ -93,7 +93,7 @@ export default {
         { slug: "demo-37-java-quality", name: "Code quality", blurb: "Formatting and static analysis for Java." },
         { slug: "demo-38-test-framework", name: "Test frameworks", blurb: "Tests whose module requires no engine: the framework they are written against is worked out and its engines resolved." },
         { slug: "demo-39-test-selection", name: "Test selection", blurb: "Running only the tests a change can affect." },
-        { slug: "demo-40-test-runs", name: "Test runs", blurb: "One module's tests run twice, by two modules that scan its jar with different settings, in a modular and in a pom.xml build." },
+        { slug: "demo-40-test-runs", name: "Test runs", blurb: "One module's tests run twice, by two modules that scan its jar with different settings, side by side or one at a time, in a modular and in a pom.xml build." },
         { slug: "demo-41-code-coverage", name: "Code coverage", blurb: "Measuring test coverage." },
         { slug: "demo-42-pitest", name: "Mutation testing", blurb: "Mutation testing with PIT, switched on by its configuration file." },
         { slug: "demo-43-jmh", name: "Benchmarks", blurb: "A JMH benchmark the build generates, compiles and runs, printing its result table." },
