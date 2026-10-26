@@ -29,8 +29,7 @@ build it pins, so whatever the changed versions reach is built again, a module's
 pinned too.
 
 In a `pom.xml`, the pins change nothing Maven resolves: `pin` writes no `<dependencyManagement>` entry, and
-removes the entries carrying a `<!--Checksum/…-->` comment that an earlier version of `pin` wrote there. Every
-other entry, an imported bill of materials and every comment stay as written. A `-SNAPSHOT` is given no
+every entry, an imported bill of materials and every comment stay as written. A `-SNAPSHOT` is given no
 checksum, as it is published again under its version. The main code and the tests of a `pom.xml` share its one
 comment, so where they resolve a coordinate at different versions, its line takes the version the POM declares
 itself, which the other half then resolves as well. A module of a `pom.xml` project inherits the
