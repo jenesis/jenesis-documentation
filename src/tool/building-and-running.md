@@ -113,6 +113,11 @@ A forked process that ends with exit code 137 was killed with `SIGKILL`, possibl
 killer, and the failure says so. Fewer tools at once, with a lower `jenesis.process.concurrency`, or a smaller
 heap for the JVM it ran, as an `-Xmx` in `process-test.properties` for the tests, makes it need less memory.
 
+A build that is stopped - with `Ctrl+C`, or by the `SIGTERM` a CI runner or an IDE sends - ends every process it
+forked before it exits, and the processes those started. On Linux and macOS it first asks them to stop, so a test
+JVM runs its own shutdown hooks, and it kills what is still running ten seconds later. On Windows it ends them
+at once. A build killed with `SIGKILL` cannot end anything.
+
 For a failed test run, the output the build prints ends with what the runner printed about each failed
 test - for the JUnit Platform, a `Failures` section naming the test with its stack trace, then the run's
 counts. A test run writes no report unless `-Djenesis.test.reporting=true` asks for one in the module's
