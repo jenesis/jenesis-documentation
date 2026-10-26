@@ -284,7 +284,8 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.dependency.signature` | `none` | Signature verification after each download: `none`, `declared`, or `strict`. |
 | `jenesis.dependency.native` | `ignore` | What to do when a module runs a jar whose `Jenesis-Native-Access` names a module it does not grant with `@jenesis.native`: `ignore`, `warn`, or `strict`. |
 | `jenesis.pin.bom` | `keep` | Whether the `pin` step keeps (`keep`) or flattens (`flatten`) BOM references. |
-| `jenesis.pin.file` | *(unset)* | Write the whole project's pins to this properties file instead of rewriting the module declarations. A project's own file names only a folder inside the project. |
+| `jenesis.pin.file` | *(unset)* | Write the pins of the groups `jenesis.pin.groups` names, from every module, to this properties file, and every other group's to the module declarations. A project's own file names only a folder inside the project. |
+| `jenesis.pin.groups` | `main` | Comma-separated groups whose pins `jenesis.pin.file` writes to the file, or `*` for every group. A module importing the file into one of them loses that group's pin lines from its declaration. |
 | `jenesis.pin.checksum` | `true` | Whether `pin` writes SHA checksums alongside versions. |
 | `jenesis.pin.retain` | `groups` | Which lines a refresh keeps although it did not write them: `groups` those of a group the run resolved nothing in, `all` every one (a project built in more than one layout), `none` none. |
 | `jenesis.pin.provided` | *(unset)* | Comma-separated pin files, relative to the project root, whose entries the file `jenesis.pin.file` names leaves out where the version and the checksum are the same. |
