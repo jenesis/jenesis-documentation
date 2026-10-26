@@ -1,0 +1,2210 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 5ae69cb..70de60b 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -42,17 +42,42 @@ jobs:
+           distribution: 'temurin'
+       - name: 'Install'
+         shell: bash
+-        run: ./mvnw -B dependency:go-offline test clean -U --quiet --fail-never -DskipTests=true -f build-pom.xml
++        run: ./mvnw -B dependency:go-offline test clean -U --quiet --fail-never -DskipTests=true
+       - name: 'Test'
+         shell: bash
+         # One of the auto-service-ksp test deps was built targeting JDK 11, so we skip its tests
+         # here and only run them on JDK 11+ in the next step.
+-        run: ./mvnw -B verify -U --fail-at-end -Dsource.skip=true -Dmaven.javadoc.skip=true -pl '!service/processor_ksp' -f build-pom.xml
++        run: ./mvnw -B verify -U --fail-at-end -Dsource.skip=true -Dmaven.javadoc.skip=true -pl '!service/processor_ksp'
+       - name: 'Test auto-service-ksp'
+         if: ${{ matrix.java >= 11 }}
+         shell: bash
+         run: ./mvnw -B verify -U --fail-at-end -Dsource.skip=true -Dmaven.javadoc.skip=true -f service/pom.xml
+ 
++  jenesis:
++    name: "Jenesis (JDK 25)"
++    runs-on: ubuntu-latest
++    steps:
++      - name: 'Check out repository'
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
++        with:
++          persist-credentials: false
++      - name: 'Cache Jenesis'
++        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
++        with:
++          path: |
++            ~/.m2/repository
++            .jenesis
++          key: jenesis-${{ hashFiles('**/pom.xml', 'build/jenesis/jenesis.version') }}
++          restore-keys: |
++            jenesis-
++      - name: 'Set up JDK 25'
++        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
++        with:
++          java-version: 25
++          distribution: 'temurin'
++      - name: 'Build and test'
++        run: java -Djenesis.dependency.pin=strict build/jenesis/Make.java
++
+   publish_snapshot:
+     name: 'Publish snapshot'
+     needs: test
+diff --git a/.gitignore b/.gitignore
+index 5c15540..309a9a6 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -6,11 +6,13 @@ eclipsebin
+ 
+ bin
+ gen
+-build
++/build/*
++!/build/jenesis/
+ out
+ lib
+ 
+ target
++.jenesis/
+ .mvn/wrapper/maven-wrapper.jar
+ *.class
+ pom.xml.*
+diff --git a/.mvn/maven.config b/.mvn/maven.config
+new file mode 100644
+index 0000000..409193a
+--- /dev/null
++++ b/.mvn/maven.config
+@@ -0,0 +1 @@
++-P!jenesis
+diff --git a/build.jenesis/process-javac.properties b/build.jenesis/process-javac.properties
+new file mode 100644
+index 0000000..b968aa1
+--- /dev/null
++++ b/build.jenesis/process-javac.properties
+@@ -0,0 +1,2 @@
++-Xlint\:all=
++-g=
+diff --git a/build.jenesis/process-javadoc.properties b/build.jenesis/process-javadoc.properties
+new file mode 100644
+index 0000000..0275983
+--- /dev/null
++++ b/build.jenesis/process-javadoc.properties
+@@ -0,0 +1 @@
++-use=
+diff --git a/common/pom.xml b/common/pom.xml
+index 4a7438e..21c6f8a 100644
+--- a/common/pom.xml
++++ b/common/pom.xml
+@@ -30,6 +30,8 @@
+   <properties>
+     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+     <java.version>1.8</java.version>
++    <maven.compiler.source>${java.version}</maven.compiler.source>
++    <maven.compiler.target>${java.version}</maven.compiler.target>
+     <guava.version>33.7.2-jre</guava.version>
+     <truth.version>1.4.5</truth.version>
+   </properties>
+@@ -58,6 +60,100 @@
+     <url>http://www.google.com</url>
+   </organization>
+ 
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>com.google.auto.value</groupId>
++        <artifactId>auto-value-annotations</artifactId>
++        <version>1.11.1</version>
++        <!--Checksum/SHA-256/6c61a11420a5cddf3313888e9d335d5eedfbeb9a8da26591470fbfe61f5bf859-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>2.50.0</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>failureaccess</artifactId>
++        <version>1.0.3</version>
++        <!--Checksum/SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava</artifactId>
++        <version>${guava.version}</version>
++        <!--Checksum/SHA-256/b530942257fb935f8b2cfaa5f8eb5bd59c555fd8e8d01b8ce98912e077ea606c 33.7.2-jre-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava-testlib</artifactId>
++        <version>${guava.version}</version>
++        <!--Checksum/SHA-256/87684af5e41c7883aaa76c1c531e7ab98e620735bdb652cc97ceccd8e534c115 33.7.2-jre-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>listenablefuture</artifactId>
++        <version>9999.0-empty-to-avoid-conflict-with-guava</version>
++        <!--Checksum/SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.j2objc</groupId>
++        <artifactId>j2objc-annotations</artifactId>
++        <version>3.1</version>
++        <!--Checksum/SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.testing.compile</groupId>
++        <artifactId>compile-testing</artifactId>
++        <version>0.24.0</version>
++        <!--Checksum/SHA-256/0a04636fe48d6aa73d278199f668e26db113c5425699bfcb2ab03e06d4ba7b0e-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.truth</groupId>
++        <artifactId>truth</artifactId>
++        <version>${truth.version}</version>
++        <!--Checksum/SHA-256/a6409e90fdd6b31f239b0c02065c43b53e1b09c72f2e08c3a86d04fe5910cf4b 1.4.5-->
++      </dependency>
++      <dependency>
++        <groupId>com.squareup</groupId>
++        <artifactId>javapoet</artifactId>
++        <version>1.13.0</version>
++        <!--Checksum/SHA-256/4c7517e848a71b36d069d12bb3bf46a70fd4cda3105d822b0ed2e19c00b69291-->
++      </dependency>
++      <dependency>
++        <groupId>junit</groupId>
++        <artifactId>junit</artifactId>
++        <version>4.13.2</version>
++        <!--Checksum/SHA-256/8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3-->
++      </dependency>
++      <dependency>
++        <groupId>org.eclipse.jdt</groupId>
++        <artifactId>ecj</artifactId>
++        <version>3.46.100</version>
++        <!--Checksum/SHA-256/74c93172475fee0cd4e6eefb44233516dd40525642da35d009146d97ea598229-->
++      </dependency>
++      <dependency>
++        <groupId>org.hamcrest</groupId>
++        <artifactId>hamcrest-core</artifactId>
++        <version>1.3</version>
++        <!--Checksum/SHA-256/66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9-->
++      </dependency>
++      <dependency>
++        <groupId>org.jspecify</groupId>
++        <artifactId>jspecify</artifactId>
++        <version>1.0.1</version>
++        <!--Checksum/SHA-256/070d75f261fe4c5b8202508366715f7f2d4660f88c8ef7e6d3575e48c9683b66-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm</artifactId>
++        <version>9.8</version>
++        <!--Checksum/SHA-256/876eab6a83daecad5ca67eb9fcabb063c97b5aeb8cf1fca7a989ecde17522051-->
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+   <dependencies>
+     <dependency>
+       <groupId>com.google.guava</groupId>
+diff --git a/factory/build.jenesis/process-test.properties b/factory/build.jenesis/process-test.properties
+new file mode 100644
+index 0000000..6cde41d
+--- /dev/null
++++ b/factory/build.jenesis/process-test.properties
+@@ -0,0 +1 @@
++--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED\njdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED\njdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED\njdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED\njdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED\njdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+diff --git a/factory/pom.xml b/factory/pom.xml
+index 970da0f..cf6f48c 100644
+--- a/factory/pom.xml
++++ b/factory/pom.xml
+@@ -33,6 +33,8 @@
+     <auto-service.version>1.1.1</auto-service.version>
+     <auto-value.version>1.11.1</auto-value.version>
+     <java.version>1.8</java.version>
++    <maven.compiler.source>${java.version}</maven.compiler.source>
++    <maven.compiler.target>${java.version}</maven.compiler.target>
+     <guava.version>33.7.2-jre</guava.version>
+     <truth.version>1.4.5</truth.version>
+   </properties>
+@@ -86,6 +88,166 @@
+     </developer>
+   </developers>
+ 
++  <!--jenesis.plugin
++    maven/com.google.auto.service/auto-service/1.1.1
++    maven/com.google.auto.value/auto-value/1.11.1
++    maven/net.ltgt.gradle.incap/incap-processor/1.0.0
++  -->
++
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>com.google.auto.service</groupId>
++        <artifactId>auto-service-annotations</artifactId>
++        <version>${auto-service.version}</version>
++        <!--Checksum/SHA-256/16a76dd00a2650568447f5d6e3a9e2c809d9a42367d56b45215cfb89731f4d24 1.1.1-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.auto.value</groupId>
++        <artifactId>auto-value-annotations</artifactId>
++        <version>${auto-value.version}</version>
++        <!--Checksum/SHA-256/6c61a11420a5cddf3313888e9d335d5eedfbeb9a8da26591470fbfe61f5bf859 1.11.1-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.auto</groupId>
++        <artifactId>auto-common</artifactId>
++        <version>1.2.2</version>
++        <!--Checksum/SHA-256/f50b1ce8a41fad31a8a819c052f8ffa362ea0a3dbe9ef8f7c7dc9a36d4738a59-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.code.findbugs</groupId>
++        <artifactId>jsr305</artifactId>
++        <version>3.0.2</version>
++        <!--Checksum/SHA-256/766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>2.50.0</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>failureaccess</artifactId>
++        <version>1.0.3</version>
++        <!--Checksum/SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava</artifactId>
++        <version>${guava.version}</version>
++        <!--Checksum/SHA-256/b530942257fb935f8b2cfaa5f8eb5bd59c555fd8e8d01b8ce98912e077ea606c 33.7.2-jre-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>listenablefuture</artifactId>
++        <version>9999.0-empty-to-avoid-conflict-with-guava</version>
++        <!--Checksum/SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.j2objc</groupId>
++        <artifactId>j2objc-annotations</artifactId>
++        <version>3.1</version>
++        <!--Checksum/SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.testing.compile</groupId>
++        <artifactId>compile-testing</artifactId>
++        <version>0.24.0</version>
++        <!--Checksum/SHA-256/0a04636fe48d6aa73d278199f668e26db113c5425699bfcb2ab03e06d4ba7b0e-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.testparameterinjector</groupId>
++        <artifactId>test-parameter-injector</artifactId>
++        <version>1.24</version>
++        <!--Checksum/SHA-256/10ff715c68686ae98f64e50114c04036e1044908a6e69cfcfbf7c8cd8eb1e905-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.truth</groupId>
++        <artifactId>truth</artifactId>
++        <version>${truth.version}</version>
++        <!--Checksum/SHA-256/a6409e90fdd6b31f239b0c02065c43b53e1b09c72f2e08c3a86d04fe5910cf4b 1.4.5-->
++      </dependency>
++      <dependency>
++        <groupId>com.squareup</groupId>
++        <artifactId>javapoet</artifactId>
++        <version>1.13.0</version>
++        <!--Checksum/SHA-256/4c7517e848a71b36d069d12bb3bf46a70fd4cda3105d822b0ed2e19c00b69291-->
++      </dependency>
++      <dependency>
++        <groupId>jakarta.inject</groupId>
++        <artifactId>jakarta.inject-api</artifactId>
++        <version>2.0.1</version>
++        <!--Checksum/SHA-256/f7dc98062fccf14126abb751b64fab12c312566e8cbdc8483598bffcea93af7c-->
++      </dependency>
++      <dependency>
++        <groupId>javax.inject</groupId>
++        <artifactId>javax.inject</artifactId>
++        <version>1</version>
++        <!--Checksum/SHA-256/91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff-->
++      </dependency>
++      <dependency>
++        <groupId>junit</groupId>
++        <artifactId>junit</artifactId>
++        <version>4.13.2</version>
++        <!--Checksum/SHA-256/8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3-->
++      </dependency>
++      <dependency>
++        <groupId>net.ltgt.gradle.incap</groupId>
++        <artifactId>incap</artifactId>
++        <version>1.0.0</version>
++        <!--Checksum/SHA-256/cd140bf025c109b8e24e9d8a432714362b8e973bea1bec6ee0c6f43045d10110-->
++      </dependency>
++      <dependency>
++        <groupId>org.checkerframework</groupId>
++        <artifactId>checker-compat-qual</artifactId>
++        <version>2.5.6</version>
++        <!--Checksum/SHA-256/11d134b245e9cacc474514d2d66b5b8618f8039a1465cdc55bbc0b34e0008b7a-->
++      </dependency>
++      <dependency>
++        <groupId>org.hamcrest</groupId>
++        <artifactId>hamcrest-core</artifactId>
++        <version>1.3</version>
++        <!--Checksum/SHA-256/66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-reflect</artifactId>
++        <version>2.2.20</version>
++        <!--Checksum/SHA-256/8209083a4a7c4e476d9842b078308fa96a96f07a6bd99f05f3586ee13289ab26-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-stdlib</artifactId>
++        <version>2.2.20</version>
++        <!--Checksum/SHA-256/8836ccffd3585fadda9901244b20d42901d2f3cd581058d8434e2ffabcf3a3e7-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains</groupId>
++        <artifactId>annotations</artifactId>
++        <version>13.0</version>
++        <!--Checksum/SHA-256/ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478-->
++      </dependency>
++      <dependency>
++        <groupId>org.jspecify</groupId>
++        <artifactId>jspecify</artifactId>
++        <version>1.0.1</version>
++        <!--Checksum/SHA-256/070d75f261fe4c5b8202508366715f7f2d4660f88c8ef7e6d3575e48c9683b66-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm</artifactId>
++        <version>9.8</version>
++        <!--Checksum/SHA-256/876eab6a83daecad5ca67eb9fcabb063c97b5aeb8cf1fca7a989ecde17522051-->
++      </dependency>
++      <dependency>
++        <groupId>org.yaml</groupId>
++        <artifactId>snakeyaml</artifactId>
++        <version>2.0</version>
++        <!--Checksum/SHA-256/880c9d896e4b74a06c549c15ca496450165d6909fa15d7e662bee8f6a66d7afa-->
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+   <dependencies>
+     <dependency>
+       <groupId>org.jspecify</groupId>
+@@ -315,4 +477,19 @@
+       </build>
+     </profile>
+   </profiles>
++  <!--jenesis.pin
++  plugin/maven/com.google.auto.service/auto-service 1.1.1 SHA-256/1f48f451503e623daba7d9ed368cca0f81e1e3815653a4560113e12c0129ebd5
++  plugin/maven/com.google.auto.service/auto-service-annotations 1.1.1 SHA-256/16a76dd00a2650568447f5d6e3a9e2c809d9a42367d56b45215cfb89731f4d24
++  plugin/maven/com.google.auto.value/auto-value 1.11.1 SHA-256/0c556370ca3d072ba7dec6b37751ccad0e4804b6f3390cc9acb800d821dd9c0a
++  plugin/maven/com.google.auto/auto-common 1.2.1 SHA-256/f43f29fe2a6ebaf04b2598cdeec32a4e346d49a9404e990f5fc19c19f3a28d0e
++  plugin/maven/com.google.code.findbugs/jsr305 3.0.2 SHA-256/766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7
++  plugin/maven/com.google.errorprone/error_prone_annotations 2.18.0 SHA-256/9e6814cb71816988a4fd1b07a993a8f21bb7058d522c162b1de849e19bea54ae
++  plugin/maven/com.google.guava/failureaccess 1.0.1 SHA-256/a171ee4c734dd2da837e4b16be9df4661afab72a41adaf31eb84dfdaf936ca26
++  plugin/maven/com.google.guava/guava 32.0.1-jre SHA-256/bd7fa227591fb8509677d0d1122cf95158f3b8a9f45653f58281d879f6dc48c5
++  plugin/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  plugin/maven/com.google.j2objc/j2objc-annotations 2.8 SHA-256/f02a95fa1a5e95edb3ed859fd0fb7df709d121a35290eff8b74dce2ab7f4d6ed
++  plugin/maven/net.ltgt.gradle.incap/incap 1.0.0 SHA-256/cd140bf025c109b8e24e9d8a432714362b8e973bea1bec6ee0c6f43045d10110
++  plugin/maven/net.ltgt.gradle.incap/incap-processor 1.0.0 SHA-256/71a201d72b2d75eec35a5bef4440d22943f9269c0b1b44c811dae2044d5e850b
++  plugin/maven/org.checkerframework/checker-qual 3.33.0 SHA-256/e316255bbfcd9fe50d165314b85abb2b33cb2a66a93c491db648e498a82c2de1
++  -->
+ </project>
+diff --git a/jenesis-release.properties b/jenesis-release.properties
+new file mode 100644
+index 0000000..0585dd7
+--- /dev/null
++++ b/jenesis-release.properties
+@@ -0,0 +1,2 @@
++jenesis.project.sources=true
++jenesis.project.documentation=true
+diff --git a/jenesis.properties b/jenesis.properties
+new file mode 100644
+index 0000000..d4c198d
+--- /dev/null
++++ b/jenesis.properties
+@@ -0,0 +1,3 @@
++jenesis.maven.uri=https://repo.maven.apache.org/maven2/,https://maven.google.com/|androidx
++jenesis.test.exclude=value/src/it/functional/.*GradleIT
++jenesis.abi.mode=classpath
+diff --git a/build-pom.xml b/pom.xml
+similarity index 87%
+rename from build-pom.xml
+rename to pom.xml
+index 45a3113..0ff4f46 100644
+--- a/build-pom.xml
++++ b/pom.xml
+@@ -1,4 +1,4 @@
+-<!-- A pure convenience for local builds and travis-ci. -->
++<!-- The aggregator of every module: Maven and Jenesis (java build/jenesis/Make.java) both build from here. -->
+ <project>
+   <modelVersion>4.0.0</modelVersion>
+   <groupId>build-only</groupId>
+diff --git a/service/annotations/build.jenesis/process-javac.properties b/service/annotations/build.jenesis/process-javac.properties
+new file mode 100644
+index 0000000..351edc5
+--- /dev/null
++++ b/service/annotations/build.jenesis/process-javac.properties
+@@ -0,0 +1,2 @@
++-proc\:none=
++-g=
+diff --git a/service/annotations/src/main/resources/META-INF/MANIFEST.MF b/service/annotations/src/main/resources/META-INF/MANIFEST.MF
+new file mode 100644
+index 0000000..7bf73ea
+--- /dev/null
++++ b/service/annotations/src/main/resources/META-INF/MANIFEST.MF
+@@ -0,0 +1,2 @@
++Manifest-Version: 1.0
++Automatic-Module-Name: com.google.auto.service
+diff --git a/service/pom.xml b/service/pom.xml
+index e68d7af..f558f70 100644
+--- a/service/pom.xml
++++ b/service/pom.xml
+@@ -31,6 +31,8 @@
+   <properties>
+     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+     <java.version>1.8</java.version>
++    <maven.compiler.source>${java.version}</maven.compiler.source>
++    <maven.compiler.target>${java.version}</maven.compiler.target>
+     <guava.version>33.7.2-jre</guava.version>
+     <truth.version>1.4.5</truth.version>
+   </properties>
+diff --git a/service/processor/build.jenesis/process-javac.properties b/service/processor/build.jenesis/process-javac.properties
+new file mode 100644
+index 0000000..351edc5
+--- /dev/null
++++ b/service/processor/build.jenesis/process-javac.properties
+@@ -0,0 +1,2 @@
++-proc\:none=
++-g=
+diff --git a/service/processor/pom.xml b/service/processor/pom.xml
+index e804509..5f8a3fe 100644
+--- a/service/processor/pom.xml
++++ b/service/processor/pom.xml
+@@ -40,6 +40,88 @@
+     <tag>HEAD</tag>
+   </scm>
+ 
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>com.google.auto.value</groupId>
++        <artifactId>auto-value-annotations</artifactId>
++        <version>1.11.1</version>
++        <!--Checksum/SHA-256/6c61a11420a5cddf3313888e9d335d5eedfbeb9a8da26591470fbfe61f5bf859-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.auto</groupId>
++        <artifactId>auto-common</artifactId>
++        <version>1.2.2</version>
++        <!--Checksum/SHA-256/f50b1ce8a41fad31a8a819c052f8ffa362ea0a3dbe9ef8f7c7dc9a36d4738a59-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>2.50.0</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>failureaccess</artifactId>
++        <version>1.0.3</version>
++        <!--Checksum/SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava</artifactId>
++        <version>${guava.version}</version>
++        <!--Checksum/SHA-256/b530942257fb935f8b2cfaa5f8eb5bd59c555fd8e8d01b8ce98912e077ea606c 33.7.2-jre-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>listenablefuture</artifactId>
++        <version>9999.0-empty-to-avoid-conflict-with-guava</version>
++        <!--Checksum/SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.j2objc</groupId>
++        <artifactId>j2objc-annotations</artifactId>
++        <version>3.1</version>
++        <!--Checksum/SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.testing.compile</groupId>
++        <artifactId>compile-testing</artifactId>
++        <version>0.24.0</version>
++        <!--Checksum/SHA-256/0a04636fe48d6aa73d278199f668e26db113c5425699bfcb2ab03e06d4ba7b0e-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.truth</groupId>
++        <artifactId>truth</artifactId>
++        <version>${truth.version}</version>
++        <!--Checksum/SHA-256/a6409e90fdd6b31f239b0c02065c43b53e1b09c72f2e08c3a86d04fe5910cf4b 1.4.5-->
++      </dependency>
++      <dependency>
++        <groupId>junit</groupId>
++        <artifactId>junit</artifactId>
++        <version>4.13.2</version>
++        <!--Checksum/SHA-256/8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3-->
++      </dependency>
++      <dependency>
++        <groupId>org.hamcrest</groupId>
++        <artifactId>hamcrest-core</artifactId>
++        <version>1.3</version>
++        <!--Checksum/SHA-256/66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9-->
++      </dependency>
++      <dependency>
++        <groupId>org.jspecify</groupId>
++        <artifactId>jspecify</artifactId>
++        <version>1.0.1</version>
++        <!--Checksum/SHA-256/070d75f261fe4c5b8202508366715f7f2d4660f88c8ef7e6d3575e48c9683b66-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm</artifactId>
++        <version>9.8</version>
++        <!--Checksum/SHA-256/876eab6a83daecad5ca67eb9fcabb063c97b5aeb8cf1fca7a989ecde17522051-->
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+   <dependencies>
+     <dependency>
+       <groupId>com.google.auto.service</groupId>
+diff --git a/service/processor_ksp/build.jenesis/process-kotlinc.properties b/service/processor_ksp/build.jenesis/process-kotlinc.properties
+new file mode 100644
+index 0000000..63bdd35
+--- /dev/null
++++ b/service/processor_ksp/build.jenesis/process-kotlinc.properties
+@@ -0,0 +1,2 @@
++-language-version=2.0
++-api-version=2.0
+diff --git a/service/processor_ksp/pom.xml b/service/processor_ksp/pom.xml
+index 99c3d00..719e088 100644
+--- a/service/processor_ksp/pom.xml
++++ b/service/processor_ksp/pom.xml
+@@ -56,6 +56,190 @@
+     </repository>
+   </repositories>
+ 
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>androidx.room3</groupId>
++        <artifactId>room3-compiler-processing</artifactId>
++        <version>3.0.3</version>
++        <!--Checksum/SHA-256/d612290e5de1bedc1d494996dfa0ace2a72b5475e139c7231bed23fbb04ef52f-->
++      </dependency>
++      <dependency>
++        <groupId>androidx.room3</groupId>
++        <artifactId>room3-compiler-processing-testing</artifactId>
++        <version>3.0.3</version>
++        <!--Checksum/SHA-256/26929e593e6a6b279f767bd530b9b0bd0e11d0516efaf7ec8aa8b9a2b03ddf28-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.auto.value</groupId>
++        <artifactId>auto-value-annotations</artifactId>
++        <version>1.11.0</version>
++        <!--Checksum/SHA-256/5a055ce4255333b3346e1a8703da5bf8ff049532286fdcd31712d624abe111dd-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.auto</groupId>
++        <artifactId>auto-common</artifactId>
++        <version>1.2.2</version>
++        <!--Checksum/SHA-256/f50b1ce8a41fad31a8a819c052f8ffa362ea0a3dbe9ef8f7c7dc9a36d4738a59-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.devtools.ksp</groupId>
++        <artifactId>symbol-processing-aa-embeddable</artifactId>
++        <version>2.3.9</version>
++        <!--Checksum/SHA-256/b3536a0e599eaf1c150a42ab089d8d82aeec35fb2546c937f4d37f4c5ecb7998-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.devtools.ksp</groupId>
++        <artifactId>symbol-processing-api</artifactId>
++        <version>2.3.12</version>
++        <!--Checksum/SHA-256/fc7d11cea3bcd873589c8914ad6320bdc877bce14cc7c2f717394646af56bd37-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.devtools.ksp</groupId>
++        <artifactId>symbol-processing-common-deps</artifactId>
++        <version>2.3.9</version>
++        <!--Checksum/SHA-256/ef51e88dad8a839ac0ddea0e66d19ac14c5603f3500995db8fcab1f1be5fd3b9-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>2.50.0</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>failureaccess</artifactId>
++        <version>1.0.3</version>
++        <!--Checksum/SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava</artifactId>
++        <version>${guava.version}</version>
++        <!--Checksum/SHA-256/b530942257fb935f8b2cfaa5f8eb5bd59c555fd8e8d01b8ce98912e077ea606c 33.7.2-jre-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>listenablefuture</artifactId>
++        <version>9999.0-empty-to-avoid-conflict-with-guava</version>
++        <!--Checksum/SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.j2objc</groupId>
++        <artifactId>j2objc-annotations</artifactId>
++        <version>3.1</version>
++        <!--Checksum/SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.testing.compile</groupId>
++        <artifactId>compile-testing</artifactId>
++        <version>0.24.0</version>
++        <!--Checksum/SHA-256/0a04636fe48d6aa73d278199f668e26db113c5425699bfcb2ab03e06d4ba7b0e-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.truth</groupId>
++        <artifactId>truth</artifactId>
++        <version>${truth.version}</version>
++        <!--Checksum/SHA-256/a6409e90fdd6b31f239b0c02065c43b53e1b09c72f2e08c3a86d04fe5910cf4b 1.4.5-->
++      </dependency>
++      <dependency>
++        <groupId>com.squareup</groupId>
++        <artifactId>javapoet</artifactId>
++        <version>1.13.0</version>
++        <!--Checksum/SHA-256/4c7517e848a71b36d069d12bb3bf46a70fd4cda3105d822b0ed2e19c00b69291-->
++      </dependency>
++      <dependency>
++        <groupId>com.squareup</groupId>
++        <artifactId>kotlinpoet-javapoet</artifactId>
++        <version>2.0.0</version>
++        <!--Checksum/SHA-256/2929f3b9a8d739d0aea40bf3c7bd01fad3a7cd2d0fb56f2de248ebb9b46774a4-->
++      </dependency>
++      <dependency>
++        <groupId>com.squareup</groupId>
++        <artifactId>kotlinpoet-jvm</artifactId>
++        <version>2.0.0</version>
++        <!--Checksum/SHA-256/65e2d5e1c7844861d134635692791f7dbac808adb060da7329c18c4bd88d2acb-->
++      </dependency>
++      <dependency>
++        <groupId>junit</groupId>
++        <artifactId>junit</artifactId>
++        <version>4.13.2</version>
++        <!--Checksum/SHA-256/8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3-->
++      </dependency>
++      <dependency>
++        <groupId>org.hamcrest</groupId>
++        <artifactId>hamcrest-core</artifactId>
++        <version>1.3</version>
++        <!--Checksum/SHA-256/66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-annotation-processing-embeddable</artifactId>
++        <version>2.3.20</version>
++        <!--Checksum/SHA-256/0be28c39e03f910cd07d9cea264bf1e6e734e999ba3af90f924c9a1dcd49a0d3-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-compiler-embeddable</artifactId>
++        <version>2.3.20</version>
++        <!--Checksum/SHA-256/976f989d0b5f5d80e8e8a8ad4b73da0bfc27fdd965b9fa38362b2be79ecc1337-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-daemon-embeddable</artifactId>
++        <version>2.3.20</version>
++        <!--Checksum/SHA-256/8870bab840b8087c96c4ddc06088b4aedf5131c408af3674306304f1f96af3f4-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-metadata-jvm</artifactId>
++        <version>2.3.20</version>
++        <!--Checksum/SHA-256/17264b9690feed34aa8b8e7d556fb2e7951f6800462f117243fba96201014f7d-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-reflect</artifactId>
++        <version>1.6.10</version>
++        <!--Checksum/SHA-256/3277ac102ae17aad10a55abec75ff5696c8d109790396434b496e75087854203-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-script-runtime</artifactId>
++        <version>2.3.20</version>
++        <!--Checksum/SHA-256/6fcdb7da6e65cf8cc43e5aabab94bdcc48825e7933686f8a1bf694eb88f8e00e-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-stdlib</artifactId>
++        <version>${kotlin.version}</version>
++        <!--Checksum/SHA-256/bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3 2.4.21-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlinx</groupId>
++        <artifactId>kotlinx-coroutines-core-jvm</artifactId>
++        <version>1.8.0</version>
++        <!--Checksum/SHA-256/9860906a1937490bf5f3b06d2f0e10ef451e65b95b269f22daf68a3d1f5065c5-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains</groupId>
++        <artifactId>annotations</artifactId>
++        <version>13.0</version>
++        <!--Checksum/SHA-256/ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478-->
++      </dependency>
++      <dependency>
++        <groupId>org.jspecify</groupId>
++        <artifactId>jspecify</artifactId>
++        <version>1.0.1</version>
++        <!--Checksum/SHA-256/070d75f261fe4c5b8202508366715f7f2d4660f88c8ef7e6d3575e48c9683b66-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm</artifactId>
++        <version>9.8</version>
++        <!--Checksum/SHA-256/876eab6a83daecad5ca67eb9fcabb063c97b5aeb8cf1fca7a989ecde17522051-->
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+   <dependencies>
+     <dependency>
+       <groupId>com.google.auto.service</groupId>
+@@ -67,6 +251,12 @@
+       <artifactId>symbol-processing-api</artifactId>
+       <version>2.3.12</version>
+     </dependency>
++    <dependency>
++      <!-- kotlin-maven-plugin's extensions add it; Jenesis compiles against declared dependencies alone -->
++      <groupId>org.jetbrains.kotlin</groupId>
++      <artifactId>kotlin-stdlib</artifactId>
++      <version>${kotlin.version}</version>
++    </dependency>
+     <dependency>
+       <groupId>com.google.guava</groupId>
+       <artifactId>guava</artifactId>
+@@ -125,4 +315,35 @@
+       </plugin>
+     </plugins>
+   </build>
++  <!--jenesis.pin
++  kotlin/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  kotlin/module/build.jenesis.plugin.kotlin 0.1.0 SHA-256/8ae119271454d849d712d61b0166b5879f6c6493897beaa4d76b1aa5319545c6
++  kotlin:dokka/maven/com.fasterxml.jackson.core/jackson-annotations 2.15.3 SHA-256/aae865c3d88256d61b11523cb1e88bd48d5b9ad5855fa1fc859504fd2204708a
++  kotlin:dokka/maven/com.fasterxml.jackson.core/jackson-core 2.15.3 SHA-256/51fab7aad51ed588482edc507fd542747936c5094d1ab76ed21ddb63b96b610d
++  kotlin:dokka/maven/com.fasterxml.jackson.core/jackson-databind 2.15.3 SHA-256/c3c53333a2172a80678bda1803e39cff45bec6ae3e9c7d4f44a81ec4e2ab18dc
++  kotlin:dokka/maven/com.fasterxml.jackson.module/jackson-module-kotlin 2.15.3 SHA-256/8f72e6b99e6145e3284a5224355ca8ee6030afa8c1d6a3395b530d29026f8d52
++  kotlin:dokka/maven/org.freemarker/freemarker 2.3.32 SHA-256/04d65ec1bde6cea20e3495d5e78ef96ab774d9936434861d3254bd88e7e94f92
++  kotlin:dokka/maven/org.jetbrains.dokka/analysis-kotlin-symbols 2.2.0 SHA-256/31b4eabf7436083ae33200da6be7203675fb1fcdcd34d2f394f55e822dac8f0f
++  kotlin:dokka/maven/org.jetbrains.dokka/analysis-markdown 2.2.0 SHA-256/7070de21dc5078013b53cc9c139321cceaf476c1630711cc5bda6d96e9da2087
++  kotlin:dokka/maven/org.jetbrains.dokka/dokka-base 2.2.0 SHA-256/721c5a1647dc49d1680d884350b438a039b2426aec65b696baee8e5aeb6442f5
++  kotlin:dokka/maven/org.jetbrains.dokka/dokka-cli 2.2.0 SHA-256/b8c8aba823c0ac0e173af52abf2808aa692809a40b79f63828798bb77518324a
++  kotlin:dokka/maven/org.jetbrains.kotlin/kotlin-reflect 2.0.21 SHA-256/3ad2fcad0c09ddc0922debab4444d612144b7b465b75a8bb7587e20ddfafd799
++  kotlin:dokka/maven/org.jetbrains.kotlin/kotlin-stdlib 2.0.21 SHA-256/f31cc53f105a7e48c093683bbd5437561d1233920513774b470805641bedbc09
++  kotlin:dokka/maven/org.jetbrains.kotlin/kotlin-stdlib-common 1.8.20 SHA-256/fa20188abaa8ecf1d0035e93a969b071f10e45a1c8378c314521eade73f75fd5
++  kotlin:dokka/maven/org.jetbrains.kotlin/kotlin-stdlib-jdk7 1.8.20 SHA-256/af1ec40c3b951afdcc0c2a0173c7b81763c5281c2d5bafbf0a8544a24c5dcc0c
++  kotlin:dokka/maven/org.jetbrains.kotlin/kotlin-stdlib-jdk8 1.8.20 SHA-256/e398b67977622718bf18ff99b739c7d9da060f33fb458a2e25203221c16af010
++  kotlin:dokka/maven/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm 1.7.3 SHA-256/1ab3acc38f3e7355c4f9d1ec62107a46fa73c899f3070d055e5d4373dfe67e12
++  kotlin:dokka/maven/org.jetbrains.kotlinx/kotlinx-html-jvm 0.9.1 SHA-256/b68f39cd9ad7b46de0a0e77e7f5908d4e7661f3d0c85d2d9171543fcd5b156fb
++  kotlin:dokka/maven/org.jetbrains/annotations 13.0 SHA-256/ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478
++  kotlin:dokka/maven/org.jetbrains/markdown-jvm 0.7.3 SHA-256/893abb31f15b6216f74dc704c0c6bf1e567dcf2b62cca29cf42e4f53153637ac
++  kotlin:dokka/maven/org.jsoup/jsoup 1.16.1 SHA-256/1f115726540ddf71958c14bc517ebfc49cf481e91cd917b0face84f01272e901
++  kotlin:tool/maven/org.jetbrains.kotlin/kotlin-build-tools-api 2.4.21 SHA-256/c5cd6a49bd072b529ae10809111c16a7aa0f92147e95d288354017fd65799461
++  kotlin:tool/maven/org.jetbrains.kotlin/kotlin-compiler-embeddable 2.4.21 SHA-256/ef19419c765e7ac8404465fa026ca8fc4dbb8a822de0fc79aa53c8dce29f1d02
++  kotlin:tool/maven/org.jetbrains.kotlin/kotlin-daemon-embeddable 2.4.21 SHA-256/7b3ef24674e5bcffcadfc4e43202ea314194939ecbcdd90a4770b2f1b04e0d07
++  kotlin:tool/maven/org.jetbrains.kotlin/kotlin-reflect 1.6.10 SHA-256/3277ac102ae17aad10a55abec75ff5696c8d109790396434b496e75087854203
++  kotlin:tool/maven/org.jetbrains.kotlin/kotlin-script-runtime 2.4.21 SHA-256/a658cf5902a1525a06c264a5e42b437e97a6679ddeef8ca641246f270cf6a013
++  kotlin:tool/maven/org.jetbrains.kotlin/kotlin-stdlib 2.4.21 SHA-256/bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3
++  kotlin:tool/maven/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm 1.8.0 SHA-256/9860906a1937490bf5f3b06d2f0e10ef451e65b95b269f22daf68a3d1f5065c5
++  kotlin:tool/maven/org.jetbrains/annotations 13.0 SHA-256/ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478
++  -->
+ </project>
+diff --git a/util/generate-latest-docs.sh b/util/generate-latest-docs.sh
+index aba5c3c..084f177 100755
+--- a/util/generate-latest-docs.sh
++++ b/util/generate-latest-docs.sh
+@@ -6,7 +6,7 @@ set -e
+ 
+ echo -e "Publishing javadoc...\n"
+ 
+-./mvnw -f build-pom.xml javadoc:aggregate
++./mvnw javadoc:aggregate
+ TARGET="$(pwd)/target"
+ 
+ cd $HOME
+diff --git a/util/publish-snapshot-on-commit.sh b/util/publish-snapshot-on-commit.sh
+index 8a6a175..58b6959 100755
+--- a/util/publish-snapshot-on-commit.sh
++++ b/util/publish-snapshot-on-commit.sh
+@@ -2,5 +2,5 @@
+ 
+ set -e
+ 
+-./mvnw -B dependency:go-offline test clean -U --quiet --fail-never -DskipTests=true -f build-pom.xml
+-./mvnw -B -U deploy -DskipTests=true -f build-pom.xml
++./mvnw -B dependency:go-offline test clean -U --quiet --fail-never -DskipTests=true
++./mvnw -B -U deploy -DskipTests=true
+diff --git a/value/CHANGES.md b/value/CHANGES.md
+index 888665c..938de3a 100644
+--- a/value/CHANGES.md
++++ b/value/CHANGES.md
+@@ -254,4 +254,4 @@ later.
+ 
+     See [the AutoValue User's Guide](userguide/index.md)
+ 
+-[AutoValueExtension]: src/main/java/com/google/auto/value/extension/AutoValueExtension.java
++[AutoValueExtension]: processor/src/main/java/com/google/auto/value/extension/AutoValueExtension.java
+diff --git a/value/annotations/pom.xml b/value/annotations/pom.xml
+index f686745..f7e016d 100644
+--- a/value/annotations/pom.xml
++++ b/value/annotations/pom.xml
+@@ -34,6 +34,8 @@
+ 
+   <properties>
+     <java.version>1.8</java.version>
++    <maven.compiler.source>${java.version}</maven.compiler.source>
++    <maven.compiler.target>${java.version}</maven.compiler.target>
+   </properties>
+ 
+   <scm>
+@@ -43,19 +45,10 @@
+     <tag>HEAD</tag>
+   </scm>
+   <build>
+-    <sourceDirectory>../src/main/java</sourceDirectory>
+     <plugins>
+       <plugin>
+         <groupId>org.apache.maven.plugins</groupId>
+         <artifactId>maven-compiler-plugin</artifactId>
+-        <configuration>
+-          <includes>
+-            <include>com/google/auto/value/*</include>
+-            <include>com/google/auto/value/extension/memoized/*</include>
+-            <include>com/google/auto/value/extension/serializable/*</include>
+-            <include>com/google/auto/value/extension/toprettystring/*</include>
+-          </includes>
+-        </configuration>
+       </plugin>
+       <plugin>
+         <groupId>org.apache.maven.plugins</groupId>
+diff --git a/value/src/main/java/com/google/auto/value/AutoAnnotation.java b/value/annotations/src/main/java/com/google/auto/value/AutoAnnotation.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/AutoAnnotation.java
+rename to value/annotations/src/main/java/com/google/auto/value/AutoAnnotation.java
+diff --git a/value/src/main/java/com/google/auto/value/AutoBuilder.java b/value/annotations/src/main/java/com/google/auto/value/AutoBuilder.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/AutoBuilder.java
+rename to value/annotations/src/main/java/com/google/auto/value/AutoBuilder.java
+diff --git a/value/src/main/java/com/google/auto/value/AutoOneOf.java b/value/annotations/src/main/java/com/google/auto/value/AutoOneOf.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/AutoOneOf.java
+rename to value/annotations/src/main/java/com/google/auto/value/AutoOneOf.java
+diff --git a/value/src/main/java/com/google/auto/value/AutoValue.java b/value/annotations/src/main/java/com/google/auto/value/AutoValue.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/AutoValue.java
+rename to value/annotations/src/main/java/com/google/auto/value/AutoValue.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/memoized/Memoized.java b/value/annotations/src/main/java/com/google/auto/value/extension/memoized/Memoized.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/memoized/Memoized.java
+rename to value/annotations/src/main/java/com/google/auto/value/extension/memoized/Memoized.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/SerializableAutoValue.java b/value/annotations/src/main/java/com/google/auto/value/extension/serializable/SerializableAutoValue.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/SerializableAutoValue.java
+rename to value/annotations/src/main/java/com/google/auto/value/extension/serializable/SerializableAutoValue.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/toprettystring/ToPrettyString.java b/value/annotations/src/main/java/com/google/auto/value/extension/toprettystring/ToPrettyString.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/toprettystring/ToPrettyString.java
+rename to value/annotations/src/main/java/com/google/auto/value/extension/toprettystring/ToPrettyString.java
+diff --git a/value/processor/build.jenesis/process-test.properties b/value/processor/build.jenesis/process-test.properties
+new file mode 100644
+index 0000000..6cde41d
+--- /dev/null
++++ b/value/processor/build.jenesis/process-test.properties
+@@ -0,0 +1 @@
++--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED\njdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED\njdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED\njdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED\njdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED\njdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+diff --git a/value/processor/pom.xml b/value/processor/pom.xml
+index 4ad66dd..47237f4 100644
+--- a/value/processor/pom.xml
++++ b/value/processor/pom.xml
+@@ -42,8 +42,133 @@
+   <properties>
+     <auto-service.version>1.1.1</auto-service.version>
+     <errorprone.version>2.50.0</errorprone.version>
++    <maven.compiler.source>${java.version}</maven.compiler.source>
++    <maven.compiler.target>${java.version}</maven.compiler.target>
+   </properties>
+ 
++  <!--jenesis.plugin
++    maven/com.google.auto.service/auto-service/1.1.1
++    maven/net.ltgt.gradle.incap/incap-processor/1.0.0
++  -->
++
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>com.google.auto.service</groupId>
++        <artifactId>auto-service-annotations</artifactId>
++        <version>${auto-service.version}</version>
++        <!--Checksum/SHA-256/16a76dd00a2650568447f5d6e3a9e2c809d9a42367d56b45215cfb89731f4d24 1.1.1-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.auto</groupId>
++        <artifactId>auto-common</artifactId>
++        <version>1.2.2</version>
++        <!--Checksum/SHA-256/f50b1ce8a41fad31a8a819c052f8ffa362ea0a3dbe9ef8f7c7dc9a36d4738a59-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.code.findbugs</groupId>
++        <artifactId>jsr305</artifactId>
++        <version>3.0.2</version>
++        <!--Checksum/SHA-256/766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>${errorprone.version}</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a 2.50.0-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.escapevelocity</groupId>
++        <artifactId>escapevelocity</artifactId>
++        <version>1.1</version>
++        <!--Checksum/SHA-256/37e76e4466836dedb864fb82355cd01c3bd21325ab642d89a0f759291b171231-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>failureaccess</artifactId>
++        <version>1.0.3</version>
++        <!--Checksum/SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava</artifactId>
++        <version>${guava.version}</version>
++        <!--Checksum/SHA-256/b530942257fb935f8b2cfaa5f8eb5bd59c555fd8e8d01b8ce98912e077ea606c 33.7.2-jre-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava-testlib</artifactId>
++        <version>${guava.version}</version>
++        <!--Checksum/SHA-256/87684af5e41c7883aaa76c1c531e7ab98e620735bdb652cc97ceccd8e534c115 33.7.2-jre-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>listenablefuture</artifactId>
++        <version>9999.0-empty-to-avoid-conflict-with-guava</version>
++        <!--Checksum/SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.j2objc</groupId>
++        <artifactId>j2objc-annotations</artifactId>
++        <version>3.1</version>
++        <!--Checksum/SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.testing.compile</groupId>
++        <artifactId>compile-testing</artifactId>
++        <version>0.24.0</version>
++        <!--Checksum/SHA-256/0a04636fe48d6aa73d278199f668e26db113c5425699bfcb2ab03e06d4ba7b0e-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.truth</groupId>
++        <artifactId>truth</artifactId>
++        <version>1.4.5</version>
++        <!--Checksum/SHA-256/a6409e90fdd6b31f239b0c02065c43b53e1b09c72f2e08c3a86d04fe5910cf4b-->
++      </dependency>
++      <dependency>
++        <groupId>com.squareup</groupId>
++        <artifactId>javapoet</artifactId>
++        <version>1.13.0</version>
++        <!--Checksum/SHA-256/4c7517e848a71b36d069d12bb3bf46a70fd4cda3105d822b0ed2e19c00b69291-->
++      </dependency>
++      <dependency>
++        <groupId>junit</groupId>
++        <artifactId>junit</artifactId>
++        <version>4.13.2</version>
++        <!--Checksum/SHA-256/8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3-->
++      </dependency>
++      <dependency>
++        <groupId>net.ltgt.gradle.incap</groupId>
++        <artifactId>incap</artifactId>
++        <version>1.0.0</version>
++        <!--Checksum/SHA-256/cd140bf025c109b8e24e9d8a432714362b8e973bea1bec6ee0c6f43045d10110-->
++      </dependency>
++      <dependency>
++        <groupId>org.checkerframework</groupId>
++        <artifactId>checker-qual</artifactId>
++        <version>4.3.1</version>
++        <!--Checksum/SHA-256/66c061a19e20fb005c173169534aba7bf78e904a8a6da6fe8c6e97d277f6d347-->
++      </dependency>
++      <dependency>
++        <groupId>org.hamcrest</groupId>
++        <artifactId>hamcrest-core</artifactId>
++        <version>1.3</version>
++        <!--Checksum/SHA-256/66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9-->
++      </dependency>
++      <dependency>
++        <groupId>org.jspecify</groupId>
++        <artifactId>jspecify</artifactId>
++        <version>1.0.1</version>
++        <!--Checksum/SHA-256/070d75f261fe4c5b8202508366715f7f2d4660f88c8ef7e6d3575e48c9683b66-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm</artifactId>
++        <version>9.11</version>
++        <!--Checksum/SHA-256/5fe3b469b8646e5bc53a897840952d63b712d4923d2a7a26aebc585f1fec7676-->
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+   <dependencies>
+     <dependency>
+       <groupId>com.google.auto</groupId>
+@@ -124,29 +249,11 @@
+   </dependencies>
+ 
+   <build>
+-    <sourceDirectory>../src/main/java</sourceDirectory>
+-    <testSourceDirectory>../src/test/java</testSourceDirectory>
+-
+-    <resources>
+-      <resource>
+-        <directory>../src/main/java</directory>
+-        <includes>
+-          <include>**/*.vm</include>
+-        </includes>
+-      </resource>
+-    </resources>
+     <plugins>
+       <plugin>
+         <groupId>org.apache.maven.plugins</groupId>
+         <artifactId>maven-compiler-plugin</artifactId>
+         <configuration>
+-          <includes>
+-            <include>com/google/auto/value/processor/**/*.java</include>
+-            <include>com/google/auto/value/extension/memoized/processor/**/*.java</include>
+-            <include>com/google/auto/value/extension/serializable/processor/**/*.java</include>
+-            <include>com/google/auto/value/extension/serializable/serializer/**/*.java</include>
+-            <include>com/google/auto/value/extension/toprettystring/processor/**/*.java</include>
+-          </includes>
+           <compilerArgs>
+             <!-- This is something of a hack to allow tests to pass. Ideally we would build
+                  TestStringSerializerFactory as a separate artifact, to avoid a problem when it
+@@ -276,6 +383,24 @@
+     </plugins>
+   </build>
+   <profiles>
++    <profile>
++      <!-- Read by Jenesis, which runs the tests' annotation processors from test-scoped dependencies
++           of type processor; .mvn/maven.config deactivates it for Maven, which knows no such type and
++           takes the same processors from default-testCompile's annotationProcessorPaths. -->
++      <id>jenesis</id>
++      <activation>
++        <jdk>[1.8,)</jdk>
++      </activation>
++      <dependencies>
++        <dependency>
++          <groupId>com.google.auto.value</groupId>
++          <artifactId>auto-value</artifactId>
++          <version>${project.version}</version>
++          <type>processor</type>
++          <scope>test</scope>
++        </dependency>
++      </dependencies>
++    </profile>
+     <profile>
+       <id>disable-java8-doclint</id>
+       <activation>
+@@ -320,4 +445,21 @@
+       </build>
+     </profile>
+   </profiles>
++  <!--jenesis.pin
++  plugin/maven/com.google.auto.service/auto-service 1.1.1 SHA-256/1f48f451503e623daba7d9ed368cca0f81e1e3815653a4560113e12c0129ebd5
++  plugin/maven/com.google.auto.service/auto-service-annotations 1.1.1 SHA-256/16a76dd00a2650568447f5d6e3a9e2c809d9a42367d56b45215cfb89731f4d24
++  plugin/maven/com.google.auto/auto-common 1.2.1 SHA-256/f43f29fe2a6ebaf04b2598cdeec32a4e346d49a9404e990f5fc19c19f3a28d0e
++  plugin/maven/com.google.code.findbugs/jsr305 3.0.2 SHA-256/766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7
++  plugin/maven/com.google.errorprone/error_prone_annotations 2.18.0 SHA-256/9e6814cb71816988a4fd1b07a993a8f21bb7058d522c162b1de849e19bea54ae
++  plugin/maven/com.google.escapevelocity/escapevelocity 1.1 SHA-256/37e76e4466836dedb864fb82355cd01c3bd21325ab642d89a0f759291b171231
++  plugin/maven/com.google.guava/failureaccess 1.0.1 SHA-256/a171ee4c734dd2da837e4b16be9df4661afab72a41adaf31eb84dfdaf936ca26
++  plugin/maven/com.google.guava/guava 32.0.1-jre SHA-256/bd7fa227591fb8509677d0d1122cf95158f3b8a9f45653f58281d879f6dc48c5
++  plugin/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  plugin/maven/com.google.j2objc/j2objc-annotations 2.8 SHA-256/f02a95fa1a5e95edb3ed859fd0fb7df709d121a35290eff8b74dce2ab7f4d6ed
++  plugin/maven/com.squareup/javapoet 1.13.0 SHA-256/4c7517e848a71b36d069d12bb3bf46a70fd4cda3105d822b0ed2e19c00b69291
++  plugin/maven/net.ltgt.gradle.incap/incap 1.0.0 SHA-256/cd140bf025c109b8e24e9d8a432714362b8e973bea1bec6ee0c6f43045d10110
++  plugin/maven/net.ltgt.gradle.incap/incap-processor 1.0.0 SHA-256/71a201d72b2d75eec35a5bef4440d22943f9269c0b1b44c811dae2044d5e850b
++  plugin/maven/org.checkerframework/checker-qual 3.33.0 SHA-256/e316255bbfcd9fe50d165314b85abb2b33cb2a66a93c491db648e498a82c2de1
++  plugin/maven/org.ow2.asm/asm 9.11 SHA-256/5fe3b469b8646e5bc53a897840952d63b712d4923d2a7a26aebc585f1fec7676
++  -->
+ </project>
+diff --git a/value/processor/src/main/build.jenesis/process-javac.properties b/value/processor/src/main/build.jenesis/process-javac.properties
+new file mode 100644
+index 0000000..b56f9b8
+--- /dev/null
++++ b/value/processor/src/main/build.jenesis/process-javac.properties
+@@ -0,0 +1,3 @@
++-Xlint\:all=
++-AallowedMissingSerializableExtensionClasses\=.*TestStringSerializerFactory=
++-g=
+diff --git a/value/src/main/java/com/google/auto/value/extension/AutoValueExtension.java b/value/processor/src/main/java/com/google/auto/value/extension/AutoValueExtension.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/AutoValueExtension.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/AutoValueExtension.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/memoized/processor/ClassNames.java b/value/processor/src/main/java/com/google/auto/value/extension/memoized/processor/ClassNames.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/memoized/processor/ClassNames.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/memoized/processor/ClassNames.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/memoized/processor/MemoizeExtension.java b/value/processor/src/main/java/com/google/auto/value/extension/memoized/processor/MemoizeExtension.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/memoized/processor/MemoizeExtension.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/memoized/processor/MemoizeExtension.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/memoized/processor/MemoizedValidator.java b/value/processor/src/main/java/com/google/auto/value/extension/memoized/processor/MemoizedValidator.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/memoized/processor/MemoizedValidator.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/memoized/processor/MemoizedValidator.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/g3doc/index.md b/value/processor/src/main/java/com/google/auto/value/extension/serializable/g3doc/index.md
+similarity index 92%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/g3doc/index.md
+rename to value/processor/src/main/java/com/google/auto/value/extension/serializable/g3doc/index.md
+index 896b973..870b8ea 100644
+--- a/value/src/main/java/com/google/auto/value/extension/serializable/g3doc/index.md
++++ b/value/processor/src/main/java/com/google/auto/value/extension/serializable/g3doc/index.md
+@@ -96,6 +96,6 @@ object `Proxy$` where `Foo`'s data is unwrapped.
+ un-serializable types with [SerializerExtensions].
+ 
+ [`AutoValue`]: https://github.com/google/auto/tree/main/value
+-[`SerializableAutoValue`]: https://github.com/google/auto/blob/main/value/src/main/java/com/google/auto/value/extension/serializable/SerializableAutoValue.java
+-[`SerializableAutoValueExtension`]: https://github.com/google/auto/blob/main/value/src/main/java/com/google/auto/value/extension/serializable/extension/SerializableAutoValueExtension.java
++[`SerializableAutoValue`]: https://github.com/google/auto/blob/main/value/annotations/src/main/java/com/google/auto/value/extension/serializable/SerializableAutoValue.java
++[`SerializableAutoValueExtension`]: https://github.com/google/auto/blob/main/value/processor/src/main/java/com/google/auto/value/extension/serializable/extension/SerializableAutoValueExtension.java
+ [SerializerExtensions]: serializer-extension
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/g3doc/serializer-extension.md b/value/processor/src/main/java/com/google/auto/value/extension/serializable/g3doc/serializer-extension.md
+similarity index 94%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/g3doc/serializer-extension.md
+rename to value/processor/src/main/java/com/google/auto/value/extension/serializable/g3doc/serializer-extension.md
+index da026a7..3534937 100644
+--- a/value/src/main/java/com/google/auto/value/extension/serializable/g3doc/serializer-extension.md
++++ b/value/processor/src/main/java/com/google/auto/value/extension/serializable/g3doc/serializer-extension.md
+@@ -240,6 +240,6 @@ no `Serializer` is available, we can do nothing and let `Baz` be serialized
+ as-is.
+ 
+ [AutoService]: https://github.com/google/auto/tree/main/service
+-[`SerializableAutoValueExtension`]: https://github.com/google/auto/blob/main/value/src/main/java/com/google/auto/value/extension/serializable/extension/SerializableAutoValueExtension.java
+-[`SerializerExtension`]: https://github.com/google/auto/blob/main/value/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/SerializerExtension.java
+-[`Serializer`]: https://github.com/google/auto/blob/main/value/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/Serializer.java
++[`SerializableAutoValueExtension`]: https://github.com/google/auto/blob/main/value/processor/src/main/java/com/google/auto/value/extension/serializable/extension/SerializableAutoValueExtension.java
++[`SerializerExtension`]: https://github.com/google/auto/blob/main/value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/SerializerExtension.java
++[`Serializer`]: https://github.com/google/auto/blob/main/value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/Serializer.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/processor/ClassNames.java b/value/processor/src/main/java/com/google/auto/value/extension/serializable/processor/ClassNames.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/processor/ClassNames.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/serializable/processor/ClassNames.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/processor/PropertyMirror.java b/value/processor/src/main/java/com/google/auto/value/extension/serializable/processor/PropertyMirror.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/processor/PropertyMirror.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/serializable/processor/PropertyMirror.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/processor/SerializableAutoValueExtension.java b/value/processor/src/main/java/com/google/auto/value/extension/serializable/processor/SerializableAutoValueExtension.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/processor/SerializableAutoValueExtension.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/serializable/processor/SerializableAutoValueExtension.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/serializer/SerializerFactoryLoader.java b/value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/SerializerFactoryLoader.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/serializer/SerializerFactoryLoader.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/SerializerFactoryLoader.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/IdentitySerializerFactory.java b/value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/IdentitySerializerFactory.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/IdentitySerializerFactory.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/IdentitySerializerFactory.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableListSerializerExtension.java b/value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableListSerializerExtension.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableListSerializerExtension.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableListSerializerExtension.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableMapSerializerExtension.java b/value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableMapSerializerExtension.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableMapSerializerExtension.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableMapSerializerExtension.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/OptionalSerializerExtension.java b/value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/OptionalSerializerExtension.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/OptionalSerializerExtension.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/OptionalSerializerExtension.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/SerializerFactoryImpl.java b/value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/SerializerFactoryImpl.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/SerializerFactoryImpl.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/impl/SerializerFactoryImpl.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/Serializer.java b/value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/Serializer.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/Serializer.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/Serializer.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/SerializerExtension.java b/value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/SerializerExtension.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/SerializerExtension.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/SerializerExtension.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/SerializerFactory.java b/value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/SerializerFactory.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/SerializerFactory.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/interfaces/SerializerFactory.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/serializable/serializer/runtime/FunctionWithExceptions.java b/value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/runtime/FunctionWithExceptions.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/serializable/serializer/runtime/FunctionWithExceptions.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/serializable/serializer/runtime/FunctionWithExceptions.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/toprettystring/processor/Annotations.java b/value/processor/src/main/java/com/google/auto/value/extension/toprettystring/processor/Annotations.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/toprettystring/processor/Annotations.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/toprettystring/processor/Annotations.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/toprettystring/processor/ClassNames.java b/value/processor/src/main/java/com/google/auto/value/extension/toprettystring/processor/ClassNames.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/toprettystring/processor/ClassNames.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/toprettystring/processor/ClassNames.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/toprettystring/processor/ExtensionClassTypeSpecBuilder.java b/value/processor/src/main/java/com/google/auto/value/extension/toprettystring/processor/ExtensionClassTypeSpecBuilder.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/toprettystring/processor/ExtensionClassTypeSpecBuilder.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/toprettystring/processor/ExtensionClassTypeSpecBuilder.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/toprettystring/processor/ToPrettyStringExtension.java b/value/processor/src/main/java/com/google/auto/value/extension/toprettystring/processor/ToPrettyStringExtension.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/toprettystring/processor/ToPrettyStringExtension.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/toprettystring/processor/ToPrettyStringExtension.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/toprettystring/processor/ToPrettyStringMethods.java b/value/processor/src/main/java/com/google/auto/value/extension/toprettystring/processor/ToPrettyStringMethods.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/toprettystring/processor/ToPrettyStringMethods.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/toprettystring/processor/ToPrettyStringMethods.java
+diff --git a/value/src/main/java/com/google/auto/value/extension/toprettystring/processor/ToPrettyStringValidator.java b/value/processor/src/main/java/com/google/auto/value/extension/toprettystring/processor/ToPrettyStringValidator.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/extension/toprettystring/processor/ToPrettyStringValidator.java
+rename to value/processor/src/main/java/com/google/auto/value/extension/toprettystring/processor/ToPrettyStringValidator.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AbortProcessingException.java b/value/processor/src/main/java/com/google/auto/value/processor/AbortProcessingException.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AbortProcessingException.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AbortProcessingException.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AnnotatedTypeMirror.java b/value/processor/src/main/java/com/google/auto/value/processor/AnnotatedTypeMirror.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AnnotatedTypeMirror.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AnnotatedTypeMirror.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AnnotationOutput.java b/value/processor/src/main/java/com/google/auto/value/processor/AnnotationOutput.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AnnotationOutput.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AnnotationOutput.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AutoAnnotationProcessor.java b/value/processor/src/main/java/com/google/auto/value/processor/AutoAnnotationProcessor.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AutoAnnotationProcessor.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AutoAnnotationProcessor.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AutoAnnotationTemplateVars.java b/value/processor/src/main/java/com/google/auto/value/processor/AutoAnnotationTemplateVars.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AutoAnnotationTemplateVars.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AutoAnnotationTemplateVars.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AutoBuilderAnnotationTemplateVars.java b/value/processor/src/main/java/com/google/auto/value/processor/AutoBuilderAnnotationTemplateVars.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AutoBuilderAnnotationTemplateVars.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AutoBuilderAnnotationTemplateVars.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AutoBuilderProcessor.java b/value/processor/src/main/java/com/google/auto/value/processor/AutoBuilderProcessor.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AutoBuilderProcessor.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AutoBuilderProcessor.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AutoBuilderTemplateVars.java b/value/processor/src/main/java/com/google/auto/value/processor/AutoBuilderTemplateVars.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AutoBuilderTemplateVars.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AutoBuilderTemplateVars.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AutoOneOfProcessor.java b/value/processor/src/main/java/com/google/auto/value/processor/AutoOneOfProcessor.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AutoOneOfProcessor.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AutoOneOfProcessor.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AutoOneOfTemplateVars.java b/value/processor/src/main/java/com/google/auto/value/processor/AutoOneOfTemplateVars.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AutoOneOfTemplateVars.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AutoOneOfTemplateVars.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AutoValueBuilderProcessor.java b/value/processor/src/main/java/com/google/auto/value/processor/AutoValueBuilderProcessor.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AutoValueBuilderProcessor.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AutoValueBuilderProcessor.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AutoValueOrBuilderTemplateVars.java b/value/processor/src/main/java/com/google/auto/value/processor/AutoValueOrBuilderTemplateVars.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AutoValueOrBuilderTemplateVars.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AutoValueOrBuilderTemplateVars.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AutoValueProcessor.java b/value/processor/src/main/java/com/google/auto/value/processor/AutoValueProcessor.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AutoValueProcessor.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AutoValueProcessor.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AutoValueTemplateVars.java b/value/processor/src/main/java/com/google/auto/value/processor/AutoValueTemplateVars.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AutoValueTemplateVars.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AutoValueTemplateVars.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AutoValueishProcessor.java b/value/processor/src/main/java/com/google/auto/value/processor/AutoValueishProcessor.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AutoValueishProcessor.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AutoValueishProcessor.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/AutoValueishTemplateVars.java b/value/processor/src/main/java/com/google/auto/value/processor/AutoValueishTemplateVars.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/AutoValueishTemplateVars.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/AutoValueishTemplateVars.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/BuilderMethodClassifier.java b/value/processor/src/main/java/com/google/auto/value/processor/BuilderMethodClassifier.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/BuilderMethodClassifier.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/BuilderMethodClassifier.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/BuilderMethodClassifierForAutoBuilder.java b/value/processor/src/main/java/com/google/auto/value/processor/BuilderMethodClassifierForAutoBuilder.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/BuilderMethodClassifierForAutoBuilder.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/BuilderMethodClassifierForAutoBuilder.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/BuilderMethodClassifierForAutoValue.java b/value/processor/src/main/java/com/google/auto/value/processor/BuilderMethodClassifierForAutoValue.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/BuilderMethodClassifierForAutoValue.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/BuilderMethodClassifierForAutoValue.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/BuilderRequiredProperties.java b/value/processor/src/main/java/com/google/auto/value/processor/BuilderRequiredProperties.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/BuilderRequiredProperties.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/BuilderRequiredProperties.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/BuilderSpec.java b/value/processor/src/main/java/com/google/auto/value/processor/BuilderSpec.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/BuilderSpec.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/BuilderSpec.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/ClassNames.java b/value/processor/src/main/java/com/google/auto/value/processor/ClassNames.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/ClassNames.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/ClassNames.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/EclipseHack.java b/value/processor/src/main/java/com/google/auto/value/processor/EclipseHack.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/EclipseHack.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/EclipseHack.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/ErrorReporter.java b/value/processor/src/main/java/com/google/auto/value/processor/ErrorReporter.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/ErrorReporter.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/ErrorReporter.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/Executable.java b/value/processor/src/main/java/com/google/auto/value/processor/Executable.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/Executable.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/Executable.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/ExtensionContext.java b/value/processor/src/main/java/com/google/auto/value/processor/ExtensionContext.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/ExtensionContext.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/ExtensionContext.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/ForwardingClassGenerator.java b/value/processor/src/main/java/com/google/auto/value/processor/ForwardingClassGenerator.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/ForwardingClassGenerator.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/ForwardingClassGenerator.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/GwtCompatibility.java b/value/processor/src/main/java/com/google/auto/value/processor/GwtCompatibility.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/GwtCompatibility.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/GwtCompatibility.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/GwtSerialization.java b/value/processor/src/main/java/com/google/auto/value/processor/GwtSerialization.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/GwtSerialization.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/GwtSerialization.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/JavaScanner.java b/value/processor/src/main/java/com/google/auto/value/processor/JavaScanner.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/JavaScanner.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/JavaScanner.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/KotlinMetadata.java b/value/processor/src/main/java/com/google/auto/value/processor/KotlinMetadata.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/KotlinMetadata.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/KotlinMetadata.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/MethodSignature.java b/value/processor/src/main/java/com/google/auto/value/processor/MethodSignature.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/MethodSignature.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/MethodSignature.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/MissingTypes.java b/value/processor/src/main/java/com/google/auto/value/processor/MissingTypes.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/MissingTypes.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/MissingTypes.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/Nullables.java b/value/processor/src/main/java/com/google/auto/value/processor/Nullables.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/Nullables.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/Nullables.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/Optionalish.java b/value/processor/src/main/java/com/google/auto/value/processor/Optionalish.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/Optionalish.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/Optionalish.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/PropertyBuilderClassifier.java b/value/processor/src/main/java/com/google/auto/value/processor/PropertyBuilderClassifier.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/PropertyBuilderClassifier.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/PropertyBuilderClassifier.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/PropertyNames.java b/value/processor/src/main/java/com/google/auto/value/processor/PropertyNames.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/PropertyNames.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/PropertyNames.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/Reformatter.java b/value/processor/src/main/java/com/google/auto/value/processor/Reformatter.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/Reformatter.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/Reformatter.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/SimpleMethod.java b/value/processor/src/main/java/com/google/auto/value/processor/SimpleMethod.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/SimpleMethod.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/SimpleMethod.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/SimpleServiceLoader.java b/value/processor/src/main/java/com/google/auto/value/processor/SimpleServiceLoader.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/SimpleServiceLoader.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/SimpleServiceLoader.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/TemplateVars.java b/value/processor/src/main/java/com/google/auto/value/processor/TemplateVars.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/TemplateVars.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/TemplateVars.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/TypeEncoder.java b/value/processor/src/main/java/com/google/auto/value/processor/TypeEncoder.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/TypeEncoder.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/TypeEncoder.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/TypeMirrorSet.java b/value/processor/src/main/java/com/google/auto/value/processor/TypeMirrorSet.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/TypeMirrorSet.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/TypeMirrorSet.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/TypeSimplifier.java b/value/processor/src/main/java/com/google/auto/value/processor/TypeSimplifier.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/TypeSimplifier.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/TypeSimplifier.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/TypeVariables.java b/value/processor/src/main/java/com/google/auto/value/processor/TypeVariables.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/TypeVariables.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/TypeVariables.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/package-info.java b/value/processor/src/main/java/com/google/auto/value/processor/package-info.java
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/package-info.java
+rename to value/processor/src/main/java/com/google/auto/value/processor/package-info.java
+diff --git a/value/src/main/java/com/google/auto/value/processor/autoannotation.vm b/value/processor/src/main/resources/com/google/auto/value/processor/autoannotation.vm
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/autoannotation.vm
+rename to value/processor/src/main/resources/com/google/auto/value/processor/autoannotation.vm
+diff --git a/value/src/main/java/com/google/auto/value/processor/autobuilder.vm b/value/processor/src/main/resources/com/google/auto/value/processor/autobuilder.vm
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/autobuilder.vm
+rename to value/processor/src/main/resources/com/google/auto/value/processor/autobuilder.vm
+diff --git a/value/src/main/java/com/google/auto/value/processor/autobuilderannotation.vm b/value/processor/src/main/resources/com/google/auto/value/processor/autobuilderannotation.vm
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/autobuilderannotation.vm
+rename to value/processor/src/main/resources/com/google/auto/value/processor/autobuilderannotation.vm
+diff --git a/value/src/main/java/com/google/auto/value/processor/autooneof.vm b/value/processor/src/main/resources/com/google/auto/value/processor/autooneof.vm
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/autooneof.vm
+rename to value/processor/src/main/resources/com/google/auto/value/processor/autooneof.vm
+diff --git a/value/src/main/java/com/google/auto/value/processor/autovalue.vm b/value/processor/src/main/resources/com/google/auto/value/processor/autovalue.vm
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/autovalue.vm
+rename to value/processor/src/main/resources/com/google/auto/value/processor/autovalue.vm
+diff --git a/value/src/main/java/com/google/auto/value/processor/builder.vm b/value/processor/src/main/resources/com/google/auto/value/processor/builder.vm
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/builder.vm
+rename to value/processor/src/main/resources/com/google/auto/value/processor/builder.vm
+diff --git a/value/src/main/java/com/google/auto/value/processor/equalshashcode.vm b/value/processor/src/main/resources/com/google/auto/value/processor/equalshashcode.vm
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/equalshashcode.vm
+rename to value/processor/src/main/resources/com/google/auto/value/processor/equalshashcode.vm
+diff --git a/value/src/main/java/com/google/auto/value/processor/gwtserializer.vm b/value/processor/src/main/resources/com/google/auto/value/processor/gwtserializer.vm
+similarity index 100%
+rename from value/src/main/java/com/google/auto/value/processor/gwtserializer.vm
+rename to value/processor/src/main/resources/com/google/auto/value/processor/gwtserializer.vm
+diff --git a/value/processor/src/test/build.jenesis/process-javac.properties b/value/processor/src/test/build.jenesis/process-javac.properties
+new file mode 100644
+index 0000000..df22d58
+--- /dev/null
++++ b/value/processor/src/test/build.jenesis/process-javac.properties
+@@ -0,0 +1,3 @@
++-Xlint\:all=
++-parameters=
++-g=
+diff --git a/value/src/test/java/com/google/auto/value/extension/memoized/MemoizedMethodSubject.java b/value/processor/src/test/java/com/google/auto/value/extension/memoized/MemoizedMethodSubject.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/memoized/MemoizedMethodSubject.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/memoized/MemoizedMethodSubject.java
+diff --git a/value/src/test/java/com/google/auto/value/extension/memoized/MemoizedMethodSubjectFactory.java b/value/processor/src/test/java/com/google/auto/value/extension/memoized/MemoizedMethodSubjectFactory.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/memoized/MemoizedMethodSubjectFactory.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/memoized/MemoizedMethodSubjectFactory.java
+diff --git a/value/src/test/java/com/google/auto/value/extension/memoized/MemoizedTest.java b/value/processor/src/test/java/com/google/auto/value/extension/memoized/MemoizedTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/memoized/MemoizedTest.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/memoized/MemoizedTest.java
+diff --git a/value/src/test/java/com/google/auto/value/extension/memoized/MemoizedValidationTest.java b/value/processor/src/test/java/com/google/auto/value/extension/memoized/MemoizedValidationTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/memoized/MemoizedValidationTest.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/memoized/MemoizedValidationTest.java
+diff --git a/value/src/test/java/com/google/auto/value/extension/serializable/processor/SerializableAutoValueExtensionTest.java b/value/processor/src/test/java/com/google/auto/value/extension/serializable/processor/SerializableAutoValueExtensionTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/serializable/processor/SerializableAutoValueExtensionTest.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/serializable/processor/SerializableAutoValueExtensionTest.java
+diff --git a/value/src/test/java/com/google/auto/value/extension/serializable/serializer/SerializerFactoryLoaderTest.java b/value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/SerializerFactoryLoaderTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/serializable/serializer/SerializerFactoryLoaderTest.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/SerializerFactoryLoaderTest.java
+diff --git a/value/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/IdentitySerializerFactoryTest.java b/value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/IdentitySerializerFactoryTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/IdentitySerializerFactoryTest.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/IdentitySerializerFactoryTest.java
+diff --git a/value/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableListSerializerExtensionTest.java b/value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableListSerializerExtensionTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableListSerializerExtensionTest.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableListSerializerExtensionTest.java
+diff --git a/value/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableMapSerializerExtensionTest.java b/value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableMapSerializerExtensionTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableMapSerializerExtensionTest.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/ImmutableMapSerializerExtensionTest.java
+diff --git a/value/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/OptionalSerializerExtensionTest.java b/value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/OptionalSerializerExtensionTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/OptionalSerializerExtensionTest.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/OptionalSerializerExtensionTest.java
+diff --git a/value/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/SerializerFactoryImplTest.java b/value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/SerializerFactoryImplTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/SerializerFactoryImplTest.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/impl/SerializerFactoryImplTest.java
+diff --git a/value/src/test/java/com/google/auto/value/extension/serializable/serializer/utils/CompilationAbstractTest.java b/value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/utils/CompilationAbstractTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/serializable/serializer/utils/CompilationAbstractTest.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/utils/CompilationAbstractTest.java
+diff --git a/value/src/test/java/com/google/auto/value/extension/serializable/serializer/utils/FakeSerializerFactory.java b/value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/utils/FakeSerializerFactory.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/serializable/serializer/utils/FakeSerializerFactory.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/utils/FakeSerializerFactory.java
+diff --git a/value/src/test/java/com/google/auto/value/extension/serializable/serializer/utils/TestStringSerializerFactory.java b/value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/utils/TestStringSerializerFactory.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/serializable/serializer/utils/TestStringSerializerFactory.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/serializable/serializer/utils/TestStringSerializerFactory.java
+diff --git a/value/src/test/java/com/google/auto/value/extension/toprettystring/ToPrettyStringTest.java b/value/processor/src/test/java/com/google/auto/value/extension/toprettystring/ToPrettyStringTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/toprettystring/ToPrettyStringTest.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/toprettystring/ToPrettyStringTest.java
+diff --git a/value/src/test/java/com/google/auto/value/extension/toprettystring/ToPrettyStringValidatorTest.java b/value/processor/src/test/java/com/google/auto/value/extension/toprettystring/ToPrettyStringValidatorTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/extension/toprettystring/ToPrettyStringValidatorTest.java
+rename to value/processor/src/test/java/com/google/auto/value/extension/toprettystring/ToPrettyStringValidatorTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/AutoAnnotationCompilationTest.java b/value/processor/src/test/java/com/google/auto/value/processor/AutoAnnotationCompilationTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/AutoAnnotationCompilationTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/AutoAnnotationCompilationTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/AutoAnnotationErrorsTest.java b/value/processor/src/test/java/com/google/auto/value/processor/AutoAnnotationErrorsTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/AutoAnnotationErrorsTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/AutoAnnotationErrorsTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/AutoBuilderCompilationTest.java b/value/processor/src/test/java/com/google/auto/value/processor/AutoBuilderCompilationTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/AutoBuilderCompilationTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/AutoBuilderCompilationTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/AutoOneOfCompilationTest.java b/value/processor/src/test/java/com/google/auto/value/processor/AutoOneOfCompilationTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/AutoOneOfCompilationTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/AutoOneOfCompilationTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/AutoValueCompilationTest.java b/value/processor/src/test/java/com/google/auto/value/processor/AutoValueCompilationTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/AutoValueCompilationTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/AutoValueCompilationTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/BuilderRequiredPropertiesTest.java b/value/processor/src/test/java/com/google/auto/value/processor/BuilderRequiredPropertiesTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/BuilderRequiredPropertiesTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/BuilderRequiredPropertiesTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/ExtensionTest.java b/value/processor/src/test/java/com/google/auto/value/processor/ExtensionTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/ExtensionTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/ExtensionTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/ForwardingClassGeneratorTest.java b/value/processor/src/test/java/com/google/auto/value/processor/ForwardingClassGeneratorTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/ForwardingClassGeneratorTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/ForwardingClassGeneratorTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/GeneratedDoesNotExistTest.java b/value/processor/src/test/java/com/google/auto/value/processor/GeneratedDoesNotExistTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/GeneratedDoesNotExistTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/GeneratedDoesNotExistTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/GeneratedImport.java b/value/processor/src/test/java/com/google/auto/value/processor/GeneratedImport.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/GeneratedImport.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/GeneratedImport.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/GuavaCollectionBuildersTest.java b/value/processor/src/test/java/com/google/auto/value/processor/GuavaCollectionBuildersTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/GuavaCollectionBuildersTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/GuavaCollectionBuildersTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/IncrementalExtensionTest.java b/value/processor/src/test/java/com/google/auto/value/processor/IncrementalExtensionTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/IncrementalExtensionTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/IncrementalExtensionTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/JavaScannerTest.java b/value/processor/src/test/java/com/google/auto/value/processor/JavaScannerTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/JavaScannerTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/JavaScannerTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/NullablesTest.java b/value/processor/src/test/java/com/google/auto/value/processor/NullablesTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/NullablesTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/NullablesTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/PropertyAnnotationsTest.java b/value/processor/src/test/java/com/google/auto/value/processor/PropertyAnnotationsTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/PropertyAnnotationsTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/PropertyAnnotationsTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/PropertyNamesTest.java b/value/processor/src/test/java/com/google/auto/value/processor/PropertyNamesTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/PropertyNamesTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/PropertyNamesTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/ReformatterTest.java b/value/processor/src/test/java/com/google/auto/value/processor/ReformatterTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/ReformatterTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/ReformatterTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/SimpleServiceLoaderTest.java b/value/processor/src/test/java/com/google/auto/value/processor/SimpleServiceLoaderTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/SimpleServiceLoaderTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/SimpleServiceLoaderTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/SimplifyWithAnnotationsTest.java b/value/processor/src/test/java/com/google/auto/value/processor/SimplifyWithAnnotationsTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/SimplifyWithAnnotationsTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/SimplifyWithAnnotationsTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/TemplateVarsTest.java b/value/processor/src/test/java/com/google/auto/value/processor/TemplateVarsTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/TemplateVarsTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/TemplateVarsTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/TypeEncoderTest.java b/value/processor/src/test/java/com/google/auto/value/processor/TypeEncoderTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/TypeEncoderTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/TypeEncoderTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/TypeSimplifierTest.java b/value/processor/src/test/java/com/google/auto/value/processor/TypeSimplifierTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/TypeSimplifierTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/TypeSimplifierTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/TypeVariablesTest.java b/value/processor/src/test/java/com/google/auto/value/processor/TypeVariablesTest.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/TypeVariablesTest.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/TypeVariablesTest.java
+diff --git a/value/src/test/java/com/google/auto/value/processor/testclasses/RuntimePermission.java b/value/processor/src/test/java/com/google/auto/value/processor/testclasses/RuntimePermission.java
+similarity index 100%
+rename from value/src/test/java/com/google/auto/value/processor/testclasses/RuntimePermission.java
+rename to value/processor/src/test/java/com/google/auto/value/processor/testclasses/RuntimePermission.java
+diff --git a/value/src/it/functional/build.jenesis/packaging.properties b/value/src/it/functional/build.jenesis/packaging.properties
+new file mode 100644
+index 0000000..6e7126a
+--- /dev/null
++++ b/value/src/it/functional/build.jenesis/packaging.properties
+@@ -0,0 +1 @@
++stage=false
+diff --git a/value/src/it/functional/pom.xml b/value/src/it/functional/pom.xml
+index 87e33a4..03b94b2 100644
+--- a/value/src/it/functional/pom.xml
++++ b/value/src/it/functional/pom.xml
+@@ -34,6 +34,459 @@
+   <properties>
+     <kotlin.version>2.4.21</kotlin.version>
+   </properties>
++  <!--jenesis.plugin
++    maven/com.google.auto.value/auto-value
++    maven/org.jetbrains.kotlin/kotlin-metadata-jvm/2.4.21
++  -->
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>com.beust</groupId>
++        <artifactId>jcommander</artifactId>
++        <version>1.78</version>
++        <!--Checksum/SHA-256/7891debb84b5f83e9bd57593ebece3399abbe0fd938cf306b3534c57913b9615-->
++      </dependency>
++      <dependency>
++        <groupId>com.github.javaparser</groupId>
++        <artifactId>javaparser-core</artifactId>
++        <version>3.25.6</version>
++        <!--Checksum/SHA-256/5880547a277f3f875b3a9ec09d8777f7cf1545ca815bd8b2ad83ffab58f3c57b-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.auto.service</groupId>
++        <artifactId>auto-service</artifactId>
++        <version>1.1.1</version>
++        <!--Checksum/SHA-256/1f48f451503e623daba7d9ed368cca0f81e1e3815653a4560113e12c0129ebd5-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.auto.service</groupId>
++        <artifactId>auto-service-annotations</artifactId>
++        <version>1.1.1</version>
++        <!--Checksum/SHA-256/16a76dd00a2650568447f5d6e3a9e2c809d9a42367d56b45215cfb89731f4d24-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.auto</groupId>
++        <artifactId>auto-common</artifactId>
++        <version>1.2.1</version>
++        <!--Checksum/SHA-256/f43f29fe2a6ebaf04b2598cdeec32a4e346d49a9404e990f5fc19c19f3a28d0e-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.code.findbugs</groupId>
++        <artifactId>jsr305</artifactId>
++        <version>3.0.2</version>
++        <!--Checksum/SHA-256/766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>2.50.0</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.escapevelocity</groupId>
++        <artifactId>escapevelocity</artifactId>
++        <version>1.1</version>
++        <!--Checksum/SHA-256/37e76e4466836dedb864fb82355cd01c3bd21325ab642d89a0f759291b171231-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>failureaccess</artifactId>
++        <version>1.0.3</version>
++        <!--Checksum/SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava</artifactId>
++        <version>${guava.version}</version>
++        <!--Checksum/SHA-256/b530942257fb935f8b2cfaa5f8eb5bd59c555fd8e8d01b8ce98912e077ea606c 33.7.2-jre-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava-testlib</artifactId>
++        <version>${guava.version}</version>
++        <!--Checksum/SHA-256/87684af5e41c7883aaa76c1c531e7ab98e620735bdb652cc97ceccd8e534c115 33.7.2-jre-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>listenablefuture</artifactId>
++        <version>9999.0-empty-to-avoid-conflict-with-guava</version>
++        <!--Checksum/SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.j2objc</groupId>
++        <artifactId>j2objc-annotations</artifactId>
++        <version>3.1</version>
++        <!--Checksum/SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.jsinterop</groupId>
++        <artifactId>jsinterop-annotations</artifactId>
++        <version>2.0.0</version>
++        <!--Checksum/SHA-256/ce01f48439240e46521b99cc4c889dcb6793f7a0b0a3e238a38359093f457b49-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.testing.compile</groupId>
++        <artifactId>compile-testing</artifactId>
++        <version>0.24.0</version>
++        <!--Checksum/SHA-256/0a04636fe48d6aa73d278199f668e26db113c5425699bfcb2ab03e06d4ba7b0e-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.truth</groupId>
++        <artifactId>truth</artifactId>
++        <version>1.4.5</version>
++        <!--Checksum/SHA-256/a6409e90fdd6b31f239b0c02065c43b53e1b09c72f2e08c3a86d04fe5910cf4b-->
++      </dependency>
++      <dependency>
++        <groupId>com.squareup</groupId>
++        <artifactId>javapoet</artifactId>
++        <version>1.13.0</version>
++        <!--Checksum/SHA-256/4c7517e848a71b36d069d12bb3bf46a70fd4cda3105d822b0ed2e19c00b69291-->
++      </dependency>
++      <dependency>
++        <groupId>com.thoughtworks.qdox</groupId>
++        <artifactId>qdox</artifactId>
++        <version>1.12.1</version>
++        <!--Checksum/SHA-256/21fba22f830e9268f07cf4ab2d99e8181abbdcb0cb91ee0228eb3cb918dcdd1d-->
++      </dependency>
++      <dependency>
++        <groupId>dev.gradleplugins</groupId>
++        <artifactId>gradle-api</artifactId>
++        <version>8.11.1</version>
++        <!--Checksum/SHA-256/6f4658c280ce4d63a7fe269d94332604449c95a6d2181949e4f6809ac010f871-->
++      </dependency>
++      <dependency>
++        <groupId>dev.gradleplugins</groupId>
++        <artifactId>gradle-test-kit</artifactId>
++        <version>8.11.1</version>
++        <!--Checksum/SHA-256/206b18396e22f69e9d273b44768c3c082ee27ac406a81b54516e628c4c13aab9-->
++      </dependency>
++      <dependency>
++        <groupId>info.picocli</groupId>
++        <artifactId>picocli</artifactId>
++        <version>4.6.3</version>
++        <!--Checksum/SHA-256/b0a5159e926de8084ff066025142270443533656bc599b8bb31d14d11fd138a4-->
++      </dependency>
++      <dependency>
++        <groupId>javax.servlet</groupId>
++        <artifactId>javax.servlet-api</artifactId>
++        <version>3.1.0</version>
++        <!--Checksum/SHA-256/af456b2dd41c4e82cf54f3e743bc678973d9fe35bd4d3071fa05c7e5333b8482-->
++      </dependency>
++      <dependency>
++        <groupId>javax.validation</groupId>
++        <artifactId>validation-api</artifactId>
++        <version>1.0.0.GA</version>
++        <!--Checksum/SHA-256/e459f313ebc6db2483f8ceaad39af07086361b474fa92e40f442e8de5d9895dc-->
++      </dependency>
++      <dependency>
++        <groupId>javax.validation</groupId>
++        <artifactId>validation-api</artifactId>
++        <version>1.0.0.GA</version>
++        <classifier>sources</classifier>
++        <!--Checksum/SHA-256/a394d52a9b7fe2bb14f0718d2b3c8308ffe8f37e911956012398d55c9f9f9b54-->
++      </dependency>
++      <dependency>
++        <groupId>jline</groupId>
++        <artifactId>jline</artifactId>
++        <version>2.14.6</version>
++        <!--Checksum/SHA-256/97d1acaac82409be42e622d7a54d3ae9d08517e8aefdea3d2ba9791150c2f02d-->
++      </dependency>
++      <dependency>
++        <groupId>junit</groupId>
++        <artifactId>junit</artifactId>
++        <version>4.13.2</version>
++        <!--Checksum/SHA-256/8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3-->
++      </dependency>
++      <dependency>
++        <groupId>net.ltgt.gradle.incap</groupId>
++        <artifactId>incap</artifactId>
++        <version>1.0.0</version>
++        <!--Checksum/SHA-256/cd140bf025c109b8e24e9d8a432714362b8e973bea1bec6ee0c6f43045d10110-->
++      </dependency>
++      <dependency>
++        <groupId>org.apache.ant</groupId>
++        <artifactId>ant</artifactId>
++        <version>1.10.14</version>
++        <!--Checksum/SHA-256/4cbbd9243de4c1042d61d9a15db4c43c90ff93b16d78b39481da1c956c8e9671-->
++      </dependency>
++      <dependency>
++        <groupId>org.apache.ant</groupId>
++        <artifactId>ant-antlr</artifactId>
++        <version>1.10.14</version>
++        <!--Checksum/SHA-256/d737deb5b0992f691bffe94076695a77523e1e3b5d524b465f90d93e2d8ed7a2-->
++      </dependency>
++      <dependency>
++        <groupId>org.apache.ant</groupId>
++        <artifactId>ant-junit</artifactId>
++        <version>1.10.14</version>
++        <!--Checksum/SHA-256/a3b535d3d549f1850a8917a7c2bfdf364fffb79d527267db30a129475ca2faf8-->
++      </dependency>
++      <dependency>
++        <groupId>org.apache.ant</groupId>
++        <artifactId>ant-launcher</artifactId>
++        <version>1.10.14</version>
++        <!--Checksum/SHA-256/f0909725a7a24e393888f3fbb558347abf506ce2f7ebc581ff26331b94d951a5-->
++      </dependency>
++      <dependency>
++        <groupId>org.apiguardian</groupId>
++        <artifactId>apiguardian-api</artifactId>
++        <version>1.1.2</version>
++        <!--Checksum/SHA-256/b509448ac506d607319f182537f0b35d71007582ec741832a1f111e5b5b70b38-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/c92c92c4b9b183f9981ba7399f36592e5e3ad6f4cdac7101b5a22cc17998d13f-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-ant</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/243086aba6ad859a107f20c2f5db40861c478cc676cd31e9f1fb3eb60a0a4208-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-astbuilder</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/abc32356f26938dba6a6a2fb63db0f3ffc3afe5774c63deeb55dcbd6d8308744-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-cli-picocli</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/49d5c158ec4ffffcaf9b8af2d7600a7d8a10050e66ec77f409f4c1bdf9bd5d1c-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-console</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/16160addea093246b836f47b366a68008f4d1d5d297fbf8eee2ea06776931bd1-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-datetime</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/a9b221c1abb073ca6c51685bac6038ea1b5242076f2ee895b5e7a0fe3b9574dc-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-docgenerator</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/3c780ae661ceab3065e7cd0f157e97c03868ddaa97461c97ee0500075bc050f8-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-groovydoc</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/2f2eab5938fb089f669a4a79f4233db3b19bc538fefbbcd894f0a9ce22bd75d1-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-groovysh</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/ec6a42a51f787dad8058d829da281f1d0dd00b1d04b186d1e8bcaa322e612011-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-jmx</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/18f8e45da1fa81e5bb9d503199fb3c080e254d5bac7f3cba026b1cb29fbe07ce-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-json</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/5dceb17bd9085c76563b56eb7bdec414e83f388dcb79965e942580abf2780329-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-jsr223</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/571b43ab268119f4cf9b005755486c3c3a560e301e9fa311bce95099cdd23229-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-macro</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/5012ac70ec41e364979db96bcaea2db4a050e20dbc397d280eaa57d2fc894ba2-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-nio</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/5f47a9a64f7ccdceae0cb4c95ad382fea56b6130a67399d811cea9dbd8ce68a3-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-servlet</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/6ae56ffc06ab02c207ae0d3ac34eec1cfc4ad8bd9dd8d2f29e0fd4c57afce218-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-sql</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/ab74306c2ed9cf0ea20953a70d394b2ad622145ef710dbdb71a010ab52a6776c-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-swing</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/33d3bc07bf380b4f3220f6255aa589bca9c405b9457f07e23b2be0ee13121d88-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-templates</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/1f71909b4bfd7bd3741c4e54d125103d4509e71ad0974692913879f45ea01873-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-test</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/7d156e091159613f477a68481de5324988bb35a08e1b93449d177e08727ed4c9-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-test-junit5</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/c93331d8c5e36e927464f5e5aa00974f2035a51c48273f65efd7326b73a84f08-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-testng</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/8706a372b272a0821a48db314bcd6844005dc1dd884ecbadf27cb8bdf1d304c3-->
++      </dependency>
++      <dependency>
++        <groupId>org.codehaus.groovy</groupId>
++        <artifactId>groovy-xml</artifactId>
++        <version>3.0.22</version>
++        <!--Checksum/SHA-256/b7f6d5c6dd552b24d8e66ce8cdd0403e1a3a9bbb7c4229a1afc00d8e54624862-->
++      </dependency>
++      <dependency>
++        <groupId>org.eclipse.jdt</groupId>
++        <artifactId>ecj</artifactId>
++        <version>3.46.100</version>
++        <!--Checksum/SHA-256/74c93172475fee0cd4e6eefb44233516dd40525642da35d009146d97ea598229-->
++      </dependency>
++      <dependency>
++        <groupId>org.gwtproject</groupId>
++        <artifactId>gwt-user</artifactId>
++        <version>2.13.1</version>
++        <!--Checksum/SHA-256/35109b8c4eb2a72809b45c496e6b508c5d0e7229e8737ae7211b2097470cead4-->
++      </dependency>
++      <dependency>
++        <groupId>org.hamcrest</groupId>
++        <artifactId>hamcrest-core</artifactId>
++        <version>1.3</version>
++        <!--Checksum/SHA-256/66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-stdlib</artifactId>
++        <version>${kotlin.version}</version>
++        <!--Checksum/SHA-256/bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3 2.4.21-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains</groupId>
++        <artifactId>annotations</artifactId>
++        <version>13.0</version>
++        <!--Checksum/SHA-256/ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478-->
++      </dependency>
++      <dependency>
++        <groupId>org.jspecify</groupId>
++        <artifactId>jspecify</artifactId>
++        <version>1.0.1</version>
++        <!--Checksum/SHA-256/070d75f261fe4c5b8202508366715f7f2d4660f88c8ef7e6d3575e48c9683b66-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.jupiter</groupId>
++        <artifactId>junit-jupiter-api</artifactId>
++        <version>5.9.2</version>
++        <!--Checksum/SHA-256/f767a170f97127b0ad3582bf3358eabbbbe981d9f96411853e629d9276926fd5-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.jupiter</groupId>
++        <artifactId>junit-jupiter-engine</artifactId>
++        <version>5.9.2</version>
++        <!--Checksum/SHA-256/74cfc49388f760413ff348ca2c9ab39527484b57deecd157f2275a5f8a5fe971-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.platform</groupId>
++        <artifactId>junit-platform-commons</artifactId>
++        <version>1.9.2</version>
++        <!--Checksum/SHA-256/624a3d745ef1d28e955a6a67af8edba0fdfc5c9bad680a73f67a70bb950a683d-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.platform</groupId>
++        <artifactId>junit-platform-console</artifactId>
++        <version>1.9.2</version>
++        <!--Checksum/SHA-256/11eb599f761643186fb0112df0c9d962146eab256f7d5a3d5581b2a32dc720f0-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.platform</groupId>
++        <artifactId>junit-platform-engine</artifactId>
++        <version>1.9.2</version>
++        <!--Checksum/SHA-256/25f23dc535a091e9dc80c008faf29dcb92be902e6911f77a736fbaf019908367-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.platform</groupId>
++        <artifactId>junit-platform-launcher</artifactId>
++        <version>1.9.2</version>
++        <!--Checksum/SHA-256/eef139eb09c98e9cdd358b6ce4c6cdd59b30c6a88096e369c33ba96e67edf0e4-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.platform</groupId>
++        <artifactId>junit-platform-reporting</artifactId>
++        <version>1.9.2</version>
++        <!--Checksum/SHA-256/d6788db1c941c1247e07d8104f57c3f06175cadfd43060a792493fe9195671db-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.vintage</groupId>
++        <artifactId>junit-vintage-engine</artifactId>
++        <version>5.9.2</version>
++        <!--Checksum/SHA-256/41e16dd32c8f462bbc032b2b79f23944191b32ec398d05858badb5dabffd0612-->
++      </dependency>
++      <dependency>
++        <groupId>org.opentest4j</groupId>
++        <artifactId>opentest4j</artifactId>
++        <version>1.2.0</version>
++        <!--Checksum/SHA-256/58812de60898d976fb81ef3b62da05c6604c18fd4a249f5044282479fc286af2-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm</artifactId>
++        <version>9.11</version>
++        <!--Checksum/SHA-256/5fe3b469b8646e5bc53a897840952d63b712d4923d2a7a26aebc585f1fec7676-->
++      </dependency>
++      <dependency>
++        <groupId>org.slf4j</groupId>
++        <artifactId>slf4j-api</artifactId>
++        <version>1.7.32</version>
++        <!--Checksum/SHA-256/3624f8474c1af46d75f98bc097d7864a323c81b3808aa43689a6e1c601c027be-->
++      </dependency>
++      <dependency>
++        <groupId>org.testng</groupId>
++        <artifactId>testng</artifactId>
++        <version>7.5</version>
++        <!--Checksum/SHA-256/e549db50dcc421f9501d6af933af15e4fba96617577409d939724cd7e1a25033-->
++      </dependency>
++      <dependency>
++        <groupId>org.w3c.css</groupId>
++        <artifactId>sac</artifactId>
++        <version>1.3</version>
++        <!--Checksum/SHA-256/003785669f921aafe4f137468dd20a01a36111e94fd7449f26c16e7924d82d23-->
++      </dependency>
++      <dependency>
++        <groupId>org.webjars</groupId>
++        <artifactId>jquery</artifactId>
++        <version>3.5.1</version>
++        <!--Checksum/SHA-256/83168112220ac912a3dba0eebae90a4da5bf1e24b1bafd401e3d4f9f598bb2cb-->
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+   <dependencies>
+     <dependency>
+       <groupId>com.google.auto.value</groupId>
+@@ -325,4 +778,31 @@
+       </build>
+     </profile>
+   </profiles>
++  <!--jenesis.pin
++  kotlin/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  kotlin/module/build.jenesis.plugin.kotlin 0.1.0 SHA-256/8ae119271454d849d712d61b0166b5879f6c6493897beaa4d76b1aa5319545c6
++  kotlin:tool/maven/org.jetbrains.kotlin/kotlin-build-tools-api 2.4.21 SHA-256/c5cd6a49bd072b529ae10809111c16a7aa0f92147e95d288354017fd65799461
++  kotlin:tool/maven/org.jetbrains.kotlin/kotlin-compiler-embeddable 2.4.21 SHA-256/ef19419c765e7ac8404465fa026ca8fc4dbb8a822de0fc79aa53c8dce29f1d02
++  kotlin:tool/maven/org.jetbrains.kotlin/kotlin-daemon-embeddable 2.4.21 SHA-256/7b3ef24674e5bcffcadfc4e43202ea314194939ecbcdd90a4770b2f1b04e0d07
++  kotlin:tool/maven/org.jetbrains.kotlin/kotlin-reflect 1.6.10 SHA-256/3277ac102ae17aad10a55abec75ff5696c8d109790396434b496e75087854203
++  kotlin:tool/maven/org.jetbrains.kotlin/kotlin-script-runtime 2.4.21 SHA-256/a658cf5902a1525a06c264a5e42b437e97a6679ddeef8ca641246f270cf6a013
++  kotlin:tool/maven/org.jetbrains.kotlin/kotlin-stdlib 2.4.21 SHA-256/bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3
++  kotlin:tool/maven/org.jetbrains.kotlinx/kotlinx-coroutines-core-jvm 1.8.0 SHA-256/9860906a1937490bf5f3b06d2f0e10ef451e65b95b269f22daf68a3d1f5065c5
++  kotlin:tool/maven/org.jetbrains/annotations 13.0 SHA-256/ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478
++  plugin/maven/com.google.auto.service/auto-service-annotations 1.1.1 SHA-256/16a76dd00a2650568447f5d6e3a9e2c809d9a42367d56b45215cfb89731f4d24
++  plugin/maven/com.google.auto/auto-common 1.2.2 SHA-256/f50b1ce8a41fad31a8a819c052f8ffa362ea0a3dbe9ef8f7c7dc9a36d4738a59
++  plugin/maven/com.google.errorprone/error_prone_annotations 2.50.0 SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a
++  plugin/maven/com.google.escapevelocity/escapevelocity 1.1 SHA-256/37e76e4466836dedb864fb82355cd01c3bd21325ab642d89a0f759291b171231
++  plugin/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  plugin/maven/com.google.guava/guava 33.7.2-jre SHA-256/b530942257fb935f8b2cfaa5f8eb5bd59c555fd8e8d01b8ce98912e077ea606c
++  plugin/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  plugin/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  plugin/maven/com.squareup/javapoet 1.13.0 SHA-256/4c7517e848a71b36d069d12bb3bf46a70fd4cda3105d822b0ed2e19c00b69291
++  plugin/maven/net.ltgt.gradle.incap/incap 1.0.0 SHA-256/cd140bf025c109b8e24e9d8a432714362b8e973bea1bec6ee0c6f43045d10110
++  plugin/maven/org.jetbrains.kotlin/kotlin-metadata-jvm 2.4.21 SHA-256/848e8db928d4265c0302ddb95544eb127b52b0be13bd724b31dbee6bc16d8223
++  plugin/maven/org.jetbrains.kotlin/kotlin-stdlib 2.4.21 SHA-256/bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3
++  plugin/maven/org.jetbrains/annotations 13.0 SHA-256/ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478
++  plugin/maven/org.jspecify/jspecify 1.0.1 SHA-256/070d75f261fe4c5b8202508366715f7f2d4660f88c8ef7e6d3575e48c9683b66
++  plugin/maven/org.ow2.asm/asm 9.11 SHA-256/5fe3b469b8646e5bc53a897840952d63b712d4923d2a7a26aebc585f1fec7676
++  -->
+ </project>
+diff --git a/value/src/it/functional/src/test/build.jenesis/process-test.properties b/value/src/it/functional/src/test/build.jenesis/process-test.properties
+new file mode 100644
+index 0000000..ec5ef0c
+--- /dev/null
++++ b/value/src/it/functional/src/test/build.jenesis/process-test.properties
+@@ -0,0 +1,2 @@
++--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED\njdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED\njdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED\njdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED\njdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED\njdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
++-Dbasedir=value/src/it/functional
+diff --git a/value/userguide/extensions.md b/value/userguide/extensions.md
+index 261869d..6c35235 100644
+--- a/value/userguide/extensions.md
++++ b/value/userguide/extensions.md
+@@ -37,5 +37,5 @@ behavior by overriding or implementing new methods.
+ *   List of known extensions.
+ 
+ [AutoService]: https://github.com/google/auto/tree/main/service
+-[`AutoValueExtension`]: https://github.com/google/auto/blob/main/value/src/main/java/com/google/auto/value/extension/AutoValueExtension.java
++[`AutoValueExtension`]: https://github.com/google/auto/blob/main/value/processor/src/main/java/com/google/auto/value/extension/AutoValueExtension.java
+ [`ServiceLoader`]: http://docs.oracle.com/javase/7/docs/api/java/util/ServiceLoader.html
+diff --git a/value/userguide/howto.md b/value/userguide/howto.md
+index 43b7499..d072831 100644
+--- a/value/userguide/howto.md
++++ b/value/userguide/howto.md
+@@ -352,7 +352,7 @@ public class Names {
+ ```
+ 
+ For more details, see the
+-[`AutoAnnotation` javadoc](http://github.com/google/auto/blob/main/value/src/main/java/com/google/auto/value/AutoAnnotation.java#L24).
++[`AutoAnnotation` javadoc](http://github.com/google/auto/blob/main/value/annotations/src/main/java/com/google/auto/value/AutoAnnotation.java#L24).
+ 
+ ## <a name="setters"></a>... also include setter (mutator) methods?
+ 
+@@ -472,7 +472,7 @@ If a `@Memoized` method is also annotated with `@Nullable`, then `null` values
+ will be stored; if not, then the overriding method throws `NullPointerException`
+ when the annotated method returns `null`.
+ 
+-[`@Memoized`]: https://github.com/google/auto/blob/main/value/src/main/java/com/google/auto/value/extension/memoized/Memoized.java
++[`@Memoized`]: https://github.com/google/auto/blob/main/value/annotations/src/main/java/com/google/auto/value/extension/memoized/Memoized.java
+ 
+ ## <a name="memoize_hash_tostring"></a>... memoize the result of `hashCode` or `toString`?
+ 
+@@ -759,4 +759,4 @@ Song {
+ default AutoValue-generated `toString()` implementation, or on another
+ user-defined method.
+ 
+-[`@ToPrettyString`]: https://github.com/google/auto/blob/main/value/src/main/java/com/google/auto/value/extension/toprettystring/ToPrettyString.java
++[`@ToPrettyString`]: https://github.com/google/auto/blob/main/value/annotations/src/main/java/com/google/auto/value/extension/toprettystring/ToPrettyString.java

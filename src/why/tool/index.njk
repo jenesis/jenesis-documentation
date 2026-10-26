@@ -253,7 +253,8 @@ java build/jenesis/Make.java</code></pre></div>
       range of open-source builds.</p>
     <div class="lp-command"><pre><code>java build/jenesis/Make.java skill/migrate</code></pre></div>
     <p>The most common Maven and Gradle plugins - compilers, code generators, checks, test runners and coverage -
-      are built in. A less common or custom plugin is ported to one of the
+      have a counterpart: a tool the JDK ships, run directly, or an official plugin the build fetches where a
+      configuration file switches it on. A less common or custom plugin is ported to one of the
       <a class="lp-link" href="{{ docs }}extending-the-build/#hook-points">hook points</a> of a plugin, without
       changing anything else of the build. The result is validated by comparing what both builds produce: the
       jar contents, the dependency tree, the number of tests run and the POM a consumer receives.</p>

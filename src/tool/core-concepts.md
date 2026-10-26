@@ -15,8 +15,9 @@ folders and produces one fresh output folder; a step downstream reads the folder
 Compiling, packaging a jar, generating docs, resolving dependencies - each is a step, and the edges between
 them are "this step's output is that step's input".
 
-That is the whole model. There is no phase lifecycle to memorise and no plugin to bind into it: a build is
-just steps wired to steps, and the engine walks them in dependency order.
+That is the whole model. There is no phase lifecycle to memorise and nothing to bind into one: a build is
+just steps wired to steps, and the engine walks them in dependency order. A plugin adds its steps to the same
+graph.
 
 ### The build step
 

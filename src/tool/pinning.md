@@ -368,20 +368,28 @@ migration: the BOM declarations go and the closure is pinned in full.
 
 ### Refreshing a bill of materials
 
-A project that keeps its pins in a local BOM had nowhere for `pin` to write: the goal rewrites module
-declarations, so the shared file was maintained by hand. `-Djenesis.pin.file` names a properties file to
-write **instead**:
+A project that keeps its pins in a local BOM can have `pin` write that file rather than the module
+declarations. `-Djenesis.pin.file` names the file:
 
 ```bash
 java -Djenesis.pin.file=build.jenesis/pin-project.properties build/jenesis/Make.java pin
 ```
 
-The run then adds a single step over the union of every module's closure rather than one per module, so one
-writer produces one file, and it emits the keys `@jenesis.bom` reads: a module under its own name, a Maven
-artifact as `<groupId>/<artifactId>`, and anything carrying a type or a classifier under its repository. The
-module declarations are left alone.
+The run writes the union of every module's closure to that one file, in the keys `@jenesis.bom` reads: a
+module under its own name, a Maven artifact as `<groupId>/<artifactId>`, and anything carrying a type or a
+classifier under its repository. First-party modules of the project are left out, for the same reason a pin
+never records them: they are built, not resolved.
 
-Only the `main` group is written. A BOM is read under the group its declaration names, so a coordinate
-belonging to a tool's own group - the linter or alternative compiler a build module resolves for itself -
-would be read back as a repository name, and is left out rather than written wrong. First-party modules of
-the project are left out too, for the same reason a pin never records them: they are built, not resolved.
+The file names no group. A module chooses one each time it imports the file: `@jenesis.bom
+pin-project.properties` reads it into the `main` group, and `@jenesis.bom launcher/pin-project.properties`
+into the `launcher` group. Which groups the file holds is `-Djenesis.pin.groups`: `main` by default, a
+comma-separated list such as `main,launcher`, or `*` for every group. A file holds one version of each
+coordinate, so `pin` refuses to write one in which those groups resolve a coordinate at two versions, and names
+both with the module and group behind each. That is why a tool's own group - the linter or alternative
+compiler a build module resolves for itself, apart so that its versions need not agree with the
+application's - is rarely named.
+
+Every other group is pinned in the module declarations as it is without the file, so a tool's closure keeps
+its `@jenesis.pin <name>:tool/...` lines. Where a module imports the file into a group the file holds, that
+group's own pin lines are removed, as a line in the declaration would override the file. A `pom.xml` never
+reads the file and keeps every pin in its POMs.

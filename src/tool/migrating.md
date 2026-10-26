@@ -252,7 +252,7 @@ prompt, or paste what the command prints:
 ```
 
 The task follows `skill/migrate`, this chapter and phase two written for an agent, and `skill/registry` names
-the built-in that replaces each common plugin. The agent closes with a summary: the build declaration it chose,
+what replaces each common plugin. The agent closes with a summary: the build declaration it chose,
 what replaced each plugin, the split packages that kept the build on `pom.xml`, each shaded dependency and what
 replaced it, what still differs from the old build, and the command CI runs.
 

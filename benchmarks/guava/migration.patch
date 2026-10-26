@@ -1,0 +1,1311 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 6f5376a..0dab4b2 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -60,6 +60,26 @@ jobs:
+         shell: bash
+         run: ./util/print_surefire_reports.sh
+ 
++  jenesis:
++    name: "Jenesis build on JDK 25 on ${{ matrix.os }}"
++    strategy:
++      matrix:
++        os: [ ubuntu-latest, windows-latest ]
++    runs-on: ${{ matrix.os }}
++    steps:
++      - name: 'Check out repository'
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
++        with:
++          persist-credentials: false
++      - name: 'Set up JDK'
++        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
++        with:
++          java-version: 25
++          distribution: 'temurin'
++      - name: 'Build, test and stage'
++        shell: bash
++        run: java -Djenesis.dependency.pin=strict -Djenesis.make.profiles=release build/jenesis/Make.java build stage
++
+   gradle-test:
+     name: "Gradle Integration Tests"
+     runs-on: ubuntu-latest
+diff --git a/.gitignore b/.gitignore
+index c6c875c..6ec9add 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -19,3 +19,6 @@ out/
+ 
+ # OS X
+ .DS_Store
++
++# Jenesis
++.jenesis/
+diff --git a/build.jenesis/process-javac.properties b/build.jenesis/process-javac.properties
+new file mode 100644
+index 0000000..f9170e4
+--- /dev/null
++++ b/build.jenesis/process-javac.properties
+@@ -0,0 +1,19 @@
++--source=8
++-g=
++-parameters=
++-XDcompilePolicy\=simple
++--should-stop\=ifError\=FLOW
++-Xplugin\:ErrorProne\ -Xep\:Java8ApiChecker\:ERROR\ -XepDisableAllWarnings
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.api\=ALL-UNNAMED
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.file\=ALL-UNNAMED
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.main\=ALL-UNNAMED
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.model\=ALL-UNNAMED
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.parser\=ALL-UNNAMED
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.processing\=ALL-UNNAMED
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.tree\=ALL-UNNAMED
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.util\=ALL-UNNAMED
++-J--add-opens\=jdk.compiler/com.sun.tools.javac.code\=ALL-UNNAMED
++-J--add-opens\=jdk.compiler/com.sun.tools.javac.comp\=ALL-UNNAMED
++-Xlint\:-removal,-options
++-XDignore.symbol.file=
++-Xpkginfo\:always=
+diff --git a/build.jenesis/process-javadoc.properties b/build.jenesis/process-javadoc.properties
+new file mode 100644
+index 0000000..59c5050
+--- /dev/null
++++ b/build.jenesis/process-javadoc.properties
+@@ -0,0 +1,7 @@
++--source=8
++-quiet=
++-Xdoclint\:-html=
++-XDignore.symbol.file=
++-use=
++-author=
++-version=
+diff --git a/build.jenesis/process-test.properties b/build.jenesis/process-test.properties
+new file mode 100644
+index 0000000..95a65b4
+--- /dev/null
++++ b/build.jenesis/process-test.properties
+@@ -0,0 +1,4 @@
++-Xmx1536M=
++-Duser.language=hi
++-Duser.country=IN
++--add-opens=java.base/java.lang=ALL-UNNAMED\njava.base/java.util=ALL-UNNAMED\njava.base/sun.security.jca=ALL-UNNAMED
+diff --git a/build/bnd/.jenesis.skip b/build/bnd/.jenesis.skip
+new file mode 100644
+index 0000000..e69de29
+diff --git a/build/bnd/build/bnd/BndFactory.java b/build/bnd/build/bnd/BndFactory.java
+new file mode 100644
+index 0000000..b45f761
+--- /dev/null
++++ b/build/bnd/build/bnd/BndFactory.java
+@@ -0,0 +1,19 @@
++package build.bnd;
++
++import module build.jenesis;
++import module java.base;
++
++public class BndFactory implements BuildModuleFactory {
++
++    @Override
++    public BuildExecutorModule create(Environment environment,
++                                      SequencedMap<String, String> properties,
++                                      Permits permits,
++                                      String group,
++                                      Map<String, Repository> repositories,
++                                      Map<String, Resolver> resolvers) {
++        return (executor, inherited) -> executor.addStep("manifest",
++                new BndManifest(new LinkedHashMap<>(properties), group + ":tool"),
++                inherited.sequencedKeySet());
++    }
++}
+diff --git a/build/bnd/build/bnd/BndManifest.java b/build/bnd/build/bnd/BndManifest.java
+new file mode 100644
+index 0000000..1ff0f14
+--- /dev/null
++++ b/build/bnd/build/bnd/BndManifest.java
+@@ -0,0 +1,112 @@
++package build.bnd;
++
++import module build.jenesis;
++import module java.base;
++
++import build.jenesis.step.Dependencies;
++
++record BndManifest(LinkedHashMap<String, String> instructions, String tool) implements BuildStep {
++
++    private static final String MANIFEST = "manifest.mf";
++
++    @Override
++    public CompletionStage<BuildStepResult> apply(Executor executor,
++                                                  BuildStepContext context,
++                                                  SequencedMap<String, BuildStepArgument> arguments) throws IOException {
++        Path compiled = arguments.firstEntry().getValue().folder();
++        SequencedSet<Path> folders = new LinkedHashSet<>();
++        List<Path> bnd = new ArrayList<>(), classPath = new ArrayList<>();
++        for (BuildStepArgument argument : arguments.values()) {
++            if (!argument.removed()) {
++                folders.add(argument.folder());
++                bnd.addAll(Dependencies.select(argument.folder(), tool, "plugin"));
++                classPath.addAll(Dependencies.select(argument.folder(), "main", "compile"));
++            }
++        }
++        if (bnd.isEmpty()) {
++            throw new IllegalStateException("No bnd jar is resolved in the group " + tool
++                    + ": declare <!--jenesis.plugin " + tool + " maven/biz.aQute.bnd/biz.aQute.bndlib--> in pom.xml");
++        }
++        Path described = BuildStep.locate(folders, BuildStep.METADATA);
++        Properties metadata = new Properties();
++        if (described != null) {
++            try (Reader reader = Files.newBufferedReader(described)) {
++                metadata.load(reader);
++            }
++        }
++        Manifest base = new Manifest();
++        Path handed = compiled.resolve(MANIFEST);
++        if (Files.isRegularFile(handed)) {
++            try (InputStream input = Files.newInputStream(handed)) {
++                base.read(input);
++            }
++        }
++        URL[] urls = new URL[bnd.size()];
++        for (int index = 0; index < urls.length; index++) {
++            urls[index] = bnd.get(index).toUri().toURL();
++        }
++        Manifest calculated;
++        try (URLClassLoader loader = new URLClassLoader(urls, ClassLoader.getPlatformClassLoader())) {
++            calculated = calculate(loader, compiled.resolve(BuildStep.CLASSES), classPath, metadata);
++        } catch (ReflectiveOperationException exception) {
++            throw new IllegalStateException("bnd could not compute the OSGi manifest", exception);
++        }
++        base.getMainAttributes().putAll(calculated.getMainAttributes());
++        try (OutputStream output = Files.newOutputStream(context.next().resolve(MANIFEST))) {
++            base.write(output);
++        }
++        return CompletableFuture.completedStage(new BuildStepResult(true));
++    }
++
++    private Manifest calculate(ClassLoader loader,
++                               Path classes,
++                               List<Path> classPath,
++                               Properties metadata) throws ReflectiveOperationException, IOException {
++        Class<?> analyzerType = Class.forName("aQute.bnd.osgi.Analyzer", true, loader),
++                jarType = Class.forName("aQute.bnd.osgi.Jar", true, loader);
++        Properties properties = new Properties();
++        String group = metadata.getProperty("project"), artifact = metadata.getProperty("artifact");
++        if (group != null && artifact != null) {
++            properties.setProperty("Bundle-SymbolicName",
++                    group.endsWith("." + artifact) || group.equals(artifact) ? group : group + "." + artifact);
++        }
++        String version = metadata.getProperty("version");
++        if (version != null) {
++            properties.setProperty("Bundle-Version",
++                    (String) analyzerType.getMethod("cleanupVersion", String.class).invoke(null, version));
++        }
++        put(properties, "Bundle-Name", metadata.getProperty("name"));
++        put(properties, "Bundle-Description", metadata.getProperty("description"));
++        put(properties, "Bundle-Vendor", metadata.getProperty("organization.name"));
++        put(properties, "Bundle-License", metadata.stringPropertyNames().stream()
++                .filter(key -> key.startsWith("license.") && key.endsWith(".url"))
++                .sorted()
++                .map(metadata::getProperty)
++                .reduce((left, right) -> left + "," + right)
++                .orElse(null));
++        properties.setProperty("-noextraheaders", "true");
++        properties.setProperty("-reproducible", "true");
++        properties.putAll(instructions);
++        Object analyzer = analyzerType.getConstructor().newInstance();
++        try {
++            analyzerType.getMethod("setJar", jarType).invoke(analyzer, jarType.getConstructor(File.class).newInstance(classes.toFile()));
++            analyzerType.getMethod("setProperties", Properties.class).invoke(analyzer, properties);
++            analyzerType.getMethod("setClasspath", File[].class).invoke(analyzer,
++                    (Object) classPath.stream().map(Path::toFile).toArray(File[]::new));
++            Manifest manifest = (Manifest) analyzerType.getMethod("calcManifest").invoke(analyzer);
++            List<?> errors = (List<?>) analyzerType.getMethod("getErrors").invoke(analyzer);
++            if (!errors.isEmpty()) {
++                throw new IllegalStateException("bnd reported errors for " + classes + ": " + errors);
++            }
++            return manifest;
++        } finally {
++            analyzerType.getMethod("close").invoke(analyzer);
++        }
++    }
++
++    private static void put(Properties properties, String key, String value) {
++        if (value != null && !value.isBlank()) {
++            properties.setProperty(key, value);
++        }
++    }
++}
+diff --git a/build/bnd/module-info.java b/build/bnd/module-info.java
+new file mode 100644
+index 0000000..d249d75
+--- /dev/null
++++ b/build/bnd/module-info.java
+@@ -0,0 +1,4 @@
++module build.bnd {
++    requires build.jenesis;
++    provides build.jenesis.BuildModuleFactory with build.bnd.BndFactory;
++}
+diff --git a/guava-testlib/build.jenesis/process-javadoc.properties b/guava-testlib/build.jenesis/process-javadoc.properties
+new file mode 100644
+index 0000000..e5716da
+--- /dev/null
++++ b/guava-testlib/build.jenesis/process-javadoc.properties
+@@ -0,0 +1,9 @@
++--source=8
++-quiet=
++-doctitle=Guava Testing Library
++-windowtitle=Guava Testing Library API
++-Xdoclint\:-html=
++-XDignore.symbol.file=
++-use=
++-author=
++-version=
+diff --git a/guava-testlib/pom.xml b/guava-testlib/pom.xml
+index 5f63de1..e3e36d5 100644
+--- a/guava-testlib/pom.xml
++++ b/guava-testlib/pom.xml
+@@ -13,6 +13,106 @@
+     Guava testlib is a set of java classes used for more convenient
+     unit testing - particularly to assist the tests for Guava itself.
+   </description>
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>com.google.auto.value</groupId>
++        <artifactId>auto-value-annotations</artifactId>
++        <version>1.7.4</version>
++        <!--Checksum/SHA-256/fedd59b0b4986c342f6ab2d182f2a4ee9fceb2c7e2d5bdc4dc764c92394a23d3-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.code.findbugs</groupId>
++        <artifactId>jsr305</artifactId>
++        <version>${jsr305.version}</version>
++        <!--Checksum/SHA-256/766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7 3.0.2-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>${error_prone_annotations.version}</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a 2.50.0-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>failureaccess</artifactId>
++        <version>1.0.3</version>
++        <!--Checksum/SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>listenablefuture</artifactId>
++        <version>9999.0-empty-to-avoid-conflict-with-guava</version>
++        <!--Checksum/SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.j2objc</groupId>
++        <artifactId>j2objc-annotations</artifactId>
++        <version>${j2objc.version}</version>
++        <!--Checksum/SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b 3.1-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.testparameterinjector</groupId>
++        <artifactId>test-parameter-injector</artifactId>
++        <version>${test-parameter-injector.version}</version>
++        <!--Checksum/SHA-256/ff534578f2e3dc6030d1f4a6896df3d20573644858c6ade878efb75d2a36504b 1.22-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.truth</groupId>
++        <artifactId>truth</artifactId>
++        <version>${truth.version}</version>
++        <!--Checksum/SHA-256/a6409e90fdd6b31f239b0c02065c43b53e1b09c72f2e08c3a86d04fe5910cf4b 1.4.5-->
++      </dependency>
++      <dependency>
++        <groupId>junit</groupId>
++        <artifactId>junit</artifactId>
++        <version>${junit.version}</version>
++        <!--Checksum/SHA-256/8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3 4.13.2-->
++      </dependency>
++      <dependency>
++        <groupId>org.hamcrest</groupId>
++        <artifactId>hamcrest-core</artifactId>
++        <version>1.3</version>
++        <!--Checksum/SHA-256/66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-reflect</artifactId>
++        <version>2.2.20</version>
++        <!--Checksum/SHA-256/8209083a4a7c4e476d9842b078308fa96a96f07a6bd99f05f3586ee13289ab26-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-stdlib</artifactId>
++        <version>2.2.20</version>
++        <!--Checksum/SHA-256/8836ccffd3585fadda9901244b20d42901d2f3cd581058d8434e2ffabcf3a3e7-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains</groupId>
++        <artifactId>annotations</artifactId>
++        <version>13.0</version>
++        <!--Checksum/SHA-256/ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478-->
++      </dependency>
++      <dependency>
++        <groupId>org.jspecify</groupId>
++        <artifactId>jspecify</artifactId>
++        <version>${jspecify.version}</version>
++        <!--Checksum/SHA-256/070d75f261fe4c5b8202508366715f7f2d4660f88c8ef7e6d3575e48c9683b66 1.0.1-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm</artifactId>
++        <version>9.8</version>
++        <!--Checksum/SHA-256/876eab6a83daecad5ca67eb9fcabb063c97b5aeb8cf1fca7a989ecde17522051-->
++      </dependency>
++      <dependency>
++        <groupId>org.yaml</groupId>
++        <artifactId>snakeyaml</artifactId>
++        <version>2.0</version>
++        <!--Checksum/SHA-256/880c9d896e4b74a06c549c15ca496450165d6909fa15d7e662bee8f6a66d7afa-->
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+   <dependencies>
+     <dependency>
+       <groupId>org.jspecify</groupId>
+@@ -95,7 +195,7 @@
+             <configuration>
+               <release>9</release>
+               <compileSourceRoots>
+-                <compileSourceRoot>${project.basedir}/src</compileSourceRoot>
++                <compileSourceRoot>${project.basedir}/src/META-INF/versions/9</compileSourceRoot>
+               </compileSourceRoots>
+ 
+               <!--
+@@ -147,4 +247,27 @@
+       </plugin>
+     </plugins>
+   </build>
++  <!--jenesis.pin
++  javac/maven/com.github.ben-manes.caffeine/caffeine 3.0.5 SHA-256/8a9b54d3506a3b92ee46b217bcee79196b21ca6d52dc2967c686a205fb2f9c15
++  javac/maven/com.github.kevinstern/software-and-algorithms 1.0 SHA-256/61ab82439cef37343b14f53154c461619375373a56b9338e895709fb54e0864c
++  javac/maven/com.google.auto.service/auto-service-annotations 1.0.1 SHA-256/c7bec54b7b5588b5967e870341091c5691181d954cf2039f1bf0a6eeb837473b
++  javac/maven/com.google.auto.value/auto-value-annotations 1.9 SHA-256/fa5469f4c44ee598a2d8f033ab0a9dcbc6498a0c5e0c998dfa0c2adf51358044
++  javac/maven/com.google.auto/auto-common 1.2.2 SHA-256/f50b1ce8a41fad31a8a819c052f8ffa362ea0a3dbe9ef8f7c7dc9a36d4738a59
++  javac/maven/com.google.errorprone/error_prone_annotation 2.50.0 SHA-256/aa9b67a3aa3418b366e26594e1ae35d100ad3369cd1010ae7d4782d984ea9aaf
++  javac/maven/com.google.errorprone/error_prone_annotations 2.50.0 SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a
++  javac/maven/com.google.errorprone/error_prone_check_api 2.50.0 SHA-256/ee935a4f42ac409fb0a471affea938c3050c6887dbaadb106868936d83d8c8f1
++  javac/maven/com.google.errorprone/error_prone_core 2.50.0 SHA-256/40a88d3ea732fac3a57ae0e2b27f1729ce76cc41857bcd63d5845e79eae5f72e
++  javac/maven/com.google.googlejavaformat/google-java-format 1.35.0 SHA-256/b2a52e363d51dd86b3b38d1a8dd51538541b42ff1048769684681c676550f043
++  javac/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  javac/maven/com.google.guava/guava 33.5.0-jre SHA-256/1e301f0c52ac248b0b14fdc3d12283c77252d4d6f48521d572e7d8c4c2cc4ac7
++  javac/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  javac/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  javac/maven/com.google.protobuf/protobuf-java 4.33.2 SHA-256/c5b582aa127fb62c5fc3077329d522dfb7930b4e9a625c08760b681b2ba5aab7
++  javac/maven/io.github.eisop/dataflow-errorprone 3.41.0-eisop1 SHA-256/10434fba4e53f55fa9c76904cde414b918932548c9dfc4e2d634ac05ff7a7d10
++  javac/maven/io.github.java-diff-utils/java-diff-utils 4.12 SHA-256/9990a2039778f6b4cc94790141c2868864eacee0620c6c459451121a901cd5b5
++  javac/maven/javax.inject/javax.inject 1 SHA-256/91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff
++  javac/maven/org.checkerframework/checker-qual 3.19.0 SHA-256/a827c49183f3a632277d27a0a4673686cb341507447b9d570261094bd748aa68
++  javac/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/org.pcollections/pcollections 4.0.1 SHA-256/1f82766d7c3221930854033bebff5073ea46b43f27326074bbe15d148c18bfb3
++  -->
+ </project>
+diff --git a/guava-testlib/src/module-info.java b/guava-testlib/src/META-INF/versions/9/module-info.java
+similarity index 100%
+rename from guava-testlib/src/module-info.java
+rename to guava-testlib/src/META-INF/versions/9/module-info.java
+diff --git a/guava-tests/build.jenesis/packaging.properties b/guava-tests/build.jenesis/packaging.properties
+new file mode 100644
+index 0000000..6e7126a
+--- /dev/null
++++ b/guava-tests/build.jenesis/packaging.properties
+@@ -0,0 +1 @@
++stage=false
+diff --git a/guava-tests/pom.xml b/guava-tests/pom.xml
+index 395d5ab..df88a68 100644
+--- a/guava-tests/pom.xml
++++ b/guava-tests/pom.xml
+@@ -14,6 +14,280 @@
+     separate artifact to allow for the testlibs to depend on guava
+     itself.
+   </description>
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>com.google.auto.value</groupId>
++        <artifactId>auto-value-annotations</artifactId>
++        <version>1.7.4</version>
++        <!--Checksum/SHA-256/fedd59b0b4986c342f6ab2d182f2a4ee9fceb2c7e2d5bdc4dc764c92394a23d3-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.caliper</groupId>
++        <artifactId>caliper</artifactId>
++        <version>${caliper.version}</version>
++        <!--Checksum/SHA-256/d54e1bfdbe9359a79e175c217b8d472555cf20da9c5c0a18bdb1ea7db979ed8e 1.0-beta-3-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.caliper</groupId>
++        <artifactId>caliper-api</artifactId>
++        <version>1.0-beta-3</version>
++        <!--Checksum/SHA-256/374f0c6c0c1f8784cb69d885e1dcbb7498c34ca20369e0597264568530642928-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.caliper</groupId>
++        <artifactId>caliper-core</artifactId>
++        <version>1.0-beta-3</version>
++        <!--Checksum/SHA-256/514deac8f8b09dd4262733e0a4406a333208c899dc7ea726b03600b9bb94f192-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.caliper</groupId>
++        <artifactId>caliper-runner</artifactId>
++        <version>1.0-beta-3</version>
++        <!--Checksum/SHA-256/3ab58890aa01343361adedf859500d280f67813df0cedfcd165b169533b9b1fa-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.caliper</groupId>
++        <artifactId>caliper-util</artifactId>
++        <version>1.0-beta-3</version>
++        <!--Checksum/SHA-256/6e9af500c7020450dfdb5003d09501d512d395f431c54c7ee8f79e712463fe66-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.caliper</groupId>
++        <artifactId>caliper-worker</artifactId>
++        <version>1.0-beta-3</version>
++        <!--Checksum/SHA-256/315d8e51df1f60551645a0e3bf2c504d2c79762f688e6f728eb9d1d9cd9a491b-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.caliper</groupId>
++        <artifactId>caliper-worker-jvm</artifactId>
++        <version>1.0-beta-3</version>
++        <!--Checksum/SHA-256/e14e1ecfdf939c82abdb902105be41ff3f83c18cb968116232015f2662d065a4-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.code.findbugs</groupId>
++        <artifactId>jsr305</artifactId>
++        <version>3.0.2</version>
++        <!--Checksum/SHA-256/766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.code.gson</groupId>
++        <artifactId>gson</artifactId>
++        <version>2.8.7</version>
++        <!--Checksum/SHA-256/67bd19c510ed227d8a9dc5f67f1b4b2f3426853f5eff02e1d9ea7e95f4923ba0-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.code.java-allocation-instrumenter</groupId>
++        <artifactId>java-allocation-instrumenter</artifactId>
++        <version>3.3.0</version>
++        <!--Checksum/SHA-256/1ef5535a8bd41cf3072469f381b9ee6ab28275311a7499f53d6e52adf976fef0-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.dagger</groupId>
++        <artifactId>dagger</artifactId>
++        <version>2.22.1</version>
++        <!--Checksum/SHA-256/329d4340f24c4f5717af016c097e90668bfea2a5376e6aa9964b01cef3fd241a-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.dagger</groupId>
++        <artifactId>dagger-producers</artifactId>
++        <version>2.22.1</version>
++        <!--Checksum/SHA-256/f834a0082014213a68ff06a0f048d750178d02196c58b0b15beb367d32b97e35-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>${error_prone_annotations.version}</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a 2.50.0-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>failureaccess</artifactId>
++        <version>${failureaccess.version}</version>
++        <!--Checksum/SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb 1.0.3-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>listenablefuture</artifactId>
++        <version>9999.0-empty-to-avoid-conflict-with-guava</version>
++        <!--Checksum/SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.j2objc</groupId>
++        <artifactId>j2objc-annotations</artifactId>
++        <version>${j2objc.version}</version>
++        <!--Checksum/SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b 3.1-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.jimfs</groupId>
++        <artifactId>jimfs</artifactId>
++        <version>${jimfs.version}</version>
++        <!--Checksum/SHA-256/b31e5da8d4d73bf9634ca8543af099517d45e9c2e6b47b76c6bcc28736902f14 1.3.1-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.testparameterinjector</groupId>
++        <artifactId>test-parameter-injector</artifactId>
++        <version>${test-parameter-injector.version}</version>
++        <!--Checksum/SHA-256/ff534578f2e3dc6030d1f4a6896df3d20573644858c6ade878efb75d2a36504b 1.22-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.truth</groupId>
++        <artifactId>truth</artifactId>
++        <version>${truth.version}</version>
++        <!--Checksum/SHA-256/a6409e90fdd6b31f239b0c02065c43b53e1b09c72f2e08c3a86d04fe5910cf4b 1.4.5-->
++      </dependency>
++      <dependency>
++        <groupId>com.squareup.okhttp</groupId>
++        <artifactId>okhttp</artifactId>
++        <version>2.7.5</version>
++        <!--Checksum/SHA-256/88ac9fd1bb51f82bcc664cc1eb9c225c90dc4389d660231b4cc737bebfe7d0aa-->
++      </dependency>
++      <dependency>
++        <groupId>com.squareup.okio</groupId>
++        <artifactId>okio</artifactId>
++        <version>1.6.0</version>
++        <!--Checksum/SHA-256/114bdc1f47338a68bcbc95abf2f5cdc72beeec91812f2fcd7b521c1937876266-->
++      </dependency>
++      <dependency>
++        <groupId>com.sun.jersey</groupId>
++        <artifactId>jersey-client</artifactId>
++        <version>1.19.4</version>
++        <!--Checksum/SHA-256/639c825c5db580f8115bf49ffc893093526d2ed1079fbc929b6a5fbd0b2eda40-->
++      </dependency>
++      <dependency>
++        <groupId>com.sun.jersey</groupId>
++        <artifactId>jersey-core</artifactId>
++        <version>1.19.4</version>
++        <!--Checksum/SHA-256/64b03198e0264849d0fc341857ebcc9c882b1909a2dc35a0972fe7d901b826e5-->
++      </dependency>
++      <dependency>
++        <groupId>javax.annotation</groupId>
++        <artifactId>javax.annotation-api</artifactId>
++        <version>1.3.2</version>
++        <!--Checksum/SHA-256/e04ba5195bcd555dc95650f7cc614d151e4bcd52d29a10b8aa2197f3ab89ab9b-->
++      </dependency>
++      <dependency>
++        <groupId>javax.inject</groupId>
++        <artifactId>javax.inject</artifactId>
++        <version>1</version>
++        <!--Checksum/SHA-256/91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff-->
++      </dependency>
++      <dependency>
++        <groupId>javax.ws.rs</groupId>
++        <artifactId>jsr311-api</artifactId>
++        <version>1.1.1</version>
++        <!--Checksum/SHA-256/ab1534b73b5fa055808e6598a5e73b599ccda28c3159c3c0908977809422ee4a-->
++      </dependency>
++      <dependency>
++        <groupId>joda-time</groupId>
++        <artifactId>joda-time</artifactId>
++        <version>2.10.10</version>
++        <!--Checksum/SHA-256/dd8e7c92185a678d1b7b933f31209b6203c8ffa91e9880475a1be0346b9617e3-->
++      </dependency>
++      <dependency>
++        <groupId>junit</groupId>
++        <artifactId>junit</artifactId>
++        <version>${junit.version}</version>
++        <!--Checksum/SHA-256/8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3 4.13.2-->
++      </dependency>
++      <dependency>
++        <groupId>net.bytebuddy</groupId>
++        <artifactId>byte-buddy</artifactId>
++        <version>1.12.19</version>
++        <!--Checksum/SHA-256/030704139e46f32c38d27060edee9e0676b0a0fff8a8be53461515154ba8a7be-->
++      </dependency>
++      <dependency>
++        <groupId>net.bytebuddy</groupId>
++        <artifactId>byte-buddy-agent</artifactId>
++        <version>1.12.19</version>
++        <!--Checksum/SHA-256/3a70240de7cdcde04e7c504c2327d7035b9c25ae0206881e3bf4e6798a273ed8-->
++      </dependency>
++      <dependency>
++        <groupId>org.checkerframework</groupId>
++        <artifactId>checker-compat-qual</artifactId>
++        <version>2.5.3</version>
++        <!--Checksum/SHA-256/d76b9afea61c7c082908023f0cbc1427fab9abd2df915c8b8a3e7a509bccbc6d-->
++      </dependency>
++      <dependency>
++        <groupId>org.hamcrest</groupId>
++        <artifactId>hamcrest-core</artifactId>
++        <version>1.3</version>
++        <!--Checksum/SHA-256/66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-reflect</artifactId>
++        <version>2.2.20</version>
++        <!--Checksum/SHA-256/8209083a4a7c4e476d9842b078308fa96a96f07a6bd99f05f3586ee13289ab26-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-stdlib</artifactId>
++        <version>2.2.20</version>
++        <!--Checksum/SHA-256/8836ccffd3585fadda9901244b20d42901d2f3cd581058d8434e2ffabcf3a3e7-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains</groupId>
++        <artifactId>annotations</artifactId>
++        <version>13.0</version>
++        <!--Checksum/SHA-256/ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478-->
++      </dependency>
++      <dependency>
++        <groupId>org.jspecify</groupId>
++        <artifactId>jspecify</artifactId>
++        <version>${jspecify.version}</version>
++        <!--Checksum/SHA-256/070d75f261fe4c5b8202508366715f7f2d4660f88c8ef7e6d3575e48c9683b66 1.0.1-->
++      </dependency>
++      <dependency>
++        <groupId>org.mockito</groupId>
++        <artifactId>mockito-core</artifactId>
++        <version>${mockito.version}</version>
++        <!--Checksum/SHA-256/4b909690cab288c761eb94c0bf0e814496cf3921d8affac84cd87774530351e5 4.11.0-->
++      </dependency>
++      <dependency>
++        <groupId>org.objenesis</groupId>
++        <artifactId>objenesis</artifactId>
++        <version>3.3</version>
++        <!--Checksum/SHA-256/02dfd0b0439a5591e35b708ed2f5474eb0948f53abf74637e959b8e4ef69bfeb-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm</artifactId>
++        <version>9.8</version>
++        <!--Checksum/SHA-256/876eab6a83daecad5ca67eb9fcabb063c97b5aeb8cf1fca7a989ecde17522051-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm-analysis</artifactId>
++        <version>7.2</version>
++        <!--Checksum/SHA-256/be922aae60ff1ff1768e8e6544a38a7f92bd0a6d6b0b9791f94955d1bd453de2-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm-commons</artifactId>
++        <version>7.2</version>
++        <!--Checksum/SHA-256/0e86b8b179c5fb223d1a880a0ff4960b6978223984b94e62e71135f2d8ea3558-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm-tree</artifactId>
++        <version>7.2</version>
++        <!--Checksum/SHA-256/c063f5a67fa03cdc9bd79fd1c2ea6816cc4a19473ecdfbd9e9153b408c6f2656-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm-util</artifactId>
++        <version>7.2</version>
++        <!--Checksum/SHA-256/6e24913b021ffacfe8e7e053d6e0ccc731941148cfa078d4f1ed3d96904530f8-->
++      </dependency>
++      <dependency>
++        <groupId>org.yaml</groupId>
++        <artifactId>snakeyaml</artifactId>
++        <version>2.0</version>
++        <!--Checksum/SHA-256/880c9d896e4b74a06c549c15ca496450165d6909fa15d7e662bee8f6a66d7afa-->
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+   <dependencies>
+     <dependency>
+       <groupId>com.google.guava</groupId>
+@@ -127,23 +401,29 @@
+           <checkTestClasses>false</checkTestClasses> <!-- TODO(cpovirk): Consider checking them. -->
+         </configuration>
+       </plugin>
+-      <plugin>
+-        <groupId>org.codehaus.mojo</groupId>
+-        <artifactId>build-helper-maven-plugin</artifactId>
+-        <version>${build-helper-maven-plugin.version}</version>
+-        <executions>
+-          <execution>
+-            <id>add-benchmark-sources</id>
+-            <phase>generate-test-sources</phase>
+-            <goals><goal>add-test-source</goal></goals>
+-            <configuration>
+-              <sources>
+-                <source>benchmark</source>
+-              </sources>
+-            </configuration>
+-          </execution>
+-        </executions>
+-      </plugin>
+     </plugins>
+   </build>
++  <!--jenesis.pin
++  javac/maven/com.github.ben-manes.caffeine/caffeine 3.0.5 SHA-256/8a9b54d3506a3b92ee46b217bcee79196b21ca6d52dc2967c686a205fb2f9c15
++  javac/maven/com.github.kevinstern/software-and-algorithms 1.0 SHA-256/61ab82439cef37343b14f53154c461619375373a56b9338e895709fb54e0864c
++  javac/maven/com.google.auto.service/auto-service-annotations 1.0.1 SHA-256/c7bec54b7b5588b5967e870341091c5691181d954cf2039f1bf0a6eeb837473b
++  javac/maven/com.google.auto.value/auto-value-annotations 1.9 SHA-256/fa5469f4c44ee598a2d8f033ab0a9dcbc6498a0c5e0c998dfa0c2adf51358044
++  javac/maven/com.google.auto/auto-common 1.2.2 SHA-256/f50b1ce8a41fad31a8a819c052f8ffa362ea0a3dbe9ef8f7c7dc9a36d4738a59
++  javac/maven/com.google.errorprone/error_prone_annotation 2.50.0 SHA-256/aa9b67a3aa3418b366e26594e1ae35d100ad3369cd1010ae7d4782d984ea9aaf
++  javac/maven/com.google.errorprone/error_prone_annotations 2.50.0 SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a
++  javac/maven/com.google.errorprone/error_prone_check_api 2.50.0 SHA-256/ee935a4f42ac409fb0a471affea938c3050c6887dbaadb106868936d83d8c8f1
++  javac/maven/com.google.errorprone/error_prone_core 2.50.0 SHA-256/40a88d3ea732fac3a57ae0e2b27f1729ce76cc41857bcd63d5845e79eae5f72e
++  javac/maven/com.google.googlejavaformat/google-java-format 1.35.0 SHA-256/b2a52e363d51dd86b3b38d1a8dd51538541b42ff1048769684681c676550f043
++  javac/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  javac/maven/com.google.guava/guava 33.5.0-jre SHA-256/1e301f0c52ac248b0b14fdc3d12283c77252d4d6f48521d572e7d8c4c2cc4ac7
++  javac/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  javac/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  javac/maven/com.google.protobuf/protobuf-java 4.33.2 SHA-256/c5b582aa127fb62c5fc3077329d522dfb7930b4e9a625c08760b681b2ba5aab7
++  javac/maven/io.github.eisop/dataflow-errorprone 3.41.0-eisop1 SHA-256/10434fba4e53f55fa9c76904cde414b918932548c9dfc4e2d634ac05ff7a7d10
++  javac/maven/io.github.java-diff-utils/java-diff-utils 4.12 SHA-256/9990a2039778f6b4cc94790141c2868864eacee0620c6c459451121a901cd5b5
++  javac/maven/javax.inject/javax.inject 1 SHA-256/91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff
++  javac/maven/org.checkerframework/checker-qual 3.19.0 SHA-256/a827c49183f3a632277d27a0a4673686cb341507447b9d570261094bd748aa68
++  javac/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/org.pcollections/pcollections 4.0.1 SHA-256/1f82766d7c3221930854033bebff5073ea46b43f27326074bbe15d148c18bfb3
++  -->
+ </project>
+diff --git a/guava-tests/benchmark/com/google/common/base/AsciiBenchmark.java b/guava-tests/test/com/google/common/base/AsciiBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/base/AsciiBenchmark.java
+rename to guava-tests/test/com/google/common/base/AsciiBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/base/CharMatcherBenchmark.java b/guava-tests/test/com/google/common/base/CharMatcherBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/base/CharMatcherBenchmark.java
+rename to guava-tests/test/com/google/common/base/CharMatcherBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/base/EnumsBenchmark.java b/guava-tests/test/com/google/common/base/EnumsBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/base/EnumsBenchmark.java
+rename to guava-tests/test/com/google/common/base/EnumsBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/base/JoinerBenchmark.java b/guava-tests/test/com/google/common/base/JoinerBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/base/JoinerBenchmark.java
+rename to guava-tests/test/com/google/common/base/JoinerBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/base/LazyStackTraceBenchmark.java b/guava-tests/test/com/google/common/base/LazyStackTraceBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/base/LazyStackTraceBenchmark.java
+rename to guava-tests/test/com/google/common/base/LazyStackTraceBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/base/ObjectsBenchmark.java b/guava-tests/test/com/google/common/base/ObjectsBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/base/ObjectsBenchmark.java
+rename to guava-tests/test/com/google/common/base/ObjectsBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/base/SplitterBenchmark.java b/guava-tests/test/com/google/common/base/SplitterBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/base/SplitterBenchmark.java
+rename to guava-tests/test/com/google/common/base/SplitterBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/base/StopwatchBenchmark.java b/guava-tests/test/com/google/common/base/StopwatchBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/base/StopwatchBenchmark.java
+rename to guava-tests/test/com/google/common/base/StopwatchBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/base/StringsRepeatBenchmark.java b/guava-tests/test/com/google/common/base/StringsRepeatBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/base/StringsRepeatBenchmark.java
+rename to guava-tests/test/com/google/common/base/StringsRepeatBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/base/ToStringHelperBenchmark.java b/guava-tests/test/com/google/common/base/ToStringHelperBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/base/ToStringHelperBenchmark.java
+rename to guava-tests/test/com/google/common/base/ToStringHelperBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/base/WhitespaceMatcherBenchmark.java b/guava-tests/test/com/google/common/base/WhitespaceMatcherBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/base/WhitespaceMatcherBenchmark.java
+rename to guava-tests/test/com/google/common/base/WhitespaceMatcherBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/cache/ChainBenchmark.java b/guava-tests/test/com/google/common/cache/ChainBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/cache/ChainBenchmark.java
+rename to guava-tests/test/com/google/common/cache/ChainBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/cache/LoadingCacheSingleThreadBenchmark.java b/guava-tests/test/com/google/common/cache/LoadingCacheSingleThreadBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/cache/LoadingCacheSingleThreadBenchmark.java
+rename to guava-tests/test/com/google/common/cache/LoadingCacheSingleThreadBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/cache/MapMakerComparisonBenchmark.java b/guava-tests/test/com/google/common/cache/MapMakerComparisonBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/cache/MapMakerComparisonBenchmark.java
+rename to guava-tests/test/com/google/common/cache/MapMakerComparisonBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/cache/SegmentBenchmark.java b/guava-tests/test/com/google/common/cache/SegmentBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/cache/SegmentBenchmark.java
+rename to guava-tests/test/com/google/common/cache/SegmentBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/ComparatorDelegationOverheadBenchmark.java b/guava-tests/test/com/google/common/collect/ComparatorDelegationOverheadBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/ComparatorDelegationOverheadBenchmark.java
+rename to guava-tests/test/com/google/common/collect/ComparatorDelegationOverheadBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/ConcurrentHashMultisetBenchmark.java b/guava-tests/test/com/google/common/collect/ConcurrentHashMultisetBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/ConcurrentHashMultisetBenchmark.java
+rename to guava-tests/test/com/google/common/collect/ConcurrentHashMultisetBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/HashMultisetAddPresentBenchmark.java b/guava-tests/test/com/google/common/collect/HashMultisetAddPresentBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/HashMultisetAddPresentBenchmark.java
+rename to guava-tests/test/com/google/common/collect/HashMultisetAddPresentBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/ImmutableListCreationBenchmark.java b/guava-tests/test/com/google/common/collect/ImmutableListCreationBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/ImmutableListCreationBenchmark.java
+rename to guava-tests/test/com/google/common/collect/ImmutableListCreationBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/ImmutableSetHashFloodingDetectionBenchmark.java b/guava-tests/test/com/google/common/collect/ImmutableSetHashFloodingDetectionBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/ImmutableSetHashFloodingDetectionBenchmark.java
+rename to guava-tests/test/com/google/common/collect/ImmutableSetHashFloodingDetectionBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/InternersBenchmark.java b/guava-tests/test/com/google/common/collect/InternersBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/InternersBenchmark.java
+rename to guava-tests/test/com/google/common/collect/InternersBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/IteratorBenchmark.java b/guava-tests/test/com/google/common/collect/IteratorBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/IteratorBenchmark.java
+rename to guava-tests/test/com/google/common/collect/IteratorBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/MapBenchmark.java b/guava-tests/test/com/google/common/collect/MapBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/MapBenchmark.java
+rename to guava-tests/test/com/google/common/collect/MapBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/MinMaxPriorityQueueBenchmark.java b/guava-tests/test/com/google/common/collect/MinMaxPriorityQueueBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/MinMaxPriorityQueueBenchmark.java
+rename to guava-tests/test/com/google/common/collect/MinMaxPriorityQueueBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/MultipleSetContainsBenchmark.java b/guava-tests/test/com/google/common/collect/MultipleSetContainsBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/MultipleSetContainsBenchmark.java
+rename to guava-tests/test/com/google/common/collect/MultipleSetContainsBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/MultisetIteratorBenchmark.java b/guava-tests/test/com/google/common/collect/MultisetIteratorBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/MultisetIteratorBenchmark.java
+rename to guava-tests/test/com/google/common/collect/MultisetIteratorBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/PowerSetBenchmark.java b/guava-tests/test/com/google/common/collect/PowerSetBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/PowerSetBenchmark.java
+rename to guava-tests/test/com/google/common/collect/PowerSetBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/SetContainsBenchmark.java b/guava-tests/test/com/google/common/collect/SetContainsBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/SetContainsBenchmark.java
+rename to guava-tests/test/com/google/common/collect/SetContainsBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/SetCreationBenchmark.java b/guava-tests/test/com/google/common/collect/SetCreationBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/SetCreationBenchmark.java
+rename to guava-tests/test/com/google/common/collect/SetCreationBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/SetIterationBenchmark.java b/guava-tests/test/com/google/common/collect/SetIterationBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/SetIterationBenchmark.java
+rename to guava-tests/test/com/google/common/collect/SetIterationBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/SortedCopyBenchmark.java b/guava-tests/test/com/google/common/collect/SortedCopyBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/SortedCopyBenchmark.java
+rename to guava-tests/test/com/google/common/collect/SortedCopyBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/collect/StreamsBenchmark.java b/guava-tests/test/com/google/common/collect/StreamsBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/collect/StreamsBenchmark.java
+rename to guava-tests/test/com/google/common/collect/StreamsBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/eventbus/EventBusBenchmark.java b/guava-tests/test/com/google/common/eventbus/EventBusBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/eventbus/EventBusBenchmark.java
+rename to guava-tests/test/com/google/common/eventbus/EventBusBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/hash/HashCodeBenchmark.java b/guava-tests/test/com/google/common/hash/HashCodeBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/hash/HashCodeBenchmark.java
+rename to guava-tests/test/com/google/common/hash/HashCodeBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/hash/HashFunctionBenchmark.java b/guava-tests/test/com/google/common/hash/HashFunctionBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/hash/HashFunctionBenchmark.java
+rename to guava-tests/test/com/google/common/hash/HashFunctionBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/hash/HashStringBenchmark.java b/guava-tests/test/com/google/common/hash/HashStringBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/hash/HashStringBenchmark.java
+rename to guava-tests/test/com/google/common/hash/HashStringBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/hash/MessageDigestAlgorithmBenchmark.java b/guava-tests/test/com/google/common/hash/MessageDigestAlgorithmBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/hash/MessageDigestAlgorithmBenchmark.java
+rename to guava-tests/test/com/google/common/hash/MessageDigestAlgorithmBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/hash/MessageDigestCreationBenchmark.java b/guava-tests/test/com/google/common/hash/MessageDigestCreationBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/hash/MessageDigestCreationBenchmark.java
+rename to guava-tests/test/com/google/common/hash/MessageDigestCreationBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/io/BaseEncodingBenchmark.java b/guava-tests/test/com/google/common/io/BaseEncodingBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/io/BaseEncodingBenchmark.java
+rename to guava-tests/test/com/google/common/io/BaseEncodingBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/io/ByteSourceAsCharSourceReadBenchmark.java b/guava-tests/test/com/google/common/io/ByteSourceAsCharSourceReadBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/io/ByteSourceAsCharSourceReadBenchmark.java
+rename to guava-tests/test/com/google/common/io/ByteSourceAsCharSourceReadBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/io/CharStreamsCopyBenchmark.java b/guava-tests/test/com/google/common/io/CharStreamsCopyBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/io/CharStreamsCopyBenchmark.java
+rename to guava-tests/test/com/google/common/io/CharStreamsCopyBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/math/ApacheBenchmark.java b/guava-tests/test/com/google/common/math/ApacheBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/math/ApacheBenchmark.java
+rename to guava-tests/test/com/google/common/math/ApacheBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/math/BigIntegerMathBenchmark.java b/guava-tests/test/com/google/common/math/BigIntegerMathBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/math/BigIntegerMathBenchmark.java
+rename to guava-tests/test/com/google/common/math/BigIntegerMathBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/math/BigIntegerMathRoundingBenchmark.java b/guava-tests/test/com/google/common/math/BigIntegerMathRoundingBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/math/BigIntegerMathRoundingBenchmark.java
+rename to guava-tests/test/com/google/common/math/BigIntegerMathRoundingBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/math/DoubleMathBenchmark.java b/guava-tests/test/com/google/common/math/DoubleMathBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/math/DoubleMathBenchmark.java
+rename to guava-tests/test/com/google/common/math/DoubleMathBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/math/DoubleMathRoundingBenchmark.java b/guava-tests/test/com/google/common/math/DoubleMathRoundingBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/math/DoubleMathRoundingBenchmark.java
+rename to guava-tests/test/com/google/common/math/DoubleMathRoundingBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/math/IntMathBenchmark.java b/guava-tests/test/com/google/common/math/IntMathBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/math/IntMathBenchmark.java
+rename to guava-tests/test/com/google/common/math/IntMathBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/math/IntMathRoundingBenchmark.java b/guava-tests/test/com/google/common/math/IntMathRoundingBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/math/IntMathRoundingBenchmark.java
+rename to guava-tests/test/com/google/common/math/IntMathRoundingBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/math/LessThanBenchmark.java b/guava-tests/test/com/google/common/math/LessThanBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/math/LessThanBenchmark.java
+rename to guava-tests/test/com/google/common/math/LessThanBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/math/LongMathBenchmark.java b/guava-tests/test/com/google/common/math/LongMathBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/math/LongMathBenchmark.java
+rename to guava-tests/test/com/google/common/math/LongMathBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/math/LongMathRoundingBenchmark.java b/guava-tests/test/com/google/common/math/LongMathRoundingBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/math/LongMathRoundingBenchmark.java
+rename to guava-tests/test/com/google/common/math/LongMathRoundingBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/math/QuantilesBenchmark.java b/guava-tests/test/com/google/common/math/QuantilesBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/math/QuantilesBenchmark.java
+rename to guava-tests/test/com/google/common/math/QuantilesBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/math/StatsBenchmark.java b/guava-tests/test/com/google/common/math/StatsBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/math/StatsBenchmark.java
+rename to guava-tests/test/com/google/common/math/StatsBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/primitives/UnsignedLongsBenchmark.java b/guava-tests/test/com/google/common/primitives/UnsignedLongsBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/primitives/UnsignedLongsBenchmark.java
+rename to guava-tests/test/com/google/common/primitives/UnsignedLongsBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/util/concurrent/AbstractFutureFootprintBenchmark.java b/guava-tests/test/com/google/common/util/concurrent/AbstractFutureFootprintBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/util/concurrent/AbstractFutureFootprintBenchmark.java
+rename to guava-tests/test/com/google/common/util/concurrent/AbstractFutureFootprintBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/util/concurrent/CycleDetectingLockFactoryBenchmark.java b/guava-tests/test/com/google/common/util/concurrent/CycleDetectingLockFactoryBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/util/concurrent/CycleDetectingLockFactoryBenchmark.java
+rename to guava-tests/test/com/google/common/util/concurrent/CycleDetectingLockFactoryBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/util/concurrent/ExecutionListBenchmark.java b/guava-tests/test/com/google/common/util/concurrent/ExecutionListBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/util/concurrent/ExecutionListBenchmark.java
+rename to guava-tests/test/com/google/common/util/concurrent/ExecutionListBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/util/concurrent/FuturesGetCheckedBenchmark.java b/guava-tests/test/com/google/common/util/concurrent/FuturesGetCheckedBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/util/concurrent/FuturesGetCheckedBenchmark.java
+rename to guava-tests/test/com/google/common/util/concurrent/FuturesGetCheckedBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/util/concurrent/MonitorBasedArrayBlockingQueue.java b/guava-tests/test/com/google/common/util/concurrent/MonitorBasedArrayBlockingQueue.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/util/concurrent/MonitorBasedArrayBlockingQueue.java
+rename to guava-tests/test/com/google/common/util/concurrent/MonitorBasedArrayBlockingQueue.java
+diff --git a/guava-tests/benchmark/com/google/common/util/concurrent/MonitorBasedPriorityBlockingQueue.java b/guava-tests/test/com/google/common/util/concurrent/MonitorBasedPriorityBlockingQueue.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/util/concurrent/MonitorBasedPriorityBlockingQueue.java
+rename to guava-tests/test/com/google/common/util/concurrent/MonitorBasedPriorityBlockingQueue.java
+diff --git a/guava-tests/benchmark/com/google/common/util/concurrent/MonitorBenchmark.java b/guava-tests/test/com/google/common/util/concurrent/MonitorBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/util/concurrent/MonitorBenchmark.java
+rename to guava-tests/test/com/google/common/util/concurrent/MonitorBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/util/concurrent/MoreExecutorsDirectExecutorBenchmark.java b/guava-tests/test/com/google/common/util/concurrent/MoreExecutorsDirectExecutorBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/util/concurrent/MoreExecutorsDirectExecutorBenchmark.java
+rename to guava-tests/test/com/google/common/util/concurrent/MoreExecutorsDirectExecutorBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/util/concurrent/SingleThreadAbstractFutureBenchmark.java b/guava-tests/test/com/google/common/util/concurrent/SingleThreadAbstractFutureBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/util/concurrent/SingleThreadAbstractFutureBenchmark.java
+rename to guava-tests/test/com/google/common/util/concurrent/SingleThreadAbstractFutureBenchmark.java
+diff --git a/guava-tests/benchmark/com/google/common/util/concurrent/StripedBenchmark.java b/guava-tests/test/com/google/common/util/concurrent/StripedBenchmark.java
+similarity index 100%
+rename from guava-tests/benchmark/com/google/common/util/concurrent/StripedBenchmark.java
+rename to guava-tests/test/com/google/common/util/concurrent/StripedBenchmark.java
+diff --git a/guava/build.jenesis/plugin-bnd.properties b/guava/build.jenesis/plugin-bnd.properties
+new file mode 100644
+index 0000000..3987ed2
+--- /dev/null
++++ b/guava/build.jenesis/plugin-bnd.properties
+@@ -0,0 +1,5 @@
++-fixupmessages=^Split package, multiple jars provide the same package:.*,Classes found in the wrong directory: *META-INF/versions/9*;restrict:=error;is:=ignore
++Export-Package=!com.google.common.base.internal,!com.google.common.util.concurrent.internal,!META-INF.*,com.google.common.*;version="${versionmask;===;${Bundle-Version}}"
++Import-Package=com.google.common.util.concurrent.internal,org.jspecify.annotations;resolution:=optional,javax.crypto.*;resolution:=optional,sun.misc.*;resolution:=optional
++Bundle-DocURL=https://github.com/google/guava/
++-removeheaders=Private-Package
+diff --git a/guava/build.jenesis/process-javadoc.properties b/guava/build.jenesis/process-javadoc.properties
+new file mode 100644
+index 0000000..795ef23
+--- /dev/null
++++ b/guava/build.jenesis/process-javadoc.properties
+@@ -0,0 +1,14 @@
++--source=8
++-quiet=
++-doctitle=Guava\: Google Core Libraries for Java
++-windowtitle=Guava\: Google Core Libraries for Java API
++-Xdoclint\:-html=
++-XDignore.symbol.file=
++-exclude=com.google.common.base.internal\:com.google.thirdparty.publicsuffix
++-tag=apiNote\:X\nimplNote\:X\nimplSpec\:X\njls\:X\nrevised\:X\nspec\:X
++-link=https\://docs.oracle.com/en/java/javase/27/docs/api/\nhttps\://jspecify.dev/docs/api/
++-linkoffline=https\://javadoc.io/doc/com.google.j2objc/j2objc-annotations/latest/\tguava/javadoc-link/j2objc-annotations\nhttps\://errorprone.info/api/latest/\tguava/javadoc-link/error_prone_annotations
++-overview=overview.html
++-use=
++-author=
++-version=
+diff --git a/guava/pom.xml b/guava/pom.xml
+index 4431f18..d5a029a 100644
+--- a/guava/pom.xml
++++ b/guava/pom.xml
+@@ -17,6 +17,42 @@
+     much more.
+   </description>
+   <url>https://github.com/google/guava</url>
++  <!-- Jenesis computes the OSGi headers with bnd, as maven-bundle-plugin does, through the plugin build/bnd (guava/build.jenesis/plugin-bnd.properties). -->
++  <!--jenesis.plugin plugin.bnd:tool maven/biz.aQute.bnd/biz.aQute.bndlib-->
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>${error_prone_annotations.version}</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a 2.50.0-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>failureaccess</artifactId>
++        <version>${failureaccess.version}</version>
++        <!--Checksum/SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb 1.0.3-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>listenablefuture</artifactId>
++        <version>${listenablefuture.version}</version>
++        <!--Checksum/SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99 9999.0-empty-to-avoid-conflict-with-guava-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.j2objc</groupId>
++        <artifactId>j2objc-annotations</artifactId>
++        <version>${j2objc.version}</version>
++        <!--Checksum/SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b 3.1-->
++      </dependency>
++      <dependency>
++        <groupId>org.jspecify</groupId>
++        <artifactId>jspecify</artifactId>
++        <version>${jspecify.version}</version>
++        <!--Checksum/SHA-256/070d75f261fe4c5b8202508366715f7f2d4660f88c8ef7e6d3575e48c9683b66 1.0.1-->
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+   <dependencies>
+     <dependency>
+       <groupId>com.google.guava</groupId>
+@@ -44,12 +80,7 @@
+   <build>
+     <resources>
+       <resource>
+-        <directory>..</directory>
+-        <includes>
+-          <include>LICENSE</include> <!-- copied from the parent pom because I couldn't figure out a way to make combine.children="append" work -->
+-          <include>proguard/*</include>
+-        </includes>
+-        <targetPath>META-INF</targetPath>
++        <directory>resources</directory>
+       </resource>
+     </resources>
+     <plugins>
+@@ -117,11 +148,8 @@
+             <configuration>
+               <release>9</release>
+               <compileSourceRoots>
+-                <compileSourceRoot>${project.basedir}/src</compileSourceRoot>
++                <compileSourceRoot>${project.basedir}/src/META-INF/versions/9</compileSourceRoot>
+               </compileSourceRoots>
+-              <includes>
+-                <include>module-info.java</include>
+-              </includes>
+ 
+               <!--
+                 JPMS needs access to the module sources to complete a modular Java build. We also need to override the
+@@ -249,4 +277,63 @@
+       </plugin>
+     </plugins>
+   </build>
++  <profiles>
++    <!-- Jenesis places LICENSE with jenesis.project.resources and reads no profile activated by a property. -->
++    <profile>
++      <id>maven-only</id>
++      <activation>
++        <property>
++          <name>!jenesis</name>
++        </property>
++      </activation>
++      <build>
++        <resources>
++          <resource>
++            <directory>..</directory>
++            <includes>
++              <include>LICENSE</include>
++            </includes>
++            <targetPath>META-INF</targetPath>
++          </resource>
++        </resources>
++      </build>
++    </profile>
++  </profiles>
++  <!--jenesis.pin
++  javac/maven/com.github.ben-manes.caffeine/caffeine 3.0.5 SHA-256/8a9b54d3506a3b92ee46b217bcee79196b21ca6d52dc2967c686a205fb2f9c15
++  javac/maven/com.github.kevinstern/software-and-algorithms 1.0 SHA-256/61ab82439cef37343b14f53154c461619375373a56b9338e895709fb54e0864c
++  javac/maven/com.google.auto.service/auto-service-annotations 1.0.1 SHA-256/c7bec54b7b5588b5967e870341091c5691181d954cf2039f1bf0a6eeb837473b
++  javac/maven/com.google.auto.value/auto-value-annotations 1.9 SHA-256/fa5469f4c44ee598a2d8f033ab0a9dcbc6498a0c5e0c998dfa0c2adf51358044
++  javac/maven/com.google.auto/auto-common 1.2.2 SHA-256/f50b1ce8a41fad31a8a819c052f8ffa362ea0a3dbe9ef8f7c7dc9a36d4738a59
++  javac/maven/com.google.errorprone/error_prone_annotation 2.50.0 SHA-256/aa9b67a3aa3418b366e26594e1ae35d100ad3369cd1010ae7d4782d984ea9aaf
++  javac/maven/com.google.errorprone/error_prone_annotations 2.50.0 SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a
++  javac/maven/com.google.errorprone/error_prone_check_api 2.50.0 SHA-256/ee935a4f42ac409fb0a471affea938c3050c6887dbaadb106868936d83d8c8f1
++  javac/maven/com.google.errorprone/error_prone_core 2.50.0 SHA-256/40a88d3ea732fac3a57ae0e2b27f1729ce76cc41857bcd63d5845e79eae5f72e
++  javac/maven/com.google.googlejavaformat/google-java-format 1.35.0 SHA-256/b2a52e363d51dd86b3b38d1a8dd51538541b42ff1048769684681c676550f043
++  javac/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  javac/maven/com.google.guava/guava 33.5.0-jre SHA-256/1e301f0c52ac248b0b14fdc3d12283c77252d4d6f48521d572e7d8c4c2cc4ac7
++  javac/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  javac/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  javac/maven/com.google.protobuf/protobuf-java 4.33.2 SHA-256/c5b582aa127fb62c5fc3077329d522dfb7930b4e9a625c08760b681b2ba5aab7
++  javac/maven/io.github.eisop/dataflow-errorprone 3.41.0-eisop1 SHA-256/10434fba4e53f55fa9c76904cde414b918932548c9dfc4e2d634ac05ff7a7d10
++  javac/maven/io.github.java-diff-utils/java-diff-utils 4.12 SHA-256/9990a2039778f6b4cc94790141c2868864eacee0620c6c459451121a901cd5b5
++  javac/maven/javax.inject/javax.inject 1 SHA-256/91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff
++  javac/maven/org.checkerframework/checker-qual 3.19.0 SHA-256/a827c49183f3a632277d27a0a4673686cb341507447b9d570261094bd748aa68
++  javac/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/org.pcollections/pcollections 4.0.1 SHA-256/1f82766d7c3221930854033bebff5073ea46b43f27326074bbe15d148c18bfb3
++  plugin.bnd/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  plugin.bnd:tool/maven/biz.aQute.bnd/biz.aQute.bnd.util 7.4.0 SHA-256/1736bbc357b445ec5c7317ef2a912f0e3801bcd9a1ffae406458dd0df041b516
++  plugin.bnd:tool/maven/biz.aQute.bnd/biz.aQute.bndlib 7.4.0 SHA-256/b59186cd61c89c6fc1ee6bf84f6565614c616fd49287b5748fd266c36241201e
++  plugin.bnd:tool/maven/org.osgi/org.osgi.dto 1.0.0 SHA-256/cb75f3c7e48e5a31a31df22e26873346f5bf659e2dcab2369e031e4850d2ff43
++  plugin.bnd:tool/maven/org.osgi/org.osgi.framework 1.8.0 SHA-256/ec194b7871af27681716ff05259319a5c3c9b9727e8000e9e832499b93484b4e
++  plugin.bnd:tool/maven/org.osgi/org.osgi.resource 1.0.0 SHA-256/81fc50f1f1d38a4af28e131907d4afe213249aab05060484edca0e60c4af9b4a
++  plugin.bnd:tool/maven/org.osgi/org.osgi.service.log 1.3.0 SHA-256/ff6710c4856d32684cf3ebdc45248f41036ff734f2b03bbc08c4609a61fecfa0
++  plugin.bnd:tool/maven/org.osgi/org.osgi.service.repository 1.1.0 SHA-256/c5553e95b459529192433486d4c4cc22ff45a2eae4968484f9f717319264a532
++  plugin.bnd:tool/maven/org.osgi/org.osgi.service.serviceloader 1.0.0 SHA-256/8f876ce2a9aa4e95b1f1952950255103e2487425050a654f3285447ba601c154
++  plugin.bnd:tool/maven/org.osgi/org.osgi.util.function 1.2.0 SHA-256/208819c7c71690c15a6bb8b187474e7f9d0147946b680182a62b9f222ae014ec
++  plugin.bnd:tool/maven/org.osgi/org.osgi.util.promise 1.3.0 SHA-256/7053c57e7d7d88fec6b90979a3af125e1d2bb847268a328a2f1ed65ad0a4c185
++  plugin.bnd:tool/maven/org.osgi/org.osgi.util.tracker 1.5.4 SHA-256/7d78c2cc9bcb6421c24f17aa097866ce8d9115c219a4f8d6cc753bc4dfb97efa
++  plugin.bnd:tool/maven/org.osgi/osgi.annotation 8.0.1 SHA-256/a0e8a4c362bd3600812f37b0ea45fba966c7bc049d01fed56a09ecc74082759e
++  plugin.bnd:tool/maven/org.slf4j/slf4j-api 1.7.25 SHA-256/18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79
++  -->
+ </project>
+diff --git a/proguard/base.pro b/guava/resources/META-INF/proguard/base.pro
+similarity index 100%
+rename from proguard/base.pro
+rename to guava/resources/META-INF/proguard/base.pro
+diff --git a/proguard/cache.pro b/guava/resources/META-INF/proguard/cache.pro
+similarity index 100%
+rename from proguard/cache.pro
+rename to guava/resources/META-INF/proguard/cache.pro
+diff --git a/proguard/collect.pro b/guava/resources/META-INF/proguard/collect.pro
+similarity index 100%
+rename from proguard/collect.pro
+rename to guava/resources/META-INF/proguard/collect.pro
+diff --git a/proguard/concurrent.pro b/guava/resources/META-INF/proguard/concurrent.pro
+similarity index 100%
+rename from proguard/concurrent.pro
+rename to guava/resources/META-INF/proguard/concurrent.pro
+diff --git a/proguard/hash.pro b/guava/resources/META-INF/proguard/hash.pro
+similarity index 100%
+rename from proguard/hash.pro
+rename to guava/resources/META-INF/proguard/hash.pro
+diff --git a/proguard/primitives.pro b/guava/resources/META-INF/proguard/primitives.pro
+similarity index 100%
+rename from proguard/primitives.pro
+rename to guava/resources/META-INF/proguard/primitives.pro
+diff --git a/guava/src/module-info.java b/guava/src/META-INF/versions/9/module-info.java
+similarity index 100%
+rename from guava/src/module-info.java
+rename to guava/src/META-INF/versions/9/module-info.java
+diff --git a/jenesis-release.properties b/jenesis-release.properties
+new file mode 100644
+index 0000000..0585dd7
+--- /dev/null
++++ b/jenesis-release.properties
+@@ -0,0 +1,2 @@
++jenesis.project.sources=true
++jenesis.project.documentation=true
+diff --git a/jenesis.plugins.properties b/jenesis.plugins.properties
+new file mode 100644
+index 0000000..e82ccff
+--- /dev/null
++++ b/jenesis.plugins.properties
+@@ -0,0 +1 @@
++bnd+binary/transform=./build/bnd
+diff --git a/jenesis.properties b/jenesis.properties
+new file mode 100644
+index 0000000..dec7f43
+--- /dev/null
++++ b/jenesis.properties
+@@ -0,0 +1,3 @@
++jenesis.project.resources=LICENSE:META-INF/LICENSE
++jenesis.test.exclude=.*PackageSanityTest
++jenesis.abi.mode=classpath
+diff --git a/pom.xml b/pom.xml
+index 1710dcb..cf9d4f9 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -30,7 +30,6 @@
+   <modules>
+     <module>guava</module>
+     <module>guava-bom</module>
+-    <module>guava-gwt</module>
+     <module>guava-testlib</module>
+     <module>guava-tests</module>
+   </modules>
+@@ -118,7 +117,10 @@
+     <otherVariant.version>999.0.0-HEAD-android-SNAPSHOT</otherVariant.version>
+     <otherVariant.jvmEnvironment>android</otherVariant.jvmEnvironment>
+     <otherVariant.jvmEnvironmentVariantName>android</otherVariant.jvmEnvironmentVariantName>
++    <maven.compiler.source>1.8</maven.compiler.source>
++    <maven.compiler.target>1.8</maven.compiler.target>
+   </properties>
++  <!--jenesis.plugin javac maven/com.google.errorprone/error_prone_core-->
+   <dependencyManagement>
+     <dependencies>
+       <dependency>
+@@ -147,15 +149,6 @@
+     <!-- Handle where Guava deviates from Maven defaults -->
+     <sourceDirectory>src</sourceDirectory>
+     <testSourceDirectory>test</testSourceDirectory>
+-    <resources>
+-      <resource>
+-        <directory>..</directory>
+-        <includes>
+-          <include>LICENSE</include>
+-        </includes>
+-        <targetPath>META-INF</targetPath>
+-      </resource>
+-    </resources>
+     <testResources>
+       <testResource>
+         <directory>test</directory>
+@@ -255,7 +248,7 @@
+                 <source>1.8</source>
+                 <target>1.8</target>
+                 <excludes>
+-                  <exclude>module-info.java</exclude>
++                  <exclude>**/module-info.java</exclude>
+                 </excludes>
+                 <compilerArgs>
+                   <!--
+@@ -487,6 +480,33 @@
+     </pluginManagement>
+   </build>
+   <profiles>
++    <!--
++    What only the Maven build reads: Jenesis reads no profile activated by a property, so it builds without these.
++    It places LICENSE with jenesis.project.resources (jenesis.properties), and guava-gwt stays with Maven, as
++    Jenesis has no GWT compiler.
++    -->
++    <profile>
++      <id>maven-only</id>
++      <activation>
++        <property>
++          <name>!jenesis</name>
++        </property>
++      </activation>
++      <modules>
++        <module>guava-gwt</module>
++      </modules>
++      <build>
++        <resources>
++          <resource>
++            <directory>..</directory>
++            <includes>
++              <include>LICENSE</include>
++            </includes>
++            <targetPath>META-INF</targetPath>
++          </resource>
++        </resources>
++      </build>
++    </profile>
+     <profile>
+       <id>sonatype-oss-release</id>
+       <build>

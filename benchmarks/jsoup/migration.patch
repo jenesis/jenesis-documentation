@@ -1,0 +1,639 @@
+diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
+index 324b3db..f83ecb2 100644
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -29,4 +29,24 @@ jobs:
+ 
+       - name: Maven Verify
+         run: mvn -X verify -B --file pom.xml
++
++  jenesis:
++    runs-on: ${{ matrix.os }}
++    strategy:
++      matrix:
++        os: [ubuntu-latest, windows-latest, macOS-latest]
++      fail-fast: false
++    name: Jenesis, ${{ matrix.os }}
++    steps:
++      - name: Checkout
++        uses: actions/checkout@v7.0.1
++
++      - name: Set up JDK 25
++        uses: actions/setup-java@v6.0.1
++        with:
++          java-version: 25
++          distribution: 'zulu'
++
++      - name: Build, test and stage
++        run: java -Djenesis.dependency.pin=strict -Djenesis.make.profiles=release build/jenesis/Make.java stage
+ ...
+diff --git a/.gitignore b/.gitignore
+index 8cdf6a5..9afb5d6 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -11,3 +11,4 @@ bin/
+ .vscode/
+ .java-version
+ .DS_Store
++.jenesis/
+diff --git a/build.jenesis/jreleaser.yml b/build.jenesis/jreleaser.yml
+new file mode 100644
+index 0000000..6e49c44
+--- /dev/null
++++ b/build.jenesis/jreleaser.yml
+@@ -0,0 +1,35 @@
++project:
++  name: jsoup
++  description: jsoup Java HTML Parser
++  authors: [Jonathan Hedley]
++  license: MIT
++  links:
++    homepage: https://jsoup.org/
++  languages:
++    java:
++      groupId: org.jsoup
++      artifactId: jsoup
++      version: '8'
++
++signing:
++  active: ALWAYS
++  pgp:
++    armored: true
++    mode: MEMORY
++
++release:
++  github:
++    owner: jhy
++    name: jsoup
++    skipRelease: true
++    skipTag: true
++
++deploy:
++  maven:
++    mavenCentral:
++      sonatype:
++        active: RELEASE
++        url: https://central.sonatype.com/api/v1/publisher
++        applyMavenCentralRules: true
++        stagingRepositories:
++          - target/stage/maven/output
+diff --git a/build/bnd/.jenesis.skip b/build/bnd/.jenesis.skip
+new file mode 100644
+index 0000000..e69de29
+diff --git a/build/bnd/build/bnd/BndFactory.java b/build/bnd/build/bnd/BndFactory.java
+new file mode 100644
+index 0000000..b45f761
+--- /dev/null
++++ b/build/bnd/build/bnd/BndFactory.java
+@@ -0,0 +1,19 @@
++package build.bnd;
++
++import module build.jenesis;
++import module java.base;
++
++public class BndFactory implements BuildModuleFactory {
++
++    @Override
++    public BuildExecutorModule create(Environment environment,
++                                      SequencedMap<String, String> properties,
++                                      Permits permits,
++                                      String group,
++                                      Map<String, Repository> repositories,
++                                      Map<String, Resolver> resolvers) {
++        return (executor, inherited) -> executor.addStep("manifest",
++                new BndManifest(new LinkedHashMap<>(properties), group + ":tool"),
++                inherited.sequencedKeySet());
++    }
++}
+diff --git a/build/bnd/build/bnd/BndManifest.java b/build/bnd/build/bnd/BndManifest.java
+new file mode 100644
+index 0000000..1ff0f14
+--- /dev/null
++++ b/build/bnd/build/bnd/BndManifest.java
+@@ -0,0 +1,112 @@
++package build.bnd;
++
++import module build.jenesis;
++import module java.base;
++
++import build.jenesis.step.Dependencies;
++
++record BndManifest(LinkedHashMap<String, String> instructions, String tool) implements BuildStep {
++
++    private static final String MANIFEST = "manifest.mf";
++
++    @Override
++    public CompletionStage<BuildStepResult> apply(Executor executor,
++                                                  BuildStepContext context,
++                                                  SequencedMap<String, BuildStepArgument> arguments) throws IOException {
++        Path compiled = arguments.firstEntry().getValue().folder();
++        SequencedSet<Path> folders = new LinkedHashSet<>();
++        List<Path> bnd = new ArrayList<>(), classPath = new ArrayList<>();
++        for (BuildStepArgument argument : arguments.values()) {
++            if (!argument.removed()) {
++                folders.add(argument.folder());
++                bnd.addAll(Dependencies.select(argument.folder(), tool, "plugin"));
++                classPath.addAll(Dependencies.select(argument.folder(), "main", "compile"));
++            }
++        }
++        if (bnd.isEmpty()) {
++            throw new IllegalStateException("No bnd jar is resolved in the group " + tool
++                    + ": declare <!--jenesis.plugin " + tool + " maven/biz.aQute.bnd/biz.aQute.bndlib--> in pom.xml");
++        }
++        Path described = BuildStep.locate(folders, BuildStep.METADATA);
++        Properties metadata = new Properties();
++        if (described != null) {
++            try (Reader reader = Files.newBufferedReader(described)) {
++                metadata.load(reader);
++            }
++        }
++        Manifest base = new Manifest();
++        Path handed = compiled.resolve(MANIFEST);
++        if (Files.isRegularFile(handed)) {
++            try (InputStream input = Files.newInputStream(handed)) {
++                base.read(input);
++            }
++        }
++        URL[] urls = new URL[bnd.size()];
++        for (int index = 0; index < urls.length; index++) {
++            urls[index] = bnd.get(index).toUri().toURL();
++        }
++        Manifest calculated;
++        try (URLClassLoader loader = new URLClassLoader(urls, ClassLoader.getPlatformClassLoader())) {
++            calculated = calculate(loader, compiled.resolve(BuildStep.CLASSES), classPath, metadata);
++        } catch (ReflectiveOperationException exception) {
++            throw new IllegalStateException("bnd could not compute the OSGi manifest", exception);
++        }
++        base.getMainAttributes().putAll(calculated.getMainAttributes());
++        try (OutputStream output = Files.newOutputStream(context.next().resolve(MANIFEST))) {
++            base.write(output);
++        }
++        return CompletableFuture.completedStage(new BuildStepResult(true));
++    }
++
++    private Manifest calculate(ClassLoader loader,
++                               Path classes,
++                               List<Path> classPath,
++                               Properties metadata) throws ReflectiveOperationException, IOException {
++        Class<?> analyzerType = Class.forName("aQute.bnd.osgi.Analyzer", true, loader),
++                jarType = Class.forName("aQute.bnd.osgi.Jar", true, loader);
++        Properties properties = new Properties();
++        String group = metadata.getProperty("project"), artifact = metadata.getProperty("artifact");
++        if (group != null && artifact != null) {
++            properties.setProperty("Bundle-SymbolicName",
++                    group.endsWith("." + artifact) || group.equals(artifact) ? group : group + "." + artifact);
++        }
++        String version = metadata.getProperty("version");
++        if (version != null) {
++            properties.setProperty("Bundle-Version",
++                    (String) analyzerType.getMethod("cleanupVersion", String.class).invoke(null, version));
++        }
++        put(properties, "Bundle-Name", metadata.getProperty("name"));
++        put(properties, "Bundle-Description", metadata.getProperty("description"));
++        put(properties, "Bundle-Vendor", metadata.getProperty("organization.name"));
++        put(properties, "Bundle-License", metadata.stringPropertyNames().stream()
++                .filter(key -> key.startsWith("license.") && key.endsWith(".url"))
++                .sorted()
++                .map(metadata::getProperty)
++                .reduce((left, right) -> left + "," + right)
++                .orElse(null));
++        properties.setProperty("-noextraheaders", "true");
++        properties.setProperty("-reproducible", "true");
++        properties.putAll(instructions);
++        Object analyzer = analyzerType.getConstructor().newInstance();
++        try {
++            analyzerType.getMethod("setJar", jarType).invoke(analyzer, jarType.getConstructor(File.class).newInstance(classes.toFile()));
++            analyzerType.getMethod("setProperties", Properties.class).invoke(analyzer, properties);
++            analyzerType.getMethod("setClasspath", File[].class).invoke(analyzer,
++                    (Object) classPath.stream().map(Path::toFile).toArray(File[]::new));
++            Manifest manifest = (Manifest) analyzerType.getMethod("calcManifest").invoke(analyzer);
++            List<?> errors = (List<?>) analyzerType.getMethod("getErrors").invoke(analyzer);
++            if (!errors.isEmpty()) {
++                throw new IllegalStateException("bnd reported errors for " + classes + ": " + errors);
++            }
++            return manifest;
++        } finally {
++            analyzerType.getMethod("close").invoke(analyzer);
++        }
++    }
++
++    private static void put(Properties properties, String key, String value) {
++        if (value != null && !value.isBlank()) {
++            properties.setProperty(key, value);
++        }
++    }
++}
+diff --git a/build/bnd/module-info.java b/build/bnd/module-info.java
+new file mode 100644
+index 0000000..d249d75
+--- /dev/null
++++ b/build/bnd/module-info.java
+@@ -0,0 +1,4 @@
++module build.bnd {
++    requires build.jenesis;
++    provides build.jenesis.BuildModuleFactory with build.bnd.BndFactory;
++}
+diff --git a/jenesis-release.properties b/jenesis-release.properties
+new file mode 100644
+index 0000000..8be8eb8
+--- /dev/null
++++ b/jenesis-release.properties
+@@ -0,0 +1,3 @@
++jenesis.project.sources=true
++jenesis.project.documentation=true
++jenesis.release.jreleaser=true
+diff --git a/jenesis.plugins.pin.properties b/jenesis.plugins.pin.properties
+new file mode 100644
+index 0000000..37f62d4
+--- /dev/null
++++ b/jenesis.plugins.pin.properties
+@@ -0,0 +1,3 @@
++jreleaser/module/build.jenesis=0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++jreleaser/module/build.jenesis.plugin.jreleaser=0.1.0 SHA-256/4f09b7b4dab5ff574faf4c85485301c45dd41a521cf71eacbb8c3e0da2fb7212
++jreleaser\:tool/maven/org.jreleaser/jreleaser-tool-provider=1.26.0 SHA-256/e601850b1da17b36848953c4c45671b8108b25ba94ee8b35caf37cd656e40639
+diff --git a/jenesis.plugins.properties b/jenesis.plugins.properties
+new file mode 100644
+index 0000000..e82ccff
+--- /dev/null
++++ b/jenesis.plugins.properties
+@@ -0,0 +1 @@
++bnd+binary/transform=./build/bnd
+diff --git a/jenesis.properties b/jenesis.properties
+new file mode 100644
+index 0000000..8668178
+--- /dev/null
++++ b/jenesis.properties
+@@ -0,0 +1,6 @@
++jenesis.maven.sources=java11
++jenesis.project.resources=LICENSE:META-INF/jsoup/LICENSE
++jenesis.test.tag=-long-running
++jenesis.test.jars=false
++jenesis.release.jreleaser=false
++jenesis.abi.mode=classpath
+diff --git a/pom.xml b/pom.xml
+index 9343b85..3b09510 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -34,6 +34,8 @@
+   <properties>
+     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+     <failsafe.excludedGroups>long-running</failsafe.excludedGroups>
++    <maven.compiler.release>8</maven.compiler.release>
++    <maven.compiler.testRelease>11</maven.compiler.testRelease>
+   </properties>
+ 
+   <build>
+@@ -273,6 +275,27 @@
+         <groupId>org.apache.maven.plugins</groupId>
+         <artifactId>maven-resources-plugin</artifactId>
+         <version>3.5.0</version>
++        <executions>
++          <!-- the LICENSE at the root ships as META-INF/jsoup/LICENSE; Jenesis places it by jenesis.project.resources -->
++          <execution>
++            <id>copy-license</id>
++            <phase>process-resources</phase>
++            <goals>
++              <goal>copy-resources</goal>
++            </goals>
++            <configuration>
++              <outputDirectory>${project.build.outputDirectory}/META-INF/jsoup</outputDirectory>
++              <resources>
++                <resource>
++                  <directory>${project.basedir}</directory>
++                  <includes>
++                    <include>LICENSE</include>
++                  </includes>
++                </resource>
++              </resources>
++            </configuration>
++          </execution>
++        </executions>
+       </plugin>
+       <plugin>
+         <artifactId>maven-release-plugin</artifactId>
+@@ -378,14 +401,6 @@
+         <directory>src/main/resources</directory>
+         <filtering>false</filtering>
+       </resource>
+-      <resource>
+-        <directory>./</directory>
+-        <targetPath>META-INF/jsoup/</targetPath>
+-        <filtering>false</filtering>
+-        <includes>
+-          <include>LICENSE</include>
+-        </includes>
+-      </resource>
+     </resources>
+   </build>
+ 
+@@ -414,6 +429,7 @@
+                   <excludes>
+                     <!-- package-info classes are emitted once by compile-package-info as base jar metadata. -->
+                     <exclude>**/package-info.java</exclude>
++                    <exclude>META-INF/**</exclude>
+                   </excludes>
+                 </configuration>
+               </execution>
+@@ -481,6 +497,7 @@
+                   <release>8</release>
+                   <excludes>
+                     <exclude>**/package-info.java</exclude>
++                    <exclude>META-INF/**</exclude>
+                   </excludes>
+                 </configuration>
+               </execution>
+@@ -506,7 +523,7 @@
+                 <configuration>
+                   <release>11</release>
+                   <compileSourceRoots>
+-                    <compileSourceRoot>${project.basedir}/src/main/java11</compileSourceRoot>
++                    <compileSourceRoot>${project.basedir}/src/main/java/META-INF/versions/11</compileSourceRoot>
+                   </compileSourceRoots>
+                   <multiReleaseOutput>true</multiReleaseOutput>
+                 </configuration>
+@@ -583,6 +600,8 @@
+     </profile>
+   </profiles>
+ 
++  <!--jenesis.plugin plugin.bnd:tool maven/biz.aQute.bnd/biz.aQute.bndlib-->
++
+   <dependencies>
+ 
+     <!-- junit -->
+@@ -642,6 +661,156 @@
+         <type>pom</type>
+         <scope>import</scope>
+       </dependency>
++      <dependency>
++        <groupId>com.google.code.gson</groupId>
++        <artifactId>gson</artifactId>
++        <version>2.14.0</version>
++        <!--Checksum/SHA-256/2cbd119bf1961c28788310963dc80ba65f58cdeec1dd139c8bdb1240faa2c36f-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>2.48.0</version>
++        <!--Checksum/SHA-256/b49c5c958316ed67a09c699dda9aa749caf434d51d863dea599ef36a49b9c855-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.re2j</groupId>
++        <artifactId>re2j</artifactId>
++        <version>1.8</version>
++        <!--Checksum/SHA-256/7b52c72156dd7f98b3237a5b35c1d34fba381b21048c89208913ad80a45dfbd7-->
++      </dependency>
++      <dependency>
++        <groupId>io.netty</groupId>
++        <artifactId>netty-buffer</artifactId>
++        <version>4.2.19.Final</version>
++        <!--Checksum/SHA-256/863f09b46cfe7d83872c9499086b9681cd9878c30a319d9f1f3a681bbfb0b12f-->
++      </dependency>
++      <dependency>
++        <groupId>io.netty</groupId>
++        <artifactId>netty-codec-base</artifactId>
++        <version>4.2.19.Final</version>
++        <!--Checksum/SHA-256/5702c8097cc81e939dd12e5b39ac2e81f83737c320f6f4d88553577842f9ceb6-->
++      </dependency>
++      <dependency>
++        <groupId>io.netty</groupId>
++        <artifactId>netty-codec-compression</artifactId>
++        <version>4.2.19.Final</version>
++        <!--Checksum/SHA-256/8935c51c7217780ae56d178c938b50ea5729b1e088cf3c2568674e331665554c-->
++      </dependency>
++      <dependency>
++        <groupId>io.netty</groupId>
++        <artifactId>netty-codec-http</artifactId>
++        <version>4.2.19.Final</version>
++        <!--Checksum/SHA-256/7c28809a4f527746fbce2369f5ac5d5fcef45cfe9da21aa3dd9d3f6bdf00cbe0-->
++      </dependency>
++      <dependency>
++        <groupId>io.netty</groupId>
++        <artifactId>netty-common</artifactId>
++        <version>4.2.19.Final</version>
++        <!--Checksum/SHA-256/22fa74761f6e35c8c88972f35cf65664566b922dd73d3424528e97c34278fa79-->
++      </dependency>
++      <dependency>
++        <groupId>io.netty</groupId>
++        <artifactId>netty-handler</artifactId>
++        <version>4.2.19.Final</version>
++        <!--Checksum/SHA-256/8b469cf23ddf21ba84291f4dff470d2277a28deac95e7084b0ff2ce853e58276-->
++      </dependency>
++      <dependency>
++        <groupId>io.netty</groupId>
++        <artifactId>netty-resolver</artifactId>
++        <version>4.2.19.Final</version>
++        <!--Checksum/SHA-256/3ded47536faeb3c4c544a84871d82f461511589afb2a892a180ca425f281363e-->
++      </dependency>
++      <dependency>
++        <groupId>io.netty</groupId>
++        <artifactId>netty-transport</artifactId>
++        <version>4.2.19.Final</version>
++        <!--Checksum/SHA-256/d82d4e200456b8c5d8a1647a3724603f80616e5b35b9ada6e7a20d048f175075-->
++      </dependency>
++      <dependency>
++        <groupId>io.netty</groupId>
++        <artifactId>netty-transport-native-unix-common</artifactId>
++        <version>4.2.19.Final</version>
++        <!--Checksum/SHA-256/341e91b8e69e6b7d92c353c845ffd91f34e921b7186254c176a64c7089b3e721-->
++      </dependency>
++      <dependency>
++        <groupId>org.apiguardian</groupId>
++        <artifactId>apiguardian-api</artifactId>
++        <version>1.1.2</version>
++        <!--Checksum/SHA-256/b509448ac506d607319f182537f0b35d71007582ec741832a1f111e5b5b70b38-->
++      </dependency>
++      <dependency>
++        <groupId>org.jspecify</groupId>
++        <artifactId>jspecify</artifactId>
++        <version>1.0.1</version>
++        <!--Checksum/SHA-256/070d75f261fe4c5b8202508366715f7f2d4660f88c8ef7e6d3575e48c9683b66-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.jupiter</groupId>
++        <artifactId>junit-jupiter</artifactId>
++        <version>5.14.4</version>
++        <!--Checksum/SHA-256/a573c9a99af73e1889d1d3ed7e12067c85cff6a821b96a1916e5ccccc375ae58-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.jupiter</groupId>
++        <artifactId>junit-jupiter-api</artifactId>
++        <version>5.14.4</version>
++        <!--Checksum/SHA-256/aa1ae085fd92dfdbf85d867e60e59adc599bac183b46fc7e0698198bf426ad3f-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.jupiter</groupId>
++        <artifactId>junit-jupiter-engine</artifactId>
++        <version>5.14.4</version>
++        <!--Checksum/SHA-256/e1e35cf651ae1635638d431ea4412d5c65938be54150444f07ba659586042b11-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.jupiter</groupId>
++        <artifactId>junit-jupiter-params</artifactId>
++        <version>5.14.4</version>
++        <!--Checksum/SHA-256/28f2a8dab5b9d259b18fa6b0ba5a6f302cbc70dd875f42032ea9e3afea09a870-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.platform</groupId>
++        <artifactId>junit-platform-commons</artifactId>
++        <version>1.14.4</version>
++        <!--Checksum/SHA-256/55c8a0c069ac1bc4e1f8bbb26b5eae95cbd10e4ff1b23248441ab61a607381e1-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.platform</groupId>
++        <artifactId>junit-platform-console</artifactId>
++        <version>1.14.4</version>
++        <!--Checksum/SHA-256/8fba295a9aaced613062b7a8486758b71418e1545a3775de8df9ed76cc062383-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.platform</groupId>
++        <artifactId>junit-platform-engine</artifactId>
++        <version>1.14.4</version>
++        <!--Checksum/SHA-256/3c7f3f84a6747aef0db6bd5fdd2a6c8fe37132e653c939bd67387377af66d91c-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.platform</groupId>
++        <artifactId>junit-platform-launcher</artifactId>
++        <version>1.14.4</version>
++        <!--Checksum/SHA-256/768d62f1b2a523713b702db53609c230af62bbd645fc2c07a7d794df4da32228-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.platform</groupId>
++        <artifactId>junit-platform-reporting</artifactId>
++        <version>1.14.4</version>
++        <!--Checksum/SHA-256/4a1d32f0f09d29f046ca51a81b8bfbc0f829392892672ea2e2cd530cd9c4b212-->
++      </dependency>
++      <dependency>
++        <groupId>org.opentest4j.reporting</groupId>
++        <artifactId>open-test-reporting-tooling-spi</artifactId>
++        <version>0.2.3</version>
++        <!--Checksum/SHA-256/f0d54b46fb9e503b22abc65c45a48025aad16051903aaed11f6d974129f74252-->
++      </dependency>
++      <dependency>
++        <groupId>org.opentest4j</groupId>
++        <artifactId>opentest4j</artifactId>
++        <version>1.3.0</version>
++        <!--Checksum/SHA-256/48e2df636cab6563ced64dcdff8abb2355627cb236ef0bf37598682ddf742f1b-->
++      </dependency>
+     </dependencies>
+   </dependencyManagement>
+ 
+@@ -657,4 +826,38 @@
+     </developer>
+   </developers>
+ 
++  <!--jenesis.pin
++  japicmp/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  japicmp/module/build.jenesis.plugin.japicmp 0.1.0 SHA-256/d2118292b0dc76b88ff0d90f34022210e1481d7b962de83df329c41cce30fd8c
++  japicmp:tool/maven/com.github.siom79.japicmp/japicmp 0.26.5 SHA-256/0383aeb8824981f3a76a984f021bc8720bff06b4c5b5e2f67b08d9dc95f677fd
++  japicmp:tool/maven/com.google.errorprone/error_prone_annotations 2.36.0 SHA-256/77440e270b0bc9a249903c5a076c36a722c4886ca4f42675f2903a1c53ed61a5
++  japicmp:tool/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  japicmp:tool/maven/com.google.guava/guava 33.4.8-jre SHA-256/f3d7f57f67fd622f4d468dfdd692b3a5e3909246c28017ac3263405f0fe617ed
++  japicmp:tool/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  japicmp:tool/maven/com.google.j2objc/j2objc-annotations 3.0.0 SHA-256/88241573467ddca44ffd4d74aa04c2bbfd11bf7c17e0c342c94c9de7a70a7c64
++  japicmp:tool/maven/com.sun.istack/istack-commons-runtime 3.0.8 SHA-256/4ffabb06be454a05e4398e20c77fa2b6308d4b88dfbef7ca30a76b5b7d5505ef
++  japicmp:tool/maven/com.sun.xml.fastinfoset/FastInfoset 1.2.16 SHA-256/056f3a1e144409f21ed16afc26805f58e9a21f3fce1543c42d400719d250c511
++  japicmp:tool/maven/jakarta.activation/jakarta.activation-api 1.2.1 SHA-256/8b0a0f52fa8b05c5431921a063ed866efaa41dadf2e3a7ee3e1961f2b0d9645b
++  japicmp:tool/maven/jakarta.xml.bind/jakarta.xml.bind-api 2.3.2 SHA-256/69156304079bdeed9fc0ae3b39389f19b3cc4ba4443bc80508995394ead742ea
++  japicmp:tool/maven/org.glassfish.jaxb/jaxb-runtime 2.3.2 SHA-256/e6e0a1e89fb6ff786279e6a0082d5cef52dc2ebe67053d041800737652b4fd1b
++  japicmp:tool/maven/org.glassfish.jaxb/txw2 2.3.2 SHA-256/4a6a9f483388d461b81aa9a28c685b8b74c0597993bf1884b04eddbca95f48fe
++  japicmp:tool/maven/org.javassist/javassist 3.30.2-GA SHA-256/eba37290994b5e4868f3af98ff113f6244a6b099385d9ad46881307d3cb01aaf
++  japicmp:tool/maven/org.jsoup/jsoup 1.23.2 SHA-256/e9d8c856856680427f096d156f02a414289985c930998fcb519ce5be39b42003
++  japicmp:tool/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  japicmp:tool/maven/org.jvnet.staxex/stax-ex 1.8.1 SHA-256/20522549056e9e50aa35ef0b445a2e47a53d06be0b0a9467d704e2483ffb049a
++  plugin.bnd/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  plugin.bnd:tool/maven/biz.aQute.bnd/biz.aQute.bnd.util 7.4.0 SHA-256/1736bbc357b445ec5c7317ef2a912f0e3801bcd9a1ffae406458dd0df041b516
++  plugin.bnd:tool/maven/biz.aQute.bnd/biz.aQute.bndlib 7.4.0 SHA-256/b59186cd61c89c6fc1ee6bf84f6565614c616fd49287b5748fd266c36241201e
++  plugin.bnd:tool/maven/org.osgi/org.osgi.dto 1.0.0 SHA-256/cb75f3c7e48e5a31a31df22e26873346f5bf659e2dcab2369e031e4850d2ff43
++  plugin.bnd:tool/maven/org.osgi/org.osgi.framework 1.8.0 SHA-256/ec194b7871af27681716ff05259319a5c3c9b9727e8000e9e832499b93484b4e
++  plugin.bnd:tool/maven/org.osgi/org.osgi.resource 1.0.0 SHA-256/81fc50f1f1d38a4af28e131907d4afe213249aab05060484edca0e60c4af9b4a
++  plugin.bnd:tool/maven/org.osgi/org.osgi.service.log 1.3.0 SHA-256/ff6710c4856d32684cf3ebdc45248f41036ff734f2b03bbc08c4609a61fecfa0
++  plugin.bnd:tool/maven/org.osgi/org.osgi.service.repository 1.1.0 SHA-256/c5553e95b459529192433486d4c4cc22ff45a2eae4968484f9f717319264a532
++  plugin.bnd:tool/maven/org.osgi/org.osgi.service.serviceloader 1.0.0 SHA-256/8f876ce2a9aa4e95b1f1952950255103e2487425050a654f3285447ba601c154
++  plugin.bnd:tool/maven/org.osgi/org.osgi.util.function 1.2.0 SHA-256/208819c7c71690c15a6bb8b187474e7f9d0147946b680182a62b9f222ae014ec
++  plugin.bnd:tool/maven/org.osgi/org.osgi.util.promise 1.3.0 SHA-256/7053c57e7d7d88fec6b90979a3af125e1d2bb847268a328a2f1ed65ad0a4c185
++  plugin.bnd:tool/maven/org.osgi/org.osgi.util.tracker 1.5.4 SHA-256/7d78c2cc9bcb6421c24f17aa097866ce8d9115c219a4f8d6cc753bc4dfb97efa
++  plugin.bnd:tool/maven/org.osgi/osgi.annotation 8.0.1 SHA-256/a0e8a4c362bd3600812f37b0ea45fba966c7bc049d01fed56a09ecc74082759e
++  plugin.bnd:tool/maven/org.slf4j/slf4j-api 1.7.25 SHA-256/18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79
++  -->
+ </project>
+diff --git a/src/examples/META-INF/MANIFEST.MF b/src/examples/META-INF/MANIFEST.MF
+new file mode 100644
+index 0000000..aa9d513
+--- /dev/null
++++ b/src/examples/META-INF/MANIFEST.MF
+@@ -0,0 +1,2 @@
++Manifest-Version: 1.0
++Main-Class: org.jsoup.examples.HtmlToPlainText
+diff --git a/src/main/build.jenesis/classifiers.properties b/src/main/build.jenesis/classifiers.properties
+new file mode 100644
+index 0000000..36903de
+--- /dev/null
++++ b/src/main/build.jenesis/classifiers.properties
+@@ -0,0 +1 @@
++examples=src/examples
+diff --git a/src/main/build.jenesis/japicmp.properties b/src/main/build.jenesis/japicmp.properties
+new file mode 100644
+index 0000000..0d47e7e
+--- /dev/null
++++ b/src/main/build.jenesis/japicmp.properties
+@@ -0,0 +1,4 @@
++baseline=org.jsoup/jsoup/1.23.2
++exclude=org.jsoup.internal.*;@java.lang.Deprecated
++error-on-binary-incompatibility=true
++error-on-source-incompatibility=true
+diff --git a/src/main/build.jenesis/plugin-bnd.properties b/src/main/build.jenesis/plugin-bnd.properties
+new file mode 100644
+index 0000000..080b42e
+--- /dev/null
++++ b/src/main/build.jenesis/plugin-bnd.properties
+@@ -0,0 +1,5 @@
++Bundle-DocURL=https://jsoup.org/
++Export-Package=org.jsoup.*;version="${versionmask;===;${Bundle-Version}}"
++Import-Package=!org.jsoup.*,org.jspecify.annotations;version=!;resolution:=optional,com.google.re2j;resolution:=optional,*
++-fixupmessages=Classes found in the wrong directory: *META-INF/versions/11*;restrict:=error;is:=ignore
++-noimportjava=true
+diff --git a/src/main/build.jenesis/process-javac.properties b/src/main/build.jenesis/process-javac.properties
+new file mode 100644
+index 0000000..6716f76
+--- /dev/null
++++ b/src/main/build.jenesis/process-javac.properties
+@@ -0,0 +1 @@
++-Xpkginfo\:always=
+diff --git a/src/main/build.jenesis/process-javadoc.properties b/src/main/build.jenesis/process-javadoc.properties
+new file mode 100644
+index 0000000..a54f9c9
+--- /dev/null
++++ b/src/main/build.jenesis/process-javadoc.properties
+@@ -0,0 +1,8 @@
++-linksource=
++-link=https\://docs.oracle.com/en/java/javase/25/docs/api
++-exclude=org.jsoup.internal\:org.jsoup.examples
++-overview=src/main/javadoc/overview.html
++-use=
++-doctitle=jsoup Java HTML Parser API
++-windowtitle=jsoup Java HTML Parser API
++--no-fonts=
+diff --git a/src/main/java11/module-info.java b/src/main/java/META-INF/versions/11/module-info.java
+similarity index 100%
+rename from src/main/java11/module-info.java
+rename to src/main/java/META-INF/versions/11/module-info.java
+diff --git a/src/main/java11/org/jsoup/helper/HttpClientExecutor.java b/src/main/java/META-INF/versions/11/org/jsoup/helper/HttpClientExecutor.java
+similarity index 100%
+rename from src/main/java11/org/jsoup/helper/HttpClientExecutor.java
+rename to src/main/java/META-INF/versions/11/org/jsoup/helper/HttpClientExecutor.java
+diff --git a/src/main/java11/org/jsoup/helper/RequestAuthHandler.java b/src/main/java/META-INF/versions/11/org/jsoup/helper/RequestAuthHandler.java
+similarity index 100%
+rename from src/main/java11/org/jsoup/helper/RequestAuthHandler.java
+rename to src/main/java/META-INF/versions/11/org/jsoup/helper/RequestAuthHandler.java
+diff --git a/src/test/build.jenesis/process-test.properties b/src/test/build.jenesis/process-test.properties
+new file mode 100644
+index 0000000..46767df
+--- /dev/null
++++ b/src/test/build.jenesis/process-test.properties
+@@ -0,0 +1,6 @@
++-Xss640k=
++-Djunit.jupiter.execution.parallel.enabled=true
++-Djunit.jupiter.execution.parallel.mode.default=same_thread
++-Djunit.jupiter.execution.parallel.mode.classes.default=same_thread
++-Djunit.jupiter.execution.parallel.config.strategy=fixed
++-Djunit.jupiter.execution.parallel.config.fixed.parallelism=8
