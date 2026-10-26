@@ -88,7 +88,7 @@ inputs are always real folders.
 | `java build/jenesis/Make.java` | The **default target**, `build`: the whole graph. On a warm cache, every step is `[SKIPPED]`. |
 | `java build/jenesis/Make.java ::/test` | Every `test` step at any depth, plus its predecessors. |
 | `java build/jenesis/Make.java build/::/test` | The same, anchored under the top-level `build` module. |
-| `java build/jenesis/Make.java +mymodule` | Only the named module's subgraph. |
+| `java build/jenesis/Make.java +mymodule` | Only the named module's subgraph; in a `pom.xml` project, its tests as well. |
 | `java build/jenesis/Make.java pin/module-api+client` | Only the `api/client` module's pins. |
 
 A `+<module>` selector narrows **`build`** and nothing else. `pin`, `stage` and `export` are entry points of
