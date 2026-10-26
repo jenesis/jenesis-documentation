@@ -72,7 +72,9 @@ the default target (`build`) runs. A selector is really a path through the graph
 - A `+<module>` selector builds one module's subtree. `+greeter` builds the `greeter` module - its `build`
   phase - and whatever it depends on, and nothing unrelated. The name after `+` is the module's **folder** name. In a modular
   project the tests live in a separate module, which the next chapters show how to write. So `+greeter` runs
-  *no* tests; you select the test module by its own folder, `+greeter-test`.
+  *no* tests; you select the test module by its own folder, `+greeter-test`. In a `pom.xml` project a
+  module's tests sit in its own folder, so `+greeter` builds the module and runs its tests, as
+  `mvn test -pl greeter` does; `+greeter/<step>` names a step of the module itself.
 - Under the hood every selector is a slash-delimited path of `module/step` identities, with two wildcards:
   `:` matches a single path segment, and `::` matches any depth. So `::/jar` runs the `jar` step of every
   module wherever it sits in the tree.
