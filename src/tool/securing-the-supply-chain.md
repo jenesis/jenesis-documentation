@@ -30,9 +30,9 @@ is no third-party library anywhere in the engine. It ships as plain Java source 
 (see *[Getting started](/tool/getting-started/)*), so the build tool arrives the way your application code
 does: by review, in a diff, under version control.
 
-That removes a class of risk rather than mitigating it: there is no plugin resolution before a build starts,
-and no plugin closure to pin. External tools a build genuinely needs - a Kotlin compiler, PMD, a formatter -
-resolve as ordinary dependencies in their own group and are pinned like any other.
+That removes a class of risk rather than mitigating it: nothing is resolved before a build starts, as running
+the build itself takes no plugin. The plugins a build does use - a Kotlin compiler, PMD, a formatter, or one
+of your own - resolve as ordinary dependencies in a group of their own and are pinned like any other.
 
 ## Four questions
 

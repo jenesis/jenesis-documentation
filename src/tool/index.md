@@ -19,8 +19,10 @@ that is not ready for the Java Module System yet.
 
 Two convictions shape everything here:
 
-- **Convention first, Java where it runs out.** There is no build language to learn and no plugin ecosystem
-  to install. What a convention cannot express is a few lines of Java, launched by the JDK directly with
+- **Convention first, Java where it runs out.** There is no build language to learn, and a build that uses
+  only the tools the JDK ships needs nothing installed beside it. Where it needs more - a linter, a Kotlin
+  compiler, a code generator - a plugin adds it, an official one or your own, resolved and pinned like a
+  dependency. What a convention cannot express is a few lines of Java, launched by the JDK directly with
   `java build/jenesis/Make.java`, so the build that does need code gets types, an IDE and refactoring, the
   same as your application.
 - **The Java Module System is a feature, never a requirement.** A `module-info.java` already describes a

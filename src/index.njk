@@ -73,9 +73,10 @@ description: The Jenesis product family - a Java-native build tool, module runne
           Java - the IDE, the debugger - simply works on your build too. Most projects
           write no build code at all: Jenesis infers the build from what is already there, a set of
           interdependent jars from your modules and a plugin wherever a configuration folder holds its
-          file. Anything left to configure is plain Java, plugins are downloaded only for strictly
-          optional features you opt into, and incremental, parallel and reproducible is the default, not
-          an achievement.
+          file. Anything left to configure is plain Java. A project that uses only the tools the JDK ships
+          downloads nothing but its dependencies; a linter, a Kotlin compiler or a code generator joins as a
+          plugin - an official one or your own - pinned like any dependency. Incremental, parallel and
+          reproducible is the default, not an achievement.
         </p>
       </article>
       <article class="mission-point">
