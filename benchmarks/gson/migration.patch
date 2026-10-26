@@ -1,0 +1,1993 @@
+diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
+index c74c55c..0ad5d53 100644
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -54,6 +54,23 @@ jobs:
+         # This also runs javadoc:jar to detect any issues with the Javadoc generated during release
+         run: mvn verify javadoc:jar ${{ matrix.extra-mvn-args || '' }}
+ 
++  # Build, test and stage with Jenesis (build/jenesis), beside the Maven build until it is retired
++  build-jenesis:
++    name: "Build with Jenesis on JDK 25"
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
++        with:
++          persist-credentials: false
++      - name: Set up JDK
++        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6  # v6.0.1
++        with:
++          distribution: 'temurin'
++          java-version: 25
++      - name: Build with Jenesis
++        # The release profile adds the sources and javadoc jars, which `mvn verify javadoc:jar` checks above
++        run: java -Djenesis.dependency.pin=strict -Djenesis.make.profiles=release build/jenesis/Make.java stage
++
+   # Build a subset of the Gson API, see also https://github.com/google/gson/pull/2946
+   build-gson-subset:
+     name: Build Gson subset
+diff --git a/.gitignore b/.gitignore
+index 5bda0b9..906f885 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -15,6 +15,8 @@ classes
+ 
+ .gradle
+ local.properties
+-build
++/build/*
++!/build/jenesis/
++.jenesis/
+ 
+ .DS_Store
+diff --git a/build.jenesis/googlejavaformat.properties b/build.jenesis/googlejavaformat.properties
+new file mode 100644
+index 0000000..0598fcd
+--- /dev/null
++++ b/build.jenesis/googlejavaformat.properties
+@@ -0,0 +1,2 @@
++# Spotless googleJavaFormat() with style GOOGLE, reflowLongStrings, reorderImports and formatJavadoc
++style=google
+diff --git a/build.jenesis/process-javac.properties b/build.jenesis/process-javac.properties
+new file mode 100644
+index 0000000..cd8721a
+--- /dev/null
++++ b/build.jenesis/process-javac.properties
+@@ -0,0 +1,75 @@
++# The compiler configuration of the Maven build's maven-compiler-plugin: Error Prone, all lints
++# but -options, warnings as errors (failOnWarning) and debug information, as Maven passes -g
++-XDcompilePolicy\=simple=
++-XDaddTypeAnnotationsToSymbol\=true=
++--should-stop\=ifError\=FLOW=
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.api\=ALL-UNNAMED=
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.file\=ALL-UNNAMED=
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.main\=ALL-UNNAMED=
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.model\=ALL-UNNAMED=
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.parser\=ALL-UNNAMED=
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.processing\=ALL-UNNAMED=
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.tree\=ALL-UNNAMED=
++-J--add-exports\=jdk.compiler/com.sun.tools.javac.util\=ALL-UNNAMED=
++-J--add-opens\=jdk.compiler/com.sun.tools.javac.code\=ALL-UNNAMED=
++-J--add-opens\=jdk.compiler/com.sun.tools.javac.comp\=ALL-UNNAMED=
++-Xplugin\:ErrorProne\ \
++    -XepExcludedPaths\:.*/generated/protoc/.*\ \
++    -Xep\:NotJavadoc\:OFF\ \
++    -XepAllSuggestionsAsWarnings\ \
++    -Xep\:AnnotationPosition\ \
++    -Xep\:AssertFalse\ \
++    -Xep\:ClassName\ \
++    -Xep\:ClassNamedLikeTypeParameter\:WARN\ \
++    -Xep\:ComparisonContractViolated\ \
++    -Xep\:ConstantField\:WARN\ \
++    -Xep\:DepAnn\ \
++    -Xep\:DifferentNameButSame\ \
++    -Xep\:EmptyIf\ \
++    -Xep\:EqualsBrokenForNull\ \
++    -Xep\:ForEachIterable\:WARN\ \
++    -Xep\:FunctionalInterfaceClash\ \
++    -Xep\:InitializeInline\ \
++    -Xep\:InterfaceWithOnlyStatics\ \
++    -Xep\:LambdaFunctionalInterface\:WARN\ \
++    -Xep\:LongLiteralLowerCaseSuffix\ \
++    -Xep\:MemberName\ \
++    -Xep\:MissingBraces\:WARN\ \
++    -Xep\:MissingDefault\ \
++    -Xep\:MixedArrayDimensions\:WARN\ \
++    -Xep\:MultiVariableDeclaration\:WARN\ \
++    -Xep\:MultipleTopLevelClasses\:WARN\ \
++    -Xep\:NonCanonicalStaticMemberImport\ \
++    -Xep\:NonFinalStaticField\ \
++    -Xep\:PackageLocation\:WARN\ \
++    -Xep\:PatternMatchingInstanceof\:OFF\ \
++    -Xep\:PrimitiveArrayPassedToVarargsMethod\ \
++    -Xep\:PrivateConstructorForUtilityClass\:WARN\ \
++    -Xep\:RemoveUnusedImports\:WARN\ \
++    -Xep\:StatementSwitchToExpressionSwitch\:OFF\ \
++    -Xep\:StaticQualifiedUsingExpression\ \
++    -Xep\:StringConcatToTextBlock\:OFF\ \
++    -Xep\:SwitchDefault\:WARN\ \
++    -Xep\:SystemExitOutsideMain\ \
++    -Xep\:SystemOut\ \
++    -Xep\:TestExceptionChecker\ \
++    -Xep\:ThrowSpecificExceptions\:OFF\ \
++    -Xep\:TryFailRefactoring\:OFF\ \
++    -Xep\:TypeParameterNaming\:WARN\ \
++    -Xep\:UnescapedEntity\ \
++    -Xep\:UngroupedOverloads\:WARN\ \
++    -Xep\:UnnecessarilyFullyQualified\ \
++    -Xep\:UnnecessarilyUsedValue\ \
++    -Xep\:UnnecessaryBoxedVariable\:WARN\ \
++    -Xep\:UnnecessaryDefaultInEnumSwitch\ \
++    -Xep\:UnnecessaryFinal\ \
++    -Xep\:UnnecessaryStaticImport\:WARN\ \
++    -Xep\:UnusedException\ \
++    -Xep\:UrlInSee\ \
++    -Xep\:UseCorrectAssertInTests\ \
++    -Xep\:UseEnumSwitch\:WARN\ \
++    -Xep\:WildcardImport\:WARN\ \
++    -Xep\:YodaCondition=
++-Xlint\:all,-options=
++-Werror=
++-g=
+diff --git a/build.jenesis/process-javadoc.properties b/build.jenesis/process-javadoc.properties
+new file mode 100644
+index 0000000..8d7072f
+--- /dev/null
++++ b/build.jenesis/process-javadoc.properties
+@@ -0,0 +1,5 @@
++-Xdoclint\:all,-missing=
++-link=https\://docs.oracle.com/en/java/javase/11/docs/api/\nhttps\://errorprone.info/api/latest/
++-quiet=
++-Werror=
++--source=11
+diff --git a/build.jenesis/process-test.properties b/build.jenesis/process-test.properties
+new file mode 100644
+index 0000000..11aba46
+--- /dev/null
++++ b/build.jenesis/process-test.properties
+@@ -0,0 +1,2 @@
++# Surefire runs the tests with assertions enabled
++-ea=
+diff --git a/extras/pom.xml b/extras/pom.xml
+index 657f84d..3134216 100644
+--- a/extras/pom.xml
++++ b/extras/pom.xml
+@@ -46,6 +46,88 @@
+     <url>https://www.google.com</url>
+   </organization>
+ 
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>com.google.auto.value</groupId>
++        <artifactId>auto-value-annotations</artifactId>
++        <version>1.11.0</version>
++        <!--Checksum/SHA-256/5a055ce4255333b3346e1a8703da5bf8ff049532286fdcd31712d624abe111dd-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>2.50.0</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>failureaccess</artifactId>
++        <version>1.0.2</version>
++        <!--Checksum/SHA-256/8a8f81cf9b359e3f6dfa691a1e776985c061ef2f223c9b2c80753e1b458e8064-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava</artifactId>
++        <version>33.4.3-android</version>
++        <!--Checksum/SHA-256/d09b7ac13b6bc203322b8a3da4d8e39128f5f6a22f816c01a34b93592f771b12-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>listenablefuture</artifactId>
++        <version>9999.0-empty-to-avoid-conflict-with-guava</version>
++        <!--Checksum/SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.j2objc</groupId>
++        <artifactId>j2objc-annotations</artifactId>
++        <version>3.0.0</version>
++        <!--Checksum/SHA-256/88241573467ddca44ffd4d74aa04c2bbfd11bf7c17e0c342c94c9de7a70a7c64-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.truth</groupId>
++        <artifactId>truth</artifactId>
++        <version>1.4.5</version>
++        <!--Checksum/SHA-256/a6409e90fdd6b31f239b0c02065c43b53e1b09c72f2e08c3a86d04fe5910cf4b-->
++      </dependency>
++      <dependency>
++        <groupId>javax.annotation</groupId>
++        <artifactId>jsr250-api</artifactId>
++        <version>1.0</version>
++        <!--Checksum/SHA-256/a1a922d0d9b6d183ed3800dfac01d1e1eb159f0e8c6f94736931c1def54a941f-->
++      </dependency>
++      <dependency>
++        <groupId>junit</groupId>
++        <artifactId>junit</artifactId>
++        <version>4.13.2</version>
++        <!--Checksum/SHA-256/8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3-->
++      </dependency>
++      <dependency>
++        <groupId>org.checkerframework</groupId>
++        <artifactId>checker-qual</artifactId>
++        <version>3.43.0</version>
++        <!--Checksum/SHA-256/3fbc2e98f05854c3df16df9abaa955b91b15b3ecac33623208ed6424640ef0f6-->
++      </dependency>
++      <dependency>
++        <groupId>org.hamcrest</groupId>
++        <artifactId>hamcrest-core</artifactId>
++        <version>1.3</version>
++        <!--Checksum/SHA-256/66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9-->
++      </dependency>
++      <dependency>
++        <groupId>org.jspecify</groupId>
++        <artifactId>jspecify</artifactId>
++        <version>1.0.0</version>
++        <!--Checksum/SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm</artifactId>
++        <version>9.8</version>
++        <!--Checksum/SHA-256/876eab6a83daecad5ca67eb9fcabb063c97b5aeb8cf1fca7a989ecde17522051-->
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+   <dependencies>
+     <dependency>
+       <groupId>com.google.code.gson</groupId>
+@@ -87,4 +169,38 @@
+   <scm>
+     <tag>gson-extras-2.12.1</tag>
+   </scm>
++  <!--jenesis.pin
++  googlejavaformat/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  googlejavaformat/module/build.jenesis.plugin.googlejavaformat 0.1.0 SHA-256/bbd5b30571e15b3e8016cbecbfeeab566e84f08ac8560f88cc0603915d7138d6
++  googlejavaformat:tool/maven/com.google.errorprone/error_prone_annotations 2.47.0 SHA-256/5364bc6f22e72e98195e406a58d3ba1c09ffa11dea0729592cb870dc2de4056d
++  googlejavaformat:tool/maven/com.google.googlejavaformat/google-java-format 1.37.0 SHA-256/49874ad1d6b1006d2f8660482135609eb124888e0046c3dbfefc706a0387c700
++  googlejavaformat:tool/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  googlejavaformat:tool/maven/com.google.guava/guava 33.6.0-jre SHA-256/dc573e1fca4fd5454f4a5fd3d7da2df03002876a4175bafc14a95980dd7713b3
++  googlejavaformat:tool/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  googlejavaformat:tool/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  googlejavaformat:tool/maven/org.commonmark/commonmark 0.29.0 SHA-256/4c9b0fa481e36d7176f38e572c134656424cf9601bc190855d0f89478df901c6
++  googlejavaformat:tool/maven/org.commonmark/commonmark-ext-gfm-tables 0.29.0 SHA-256/f263d284c0795b0ddd6071d4fa969f67d460644c20828e51957ad5aec0d75612
++  googlejavaformat:tool/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/com.github.ben-manes.caffeine/caffeine 3.0.5 SHA-256/8a9b54d3506a3b92ee46b217bcee79196b21ca6d52dc2967c686a205fb2f9c15
++  javac/maven/com.github.kevinstern/software-and-algorithms 1.0 SHA-256/61ab82439cef37343b14f53154c461619375373a56b9338e895709fb54e0864c
++  javac/maven/com.google.auto.service/auto-service-annotations 1.0.1 SHA-256/c7bec54b7b5588b5967e870341091c5691181d954cf2039f1bf0a6eeb837473b
++  javac/maven/com.google.auto.value/auto-value-annotations 1.9 SHA-256/fa5469f4c44ee598a2d8f033ab0a9dcbc6498a0c5e0c998dfa0c2adf51358044
++  javac/maven/com.google.auto/auto-common 1.2.2 SHA-256/f50b1ce8a41fad31a8a819c052f8ffa362ea0a3dbe9ef8f7c7dc9a36d4738a59
++  javac/maven/com.google.errorprone/error_prone_annotation 2.50.0 SHA-256/aa9b67a3aa3418b366e26594e1ae35d100ad3369cd1010ae7d4782d984ea9aaf
++  javac/maven/com.google.errorprone/error_prone_annotations 2.50.0 SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a
++  javac/maven/com.google.errorprone/error_prone_check_api 2.50.0 SHA-256/ee935a4f42ac409fb0a471affea938c3050c6887dbaadb106868936d83d8c8f1
++  javac/maven/com.google.errorprone/error_prone_core 2.50.0 SHA-256/40a88d3ea732fac3a57ae0e2b27f1729ce76cc41857bcd63d5845e79eae5f72e
++  javac/maven/com.google.googlejavaformat/google-java-format 1.35.0 SHA-256/b2a52e363d51dd86b3b38d1a8dd51538541b42ff1048769684681c676550f043
++  javac/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  javac/maven/com.google.guava/guava 33.5.0-jre SHA-256/1e301f0c52ac248b0b14fdc3d12283c77252d4d6f48521d572e7d8c4c2cc4ac7
++  javac/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  javac/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  javac/maven/com.google.protobuf/protobuf-java 4.33.2 SHA-256/c5b582aa127fb62c5fc3077329d522dfb7930b4e9a625c08760b681b2ba5aab7
++  javac/maven/io.github.eisop/dataflow-errorprone 3.41.0-eisop1 SHA-256/10434fba4e53f55fa9c76904cde414b918932548c9dfc4e2d634ac05ff7a7d10
++  javac/maven/io.github.java-diff-utils/java-diff-utils 4.12 SHA-256/9990a2039778f6b4cc94790141c2868864eacee0620c6c459451121a901cd5b5
++  javac/maven/javax.inject/javax.inject 1 SHA-256/91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff
++  javac/maven/org.checkerframework/checker-qual 3.19.0 SHA-256/a827c49183f3a632277d27a0a4673686cb341507447b9d570261094bd748aa68
++  javac/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/org.pcollections/pcollections 4.0.1 SHA-256/1f82766d7c3221930854033bebff5073ea46b43f27326074bbe15d148c18bfb3
++  -->
+ </project>
+diff --git a/gson/bnd.bnd b/gson/bnd.bnd
+new file mode 100644
+index 0000000..861d8b3
+--- /dev/null
++++ b/gson/bnd.bnd
+@@ -0,0 +1,18 @@
++Bundle-SymbolicName: com.google.gson
++Bundle-Name: ${project.name}
++Bundle-Description: ${project.description}
++Bundle-Vendor: Google Gson Project
++Bundle-ContactAddress: ${project.url}
++
++# Optional dependency for JDK's sun.misc.Unsafe
++# Optional dependency to google.errorprone
++# https://bnd.bndtools.org/chapters/920-faq.html#remove-unwanted-imports-
++Import-Package: sun.misc;resolution:=optional, com.google.errorprone.*;resolution:=optional, *
++
++-removeheaders: Private-Package
++
++-exportcontents:\
++    com.google.gson,\
++    com.google.gson.annotations;-noimport:=true,\
++    com.google.gson.reflect,\
++    com.google.gson.stream
+diff --git a/gson/build.jenesis/japicmp/japicmp.properties b/gson/build.jenesis/japicmp/japicmp.properties
+new file mode 100644
+index 0000000..56838ea
+--- /dev/null
++++ b/gson/build.jenesis/japicmp/japicmp.properties
+@@ -0,0 +1,6 @@
++# The japicmp-maven-plugin check of .github/workflows/check-api-compatibility.yml, run with
++# -Djenesis.make.profiles=japicmp against the last release of com.google.code.gson:gson
++exclude=com.google.gson.internal
++only-modified=true
++error-on-binary-incompatibility=true
++error-on-source-incompatibility=true
+diff --git a/gson/pom.xml b/gson/pom.xml
+index 3a5a073..93e8111 100644
+--- a/gson/pom.xml
++++ b/gson/pom.xml
+@@ -41,6 +41,184 @@
+     <excludeTestCompilation>**/Java17*</excludeTestCompilation>
+   </properties>
+ 
++  <!--jenesis.pin
++  googlejavaformat/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  googlejavaformat/module/build.jenesis.plugin.googlejavaformat 0.1.0 SHA-256/bbd5b30571e15b3e8016cbecbfeeab566e84f08ac8560f88cc0603915d7138d6
++  googlejavaformat:tool/maven/com.google.errorprone/error_prone_annotations 2.47.0 SHA-256/5364bc6f22e72e98195e406a58d3ba1c09ffa11dea0729592cb870dc2de4056d
++  googlejavaformat:tool/maven/com.google.googlejavaformat/google-java-format 1.37.0 SHA-256/49874ad1d6b1006d2f8660482135609eb124888e0046c3dbfefc706a0387c700
++  googlejavaformat:tool/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  googlejavaformat:tool/maven/com.google.guava/guava 33.6.0-jre SHA-256/dc573e1fca4fd5454f4a5fd3d7da2df03002876a4175bafc14a95980dd7713b3
++  googlejavaformat:tool/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  googlejavaformat:tool/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  googlejavaformat:tool/maven/org.commonmark/commonmark 0.29.0 SHA-256/4c9b0fa481e36d7176f38e572c134656424cf9601bc190855d0f89478df901c6
++  googlejavaformat:tool/maven/org.commonmark/commonmark-ext-gfm-tables 0.29.0 SHA-256/f263d284c0795b0ddd6071d4fa969f67d460644c20828e51957ad5aec0d75612
++  googlejavaformat:tool/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  japicmp/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  japicmp/module/build.jenesis.plugin.japicmp 0.1.0 SHA-256/d2118292b0dc76b88ff0d90f34022210e1481d7b962de83df329c41cce30fd8c
++  japicmp:tool/maven/com.github.siom79.japicmp/japicmp 0.26.5 SHA-256/0383aeb8824981f3a76a984f021bc8720bff06b4c5b5e2f67b08d9dc95f677fd
++  japicmp:tool/maven/com.google.code.gson/gson 2.14.0 SHA-256/2cbd119bf1961c28788310963dc80ba65f58cdeec1dd139c8bdb1240faa2c36f
++  japicmp:tool/maven/com.google.errorprone/error_prone_annotations 2.36.0 SHA-256/77440e270b0bc9a249903c5a076c36a722c4886ca4f42675f2903a1c53ed61a5
++  japicmp:tool/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  japicmp:tool/maven/com.google.guava/guava 33.4.8-jre SHA-256/f3d7f57f67fd622f4d468dfdd692b3a5e3909246c28017ac3263405f0fe617ed
++  japicmp:tool/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  japicmp:tool/maven/com.google.j2objc/j2objc-annotations 3.0.0 SHA-256/88241573467ddca44ffd4d74aa04c2bbfd11bf7c17e0c342c94c9de7a70a7c64
++  japicmp:tool/maven/com.sun.istack/istack-commons-runtime 3.0.8 SHA-256/4ffabb06be454a05e4398e20c77fa2b6308d4b88dfbef7ca30a76b5b7d5505ef
++  japicmp:tool/maven/com.sun.xml.fastinfoset/FastInfoset 1.2.16 SHA-256/056f3a1e144409f21ed16afc26805f58e9a21f3fce1543c42d400719d250c511
++  japicmp:tool/maven/jakarta.activation/jakarta.activation-api 1.2.1 SHA-256/8b0a0f52fa8b05c5431921a063ed866efaa41dadf2e3a7ee3e1961f2b0d9645b
++  japicmp:tool/maven/jakarta.xml.bind/jakarta.xml.bind-api 2.3.2 SHA-256/69156304079bdeed9fc0ae3b39389f19b3cc4ba4443bc80508995394ead742ea
++  japicmp:tool/maven/org.glassfish.jaxb/jaxb-runtime 2.3.2 SHA-256/e6e0a1e89fb6ff786279e6a0082d5cef52dc2ebe67053d041800737652b4fd1b
++  japicmp:tool/maven/org.glassfish.jaxb/txw2 2.3.2 SHA-256/4a6a9f483388d461b81aa9a28c685b8b74c0597993bf1884b04eddbca95f48fe
++  japicmp:tool/maven/org.javassist/javassist 3.30.2-GA SHA-256/eba37290994b5e4868f3af98ff113f6244a6b099385d9ad46881307d3cb01aaf
++  japicmp:tool/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  japicmp:tool/maven/org.jvnet.staxex/stax-ex 1.8.1 SHA-256/20522549056e9e50aa35ef0b445a2e47a53d06be0b0a9467d704e2483ffb049a
++  javac/maven/com.github.ben-manes.caffeine/caffeine 3.0.5 SHA-256/8a9b54d3506a3b92ee46b217bcee79196b21ca6d52dc2967c686a205fb2f9c15
++  javac/maven/com.github.kevinstern/software-and-algorithms 1.0 SHA-256/61ab82439cef37343b14f53154c461619375373a56b9338e895709fb54e0864c
++  javac/maven/com.google.auto.service/auto-service-annotations 1.0.1 SHA-256/c7bec54b7b5588b5967e870341091c5691181d954cf2039f1bf0a6eeb837473b
++  javac/maven/com.google.auto.value/auto-value-annotations 1.9 SHA-256/fa5469f4c44ee598a2d8f033ab0a9dcbc6498a0c5e0c998dfa0c2adf51358044
++  javac/maven/com.google.auto/auto-common 1.2.2 SHA-256/f50b1ce8a41fad31a8a819c052f8ffa362ea0a3dbe9ef8f7c7dc9a36d4738a59
++  javac/maven/com.google.errorprone/error_prone_annotation 2.50.0 SHA-256/aa9b67a3aa3418b366e26594e1ae35d100ad3369cd1010ae7d4782d984ea9aaf
++  javac/maven/com.google.errorprone/error_prone_annotations 2.50.0 SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a
++  javac/maven/com.google.errorprone/error_prone_check_api 2.50.0 SHA-256/ee935a4f42ac409fb0a471affea938c3050c6887dbaadb106868936d83d8c8f1
++  javac/maven/com.google.errorprone/error_prone_core 2.50.0 SHA-256/40a88d3ea732fac3a57ae0e2b27f1729ce76cc41857bcd63d5845e79eae5f72e
++  javac/maven/com.google.googlejavaformat/google-java-format 1.35.0 SHA-256/b2a52e363d51dd86b3b38d1a8dd51538541b42ff1048769684681c676550f043
++  javac/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  javac/maven/com.google.guava/guava 33.5.0-jre SHA-256/1e301f0c52ac248b0b14fdc3d12283c77252d4d6f48521d572e7d8c4c2cc4ac7
++  javac/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  javac/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  javac/maven/com.google.protobuf/protobuf-java 4.33.2 SHA-256/c5b582aa127fb62c5fc3077329d522dfb7930b4e9a625c08760b681b2ba5aab7
++  javac/maven/io.github.eisop/dataflow-errorprone 3.41.0-eisop1 SHA-256/10434fba4e53f55fa9c76904cde414b918932548c9dfc4e2d634ac05ff7a7d10
++  javac/maven/io.github.java-diff-utils/java-diff-utils 4.12 SHA-256/9990a2039778f6b4cc94790141c2868864eacee0620c6c459451121a901cd5b5
++  javac/maven/javax.inject/javax.inject 1 SHA-256/91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff
++  javac/maven/org.checkerframework/checker-qual 3.19.0 SHA-256/a827c49183f3a632277d27a0a4673686cb341507447b9d570261094bd748aa68
++  javac/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/org.pcollections/pcollections 4.0.1 SHA-256/1f82766d7c3221930854033bebff5073ea46b43f27326074bbe15d148c18bfb3
++  plugin.bnd/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  plugin.bnd:tool/maven/biz.aQute.bnd/biz.aQute.bnd.util 6.4.0 SHA-256/65b5bd4a0fab16812f1800c98ff74a038f37a38bfe899af382efed4efdc1e3e1
++  plugin.bnd:tool/maven/biz.aQute.bnd/biz.aQute.bndlib 6.4.0 SHA-256/357145074872f9dbf67e629fcd237e6152707e575d735df4535282f9f588d2d8
++  plugin.bnd:tool/maven/org.osgi/org.osgi.dto 1.0.0 SHA-256/cb75f3c7e48e5a31a31df22e26873346f5bf659e2dcab2369e031e4850d2ff43
++  plugin.bnd:tool/maven/org.osgi/org.osgi.framework 1.8.0 SHA-256/ec194b7871af27681716ff05259319a5c3c9b9727e8000e9e832499b93484b4e
++  plugin.bnd:tool/maven/org.osgi/org.osgi.resource 1.0.0 SHA-256/81fc50f1f1d38a4af28e131907d4afe213249aab05060484edca0e60c4af9b4a
++  plugin.bnd:tool/maven/org.osgi/org.osgi.service.log 1.3.0 SHA-256/ff6710c4856d32684cf3ebdc45248f41036ff734f2b03bbc08c4609a61fecfa0
++  plugin.bnd:tool/maven/org.osgi/org.osgi.service.repository 1.1.0 SHA-256/c5553e95b459529192433486d4c4cc22ff45a2eae4968484f9f717319264a532
++  plugin.bnd:tool/maven/org.osgi/org.osgi.util.function 1.2.0 SHA-256/208819c7c71690c15a6bb8b187474e7f9d0147946b680182a62b9f222ae014ec
++  plugin.bnd:tool/maven/org.osgi/org.osgi.util.promise 1.2.0 SHA-256/fef86e64f584d012a16a0306160764f6179663b90988a226c4641b920f3a4b36
++  plugin.bnd:tool/maven/org.osgi/org.osgi.util.tracker 1.5.4 SHA-256/7d78c2cc9bcb6421c24f17aa097866ce8d9115c219a4f8d6cc753bc4dfb97efa
++  plugin.bnd:tool/maven/org.osgi/osgi.annotation 8.0.1 SHA-256/a0e8a4c362bd3600812f37b0ea45fba966c7bc049d01fed56a09ecc74082759e
++  plugin.bnd:tool/maven/org.slf4j/slf4j-api 1.7.25 SHA-256/18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79
++  plugin.templates/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  -->
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>com.google.auto.value</groupId>
++        <artifactId>auto-value-annotations</artifactId>
++        <version>1.11.0</version>
++        <!--Checksum/SHA-256/5a055ce4255333b3346e1a8703da5bf8ff049532286fdcd31712d624abe111dd-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.code.findbugs</groupId>
++        <artifactId>jsr305</artifactId>
++        <version>3.0.2</version>
++        <!--Checksum/SHA-256/766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>2.50.0</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>failureaccess</artifactId>
++        <version>1.0.3</version>
++        <!--Checksum/SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava</artifactId>
++        <version>33.7.0-jre</version>
++        <!--Checksum/SHA-256/151bb9b817284d88825a06cf858a3184097e951b064bb48bd52a7889e3960af6-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava-testlib</artifactId>
++        <version>33.7.0-jre</version>
++        <!--Checksum/SHA-256/a09a261f852e139f23c7fb0c5ae988e5c7e662e144bb85b03806f8fa96ab8c88-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>listenablefuture</artifactId>
++        <version>9999.0-empty-to-avoid-conflict-with-guava</version>
++        <!--Checksum/SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.j2objc</groupId>
++        <artifactId>j2objc-annotations</artifactId>
++        <version>3.1</version>
++        <!--Checksum/SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.testparameterinjector</groupId>
++        <artifactId>test-parameter-injector</artifactId>
++        <version>1.22</version>
++        <!--Checksum/SHA-256/ff534578f2e3dc6030d1f4a6896df3d20573644858c6ade878efb75d2a36504b-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.truth</groupId>
++        <artifactId>truth</artifactId>
++        <version>1.4.5</version>
++        <!--Checksum/SHA-256/a6409e90fdd6b31f239b0c02065c43b53e1b09c72f2e08c3a86d04fe5910cf4b-->
++      </dependency>
++      <dependency>
++        <groupId>junit</groupId>
++        <artifactId>junit</artifactId>
++        <version>4.13.2</version>
++        <!--Checksum/SHA-256/8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3-->
++      </dependency>
++      <dependency>
++        <groupId>org.hamcrest</groupId>
++        <artifactId>hamcrest-core</artifactId>
++        <version>1.3</version>
++        <!--Checksum/SHA-256/66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-reflect</artifactId>
++        <version>2.2.20</version>
++        <!--Checksum/SHA-256/8209083a4a7c4e476d9842b078308fa96a96f07a6bd99f05f3586ee13289ab26-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-stdlib</artifactId>
++        <version>2.2.20</version>
++        <!--Checksum/SHA-256/8836ccffd3585fadda9901244b20d42901d2f3cd581058d8434e2ffabcf3a3e7-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains</groupId>
++        <artifactId>annotations</artifactId>
++        <version>13.0</version>
++        <!--Checksum/SHA-256/ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478-->
++      </dependency>
++      <dependency>
++        <groupId>org.jspecify</groupId>
++        <artifactId>jspecify</artifactId>
++        <version>1.0.0</version>
++        <!--Checksum/SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm</artifactId>
++        <version>9.8</version>
++        <!--Checksum/SHA-256/876eab6a83daecad5ca67eb9fcabb063c97b5aeb8cf1fca7a989ecde17522051-->
++      </dependency>
++      <dependency>
++        <groupId>org.yaml</groupId>
++        <artifactId>snakeyaml</artifactId>
++        <version>2.0</version>
++        <!--Checksum/SHA-256/880c9d896e4b74a06c549c15ca496450165d6909fa15d7e662bee8f6a66d7afa-->
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+   <dependencies>
+     <!-- This dependency can be considered optional; omitting it during runtime will most likely
+       not cause any issues. However, it is not declared with `<optional>true</optional>` because
+@@ -115,7 +293,7 @@
+             <configuration>
+               <excludes>
+                 <!-- module-info.java is compiled using ModiTect -->
+-                <exclude>module-info.java</exclude>
++                <exclude>META-INF/versions/9/module-info.java</exclude>
+               </excludes>
+             </configuration>
+           </execution>
+@@ -144,26 +322,8 @@
+               <goal>bnd-process</goal>
+             </goals>
+             <configuration>
+-              <bnd><![CDATA[
+-                Bundle-SymbolicName: com.google.gson
+-                Bundle-Name: ${project.name}
+-                Bundle-Description: ${project.description}
+-                Bundle-Vendor: Google Gson Project
+-                Bundle-ContactAddress: ${project.parent.url}
+-
+-                # Optional dependency for JDK's sun.misc.Unsafe
+-                # Optional dependency to google.errorprone
+-                # https://bnd.bndtools.org/chapters/920-faq.html#remove-unwanted-imports-
+-                Import-Package: sun.misc;resolution:=optional, com.google.errorprone.*;resolution:=optional, *
+-
+-                -removeheaders: Private-Package
+-
+-                -exportcontents:\
+-                    com.google.gson,\
+-                    com.google.gson.annotations;-noimport:=true,\
+-                    com.google.gson.reflect,\
+-                    com.google.gson.stream
+-              ]]></bnd>
++              <!-- The instructions are shared with the Jenesis build's bnd plugin -->
++              <bndfile>bnd.bnd</bndfile>
+             </configuration>
+           </execution>
+         </executions>
+@@ -328,7 +488,7 @@
+             <configuration>
+               <jvmVersion>9</jvmVersion>
+               <module>
+-                <moduleInfoFile>${project.build.sourceDirectory}/module-info.java</moduleInfoFile>
++                <moduleInfoFile>${project.build.sourceDirectory}/META-INF/versions/9/module-info.java</moduleInfoFile>
+               </module>
+               <!-- Overwrite the previously generated JAR file, if any -->
+               <overwriteExistingFiles>true</overwriteExistingFiles>
+@@ -343,6 +503,8 @@
+         <groupId>org.apache.maven.plugins</groupId>
+         <artifactId>maven-javadoc-plugin</artifactId>
+         <configuration>
++          <!-- module-info.java lives in META-INF/versions/9, where the Jenesis build compiles it -->
++          <sourcepath>${project.build.sourceDirectory}/META-INF/versions/9:${project.build.sourceDirectory}:${project.build.directory}/generated-sources/java-templates</sourcepath>
+           <excludePackageNames>com.google.gson.internal:com.google.gson.internal.bind</excludePackageNames>
+         </configuration>
+       </plugin>
+diff --git a/gson/src/main/build.jenesis/plugin-bnd.properties b/gson/src/main/build.jenesis/plugin-bnd.properties
+new file mode 100644
+index 0000000..f4112bf
+--- /dev/null
++++ b/gson/src/main/build.jenesis/plugin-bnd.properties
+@@ -0,0 +1 @@
++@instructions/bnd.bnd=bnd.bnd
+diff --git a/gson/src/main/build.jenesis/plugin-templates.properties b/gson/src/main/build.jenesis/plugin-templates.properties
+new file mode 100644
+index 0000000..9bd142d
+--- /dev/null
++++ b/gson/src/main/build.jenesis/plugin-templates.properties
+@@ -0,0 +1 @@
++@templates=src/main/java-templates
+diff --git a/gson/src/main/build.jenesis/process-javadoc.properties b/gson/src/main/build.jenesis/process-javadoc.properties
+new file mode 100644
+index 0000000..8c28ece
+--- /dev/null
++++ b/gson/src/main/build.jenesis/process-javadoc.properties
+@@ -0,0 +1,6 @@
++-Xdoclint\:all,-missing=
++-exclude=com.google.gson.internal\:com.google.gson.internal.bind
++-link=https\://docs.oracle.com/en/java/javase/11/docs/api/\nhttps\://errorprone.info/api/latest/
++-quiet=
++-Werror=
++--source=11
+diff --git a/gson/src/main/java/module-info.java b/gson/src/main/java/META-INF/versions/9/module-info.java
+similarity index 100%
+rename from gson/src/main/java/module-info.java
+rename to gson/src/main/java/META-INF/versions/9/module-info.java
+diff --git a/jenesis-release.properties b/jenesis-release.properties
+new file mode 100644
+index 0000000..ad90520
+--- /dev/null
++++ b/jenesis-release.properties
+@@ -0,0 +1,3 @@
++# What the Maven release profile adds: the sources and javadoc jars
++jenesis.project.sources=true
++jenesis.project.documentation=true
+diff --git a/jenesis.plugins.properties b/jenesis.plugins.properties
+new file mode 100644
+index 0000000..a4247fe
+--- /dev/null
++++ b/jenesis.plugins.properties
+@@ -0,0 +1,2 @@
++templates+binary/generated=./plugins/templating
++bnd+binary/transform=./plugins/bnd
+diff --git a/jenesis.properties b/jenesis.properties
+new file mode 100644
+index 0000000..5c5ed62
+--- /dev/null
++++ b/jenesis.properties
+@@ -0,0 +1,3 @@
++jenesis.test.exclude=gson/.*EnumWithObfuscatedTest,test-shrinker/.*ShrinkingIT
++# Skip recompiling a dependent module when only method bodies of its dependencies changed
++jenesis.abi.mode=classpath
+diff --git a/metrics/build.jenesis/packaging.properties b/metrics/build.jenesis/packaging.properties
+new file mode 100644
+index 0000000..ca0a30e
+--- /dev/null
++++ b/metrics/build.jenesis/packaging.properties
+@@ -0,0 +1,2 @@
++# gson.isTestModule: built and tested, never installed or published
++stage=false
+diff --git a/metrics/pom.xml b/metrics/pom.xml
+index e488078..d4f8b1c 100644
+--- a/metrics/pom.xml
++++ b/metrics/pom.xml
+@@ -44,6 +44,220 @@
+     <url>https://www.google.com</url>
+   </organization>
+ 
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>com.fasterxml.jackson.core</groupId>
++        <artifactId>jackson-annotations</artifactId>
++        <version>2.22</version>
++        <!--Checksum/SHA-256/21ddb598807d3a51a876704eb979d9296e1c6a6f47ab1826ff88c6d6a127a2d0-->
++      </dependency>
++      <dependency>
++        <groupId>com.fasterxml.jackson.core</groupId>
++        <artifactId>jackson-core</artifactId>
++        <version>2.22.3</version>
++        <!--Checksum/SHA-256/8a501126a385b25841915d839508f8a66e2a0dbc8a6709d055ef3b3e852b094c-->
++      </dependency>
++      <dependency>
++        <groupId>com.fasterxml.jackson.core</groupId>
++        <artifactId>jackson-databind</artifactId>
++        <version>2.22.3</version>
++        <!--Checksum/SHA-256/556db5439e206114346043f68d200497dc96a0bca62a360a81784092ebd0e0a9-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.auto.value</groupId>
++        <artifactId>auto-value-annotations</artifactId>
++        <version>1.8.1</version>
++        <!--Checksum/SHA-256/37ec09b47d7ed35a99d13927db5c86fc9071f620f943ead5d757144698310852-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.caliper</groupId>
++        <artifactId>caliper</artifactId>
++        <version>1.0-beta-3</version>
++        <!--Checksum/SHA-256/d54e1bfdbe9359a79e175c217b8d472555cf20da9c5c0a18bdb1ea7db979ed8e-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.caliper</groupId>
++        <artifactId>caliper-api</artifactId>
++        <version>1.0-beta-3</version>
++        <!--Checksum/SHA-256/374f0c6c0c1f8784cb69d885e1dcbb7498c34ca20369e0597264568530642928-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.caliper</groupId>
++        <artifactId>caliper-core</artifactId>
++        <version>1.0-beta-3</version>
++        <!--Checksum/SHA-256/514deac8f8b09dd4262733e0a4406a333208c899dc7ea726b03600b9bb94f192-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.caliper</groupId>
++        <artifactId>caliper-runner</artifactId>
++        <version>1.0-beta-3</version>
++        <!--Checksum/SHA-256/3ab58890aa01343361adedf859500d280f67813df0cedfcd165b169533b9b1fa-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.caliper</groupId>
++        <artifactId>caliper-util</artifactId>
++        <version>1.0-beta-3</version>
++        <!--Checksum/SHA-256/6e9af500c7020450dfdb5003d09501d512d395f431c54c7ee8f79e712463fe66-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.caliper</groupId>
++        <artifactId>caliper-worker</artifactId>
++        <version>1.0-beta-3</version>
++        <!--Checksum/SHA-256/315d8e51df1f60551645a0e3bf2c504d2c79762f688e6f728eb9d1d9cd9a491b-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.caliper</groupId>
++        <artifactId>caliper-worker-jvm</artifactId>
++        <version>1.0-beta-3</version>
++        <!--Checksum/SHA-256/e14e1ecfdf939c82abdb902105be41ff3f83c18cb968116232015f2662d065a4-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.code.findbugs</groupId>
++        <artifactId>jsr305</artifactId>
++        <version>3.0.2</version>
++        <!--Checksum/SHA-256/766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.code.java-allocation-instrumenter</groupId>
++        <artifactId>java-allocation-instrumenter</artifactId>
++        <version>3.3.0</version>
++        <!--Checksum/SHA-256/1ef5535a8bd41cf3072469f381b9ee6ab28275311a7499f53d6e52adf976fef0-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.dagger</groupId>
++        <artifactId>dagger</artifactId>
++        <version>2.22.1</version>
++        <!--Checksum/SHA-256/329d4340f24c4f5717af016c097e90668bfea2a5376e6aa9964b01cef3fd241a-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.dagger</groupId>
++        <artifactId>dagger-producers</artifactId>
++        <version>2.22.1</version>
++        <!--Checksum/SHA-256/f834a0082014213a68ff06a0f048d750178d02196c58b0b15beb367d32b97e35-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>2.50.0</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>failureaccess</artifactId>
++        <version>1.0.1</version>
++        <!--Checksum/SHA-256/a171ee4c734dd2da837e4b16be9df4661afab72a41adaf31eb84dfdaf936ca26-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava</artifactId>
++        <version>30.1.1-jre</version>
++        <!--Checksum/SHA-256/44ce229ce26d880bf3afc362bbfcec34d7e6903d195bbb1db9f3b6e0d9834f06-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>listenablefuture</artifactId>
++        <version>9999.0-empty-to-avoid-conflict-with-guava</version>
++        <!--Checksum/SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.j2objc</groupId>
++        <artifactId>j2objc-annotations</artifactId>
++        <version>1.3</version>
++        <!--Checksum/SHA-256/21af30c92267bd6122c0e0b4d20cccb6641a37eaf956c6540ec471d584e64a7b-->
++      </dependency>
++      <dependency>
++        <groupId>com.squareup.okhttp</groupId>
++        <artifactId>okhttp</artifactId>
++        <version>2.7.5</version>
++        <!--Checksum/SHA-256/88ac9fd1bb51f82bcc664cc1eb9c225c90dc4389d660231b4cc737bebfe7d0aa-->
++      </dependency>
++      <dependency>
++        <groupId>com.squareup.okio</groupId>
++        <artifactId>okio</artifactId>
++        <version>1.6.0</version>
++        <!--Checksum/SHA-256/114bdc1f47338a68bcbc95abf2f5cdc72beeec91812f2fcd7b521c1937876266-->
++      </dependency>
++      <dependency>
++        <groupId>com.sun.jersey</groupId>
++        <artifactId>jersey-client</artifactId>
++        <version>1.19.4</version>
++        <!--Checksum/SHA-256/639c825c5db580f8115bf49ffc893093526d2ed1079fbc929b6a5fbd0b2eda40-->
++      </dependency>
++      <dependency>
++        <groupId>com.sun.jersey</groupId>
++        <artifactId>jersey-core</artifactId>
++        <version>1.19.4</version>
++        <!--Checksum/SHA-256/64b03198e0264849d0fc341857ebcc9c882b1909a2dc35a0972fe7d901b826e5-->
++      </dependency>
++      <dependency>
++        <groupId>javax.annotation</groupId>
++        <artifactId>javax.annotation-api</artifactId>
++        <version>1.3.2</version>
++        <!--Checksum/SHA-256/e04ba5195bcd555dc95650f7cc614d151e4bcd52d29a10b8aa2197f3ab89ab9b-->
++      </dependency>
++      <dependency>
++        <groupId>javax.inject</groupId>
++        <artifactId>javax.inject</artifactId>
++        <version>1</version>
++        <!--Checksum/SHA-256/91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff-->
++      </dependency>
++      <dependency>
++        <groupId>javax.ws.rs</groupId>
++        <artifactId>jsr311-api</artifactId>
++        <version>1.1.1</version>
++        <!--Checksum/SHA-256/ab1534b73b5fa055808e6598a5e73b599ccda28c3159c3c0908977809422ee4a-->
++      </dependency>
++      <dependency>
++        <groupId>joda-time</groupId>
++        <artifactId>joda-time</artifactId>
++        <version>2.10.10</version>
++        <!--Checksum/SHA-256/dd8e7c92185a678d1b7b933f31209b6203c8ffa91e9880475a1be0346b9617e3-->
++      </dependency>
++      <dependency>
++        <groupId>org.checkerframework</groupId>
++        <artifactId>checker-compat-qual</artifactId>
++        <version>2.5.3</version>
++        <!--Checksum/SHA-256/d76b9afea61c7c082908023f0cbc1427fab9abd2df915c8b8a3e7a509bccbc6d-->
++      </dependency>
++      <dependency>
++        <groupId>org.checkerframework</groupId>
++        <artifactId>checker-qual</artifactId>
++        <version>3.8.0</version>
++        <!--Checksum/SHA-256/c88c2e6a5fdaeb9f26fcf879264042de8a9ee9d376e2477838feaabcfa44dda6-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm</artifactId>
++        <version>7.2</version>
++        <!--Checksum/SHA-256/7e6cc9e92eb94d04e39356c6d8144ca058cda961c344a7f62166a405f3206672-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm-analysis</artifactId>
++        <version>7.2</version>
++        <!--Checksum/SHA-256/be922aae60ff1ff1768e8e6544a38a7f92bd0a6d6b0b9791f94955d1bd453de2-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm-commons</artifactId>
++        <version>7.2</version>
++        <!--Checksum/SHA-256/0e86b8b179c5fb223d1a880a0ff4960b6978223984b94e62e71135f2d8ea3558-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm-tree</artifactId>
++        <version>7.2</version>
++        <!--Checksum/SHA-256/c063f5a67fa03cdc9bd79fd1c2ea6816cc4a19473ecdfbd9e9153b408c6f2656-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm-util</artifactId>
++        <version>7.2</version>
++        <!--Checksum/SHA-256/6e24913b021ffacfe8e7e053d6e0ccc731941148cfa078d4f1ed3d96904530f8-->
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+   <dependencies>
+     <dependency>
+       <groupId>com.google.code.gson</groupId>
+@@ -76,4 +290,38 @@
+       <organization>Google Inc.</organization>
+     </developer>
+   </developers>
++  <!--jenesis.pin
++  googlejavaformat/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  googlejavaformat/module/build.jenesis.plugin.googlejavaformat 0.1.0 SHA-256/bbd5b30571e15b3e8016cbecbfeeab566e84f08ac8560f88cc0603915d7138d6
++  googlejavaformat:tool/maven/com.google.errorprone/error_prone_annotations 2.47.0 SHA-256/5364bc6f22e72e98195e406a58d3ba1c09ffa11dea0729592cb870dc2de4056d
++  googlejavaformat:tool/maven/com.google.googlejavaformat/google-java-format 1.37.0 SHA-256/49874ad1d6b1006d2f8660482135609eb124888e0046c3dbfefc706a0387c700
++  googlejavaformat:tool/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  googlejavaformat:tool/maven/com.google.guava/guava 33.6.0-jre SHA-256/dc573e1fca4fd5454f4a5fd3d7da2df03002876a4175bafc14a95980dd7713b3
++  googlejavaformat:tool/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  googlejavaformat:tool/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  googlejavaformat:tool/maven/org.commonmark/commonmark 0.29.0 SHA-256/4c9b0fa481e36d7176f38e572c134656424cf9601bc190855d0f89478df901c6
++  googlejavaformat:tool/maven/org.commonmark/commonmark-ext-gfm-tables 0.29.0 SHA-256/f263d284c0795b0ddd6071d4fa969f67d460644c20828e51957ad5aec0d75612
++  googlejavaformat:tool/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/com.github.ben-manes.caffeine/caffeine 3.0.5 SHA-256/8a9b54d3506a3b92ee46b217bcee79196b21ca6d52dc2967c686a205fb2f9c15
++  javac/maven/com.github.kevinstern/software-and-algorithms 1.0 SHA-256/61ab82439cef37343b14f53154c461619375373a56b9338e895709fb54e0864c
++  javac/maven/com.google.auto.service/auto-service-annotations 1.0.1 SHA-256/c7bec54b7b5588b5967e870341091c5691181d954cf2039f1bf0a6eeb837473b
++  javac/maven/com.google.auto.value/auto-value-annotations 1.9 SHA-256/fa5469f4c44ee598a2d8f033ab0a9dcbc6498a0c5e0c998dfa0c2adf51358044
++  javac/maven/com.google.auto/auto-common 1.2.2 SHA-256/f50b1ce8a41fad31a8a819c052f8ffa362ea0a3dbe9ef8f7c7dc9a36d4738a59
++  javac/maven/com.google.errorprone/error_prone_annotation 2.50.0 SHA-256/aa9b67a3aa3418b366e26594e1ae35d100ad3369cd1010ae7d4782d984ea9aaf
++  javac/maven/com.google.errorprone/error_prone_annotations 2.50.0 SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a
++  javac/maven/com.google.errorprone/error_prone_check_api 2.50.0 SHA-256/ee935a4f42ac409fb0a471affea938c3050c6887dbaadb106868936d83d8c8f1
++  javac/maven/com.google.errorprone/error_prone_core 2.50.0 SHA-256/40a88d3ea732fac3a57ae0e2b27f1729ce76cc41857bcd63d5845e79eae5f72e
++  javac/maven/com.google.googlejavaformat/google-java-format 1.35.0 SHA-256/b2a52e363d51dd86b3b38d1a8dd51538541b42ff1048769684681c676550f043
++  javac/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  javac/maven/com.google.guava/guava 33.5.0-jre SHA-256/1e301f0c52ac248b0b14fdc3d12283c77252d4d6f48521d572e7d8c4c2cc4ac7
++  javac/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  javac/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  javac/maven/com.google.protobuf/protobuf-java 4.33.2 SHA-256/c5b582aa127fb62c5fc3077329d522dfb7930b4e9a625c08760b681b2ba5aab7
++  javac/maven/io.github.eisop/dataflow-errorprone 3.41.0-eisop1 SHA-256/10434fba4e53f55fa9c76904cde414b918932548c9dfc4e2d634ac05ff7a7d10
++  javac/maven/io.github.java-diff-utils/java-diff-utils 4.12 SHA-256/9990a2039778f6b4cc94790141c2868864eacee0620c6c459451121a901cd5b5
++  javac/maven/javax.inject/javax.inject 1 SHA-256/91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff
++  javac/maven/org.checkerframework/checker-qual 3.19.0 SHA-256/a827c49183f3a632277d27a0a4673686cb341507447b9d570261094bd748aa68
++  javac/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/org.pcollections/pcollections 4.0.1 SHA-256/1f82766d7c3221930854033bebff5073ea46b43f27326074bbe15d148c18bfb3
++  -->
+ </project>
+diff --git a/plugins/bnd/.jenesis.skip b/plugins/bnd/.jenesis.skip
+new file mode 100644
+index 0000000..e69de29
+diff --git a/plugins/bnd/bnd/BndDriver.java b/plugins/bnd/bnd/BndDriver.java
+new file mode 100644
+index 0000000..7481a77
+--- /dev/null
++++ b/plugins/bnd/bnd/BndDriver.java
+@@ -0,0 +1,59 @@
++package bnd;
++
++import module java.base;
++
++public final class BndDriver {
++
++    private BndDriver() {
++    }
++
++    @SuppressWarnings("unchecked")
++    public static int main(String[] arguments) throws Exception {
++        Class<?> jarType = Class.forName("aQute.bnd.osgi.Jar"), builderType = Class.forName("aQute.bnd.osgi.Builder");
++        Properties instructions = new Properties();
++        try (Reader reader = Files.newBufferedReader(Path.of(arguments[2]), StandardCharsets.UTF_8)) {
++            instructions.load(reader);
++        }
++        try (AutoCloseable builder = (AutoCloseable) builderType.getConstructor().newInstance()) {
++            builderType.getMethod("setBase", File.class).invoke(builder, new File(arguments[0]));
++            builderType.getMethod("setProperties", Properties.class).invoke(builder, instructions);
++            Object jar = jarType.getConstructor(String.class, File.class).newInstance("classes", new File(arguments[0]));
++            Map<String, ?> resources = (Map<String, ?>) jarType.getMethod("getResources").invoke(jar);
++            for (String name : new ArrayList<>(resources.keySet())) {
++                if (name.startsWith("META-INF/versions/")) {
++                    jarType.getMethod("remove", String.class).invoke(jar, name);
++                }
++            }
++            builderType.getMethod("setJar", jarType).invoke(builder, jar);
++            List<File> classPath = new ArrayList<>();
++            for (int index = 4; index < arguments.length; index++) {
++                classPath.add(new File(arguments[index]));
++            }
++            builderType.getMethod("setClasspath", File[].class).invoke(builder, (Object) classPath.toArray(File[]::new));
++            Object built = builderType.getMethod("build").invoke(builder);
++            Manifest manifest = (Manifest) jarType.getMethod("getManifest").invoke(built);
++            for (String warning : (List<String>) builderType.getMethod("getWarnings").invoke(builder)) {
++                System.err.println("warning: " + warning);
++            }
++            List<String> errors = (List<String>) builderType.getMethod("getErrors").invoke(builder);
++            for (String error : errors) {
++                System.err.println("error: " + error);
++            }
++            if (!errors.isEmpty() || manifest == null) {
++                return 1;
++            }
++            Manifest merged = new Manifest();
++            Path handed = Path.of(arguments[3]);
++            if (Files.isRegularFile(handed)) {
++                try (InputStream input = Files.newInputStream(handed)) {
++                    merged.read(input);
++                }
++            }
++            merged.getMainAttributes().putAll(manifest.getMainAttributes());
++            try (OutputStream output = Files.newOutputStream(Path.of(arguments[1]))) {
++                merged.write(output);
++            }
++            return 0;
++        }
++    }
++}
+diff --git a/plugins/bnd/bnd/BndFactory.java b/plugins/bnd/bnd/BndFactory.java
+new file mode 100644
+index 0000000..f54b179
+--- /dev/null
++++ b/plugins/bnd/bnd/BndFactory.java
+@@ -0,0 +1,21 @@
++package bnd;
++
++import module build.jenesis;
++import module java.base;
++
++public class BndFactory implements BuildModuleFactory {
++
++    @Override
++    public BuildExecutorModule create(Environment environment,
++                                      SequencedMap<String, String> properties,
++                                      Permits permits,
++                                      String group,
++                                      Map<String, Repository> repositories,
++                                      Map<String, Resolver> resolvers) {
++        if (!properties.isEmpty()) {
++            throw new IllegalArgumentException("The bnd plugin takes no values but its @instructions input, which"
++                    + " binds the bnd file, not " + properties.sequencedKeySet());
++        }
++        return new BndModule(environment, permits, group + ":tool", repositories, resolvers);
++    }
++}
+diff --git a/plugins/bnd/bnd/BndModule.java b/plugins/bnd/bnd/BndModule.java
+new file mode 100644
+index 0000000..ce56936
+--- /dev/null
++++ b/plugins/bnd/bnd/BndModule.java
+@@ -0,0 +1,228 @@
++package bnd;
++
++import module build.jenesis;
++import module java.base;
++
++import build.jenesis.step.Dependencies;
++import build.jenesis.step.ProcessBuildStep;
++import build.jenesis.step.ProcessHandler;
++
++public class BndModule implements BuildExecutorModule {
++
++    private static final String REQUIRED = "required", DEPENDENCIES = "dependencies", INSTRUCTIONS = "../inputs/instructions";
++    private static final String MAVEN_GROUP = "biz.aQute.bnd", MAVEN_ARTIFACT = "biz.aQute.bndlib";
++    private static final Pattern TOKEN = Pattern.compile("[A-Za-z0-9_.-]+");
++
++    private final Dependencies dependencies;
++    private final Pinning pinning;
++    private final String tool;
++    private final ProcessBuildStep.Terms terms;
++
++    public BndModule(Environment environment,
++                     Permits permits,
++                     String tool,
++                     Map<String, Repository> repositories,
++                     Map<String, Resolver> resolvers) {
++        dependencies = Dependencies.ofEnvironment(environment, repositories, resolvers);
++        pinning = Pinning.ofEnvironment(environment);
++        this.tool = tool;
++        terms = ProcessBuildStep.Terms.ofEnvironment(environment, "bnd").permits(permits);
++    }
++
++    @Override
++    public void accept(BuildExecutor executor, SequencedMap<String, Path> inherited) {
++        executor.addStep(REQUIRED, new Requires(tool), inherited.sequencedKeySet());
++        SequencedSet<String> resolveInputs = new LinkedHashSet<>();
++        resolveInputs.add(REQUIRED);
++        resolveInputs.addAll(inherited.sequencedKeySet());
++        executor.addModule(DEPENDENCIES, dependencies.pinning(pinning).group(tool), resolveInputs);
++        SequencedSet<String> inputs = new LinkedHashSet<>(inherited.sequencedKeySet());
++        inputs.add(DEPENDENCIES);
++        executor.addStep("bnd", new Bnd(terms, tool), inputs);
++    }
++
++    private record Requires(String tool) implements BuildStep {
++
++        @Override
++        public boolean shouldRun(SequencedMap<String, BuildStepArgument> arguments) {
++            return false;
++        }
++
++        @Override
++        public CompletionStage<BuildStepResult> apply(Executor executor,
++                                                      BuildStepContext context,
++                                                      SequencedMap<String, BuildStepArgument> arguments)
++                throws IOException {
++            SequencedProperties requires = new SequencedProperties();
++            requires.setProperty(tool + "/runtime/maven/" + MAVEN_GROUP + "/" + MAVEN_ARTIFACT + "/RELEASE", "");
++            requires.store(context.next().resolve(BuildStep.REQUIRES));
++            return CompletableFuture.completedStage(new BuildStepResult(true));
++        }
++    }
++
++    private static class Bnd extends ProcessBuildStep {
++
++        private static final long serialVersionUID = 1L;
++
++        private final String tool;
++
++        private Bnd(ProcessBuildStep.Terms terms, String tool) {
++            super("bnd", ProcessHandler.OfProcess.ofJavaMain(), terms);
++            this.tool = tool;
++        }
++
++        @Override
++        public CompletionStage<List<String>> process(Executor executor,
++                                                     BuildStepContext context,
++                                                     SequencedMap<String, BuildStepArgument> arguments,
++                                                     SequencedMap<String, SequencedMap<String, String>> properties)
++                throws IOException {
++            BuildStepArgument classes = arguments.firstEntry().getValue();
++            BuildStepArgument bound = arguments.get(INSTRUCTIONS);
++            if (bound == null || bound.removed()) {
++                throw new IllegalStateException("Bind the bnd file as @instructions/bnd.bnd=<file> in plugin-bnd.properties");
++            }
++            Path file = bound.folder().resolve("bnd.bnd");
++            if (!Files.isRegularFile(file)) {
++                throw new IllegalStateException("No bnd.bnd in the @instructions input - bind it as"
++                        + " @instructions/bnd.bnd=<file>");
++            }
++            List<String> jars = new ArrayList<>(), classPath = new ArrayList<>();
++            SequencedSet<Path> folders = new LinkedHashSet<>();
++            for (BuildStepArgument argument : arguments.values()) {
++                if (argument.removed()) {
++                    continue;
++                }
++                folders.add(argument.folder());
++                for (Path jar : Dependencies.select(argument.folder(), tool, "runtime")) {
++                    jars.add(jar.toString());
++                }
++                for (Path jar : Dependencies.select(argument.folder(), "main", "compile")) {
++                    classPath.add(jar.toString());
++                }
++            }
++            if (jars.isEmpty()) {
++                throw new IllegalStateException("No bnd jars resolved upstream of the bnd step");
++            }
++            Properties metadata = new Properties();
++            Path metadataFile = BuildStep.locate(folders, BuildStep.METADATA);
++            if (metadataFile != null) {
++                try (Reader reader = Files.newBufferedReader(metadataFile)) {
++                    metadata.load(reader);
++                }
++            }
++            Properties instructions = new Properties();
++            try (Reader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
++                instructions.load(reader);
++            }
++            metadata.stringPropertyNames().forEach(key -> instructions.setProperty("project." + key, metadata.getProperty(key)));
++            instructions.putIfAbsent("-reproducible", "true");
++            instructions.putIfAbsent("-noextraheaders", "true");
++            putIfPresent(instructions, "Bundle-Name", metadata.getProperty("name"));
++            String version = metadata.getProperty("version");
++            putIfPresent(instructions, "Bundle-Version", version == null ? null : osgi(version));
++            if (version != null) {
++                instructions.putIfAbsent("-snapshot", version.endsWith("-SNAPSHOT") ? "SNAPSHOT" : "${tstamp}");
++            }
++            putIfPresent(instructions, "Bundle-Description", metadata.getProperty("description"));
++            putIfPresent(instructions, "Bundle-Vendor", metadata.getProperty("organization.name"));
++            putIfPresent(instructions, "Bundle-DocURL", metadata.getProperty("url"));
++            putIfPresent(instructions, "Bundle-License", licenses(metadata));
++            putIfPresent(instructions, "Bundle-SCM", scm(metadata));
++            putIfPresent(instructions, "Bundle-Developers", developers(metadata));
++            Path merged = context.supplement().resolve("bnd.properties");
++            try (Writer writer = Files.newBufferedWriter(merged, StandardCharsets.UTF_8)) {
++                instructions.store(writer, null);
++            }
++            List<String> commands = new ArrayList<>(List.of(
++                    "-cp",
++                    ProcessHandler.OfProcess.driver(BndDriver.class) + File.pathSeparator
++                            + String.join(File.pathSeparator, jars),
++                    BndDriver.class.getName(),
++                    classes.folder().resolve(BuildStep.CLASSES).toString(),
++                    context.next().resolve("manifest.mf").toString(),
++                    merged.toString(),
++                    classes.folder().resolve("manifest.mf").toString()));
++            commands.addAll(classPath);
++            return CompletableFuture.completedStage(commands);
++        }
++
++        private static String osgi(String version) {
++            int dash = version.indexOf('-');
++            String base = dash < 0 ? version : version.substring(0, dash), qualifier = dash < 0 ? "" : version.substring(dash + 1);
++            List<String> segments = new ArrayList<>(List.of(base.split("\\.")));
++            if (segments.size() > 3 || !segments.stream().allMatch(segment -> segment.matches("[0-9]+"))) {
++                return version;
++            }
++            while (segments.size() < 3) {
++                segments.add("0");
++            }
++            String osgi = String.join(".", segments);
++            return qualifier.isEmpty() ? osgi : osgi + "." + qualifier.replaceAll("[^A-Za-z0-9_-]", "_");
++        }
++
++        private static void putIfPresent(Properties instructions, String key, String value) {
++            if (value != null && !value.isBlank()) {
++                instructions.putIfAbsent(key, value);
++            }
++        }
++
++        private static String quoted(String value) {
++            return TOKEN.matcher(value).matches() ? value : "\"" + value.replace("\"", "\\\"") + "\"";
++        }
++
++        private static SortedSet<String> ids(Properties metadata, String prefix) {
++            SortedSet<String> ids = new TreeSet<>();
++            for (String key : metadata.stringPropertyNames()) {
++                if (key.startsWith(prefix)) {
++                    ids.add(key.substring(prefix.length(), key.indexOf('.', prefix.length())));
++                }
++            }
++            return ids;
++        }
++
++        private static String licenses(Properties metadata) {
++            List<String> clauses = new ArrayList<>();
++            for (String id : ids(metadata, "license.")) {
++                String name = metadata.getProperty("license." + id + ".name"), url = metadata.getProperty("license." + id + ".url");
++                StringBuilder clause = new StringBuilder("\"").append(name == null ? url : name).append("\"");
++                if (url != null) {
++                    clause.append(";link=").append(quoted(url));
++                }
++                clauses.add(clause.toString());
++            }
++            return String.join(",", clauses);
++        }
++
++        private static String scm(Properties metadata) {
++            List<String> attributes = new ArrayList<>();
++            for (String[] pair : new String[][] {{"url", "url"}, {"connection", "connection"},
++                    {"developerConnection", "developer-connection"}, {"tag", "tag"}}) {
++                String value = metadata.getProperty("scm." + pair[0]);
++                if (value != null) {
++                    attributes.add(pair[1] + "=" + quoted(value));
++                }
++            }
++            return String.join(",", attributes);
++        }
++
++        private static String developers(Properties metadata) {
++            List<String> clauses = new ArrayList<>();
++            for (String id : ids(metadata, "developer.")) {
++                String developerId = metadata.getProperty("developer." + id + ".id");
++                if (developerId == null) {
++                    continue;
++                }
++                StringBuilder clause = new StringBuilder(quoted(developerId));
++                for (String key : List.of("email", "name", "organization", "organizationUrl", "roles", "timezone")) {
++                    String value = metadata.getProperty("developer." + id + "." + key);
++                    if (value != null) {
++                        clause.append(';').append(key).append('=').append(quoted(value));
++                    }
++                }
++                clauses.add(clause.toString());
++            }
++            return String.join(",", clauses);
++        }
++    }
++}
+diff --git a/plugins/bnd/module-info.java b/plugins/bnd/module-info.java
+new file mode 100644
+index 0000000..d0fc4c8
+--- /dev/null
++++ b/plugins/bnd/module-info.java
+@@ -0,0 +1,4 @@
++module bnd {
++    requires build.jenesis;
++    provides build.jenesis.BuildModuleFactory with bnd.BndFactory;
++}
+diff --git a/plugins/templating/.jenesis.skip b/plugins/templating/.jenesis.skip
+new file mode 100644
+index 0000000..e69de29
+diff --git a/plugins/templating/module-info.java b/plugins/templating/module-info.java
+new file mode 100644
+index 0000000..de654a7
+--- /dev/null
++++ b/plugins/templating/module-info.java
+@@ -0,0 +1,4 @@
++module templating {
++    requires build.jenesis;
++    provides build.jenesis.BuildModuleFactory with templating.TemplatingFactory;
++}
+diff --git a/plugins/templating/templating/TemplatingFactory.java b/plugins/templating/templating/TemplatingFactory.java
+new file mode 100644
+index 0000000..9ec2b88
+--- /dev/null
++++ b/plugins/templating/templating/TemplatingFactory.java
+@@ -0,0 +1,21 @@
++package templating;
++
++import module build.jenesis;
++import module java.base;
++
++public class TemplatingFactory implements BuildModuleFactory {
++
++    @Override
++    public BuildExecutorModule create(Environment environment,
++                                      SequencedMap<String, String> properties,
++                                      Permits permits,
++                                      String group,
++                                      Map<String, Repository> repositories,
++                                      Map<String, Resolver> resolvers) {
++        if (!properties.isEmpty()) {
++            throw new IllegalArgumentException("The templating plugin takes no values but the @templates input, not "
++                    + properties.sequencedKeySet());
++        }
++        return new TemplatingModule();
++    }
++}
+diff --git a/plugins/templating/templating/TemplatingModule.java b/plugins/templating/templating/TemplatingModule.java
+new file mode 100644
+index 0000000..5aa43f9
+--- /dev/null
++++ b/plugins/templating/templating/TemplatingModule.java
+@@ -0,0 +1,63 @@
++package templating;
++
++import module build.jenesis;
++import module java.base;
++
++public class TemplatingModule implements BuildExecutorModule {
++
++    private static final String TEMPLATES = "../inputs/templates";
++    private static final Pattern PLACEHOLDER = Pattern.compile("\\$\\{project\\.([a-zA-Z]+)}");
++
++    @Override
++    public void accept(BuildExecutor executor, SequencedMap<String, Path> inherited) {
++        executor.addStep("templating", new Filter(), inherited.sequencedKeySet());
++    }
++
++    private record Filter() implements BuildStep {
++
++        @Override
++        public CompletionStage<BuildStepResult> apply(Executor executor,
++                                                      BuildStepContext context,
++                                                      SequencedMap<String, BuildStepArgument> arguments)
++                throws IOException {
++            BuildStepArgument templates = arguments.get(TEMPLATES);
++            if (templates == null || templates.removed()) {
++                throw new IllegalStateException("Bind the folder of templates as @templates=<folder> in "
++                        + "plugin-templates.properties");
++            }
++            SequencedSet<Path> folders = new LinkedHashSet<>();
++            arguments.values().stream().filter(argument -> !argument.removed())
++                    .forEach(argument -> folders.add(argument.folder()));
++            Path metadataFile = BuildStep.locate(folders, BuildStep.METADATA);
++            if (metadataFile == null) {
++                throw new IllegalStateException("No " + BuildStep.METADATA + " among the arguments of the templating step");
++            }
++            Properties metadata = new Properties();
++            try (Reader reader = Files.newBufferedReader(metadataFile)) {
++                metadata.load(reader);
++            }
++            Path root = templates.folder(), target = context.next().resolve(BuildStep.SOURCES);
++            try (Stream<Path> files = Files.walk(root)) {
++                for (Path file : files.filter(Files::isRegularFile).sorted().toList()) {
++                    String text = Files.readString(file);
++                    Matcher matcher = PLACEHOLDER.matcher(text);
++                    StringBuilder filtered = new StringBuilder();
++                    while (matcher.find()) {
++                        String value = metadata.getProperty(matcher.group(1));
++                        if (value == null) {
++                            throw new IllegalStateException("Template " + root.relativize(file) + " names ${project."
++                                    + matcher.group(1) + "}, which the module's metadata does not hold: "
++                                    + new TreeSet<>(metadata.stringPropertyNames()));
++                        }
++                        matcher.appendReplacement(filtered, Matcher.quoteReplacement(value));
++                    }
++                    matcher.appendTail(filtered);
++                    Path written = target.resolve(root.relativize(file).toString());
++                    Files.createDirectories(written.getParent());
++                    Files.writeString(written, filtered);
++                }
++            }
++            return CompletableFuture.completedStage(new BuildStepResult(true));
++        }
++    }
++}
+diff --git a/pom.xml b/pom.xml
+index cb199e5..e0e6727 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -79,6 +79,8 @@
+     </license>
+   </licenses>
+ 
++  <!--jenesis.plugin javac maven/com.google.errorprone/error_prone_core-->
++
+   <dependencyManagement>
+     <dependencies>
+       <dependency>
+diff --git a/proto/pom.xml b/proto/pom.xml
+index fc98356..ca1df2b 100644
+--- a/proto/pom.xml
++++ b/proto/pom.xml
+@@ -41,6 +41,173 @@
+     </license>
+   </licenses>
+ 
++  <!--jenesis.pin
++  googlejavaformat/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  googlejavaformat/module/build.jenesis.plugin.googlejavaformat 0.1.0 SHA-256/bbd5b30571e15b3e8016cbecbfeeab566e84f08ac8560f88cc0603915d7138d6
++  googlejavaformat:tool/maven/com.google.errorprone/error_prone_annotations 2.47.0 SHA-256/5364bc6f22e72e98195e406a58d3ba1c09ffa11dea0729592cb870dc2de4056d
++  googlejavaformat:tool/maven/com.google.googlejavaformat/google-java-format 1.37.0 SHA-256/49874ad1d6b1006d2f8660482135609eb124888e0046c3dbfefc706a0387c700
++  googlejavaformat:tool/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  googlejavaformat:tool/maven/com.google.guava/guava 33.6.0-jre SHA-256/dc573e1fca4fd5454f4a5fd3d7da2df03002876a4175bafc14a95980dd7713b3
++  googlejavaformat:tool/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  googlejavaformat:tool/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  googlejavaformat:tool/maven/org.commonmark/commonmark 0.29.0 SHA-256/4c9b0fa481e36d7176f38e572c134656424cf9601bc190855d0f89478df901c6
++  googlejavaformat:tool/maven/org.commonmark/commonmark-ext-gfm-tables 0.29.0 SHA-256/f263d284c0795b0ddd6071d4fa969f67d460644c20828e51957ad5aec0d75612
++  googlejavaformat:tool/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/com.github.ben-manes.caffeine/caffeine 3.0.5 SHA-256/8a9b54d3506a3b92ee46b217bcee79196b21ca6d52dc2967c686a205fb2f9c15
++  javac/maven/com.github.kevinstern/software-and-algorithms 1.0 SHA-256/61ab82439cef37343b14f53154c461619375373a56b9338e895709fb54e0864c
++  javac/maven/com.google.auto.service/auto-service-annotations 1.0.1 SHA-256/c7bec54b7b5588b5967e870341091c5691181d954cf2039f1bf0a6eeb837473b
++  javac/maven/com.google.auto.value/auto-value-annotations 1.9 SHA-256/fa5469f4c44ee598a2d8f033ab0a9dcbc6498a0c5e0c998dfa0c2adf51358044
++  javac/maven/com.google.auto/auto-common 1.2.2 SHA-256/f50b1ce8a41fad31a8a819c052f8ffa362ea0a3dbe9ef8f7c7dc9a36d4738a59
++  javac/maven/com.google.errorprone/error_prone_annotation 2.50.0 SHA-256/aa9b67a3aa3418b366e26594e1ae35d100ad3369cd1010ae7d4782d984ea9aaf
++  javac/maven/com.google.errorprone/error_prone_annotations 2.50.0 SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a
++  javac/maven/com.google.errorprone/error_prone_check_api 2.50.0 SHA-256/ee935a4f42ac409fb0a471affea938c3050c6887dbaadb106868936d83d8c8f1
++  javac/maven/com.google.errorprone/error_prone_core 2.50.0 SHA-256/40a88d3ea732fac3a57ae0e2b27f1729ce76cc41857bcd63d5845e79eae5f72e
++  javac/maven/com.google.googlejavaformat/google-java-format 1.35.0 SHA-256/b2a52e363d51dd86b3b38d1a8dd51538541b42ff1048769684681c676550f043
++  javac/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  javac/maven/com.google.guava/guava 33.5.0-jre SHA-256/1e301f0c52ac248b0b14fdc3d12283c77252d4d6f48521d572e7d8c4c2cc4ac7
++  javac/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  javac/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  javac/maven/com.google.protobuf/protobuf-java 4.33.2 SHA-256/c5b582aa127fb62c5fc3077329d522dfb7930b4e9a625c08760b681b2ba5aab7
++  javac/maven/io.github.eisop/dataflow-errorprone 3.41.0-eisop1 SHA-256/10434fba4e53f55fa9c76904cde414b918932548c9dfc4e2d634ac05ff7a7d10
++  javac/maven/io.github.java-diff-utils/java-diff-utils 4.12 SHA-256/9990a2039778f6b4cc94790141c2868864eacee0620c6c459451121a901cd5b5
++  javac/maven/javax.inject/javax.inject 1 SHA-256/91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff
++  javac/maven/org.checkerframework/checker-qual 3.19.0 SHA-256/a827c49183f3a632277d27a0a4673686cb341507447b9d570261094bd748aa68
++  javac/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/org.pcollections/pcollections 4.0.1 SHA-256/1f82766d7c3221930854033bebff5073ea46b43f27326074bbe15d148c18bfb3
++  protoc/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  protoc/module/build.jenesis.plugin.protoc 0.1.0 SHA-256/ed7dfb8c3f3ec1ba8835989c7c32b122b3a832dceaf8e0bd8927fe0f9df29c6b
++  protoc:tool/maven/com.google.protobuf/protoc/exe/linux-x86_64 4.35.1 SHA-256/d2c65c3ea5eeb59427f684ed3e0a0cd458386122fc9f1b98de946a7242b53d31
++  -->
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>com.google.auto.value</groupId>
++        <artifactId>auto-value-annotations</artifactId>
++        <version>1.11.0</version>
++        <!--Checksum/SHA-256/5a055ce4255333b3346e1a8703da5bf8ff049532286fdcd31712d624abe111dd-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.code.findbugs</groupId>
++        <artifactId>jsr305</artifactId>
++        <version>3.0.2</version>
++        <!--Checksum/SHA-256/766ad2a0783f2687962c8ad74ceecc38a28b9f72a2d085ee438b7813e928d0c7-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>2.50.0</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>failureaccess</artifactId>
++        <version>1.0.3</version>
++        <!--Checksum/SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava</artifactId>
++        <version>33.7.0-jre</version>
++        <!--Checksum/SHA-256/151bb9b817284d88825a06cf858a3184097e951b064bb48bd52a7889e3960af6-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>listenablefuture</artifactId>
++        <version>9999.0-empty-to-avoid-conflict-with-guava</version>
++        <!--Checksum/SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.j2objc</groupId>
++        <artifactId>j2objc-annotations</artifactId>
++        <version>3.1</version>
++        <!--Checksum/SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.protobuf</groupId>
++        <artifactId>protobuf-java</artifactId>
++        <version>${protobufVersion}</version>
++        <!--Checksum/SHA-256/a4345ba2aa009912ff6f90467fea2d104605256b72c50840d75f13256638a472 4.35.1-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.protobuf</groupId>
++        <artifactId>protobuf-java-util</artifactId>
++        <version>${protobufVersion}</version>
++        <!--Checksum/SHA-256/ed75aaf651a243a943ae73413acf96cb4b02fdae14a11ae05c8e66a4489e23f3 4.35.1-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.testparameterinjector</groupId>
++        <artifactId>test-parameter-injector</artifactId>
++        <version>1.22</version>
++        <!--Checksum/SHA-256/ff534578f2e3dc6030d1f4a6896df3d20573644858c6ade878efb75d2a36504b-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.truth.extensions</groupId>
++        <artifactId>truth-liteproto-extension</artifactId>
++        <version>1.4.5</version>
++        <!--Checksum/SHA-256/fa2f81dafd0cb93ac2079baeed60b9608bc04ec53fd080124c3a344a2551226d-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.truth.extensions</groupId>
++        <artifactId>truth-proto-extension</artifactId>
++        <version>1.4.5</version>
++        <!--Checksum/SHA-256/95fdabf3bdf07cf4d062979e3f106bd27ce191b76df1e7439ebfe50292cef24a-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.truth</groupId>
++        <artifactId>truth</artifactId>
++        <version>1.4.5</version>
++        <!--Checksum/SHA-256/a6409e90fdd6b31f239b0c02065c43b53e1b09c72f2e08c3a86d04fe5910cf4b-->
++      </dependency>
++      <dependency>
++        <groupId>junit</groupId>
++        <artifactId>junit</artifactId>
++        <version>4.13.2</version>
++        <!--Checksum/SHA-256/8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3-->
++      </dependency>
++      <dependency>
++        <groupId>org.hamcrest</groupId>
++        <artifactId>hamcrest-core</artifactId>
++        <version>1.3</version>
++        <!--Checksum/SHA-256/66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-reflect</artifactId>
++        <version>2.2.20</version>
++        <!--Checksum/SHA-256/8209083a4a7c4e476d9842b078308fa96a96f07a6bd99f05f3586ee13289ab26-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains.kotlin</groupId>
++        <artifactId>kotlin-stdlib</artifactId>
++        <version>2.2.20</version>
++        <!--Checksum/SHA-256/8836ccffd3585fadda9901244b20d42901d2f3cd581058d8434e2ffabcf3a3e7-->
++      </dependency>
++      <dependency>
++        <groupId>org.jetbrains</groupId>
++        <artifactId>annotations</artifactId>
++        <version>13.0</version>
++        <!--Checksum/SHA-256/ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478-->
++      </dependency>
++      <dependency>
++        <groupId>org.jspecify</groupId>
++        <artifactId>jspecify</artifactId>
++        <version>1.0.1</version>
++        <!--Checksum/SHA-256/070d75f261fe4c5b8202508366715f7f2d4660f88c8ef7e6d3575e48c9683b66-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm</artifactId>
++        <version>9.8</version>
++        <!--Checksum/SHA-256/876eab6a83daecad5ca67eb9fcabb063c97b5aeb8cf1fca7a989ecde17522051-->
++      </dependency>
++      <dependency>
++        <groupId>org.yaml</groupId>
++        <artifactId>snakeyaml</artifactId>
++        <version>2.0</version>
++        <!--Checksum/SHA-256/880c9d896e4b74a06c549c15ca496450165d6909fa15d7e662bee8f6a66d7afa-->
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+   <dependencies>
+     <dependency>
+       <groupId>com.google.code.gson</groupId>
+diff --git a/proto/src/test/build.jenesis/protoc.properties b/proto/src/test/build.jenesis/protoc.properties
+new file mode 100644
+index 0000000..3b8ed0f
+--- /dev/null
++++ b/proto/src/test/build.jenesis/protoc.properties
+@@ -0,0 +1 @@
++@definitions/protoc=src/test/protobuf
+diff --git a/test-graal-native-image/build.jenesis/packaging.properties b/test-graal-native-image/build.jenesis/packaging.properties
+new file mode 100644
+index 0000000..ca0a30e
+--- /dev/null
++++ b/test-graal-native-image/build.jenesis/packaging.properties
+@@ -0,0 +1,2 @@
++# gson.isTestModule: built and tested, never installed or published
++stage=false
+diff --git a/test-graal-native-image/pom.xml b/test-graal-native-image/pom.xml
+index fed4ff4..3ede77b 100644
+--- a/test-graal-native-image/pom.xml
++++ b/test-graal-native-image/pom.xml
+@@ -43,6 +43,156 @@
+         <type>pom</type>
+         <scope>import</scope>
+       </dependency>
++      <dependency>
++        <groupId>com.google.auto.value</groupId>
++        <artifactId>auto-value-annotations</artifactId>
++        <version>1.11.0</version>
++        <!--Checksum/SHA-256/5a055ce4255333b3346e1a8703da5bf8ff049532286fdcd31712d624abe111dd-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>2.50.0</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>failureaccess</artifactId>
++        <version>1.0.2</version>
++        <!--Checksum/SHA-256/8a8f81cf9b359e3f6dfa691a1e776985c061ef2f223c9b2c80753e1b458e8064-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava</artifactId>
++        <version>33.4.3-android</version>
++        <!--Checksum/SHA-256/d09b7ac13b6bc203322b8a3da4d8e39128f5f6a22f816c01a34b93592f771b12-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>listenablefuture</artifactId>
++        <version>9999.0-empty-to-avoid-conflict-with-guava</version>
++        <!--Checksum/SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.j2objc</groupId>
++        <artifactId>j2objc-annotations</artifactId>
++        <version>3.0.0</version>
++        <!--Checksum/SHA-256/88241573467ddca44ffd4d74aa04c2bbfd11bf7c17e0c342c94c9de7a70a7c64-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.truth</groupId>
++        <artifactId>truth</artifactId>
++        <version>1.4.5</version>
++        <!--Checksum/SHA-256/a6409e90fdd6b31f239b0c02065c43b53e1b09c72f2e08c3a86d04fe5910cf4b-->
++      </dependency>
++      <dependency>
++        <groupId>junit</groupId>
++        <artifactId>junit</artifactId>
++        <version>4.13.2</version>
++        <!--Checksum/SHA-256/8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3-->
++      </dependency>
++      <dependency>
++        <groupId>org.apiguardian</groupId>
++        <artifactId>apiguardian-api</artifactId>
++        <version>1.1.2</version>
++        <!--Checksum/SHA-256/b509448ac506d607319f182537f0b35d71007582ec741832a1f111e5b5b70b38-->
++      </dependency>
++      <dependency>
++        <groupId>org.checkerframework</groupId>
++        <artifactId>checker-qual</artifactId>
++        <version>3.43.0</version>
++        <!--Checksum/SHA-256/3fbc2e98f05854c3df16df9abaa955b91b15b3ecac33623208ed6424640ef0f6-->
++      </dependency>
++      <dependency>
++        <groupId>org.hamcrest</groupId>
++        <artifactId>hamcrest-core</artifactId>
++        <version>1.3</version>
++        <!--Checksum/SHA-256/66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9-->
++      </dependency>
++      <dependency>
++        <groupId>org.jspecify</groupId>
++        <artifactId>jspecify</artifactId>
++        <version>1.0.0</version>
++        <!--Checksum/SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.jupiter</groupId>
++        <artifactId>junit-jupiter</artifactId>
++        <version>6.1.3</version>
++        <!--Checksum/SHA-256/6b0a14075c74221de53047e363860b7d19fce802bebc152df2c35c4089c6c379-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.jupiter</groupId>
++        <artifactId>junit-jupiter-api</artifactId>
++        <version>6.1.3</version>
++        <!--Checksum/SHA-256/555d6cf20fa1710884dd01b86cc5785397ba73e21ada2d4b784f5f1a14dcafc4-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.jupiter</groupId>
++        <artifactId>junit-jupiter-engine</artifactId>
++        <version>6.1.3</version>
++        <!--Checksum/SHA-256/414559e78bbfa3bdb2eab009ac3ab1e22369ac31117c270a0bd666da115c5c6c-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.jupiter</groupId>
++        <artifactId>junit-jupiter-params</artifactId>
++        <version>6.1.3</version>
++        <!--Checksum/SHA-256/05c51cedba2c06a9770707391e006cee825876937dea580b94a265ce145d4939-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.platform</groupId>
++        <artifactId>junit-platform-commons</artifactId>
++        <version>6.1.3</version>
++        <!--Checksum/SHA-256/a4774ae923c109544034aeae7c762cf017fbcdd1342403ba90e0921984b608c3-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.platform</groupId>
++        <artifactId>junit-platform-console</artifactId>
++        <version>6.1.3</version>
++        <!--Checksum/SHA-256/913554ad65b9420936822889a7268a6793a942e5f77ad8b653b8ec05068fa3be-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.platform</groupId>
++        <artifactId>junit-platform-engine</artifactId>
++        <version>6.1.3</version>
++        <!--Checksum/SHA-256/21ad7ad3a35beda16387979317be1833a72a71d812f9a66ee4b9a7bafb56334c-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.platform</groupId>
++        <artifactId>junit-platform-launcher</artifactId>
++        <version>6.1.3</version>
++        <!--Checksum/SHA-256/1dec64b1fc0b7c47a11302aa5b4d37d8160c041b396e27067709ce775601a7b6-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.platform</groupId>
++        <artifactId>junit-platform-reporting</artifactId>
++        <version>6.1.3</version>
++        <!--Checksum/SHA-256/d584a16cd87da5609af5e35428ed4f40b192681a2487dc59d02ecb62f6c417c2-->
++      </dependency>
++      <dependency>
++        <groupId>org.junit.vintage</groupId>
++        <artifactId>junit-vintage-engine</artifactId>
++        <version>6.1.3</version>
++        <!--Checksum/SHA-256/37a1e6ade75c09c5385c2830b7cda21c4b1f24a5f36ed7cd7397bc40f7dc71bc-->
++      </dependency>
++      <dependency>
++        <groupId>org.opentest4j.reporting</groupId>
++        <artifactId>open-test-reporting-tooling-spi</artifactId>
++        <version>0.2.5</version>
++        <!--Checksum/SHA-256/df237b68847637747f0bfdb88fa9cdd9c72cc85550fad0c41ddb33869a5ca516-->
++      </dependency>
++      <dependency>
++        <groupId>org.opentest4j</groupId>
++        <artifactId>opentest4j</artifactId>
++        <version>1.3.0</version>
++        <!--Checksum/SHA-256/48e2df636cab6563ced64dcdff8abb2355627cb236ef0bf37598682ddf742f1b-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm</artifactId>
++        <version>9.8</version>
++        <!--Checksum/SHA-256/876eab6a83daecad5ca67eb9fcabb063c97b5aeb8cf1fca7a989ecde17522051-->
++      </dependency>
+     </dependencies>
+   </dependencyManagement>
+ 
+@@ -160,4 +310,38 @@
+       </build>
+     </profile>
+   </profiles>
++  <!--jenesis.pin
++  googlejavaformat/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  googlejavaformat/module/build.jenesis.plugin.googlejavaformat 0.1.0 SHA-256/bbd5b30571e15b3e8016cbecbfeeab566e84f08ac8560f88cc0603915d7138d6
++  googlejavaformat:tool/maven/com.google.errorprone/error_prone_annotations 2.47.0 SHA-256/5364bc6f22e72e98195e406a58d3ba1c09ffa11dea0729592cb870dc2de4056d
++  googlejavaformat:tool/maven/com.google.googlejavaformat/google-java-format 1.37.0 SHA-256/49874ad1d6b1006d2f8660482135609eb124888e0046c3dbfefc706a0387c700
++  googlejavaformat:tool/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  googlejavaformat:tool/maven/com.google.guava/guava 33.6.0-jre SHA-256/dc573e1fca4fd5454f4a5fd3d7da2df03002876a4175bafc14a95980dd7713b3
++  googlejavaformat:tool/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  googlejavaformat:tool/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  googlejavaformat:tool/maven/org.commonmark/commonmark 0.29.0 SHA-256/4c9b0fa481e36d7176f38e572c134656424cf9601bc190855d0f89478df901c6
++  googlejavaformat:tool/maven/org.commonmark/commonmark-ext-gfm-tables 0.29.0 SHA-256/f263d284c0795b0ddd6071d4fa969f67d460644c20828e51957ad5aec0d75612
++  googlejavaformat:tool/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/com.github.ben-manes.caffeine/caffeine 3.0.5 SHA-256/8a9b54d3506a3b92ee46b217bcee79196b21ca6d52dc2967c686a205fb2f9c15
++  javac/maven/com.github.kevinstern/software-and-algorithms 1.0 SHA-256/61ab82439cef37343b14f53154c461619375373a56b9338e895709fb54e0864c
++  javac/maven/com.google.auto.service/auto-service-annotations 1.0.1 SHA-256/c7bec54b7b5588b5967e870341091c5691181d954cf2039f1bf0a6eeb837473b
++  javac/maven/com.google.auto.value/auto-value-annotations 1.9 SHA-256/fa5469f4c44ee598a2d8f033ab0a9dcbc6498a0c5e0c998dfa0c2adf51358044
++  javac/maven/com.google.auto/auto-common 1.2.2 SHA-256/f50b1ce8a41fad31a8a819c052f8ffa362ea0a3dbe9ef8f7c7dc9a36d4738a59
++  javac/maven/com.google.errorprone/error_prone_annotation 2.50.0 SHA-256/aa9b67a3aa3418b366e26594e1ae35d100ad3369cd1010ae7d4782d984ea9aaf
++  javac/maven/com.google.errorprone/error_prone_annotations 2.50.0 SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a
++  javac/maven/com.google.errorprone/error_prone_check_api 2.50.0 SHA-256/ee935a4f42ac409fb0a471affea938c3050c6887dbaadb106868936d83d8c8f1
++  javac/maven/com.google.errorprone/error_prone_core 2.50.0 SHA-256/40a88d3ea732fac3a57ae0e2b27f1729ce76cc41857bcd63d5845e79eae5f72e
++  javac/maven/com.google.googlejavaformat/google-java-format 1.35.0 SHA-256/b2a52e363d51dd86b3b38d1a8dd51538541b42ff1048769684681c676550f043
++  javac/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  javac/maven/com.google.guava/guava 33.5.0-jre SHA-256/1e301f0c52ac248b0b14fdc3d12283c77252d4d6f48521d572e7d8c4c2cc4ac7
++  javac/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  javac/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  javac/maven/com.google.protobuf/protobuf-java 4.33.2 SHA-256/c5b582aa127fb62c5fc3077329d522dfb7930b4e9a625c08760b681b2ba5aab7
++  javac/maven/io.github.eisop/dataflow-errorprone 3.41.0-eisop1 SHA-256/10434fba4e53f55fa9c76904cde414b918932548c9dfc4e2d634ac05ff7a7d10
++  javac/maven/io.github.java-diff-utils/java-diff-utils 4.12 SHA-256/9990a2039778f6b4cc94790141c2868864eacee0620c6c459451121a901cd5b5
++  javac/maven/javax.inject/javax.inject 1 SHA-256/91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff
++  javac/maven/org.checkerframework/checker-qual 3.19.0 SHA-256/a827c49183f3a632277d27a0a4673686cb341507447b9d570261094bd748aa68
++  javac/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/org.pcollections/pcollections 4.0.1 SHA-256/1f82766d7c3221930854033bebff5073ea46b43f27326074bbe15d148c18bfb3
++  -->
+ </project>
+diff --git a/test-jpms/build.jenesis/packaging.properties b/test-jpms/build.jenesis/packaging.properties
+new file mode 100644
+index 0000000..ca0a30e
+--- /dev/null
++++ b/test-jpms/build.jenesis/packaging.properties
+@@ -0,0 +1,2 @@
++# gson.isTestModule: built and tested, never installed or published
++stage=false
+diff --git a/test-jpms/pom.xml b/test-jpms/pom.xml
+index 27f89f5..8c54a93 100644
+--- a/test-jpms/pom.xml
++++ b/test-jpms/pom.xml
+@@ -32,6 +32,16 @@
+     <gson.isTestModule>true</gson.isTestModule>
+   </properties>
+ 
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>2.50.0</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a-->
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+   <dependencies>
+     <dependency>
+       <groupId>com.google.code.gson</groupId>
+@@ -50,4 +60,64 @@
+       <scope>test</scope>
+     </dependency>
+   </dependencies>
++
++  <build>
++    <plugins>
++      <!-- The tests run on the module path, which only Maven's build does: they live in a folder
++        the Jenesis build does not read as test sources -->
++      <plugin>
++        <groupId>org.codehaus.mojo</groupId>
++        <artifactId>build-helper-maven-plugin</artifactId>
++        <version>3.6.1</version>
++        <executions>
++          <execution>
++            <id>add-jpms-test-sources</id>
++            <phase>generate-test-sources</phase>
++            <goals>
++              <goal>add-test-source</goal>
++            </goals>
++            <configuration>
++              <sources>
++                <source>src/jpms-test</source>
++              </sources>
++            </configuration>
++          </execution>
++        </executions>
++      </plugin>
++    </plugins>
++  </build>
++  <!--jenesis.pin
++  googlejavaformat/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  googlejavaformat/module/build.jenesis.plugin.googlejavaformat 0.1.0 SHA-256/bbd5b30571e15b3e8016cbecbfeeab566e84f08ac8560f88cc0603915d7138d6
++  googlejavaformat:tool/maven/com.google.errorprone/error_prone_annotations 2.47.0 SHA-256/5364bc6f22e72e98195e406a58d3ba1c09ffa11dea0729592cb870dc2de4056d
++  googlejavaformat:tool/maven/com.google.googlejavaformat/google-java-format 1.37.0 SHA-256/49874ad1d6b1006d2f8660482135609eb124888e0046c3dbfefc706a0387c700
++  googlejavaformat:tool/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  googlejavaformat:tool/maven/com.google.guava/guava 33.6.0-jre SHA-256/dc573e1fca4fd5454f4a5fd3d7da2df03002876a4175bafc14a95980dd7713b3
++  googlejavaformat:tool/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  googlejavaformat:tool/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  googlejavaformat:tool/maven/org.commonmark/commonmark 0.29.0 SHA-256/4c9b0fa481e36d7176f38e572c134656424cf9601bc190855d0f89478df901c6
++  googlejavaformat:tool/maven/org.commonmark/commonmark-ext-gfm-tables 0.29.0 SHA-256/f263d284c0795b0ddd6071d4fa969f67d460644c20828e51957ad5aec0d75612
++  googlejavaformat:tool/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/com.github.ben-manes.caffeine/caffeine 3.0.5 SHA-256/8a9b54d3506a3b92ee46b217bcee79196b21ca6d52dc2967c686a205fb2f9c15
++  javac/maven/com.github.kevinstern/software-and-algorithms 1.0 SHA-256/61ab82439cef37343b14f53154c461619375373a56b9338e895709fb54e0864c
++  javac/maven/com.google.auto.service/auto-service-annotations 1.0.1 SHA-256/c7bec54b7b5588b5967e870341091c5691181d954cf2039f1bf0a6eeb837473b
++  javac/maven/com.google.auto.value/auto-value-annotations 1.9 SHA-256/fa5469f4c44ee598a2d8f033ab0a9dcbc6498a0c5e0c998dfa0c2adf51358044
++  javac/maven/com.google.auto/auto-common 1.2.2 SHA-256/f50b1ce8a41fad31a8a819c052f8ffa362ea0a3dbe9ef8f7c7dc9a36d4738a59
++  javac/maven/com.google.errorprone/error_prone_annotation 2.50.0 SHA-256/aa9b67a3aa3418b366e26594e1ae35d100ad3369cd1010ae7d4782d984ea9aaf
++  javac/maven/com.google.errorprone/error_prone_annotations 2.50.0 SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a
++  javac/maven/com.google.errorprone/error_prone_check_api 2.50.0 SHA-256/ee935a4f42ac409fb0a471affea938c3050c6887dbaadb106868936d83d8c8f1
++  javac/maven/com.google.errorprone/error_prone_core 2.50.0 SHA-256/40a88d3ea732fac3a57ae0e2b27f1729ce76cc41857bcd63d5845e79eae5f72e
++  javac/maven/com.google.googlejavaformat/google-java-format 1.35.0 SHA-256/b2a52e363d51dd86b3b38d1a8dd51538541b42ff1048769684681c676550f043
++  javac/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  javac/maven/com.google.guava/guava 33.5.0-jre SHA-256/1e301f0c52ac248b0b14fdc3d12283c77252d4d6f48521d572e7d8c4c2cc4ac7
++  javac/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  javac/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  javac/maven/com.google.protobuf/protobuf-java 4.33.2 SHA-256/c5b582aa127fb62c5fc3077329d522dfb7930b4e9a625c08760b681b2ba5aab7
++  javac/maven/io.github.eisop/dataflow-errorprone 3.41.0-eisop1 SHA-256/10434fba4e53f55fa9c76904cde414b918932548c9dfc4e2d634ac05ff7a7d10
++  javac/maven/io.github.java-diff-utils/java-diff-utils 4.12 SHA-256/9990a2039778f6b4cc94790141c2868864eacee0620c6c459451121a901cd5b5
++  javac/maven/javax.inject/javax.inject 1 SHA-256/91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff
++  javac/maven/org.checkerframework/checker-qual 3.19.0 SHA-256/a827c49183f3a632277d27a0a4673686cb341507447b9d570261094bd748aa68
++  javac/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/org.pcollections/pcollections 4.0.1 SHA-256/1f82766d7c3221930854033bebff5073ea46b43f27326074bbe15d148c18bfb3
++  -->
+ </project>
+diff --git a/test-jpms/src/test/java/com/google/gson/jpms_test/ExportedPackagesTest.java b/test-jpms/src/jpms-test/com/google/gson/jpms_test/ExportedPackagesTest.java
+similarity index 100%
+rename from test-jpms/src/test/java/com/google/gson/jpms_test/ExportedPackagesTest.java
+rename to test-jpms/src/jpms-test/com/google/gson/jpms_test/ExportedPackagesTest.java
+diff --git a/test-jpms/src/test/java/com/google/gson/jpms_test/ModuleTest.java b/test-jpms/src/jpms-test/com/google/gson/jpms_test/ModuleTest.java
+similarity index 100%
+rename from test-jpms/src/test/java/com/google/gson/jpms_test/ModuleTest.java
+rename to test-jpms/src/jpms-test/com/google/gson/jpms_test/ModuleTest.java
+diff --git a/test-jpms/src/test/java/com/google/gson/jpms_test/ReflectionInaccessibleTest.java b/test-jpms/src/jpms-test/com/google/gson/jpms_test/ReflectionInaccessibleTest.java
+similarity index 100%
+rename from test-jpms/src/test/java/com/google/gson/jpms_test/ReflectionInaccessibleTest.java
+rename to test-jpms/src/jpms-test/com/google/gson/jpms_test/ReflectionInaccessibleTest.java
+diff --git a/test-jpms/src/test/java/com/google/gson/jpms_test/opened/ReflectionTest.java b/test-jpms/src/jpms-test/com/google/gson/jpms_test/opened/ReflectionTest.java
+similarity index 100%
+rename from test-jpms/src/test/java/com/google/gson/jpms_test/opened/ReflectionTest.java
+rename to test-jpms/src/jpms-test/com/google/gson/jpms_test/opened/ReflectionTest.java
+diff --git a/test-jpms/src/test/java/module-info.java b/test-jpms/src/jpms-test/module-info.java
+similarity index 100%
+rename from test-jpms/src/test/java/module-info.java
+rename to test-jpms/src/jpms-test/module-info.java
+diff --git a/test-shrinker/build.jenesis/packaging.properties b/test-shrinker/build.jenesis/packaging.properties
+new file mode 100644
+index 0000000..ca0a30e
+--- /dev/null
++++ b/test-shrinker/build.jenesis/packaging.properties
+@@ -0,0 +1,2 @@
++# gson.isTestModule: built and tested, never installed or published
++stage=false
+diff --git a/test-shrinker/pom.xml b/test-shrinker/pom.xml
+index a81908b..f748959 100644
+--- a/test-shrinker/pom.xml
++++ b/test-shrinker/pom.xml
+@@ -40,6 +40,82 @@
+     </pluginRepository>
+   </pluginRepositories>
+ 
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>com.google.auto.value</groupId>
++        <artifactId>auto-value-annotations</artifactId>
++        <version>1.11.0</version>
++        <!--Checksum/SHA-256/5a055ce4255333b3346e1a8703da5bf8ff049532286fdcd31712d624abe111dd-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.errorprone</groupId>
++        <artifactId>error_prone_annotations</artifactId>
++        <version>2.50.0</version>
++        <!--Checksum/SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>failureaccess</artifactId>
++        <version>1.0.2</version>
++        <!--Checksum/SHA-256/8a8f81cf9b359e3f6dfa691a1e776985c061ef2f223c9b2c80753e1b458e8064-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>guava</artifactId>
++        <version>33.4.3-android</version>
++        <!--Checksum/SHA-256/d09b7ac13b6bc203322b8a3da4d8e39128f5f6a22f816c01a34b93592f771b12-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.guava</groupId>
++        <artifactId>listenablefuture</artifactId>
++        <version>9999.0-empty-to-avoid-conflict-with-guava</version>
++        <!--Checksum/SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.j2objc</groupId>
++        <artifactId>j2objc-annotations</artifactId>
++        <version>3.0.0</version>
++        <!--Checksum/SHA-256/88241573467ddca44ffd4d74aa04c2bbfd11bf7c17e0c342c94c9de7a70a7c64-->
++      </dependency>
++      <dependency>
++        <groupId>com.google.truth</groupId>
++        <artifactId>truth</artifactId>
++        <version>1.4.5</version>
++        <!--Checksum/SHA-256/a6409e90fdd6b31f239b0c02065c43b53e1b09c72f2e08c3a86d04fe5910cf4b-->
++      </dependency>
++      <dependency>
++        <groupId>junit</groupId>
++        <artifactId>junit</artifactId>
++        <version>4.13.2</version>
++        <!--Checksum/SHA-256/8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3-->
++      </dependency>
++      <dependency>
++        <groupId>org.checkerframework</groupId>
++        <artifactId>checker-qual</artifactId>
++        <version>3.43.0</version>
++        <!--Checksum/SHA-256/3fbc2e98f05854c3df16df9abaa955b91b15b3ecac33623208ed6424640ef0f6-->
++      </dependency>
++      <dependency>
++        <groupId>org.hamcrest</groupId>
++        <artifactId>hamcrest-core</artifactId>
++        <version>1.3</version>
++        <!--Checksum/SHA-256/66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9-->
++      </dependency>
++      <dependency>
++        <groupId>org.jspecify</groupId>
++        <artifactId>jspecify</artifactId>
++        <version>1.0.0</version>
++        <!--Checksum/SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab-->
++      </dependency>
++      <dependency>
++        <groupId>org.ow2.asm</groupId>
++        <artifactId>asm</artifactId>
++        <version>9.8</version>
++        <!--Checksum/SHA-256/876eab6a83daecad5ca67eb9fcabb063c97b5aeb8cf1fca7a989ecde17522051-->
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+   <dependencies>
+     <dependency>
+       <groupId>com.google.code.gson</groupId>
+@@ -243,4 +319,38 @@
+       </build>
+     </profile>
+   </profiles>
++  <!--jenesis.pin
++  googlejavaformat/module/build.jenesis 0.17.0 SHA-256/d3f83ea608953c2cb1745b75d34b66a0f0a89dc78944f11430f2cfc9bcbe6437
++  googlejavaformat/module/build.jenesis.plugin.googlejavaformat 0.1.0 SHA-256/bbd5b30571e15b3e8016cbecbfeeab566e84f08ac8560f88cc0603915d7138d6
++  googlejavaformat:tool/maven/com.google.errorprone/error_prone_annotations 2.47.0 SHA-256/5364bc6f22e72e98195e406a58d3ba1c09ffa11dea0729592cb870dc2de4056d
++  googlejavaformat:tool/maven/com.google.googlejavaformat/google-java-format 1.37.0 SHA-256/49874ad1d6b1006d2f8660482135609eb124888e0046c3dbfefc706a0387c700
++  googlejavaformat:tool/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  googlejavaformat:tool/maven/com.google.guava/guava 33.6.0-jre SHA-256/dc573e1fca4fd5454f4a5fd3d7da2df03002876a4175bafc14a95980dd7713b3
++  googlejavaformat:tool/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  googlejavaformat:tool/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  googlejavaformat:tool/maven/org.commonmark/commonmark 0.29.0 SHA-256/4c9b0fa481e36d7176f38e572c134656424cf9601bc190855d0f89478df901c6
++  googlejavaformat:tool/maven/org.commonmark/commonmark-ext-gfm-tables 0.29.0 SHA-256/f263d284c0795b0ddd6071d4fa969f67d460644c20828e51957ad5aec0d75612
++  googlejavaformat:tool/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/com.github.ben-manes.caffeine/caffeine 3.0.5 SHA-256/8a9b54d3506a3b92ee46b217bcee79196b21ca6d52dc2967c686a205fb2f9c15
++  javac/maven/com.github.kevinstern/software-and-algorithms 1.0 SHA-256/61ab82439cef37343b14f53154c461619375373a56b9338e895709fb54e0864c
++  javac/maven/com.google.auto.service/auto-service-annotations 1.0.1 SHA-256/c7bec54b7b5588b5967e870341091c5691181d954cf2039f1bf0a6eeb837473b
++  javac/maven/com.google.auto.value/auto-value-annotations 1.9 SHA-256/fa5469f4c44ee598a2d8f033ab0a9dcbc6498a0c5e0c998dfa0c2adf51358044
++  javac/maven/com.google.auto/auto-common 1.2.2 SHA-256/f50b1ce8a41fad31a8a819c052f8ffa362ea0a3dbe9ef8f7c7dc9a36d4738a59
++  javac/maven/com.google.errorprone/error_prone_annotation 2.50.0 SHA-256/aa9b67a3aa3418b366e26594e1ae35d100ad3369cd1010ae7d4782d984ea9aaf
++  javac/maven/com.google.errorprone/error_prone_annotations 2.50.0 SHA-256/4667724877f1d37a689202da191e23efa7657c62eef93ccdac406eccfe5cdd0a
++  javac/maven/com.google.errorprone/error_prone_check_api 2.50.0 SHA-256/ee935a4f42ac409fb0a471affea938c3050c6887dbaadb106868936d83d8c8f1
++  javac/maven/com.google.errorprone/error_prone_core 2.50.0 SHA-256/40a88d3ea732fac3a57ae0e2b27f1729ce76cc41857bcd63d5845e79eae5f72e
++  javac/maven/com.google.googlejavaformat/google-java-format 1.35.0 SHA-256/b2a52e363d51dd86b3b38d1a8dd51538541b42ff1048769684681c676550f043
++  javac/maven/com.google.guava/failureaccess 1.0.3 SHA-256/cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb
++  javac/maven/com.google.guava/guava 33.5.0-jre SHA-256/1e301f0c52ac248b0b14fdc3d12283c77252d4d6f48521d572e7d8c4c2cc4ac7
++  javac/maven/com.google.guava/listenablefuture 9999.0-empty-to-avoid-conflict-with-guava SHA-256/b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99
++  javac/maven/com.google.j2objc/j2objc-annotations 3.1 SHA-256/84d3a150518485f8140ea99b8a985656749629f6433c92b80c75b36aba3b099b
++  javac/maven/com.google.protobuf/protobuf-java 4.33.2 SHA-256/c5b582aa127fb62c5fc3077329d522dfb7930b4e9a625c08760b681b2ba5aab7
++  javac/maven/io.github.eisop/dataflow-errorprone 3.41.0-eisop1 SHA-256/10434fba4e53f55fa9c76904cde414b918932548c9dfc4e2d634ac05ff7a7d10
++  javac/maven/io.github.java-diff-utils/java-diff-utils 4.12 SHA-256/9990a2039778f6b4cc94790141c2868864eacee0620c6c459451121a901cd5b5
++  javac/maven/javax.inject/javax.inject 1 SHA-256/91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff
++  javac/maven/org.checkerframework/checker-qual 3.19.0 SHA-256/a827c49183f3a632277d27a0a4673686cb341507447b9d570261094bd748aa68
++  javac/maven/org.jspecify/jspecify 1.0.0 SHA-256/1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab
++  javac/maven/org.pcollections/pcollections 4.0.1 SHA-256/1f82766d7c3221930854033bebff5073ea46b43f27326074bbe15d148c18bfb3
++  -->
+ </project>

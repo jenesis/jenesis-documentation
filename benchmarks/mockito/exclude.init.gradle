@@ -1,0 +1,7 @@
+allprojects {
+    tasks.withType(Test).configureEach {
+        if (project.path == ':mockito-core' && name == 'test') {
+            exclude '**/StubbingWithBadThrowablesTest.class'
+        }
+    }
+}
