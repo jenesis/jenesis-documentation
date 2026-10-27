@@ -17,16 +17,18 @@
 # Settings, as environment variables:
 #   JENESIS_REF      the Jenesis commit, tag or branch to install (default: the one the published numbers used)
 #   ROUNDS           rounds per tool (default 3; 1 for a project whose full build takes more than five minutes)
-#   PAIRINGS         nodaemon, daemon or both: with a daemon, Gradle runs with --daemon and Jenesis under
-#                    jenesis.make.mode=daemon (default: nodaemon; Gradle projects: nodaemon daemon)
+#   PAIRINGS         nodaemon, daemon or both: with a daemon, Maven runs as the Maven Daemon, mvnd, Gradle with
+#                    --daemon and Jenesis under jenesis.make.mode=daemon (default: both)
 #   MAVEN_MIRROR     a Maven Central mirror for all three tools, where repo.maven.apache.org is rate-limited
 #   BENCHMARK_FOLDER the folder to work in (default: a new temporary folder), which keeps logs/ and results.tsv
 #
-# Downloaded dependencies stay in ~/.m2, ~/.gradle and ~/.jenesis, as they would on a developer's machine.
+# Downloaded dependencies stay in ~/.m2, ~/.gradle and ~/.jenesis, as they would on a developer's machine. Jenesis
+# runs with -Djenesis.make.global= and so reads no ~/.jenesis/jenesis.properties: the settings of the machine it runs
+# on cannot replace what the migration declares, such as the repositories a project resolves from.
 
 set -uo pipefail
 
-JENESIS_REF="${JENESIS_REF:-84f478894cd39a8c89d56fe0f77f44fec14d8754}"
+JENESIS_REF="${JENESIS_REF:-f5aadaf7f2291e45f96341e61409e8b1c6e10454}"
 BENCHMARKS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NAME="$(basename "$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)")"
 PATCH="$BENCHMARKS/$NAME/migration.patch"
@@ -51,9 +53,11 @@ case "$(locale charmap 2>/dev/null)" in UTF-8) ;; *) export LANG=C.UTF-8 ;; esac
 # Maven and Gradle follow JAVA_HOME, so all three tools run on the java the PATH names.
 export JAVA_HOME="$(java -XshowSettings:properties -version 2>&1 | sed -n 's/^ *java\.home = //p')"
 
-if [ -z "${PAIRINGS:-}" ]; then
-    if [ "$OLD" = gradle ]; then PAIRINGS="nodaemon daemon"; else PAIRINGS=nodaemon; fi
-fi
+PAIRINGS="${PAIRINGS:-nodaemon daemon}"
+case " $PAIRINGS " in
+    *" daemon "*) [ "$OLD" = maven ] && ! command -v mvnd >/dev/null \
+        && die "needs the Maven Daemon as mvnd for the daemon pairing, or PAIRINGS=nodaemon" ;;
+esac
 ROUNDS="${ROUNDS:-3}"
 WORK="${BENCHMARK_FOLDER:-$(mktemp -d "${TMPDIR:-/tmp}/jenesis-benchmark-$NAME.XXXXXX")}"
 PROJECT="$WORK/$NAME" ORIGINAL="$WORK/$NAME-$OLD" LOGS="$WORK/logs" RESULTS="$WORK/results.tsv"
@@ -88,6 +92,9 @@ def redirect = { RepositoryHandler repositories ->
 }
 def prepend = { RepositoryHandler repositories ->
     if (mirror && !repositories.findByName('benchmarkMirror')) {
+        if (repositories.isEmpty()) {
+            repositories.gradlePluginPortal()
+        }
         def first = repositories.maven { name = 'benchmarkMirror'; url = mirror }
         repositories.remove(first)
         repositories.addFirst(first)
@@ -105,14 +112,14 @@ settingsEvaluated { settings ->
         settings.buildCache.remote.enabled = false
     }
 }
-allprojects {
-    redirect(buildscript.repositories)
-    redirect(repositories)
+gradle.lifecycle.beforeProject { project ->
+    redirect(project.buildscript.repositories)
+    redirect(project.repositories)
 }
 EOF
 
 mvn() {
-    command mvn "${MAVEN_ARGS[@]}" "$@"
+    command "$MAVEN_COMMAND" "${MAVEN_ARGS[@]}" "$@"
 }
 
 gradlew() {
@@ -161,6 +168,18 @@ git apply --index "$PATCH" || die "the migration patch does not apply to $COMMIT
 git -c user.name=benchmark -c user.email=benchmark@example.invalid commit -q -m "Build with Jenesis"
 git worktree add -q --detach "$ORIGINAL" HEAD
 
+# A migration naming its own Maven remotes outranks the variable, so the mirror takes Central's place in that list,
+# handed to Jenesis on the command line, which outranks the project's file.
+JENESIS_REMOTES=
+if [ -n "${MAVEN_MIRROR:-}" ] && [ -f jenesis.properties ]; then
+    remotes="$(sed -n 's/^jenesis\.maven\.uri *= *//p' jenesis.properties)"
+    if [ -n "$remotes" ]; then
+        remotes="${remotes//https:\/\/repo.maven.apache.org\/maven2\//$MAVEN_MIRROR}"
+        remotes="${remotes//https:\/\/repo1.maven.org\/maven2\//$MAVEN_MIRROR}"
+        JENESIS_REMOTES="-Djenesis.maven.uri=${remotes// /}"
+    fi
+fi
+
 say "Installing Jenesis at $JENESIS_REF"
 curl -fsSL https://get.jenesis.build | JENESIS_MODE=vendor JENESIS_TARGET="$PROJECT" bash -s -- "$JENESIS_REF" \
     || die "cannot install Jenesis at $JENESIS_REF"
@@ -168,8 +187,9 @@ curl -fsSL https://get.jenesis.build | JENESIS_MODE=vendor JENESIS_TARGET="$PROJ
 printf 'pairing\ttool\tmeasurement\tround\tseconds\texit\n' >"$RESULTS"
 for pairing in $PAIRINGS; do
     case "$pairing" in
-        nodaemon) JENESIS_MODE="" GRADLE_MODE=--no-daemon ;;
-        daemon) JENESIS_MODE=-Djenesis.make.mode=daemon GRADLE_MODE=--daemon ;;
+        nodaemon) JENESIS_MODE="-Djenesis.make.global= $JENESIS_REMOTES" GRADLE_MODE=--no-daemon MAVEN_COMMAND=mvn ;;
+        daemon) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=daemon $JENESIS_REMOTES" GRADLE_MODE=--daemon \
+            MAVEN_COMMAND=mvnd ;;
         *) die "PAIRINGS takes nodaemon and daemon, not $pairing" ;;
     esac
 
@@ -181,7 +201,7 @@ for pairing in $PAIRINGS; do
         rm -rf target
         measure "$pairing" jenesis full "$round" jenesis
         measure "$pairing" jenesis again "$round" jenesis
-        edit "j${NONCE}${pairing}${round}"
+        edit "j${NONCE}${pairing}${round}" || die "the edit did not apply"
         measure "$pairing" jenesis edit "$round" jenesis
         git checkout -q -- "$EDITED"
     done
@@ -194,12 +214,13 @@ for pairing in $PAIRINGS; do
     for round in $(seq "$ROUNDS"); do
         measure "$pairing" "$OLD" full "$round" old full
         measure "$pairing" "$OLD" again "$round" old again
-        edit "o${NONCE}${pairing}${round}"
+        edit "o${NONCE}${pairing}${round}" || die "the edit did not apply"
         measure "$pairing" "$OLD" edit "$round" old again
         git checkout -q -- "$EDITED"
         old again >"$LOGS/$pairing-$OLD-restore-$round.log" 2>&1
     done
     [ "$OLD" = gradle ] && ./gradlew --stop >/dev/null 2>&1
+    [ "$OLD" = maven ] && [ "$pairing" = daemon ] && mvnd --stop >/dev/null 2>&1
 done
 
 cd "$WORK" || exit 2
