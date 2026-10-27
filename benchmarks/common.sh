@@ -78,7 +78,8 @@ EOF
     MAVEN_ARGS=(-s "$WORK/settings.xml")
     export MAVEN_REPOSITORY_URI="$MAVEN_MIRROR"
 fi
-# Neither build reads a remote build cache, and Gradle reads the mirror where one is named.
+# Neither build reads a remote build cache, and Gradle reads the mirror where one is named: in place of Central, and
+# ahead of every repository list a build declares, as the Plugin Portal redirects to Central what it holds there.
 cat >"$WORK/benchmark.init.gradle" <<EOF
 def mirror = '${MAVEN_MIRROR:-}'
 def redirect = { RepositoryHandler repositories ->
@@ -91,10 +92,7 @@ def redirect = { RepositoryHandler repositories ->
     }
 }
 def prepend = { RepositoryHandler repositories ->
-    if (mirror && !repositories.findByName('benchmarkMirror')) {
-        if (repositories.isEmpty()) {
-            repositories.gradlePluginPortal()
-        }
+    if (mirror && !repositories.isEmpty() && !repositories.findByName('benchmarkMirror')) {
         def first = repositories.maven { name = 'benchmarkMirror'; url = mirror }
         repositories.remove(first)
         repositories.addFirst(first)
@@ -102,12 +100,16 @@ def prepend = { RepositoryHandler repositories ->
 }
 beforeSettings { settings ->
     redirect(settings.pluginManagement.repositories)
+    if (mirror && settings.pluginManagement.repositories.isEmpty()) {
+        settings.pluginManagement.repositories.gradlePluginPortal()
+    }
     prepend(settings.pluginManagement.repositories)
     redirect(settings.dependencyResolutionManagement.repositories)
     redirect(settings.buildscript.repositories)
 }
 settingsEvaluated { settings ->
     redirect(settings.dependencyResolutionManagement.repositories)
+    prepend(settings.dependencyResolutionManagement.repositories)
     if (settings.buildCache.remote != null) {
         settings.buildCache.remote.enabled = false
     }
@@ -115,6 +117,9 @@ settingsEvaluated { settings ->
 gradle.lifecycle.beforeProject { project ->
     redirect(project.buildscript.repositories)
     redirect(project.repositories)
+}
+gradle.lifecycle.afterProject { project ->
+    prepend(project.repositories)
 }
 EOF
 
