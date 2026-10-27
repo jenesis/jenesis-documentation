@@ -53382,3 +53382,65 @@ index 0000000..3aa56ce
 +scm.tag=HEAD
 +issueManagement.system=GitHub
 +issueManagement.url=https://github.com/assertj/assertj/issues
+diff --git a/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/assertj/tests/core/api/Assertions_assertThatNoException_Test.java b/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/assertj/tests/core/api/Assertions_assertThatNoException_Test.java
+index bc75948..491bd98 100644
+--- a/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/assertj/tests/core/api/Assertions_assertThatNoException_Test.java
++++ b/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/assertj/tests/core/api/Assertions_assertThatNoException_Test.java
+@@ -60,8 +60,8 @@ class Assertions_assertThatNoException_Test {
+     // WHEN
+     var assertionError = expectAssertionError(() -> assertThatNoException().isThrownBy(boom));
+     // THEN
+-    then(assertionError).hasMessageContainingAll("java.lang.Exception: boom",
+-                                                 "at org.assertj.tests.core/org.assertj.tests.core.api.Assertions_assertThatNoException_Test.should_fail_if_exception_is_thrown_and_error_message_contains_stacktrace");
++    then(assertionError).hasMessageContaining("java.lang.Exception: boom")
++                        .hasMessageFindingMatch("at org\\.assertj\\.tests\\.core(@[^/]+)?/org\\.assertj\\.tests\\.core\\.api\\.Assertions_assertThatNoException_Test\\.should_fail_if_exception_is_thrown_and_error_message_contains_stacktrace");
+   }
+ 
+ }
+diff --git a/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/assertj/tests/core/presentation/StandardRepresentation_throwable_format_Test.java b/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/assertj/tests/core/presentation/StandardRepresentation_throwable_format_Test.java
+index 5f1b335..09b161e 100644
+--- a/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/assertj/tests/core/presentation/StandardRepresentation_throwable_format_Test.java
++++ b/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/assertj/tests/core/presentation/StandardRepresentation_throwable_format_Test.java
+@@ -15,7 +15,6 @@
+  */
+ package org.assertj.tests.core.presentation;
+ 
+-import static java.lang.String.format;
+ import static org.assertj.core.api.Assertions.catchThrowable;
+ import static org.assertj.core.api.BDDAssertions.then;
+ import static org.mockito.Mockito.mock;
+@@ -65,8 +64,8 @@ class StandardRepresentation_throwable_format_Test {
+     String toString = REPRESENTATION.toStringOf(catchThrowable(Test1::boom));
+     // THEN
+     then(toString.split("\\R")).satisfiesExactly(s -> then(s).isEqualTo("java.lang.RuntimeException"),
+-                                                 s -> then(s).startsWith("\tat org.assertj.tests.core/org.assertj.tests.core.presentation.StandardRepresentation_throwable_format_Test$Test1$Test2.boom2(StandardRepresentation_throwable_format_Test.java:"),
+-                                                 s -> then(s).startsWith("\tat org.assertj.tests.core/org.assertj.tests.core.presentation.StandardRepresentation_throwable_format_Test$Test1.boom(StandardRepresentation_throwable_format_Test.java:"),
++                                                 s -> then(s).containsPattern("^\tat org\\.assertj\\.tests\\.core(@[^/]+)?/org\\.assertj\\.tests\\.core\\.presentation\\.StandardRepresentation_throwable_format_Test\\$Test1\\$Test2\\.boom2\\(StandardRepresentation_throwable_format_Test\\.java:"),
++                                                 s -> then(s).containsPattern("^\tat org\\.assertj\\.tests\\.core(@[^/]+)?/org\\.assertj\\.tests\\.core\\.presentation\\.StandardRepresentation_throwable_format_Test\\$Test1\\.boom\\(StandardRepresentation_throwable_format_Test\\.java:"),
+                                                  s -> then(s).contains("at",
+                                                                        "org.assertj.core.api.ThrowableAssert.catchThrowable(ThrowableAssert.java:"),
+                                                  s -> then(s).endsWith("remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)"));
+@@ -81,8 +80,8 @@ class StandardRepresentation_throwable_format_Test {
+     // WHEN
+     String toString = REPRESENTATION.toStringOf(catchThrowable(Test1::boom));
+     // THEN
+-    then(toString).startsWith(format("java.lang.RuntimeException%n"
+-                                     + "\tat org.assertj.tests.core/org.assertj.tests.core.presentation.StandardRepresentation_throwable_format_Test$Test1$Test2.boom2(StandardRepresentation_throwable_format_Test.java"))
++    then(toString).containsPattern("^java\\.lang\\.RuntimeException\\R"
++                                   + "\tat org\\.assertj\\.tests\\.core(@[^/]+)?/org\\.assertj\\.tests\\.core\\.presentation\\.StandardRepresentation_throwable_format_Test\\$Test1\\$Test2\\.boom2\\(StandardRepresentation_throwable_format_Test\\.java")
+                   .doesNotContain("remaining lines not displayed");
+   }
+ 
+diff --git a/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/example/test/Throwables_getFirstStackTraceElementFromTest_Test.java b/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/example/test/Throwables_getFirstStackTraceElementFromTest_Test.java
+index 26e7fcd..741d12d 100644
+--- a/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/example/test/Throwables_getFirstStackTraceElementFromTest_Test.java
++++ b/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/example/test/Throwables_getFirstStackTraceElementFromTest_Test.java
+@@ -36,7 +36,7 @@ class Throwables_getFirstStackTraceElementFromTest_Test {
+     // WHEN
+     StackTraceElement firstStackTraceElementFromTest = getFirstStackTraceElementFromTest(stackTraceElements);
+     // THEN
+-    then(firstStackTraceElementFromTest).hasToString("org.assertj.tests.core/org.example.test.Throwables_getFirstStackTraceElementFromTest_Test.should_return_first_stack_trace_element_from_test(Throwables_getFirstStackTraceElementFromTest_Test.java:35)");
++    then(firstStackTraceElementFromTest.toString()).matches("org\\.assertj\\.tests\\.core(@[^/]+)?/org\\.example\\.test\\.Throwables_getFirstStackTraceElementFromTest_Test\\.should_return_first_stack_trace_element_from_test\\(Throwables_getFirstStackTraceElementFromTest_Test\\.java:35\\)");
+   }
+ 
+   @ParameterizedTest
