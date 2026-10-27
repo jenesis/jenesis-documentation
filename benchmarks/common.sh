@@ -91,6 +91,11 @@ def redirect = { RepositoryHandler repositories ->
         }
     }
 }
+def declare = { RepositoryHandler repositories ->
+    if (mirror && !repositories.findByName('benchmarkMirror')) {
+        repositories.maven { name = 'benchmarkMirror'; url = mirror }
+    }
+}
 def prepend = { RepositoryHandler repositories ->
     if (mirror && !repositories.isEmpty() && !repositories.findByName('benchmarkMirror')) {
         def first = repositories.maven { name = 'benchmarkMirror'; url = mirror }
@@ -106,6 +111,7 @@ beforeSettings { settings ->
     prepend(settings.pluginManagement.repositories)
     redirect(settings.dependencyResolutionManagement.repositories)
     redirect(settings.buildscript.repositories)
+    declare(settings.buildscript.repositories)
 }
 settingsEvaluated { settings ->
     redirect(settings.dependencyResolutionManagement.repositories)
@@ -116,6 +122,7 @@ settingsEvaluated { settings ->
 }
 gradle.lifecycle.beforeProject { project ->
     redirect(project.buildscript.repositories)
+    declare(project.buildscript.repositories)
     redirect(project.repositories)
 }
 gradle.lifecycle.afterProject { project ->
