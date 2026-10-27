@@ -12,7 +12,9 @@
 # The project is cloned into a temporary folder, the migration patch applied and committed, and Jenesis installed
 # into it from JENESIS_REF; the original build runs in a worktree of the same commit, so neither tool reads the
 # other's output. Each tool gets one unmeasured warm-up, then ROUNDS rounds of a full build from scratch, the same
-# build again with nothing changed, and a build after the edit, which is reverted afterwards.
+# build again with nothing changed, and a build after the edit, which is reverted afterwards. A round in which a build
+# fails, as a project's own test can race, is run once more from scratch, and a second failure ends the run; the
+# failed round stays in results.tsv and logs/, marked as discarded, and no median counts it.
 #
 # Settings, as environment variables:
 #   JENESIS_REF      the Jenesis commit, tag or branch to install (default: the one the published numbers used)
@@ -168,7 +170,52 @@ measure() {
     printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$pairing" "$tool" "$measurement" "$round" "$seconds" "$code" >>"$RESULTS"
     printf '%-9s %-8s %-8s %s  %6s s%s\n' "$pairing" "$tool" "$measurement" "$round" "$seconds" \
         "$([ "$code" -eq 0 ] || echo "  FAILED, see $log")"
-    [ "$code" -eq 0 ] || die "the $measurement build failed: tail $log"
+    return "$code"
+}
+
+# discard <pairing> <tool> <round>: marks the rows and logs of a failed round, which the medians leave out.
+discard() {
+    awk -F'\t' -v OFS='\t' -v p="$1" -v t="$2" -v r="$3" '$1 == p && $2 == t && $4 == r { $4 = r "-discarded" } 1' \
+        "$RESULTS" >"$RESULTS.tmp" && mv "$RESULTS.tmp" "$RESULTS"
+    local log
+    for log in "$LOGS/$1-$2-"*"-$3.log"; do
+        [ -e "$log" ] && mv "$log" "${log%.log}-discarded.log"
+    done
+}
+
+# jenesis_round and old_round <pairing> <round> <attempt>: a full build, the same build again and one after the edit.
+jenesis_round() {
+    rm -rf target
+    measure "$1" jenesis full "$2" jenesis \
+        && measure "$1" jenesis again "$2" jenesis \
+        && { edit "j${NONCE}$1$2$3" || die "the edit did not apply"; } \
+        && measure "$1" jenesis edit "$2" jenesis
+    local code=$?
+    git checkout -q -- "$EDITED"
+    return "$code"
+}
+
+old_round() {
+    measure "$1" "$OLD" full "$2" old full \
+        && measure "$1" "$OLD" again "$2" old again \
+        && { edit "o${NONCE}$1$2$3" || die "the edit did not apply"; } \
+        && measure "$1" "$OLD" edit "$2" old again
+    local code=$?
+    git checkout -q -- "$EDITED"
+    old again >"$LOGS/$1-$OLD-restore-$2.log" 2>&1
+    return "$code"
+}
+
+# rounds <tool> <round function>: a round whose build fails, as a project's own test can race, runs once more.
+rounds() {
+    local round
+    for round in $(seq "$ROUNDS"); do
+        if ! "$2" "$pairing" "$round" a; then
+            discard "$pairing" "$1" "$round"
+            say "$1 ($pairing): round $round failed, so it runs once more"
+            "$2" "$pairing" "$round" b || die "round $round of $1 failed twice: see $LOGS"
+        fi
+    done
 }
 
 say "Cloning $UPSTREAM at $COMMIT into $PROJECT"
@@ -208,29 +255,15 @@ for pairing in $PAIRINGS; do
     say "Jenesis ($pairing)"
     cd "$PROJECT" || exit 2
     rm -rf target
-    measure "$pairing" jenesis warmup 0 jenesis
-    for round in $(seq "$ROUNDS"); do
-        rm -rf target
-        measure "$pairing" jenesis full "$round" jenesis
-        measure "$pairing" jenesis again "$round" jenesis
-        edit "j${NONCE}${pairing}${round}" || die "the edit did not apply"
-        measure "$pairing" jenesis edit "$round" jenesis
-        git checkout -q -- "$EDITED"
-    done
+    measure "$pairing" jenesis warmup 0 jenesis || die "the warmup build failed: see $LOGS"
+    rounds jenesis jenesis_round
     [ "$pairing" = daemon ] && java -Djenesis.make.mode=daemon build/jenesis/Make.java --stop >/dev/null 2>&1
     rm -rf target
 
     say "$OLD ($pairing)"
     cd "$ORIGINAL" || exit 2
-    measure "$pairing" "$OLD" warmup 0 old full
-    for round in $(seq "$ROUNDS"); do
-        measure "$pairing" "$OLD" full "$round" old full
-        measure "$pairing" "$OLD" again "$round" old again
-        edit "o${NONCE}${pairing}${round}" || die "the edit did not apply"
-        measure "$pairing" "$OLD" edit "$round" old again
-        git checkout -q -- "$EDITED"
-        old again >"$LOGS/$pairing-$OLD-restore-$round.log" 2>&1
-    done
+    measure "$pairing" "$OLD" warmup 0 old full || die "the warmup build failed: see $LOGS"
+    rounds "$OLD" old_round
     [ "$OLD" = gradle ] && ./gradlew --stop >/dev/null 2>&1
     [ "$OLD" = maven ] && [ "$pairing" = daemon ] && mvnd --stop >/dev/null 2>&1
 done
@@ -240,7 +273,7 @@ git -C "$PROJECT" worktree remove --force "$ORIGINAL"
 rm -rf "${PROJECT:?}"
 
 say "Medians of $ROUNDS round(s), in seconds"
-awk -F'\t' 'NR > 1 && $3 != "warmup" { v[$1 "\t" $2 "\t" $3] = v[$1 "\t" $2 "\t" $3] " " $5 }
+awk -F'\t' 'NR > 1 && $3 != "warmup" && $6 == 0 && $4 !~ /discarded/ { v[$1 "\t" $2 "\t" $3] = v[$1 "\t" $2 "\t" $3] " " $5 }
     END {
         printf "%-9s %-8s %8s %8s %8s\n", "pairing", "tool", "full", "again", "edit"
         for (key in v) { split(key, k, "\t"); seen[k[1] "\t" k[2]] = 1 }
