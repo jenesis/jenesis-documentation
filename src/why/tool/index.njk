@@ -147,7 +147,10 @@ module demo.app {
         migration leaves out. <code>mvnd</code> builds AssertJ only once its Spring Boot tests declare
         <code>assertj-core</code>, which its parallel reactor otherwise starts too early. Each migration's patch and
         the script that measured it are <a class="lp-link" href="https://github.com/jenesis/jenesis-documentation/tree/main/benchmarks">on GitHub</a>,
-        to run again on a machine of your own.</p>
+        to run again on a machine of your own. Measuring builds this way is imperfect - one machine, a few runs and
+        builds an agent moved - but the figures still show the general tendency: Jenesis was at least as fast as the
+        original build in every case, from about 58,000 lines of Java with no dependencies, against about 160,000 for
+        Maven 3.9's core and resolver before any plugin and over a million for Gradle.</p>
     </div>
   </div>
 </section>
