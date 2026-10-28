@@ -217,6 +217,32 @@ trained again; the folder may also be deleted by hand at any time. `help`, `skil
 the cache does not, so it stays ahead in a tight edit-build loop on a large project; where builds are frequent
 and small, or a machine builds many projects now and then, the cache is the better trade.
 
+On a CI server, where every run starts on a fresh machine and nothing lives on to be reused, the cache is the
+mode to choose: the server's own cache keeps `.jenesis/` between runs, and every run after the first starts
+from a trained engine and trained tools. A tool's cache names its jars by path, size and modification time, so
+the local repositories it resolved them into are kept beside it - `~/.jenesis` and, where the build reads
+Maven's, `~/.m2/repository` - and the server's cache has to restore files where and as it saved them, as
+`actions/cache` on GitHub Actions does. The engine starts from its cache only when it runs compiled, so the job
+compiles it once and runs it from `.jenesis/classes`:
+
+```yaml
+- uses: actions/cache@v4
+  with:
+    path: |
+      .jenesis
+      ~/.jenesis
+      ~/.m2/repository
+    key: jenesis-${{ runner.os }}-${{ github.sha }}
+    restore-keys: jenesis-${{ runner.os }}-
+- run: java build/jenesis/Make.java help
+- run: java -Djenesis.make.mode=aot -cp .jenesis/classes build.jenesis.Make
+```
+
+Each run saves what it trained under a key of its own and restores the latest of the ones before; a changed
+engine or another JDK clears the folder, so a restored cache never serves a build it was not trained for. The
+engine's cache holds what its JVM loads before the build's own code runs, so a plugin's code, loaded into that
+JVM later, is not in it, while every tool a plugin starts in a JVM of its own gets a cache of its own.
+
 | Property | Default | Effect |
 | --- | --- | --- |
 | `jenesis.aot.folder` | `.jenesis/aot` | The folder of every cache, the engine's and the tools', relative to the project root. A project's own file names only a location inside the project. |
