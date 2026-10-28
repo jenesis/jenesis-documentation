@@ -134,7 +134,9 @@ module demo.app {
         median of three runs, except Guava's, whose builds take more than five minutes and ran once. Without a
         daemon, Jenesis ran under <code>jenesis.make.mode=compiled</code>, Maven as plain <code>mvn</code> and Gradle with <code>--no-daemon</code>; with one, Jenesis under
         <code>jenesis.make.mode=daemon</code>, Maven as <code>mvnd</code> and Gradle with <code>--daemon</code>,
-        each warmed up by a first build. Runs of one build differed by about 5&nbsp;%, so a saving within that
+        each warmed up by a first build. From an ahead-of-time cache, Jenesis ran under
+        <code>jenesis.make.mode=aot</code> from its compiled classes, with every cache trained by that first build,
+        as a CI server restores them, and is set beside the original build without a daemon. Runs of one build differed by about 5&nbsp;%, so a saving within that
         spread is set in grey. After an edit, each build compiled the edited module again and ran the tests of every
         module that depends on it; each edit was a new one, so no build cache held its result. Every build stayed on
         <code>pom.xml</code>, and the two builds ran the same tests, except those Jenesis leaves to the old build:
