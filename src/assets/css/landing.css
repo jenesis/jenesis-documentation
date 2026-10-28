@@ -546,7 +546,13 @@
 .lp-results__method { font-size: 0.8rem; color: var(--lp-muted); }
 .lp .lp-results__title { font-size: clamp(1.4rem, 2.2vw, 1.75rem); margin: 0 0 0.25rem; scroll-margin-top: 6rem; }
 .lp-results .lp-tabs { margin-top: 1rem; }
-.lp-results .lp-tabs__panel { padding: 0; }
-.lp-results .lp-matrix { border: 0; border-radius: 0; }
+.lp-results .lp-tabs__panel { padding: 0; overflow-x: auto; }
+.lp-results .lp-matrix { border: 0; border-radius: 0; table-layout: fixed; min-width: 50rem; }
+.lp-results .lp-matrix, .lp-results .lp-matrix[class] { display: table; }
+.lp-results__project { width: 18%; }
+.lp-results__tool { width: 10%; }
+.lp-results__agent { width: 11%; }
+.lp-results__full, .lp-results__edit { width: 22%; }
+.lp-results__again { width: 17%; }
 .lp-results .lp-matrix td { white-space: nowrap; }
 @media (max-width: 860px) { .lp-results { margin-top: 0; } }
