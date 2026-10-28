@@ -21,8 +21,10 @@ of:
 - the build after one method body in a main source file was edited, a module others depend on. Each edit names a
   variable no earlier build saw, so no build cache holds its result, and it is reverted afterwards.
 
-Each tool runs twice over, without a daemon and with one: Maven as the Maven Daemon, `mvnd`, Gradle with `--daemon`
-and Jenesis under `jenesis.make.mode=daemon`. The warm-up starts the daemons, so every measured build of that pairing
+Each tool runs twice over, without a daemon and with one. Without, Maven runs as `mvn`, Gradle with `--no-daemon`
+and Jenesis under `jenesis.make.mode=compiled`; with one, Maven as the Maven Daemon, `mvnd`, Gradle with `--daemon`
+and Jenesis under `jenesis.make.mode=daemon`. Both modes are named, so neither pairing relies on what the installed
+Jenesis does by default. The warm-up starts the daemons, so every measured build of that pairing
 runs against a warm one, and they are stopped once it is done. `mvnd` builds as it does by default, the modules of a
 project side by side.
 
@@ -51,8 +53,8 @@ The numbers say most where nothing else runs on the machine. The published ones 
 | Variable | Default | Effect |
 |---|---|---|
 | `JENESIS_REF` | the commit the published numbers used | the Jenesis commit, tag or branch to install |
-| `ROUNDS` | 3; 1 for Guava | rounds per tool |
-| `PAIRINGS` | `nodaemon daemon` | `daemon` runs Maven as `mvnd`, Gradle with `--daemon` and Jenesis under `jenesis.make.mode=daemon` |
+| `ROUNDS` | 3 | rounds per tool |
+| `PAIRINGS` | `nodaemon daemon` | `nodaemon` runs Maven as `mvn`, Gradle with `--no-daemon` and Jenesis under `jenesis.make.mode=compiled`; `daemon` runs Maven as `mvnd`, Gradle with `--daemon` and Jenesis under `jenesis.make.mode=daemon` |
 | `MAVEN_MIRROR` | none | a Maven Central mirror for all three tools, where repo.maven.apache.org is rate-limited |
 | `BENCHMARK_FOLDER` | a new temporary folder | where to clone, log and record |
 

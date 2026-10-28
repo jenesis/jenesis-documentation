@@ -18,9 +18,10 @@
 #
 # Settings, as environment variables:
 #   JENESIS_REF      the Jenesis commit, tag or branch to install (default: the one the published numbers used)
-#   ROUNDS           rounds per tool (default 3; 1 for a project whose full build takes more than five minutes)
-#   PAIRINGS         nodaemon, daemon or both: with a daemon, Maven runs as the Maven Daemon, mvnd, Gradle with
-#                    --daemon and Jenesis under jenesis.make.mode=daemon (default: both)
+#   ROUNDS           rounds per tool (default 3)
+#   PAIRINGS         nodaemon, daemon or both: without a daemon, Maven runs as mvn, Gradle with --no-daemon and
+#                    Jenesis under jenesis.make.mode=compiled; with one, Maven as the Maven Daemon, mvnd, Gradle
+#                    with --daemon and Jenesis under jenesis.make.mode=daemon (default: both)
 #   MAVEN_MIRROR     a Maven Central mirror for all three tools, where repo.maven.apache.org is rate-limited
 #   BENCHMARK_FOLDER the folder to work in (default: a new temporary folder), which keeps logs/ and results.tsv
 #
@@ -246,7 +247,8 @@ curl -fsSL https://get.jenesis.build | JENESIS_MODE=vendor JENESIS_TARGET="$PROJ
 printf 'pairing\ttool\tmeasurement\tround\tseconds\texit\n' >"$RESULTS"
 for pairing in $PAIRINGS; do
     case "$pairing" in
-        nodaemon) JENESIS_MODE="-Djenesis.make.global= $JENESIS_REMOTES" GRADLE_MODE=--no-daemon MAVEN_COMMAND=mvn ;;
+        nodaemon) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=compiled $JENESIS_REMOTES" \
+            GRADLE_MODE=--no-daemon MAVEN_COMMAND=mvn ;;
         daemon) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=daemon $JENESIS_REMOTES" GRADLE_MODE=--daemon \
             MAVEN_COMMAND=mvnd ;;
         *) die "PAIRINGS takes nodaemon and daemon, not $pairing" ;;

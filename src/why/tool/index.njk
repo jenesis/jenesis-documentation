@@ -49,9 +49,16 @@ eleventyExcludeFromCollections: true
       </ul>
     </div>
 
-    <figure class="lp-terminal" aria-label="A Jenesis project and its build command">
-      <div class="lp-terminal__bar" aria-hidden="true"><span></span><span></span><span></span></div>
-      <pre><code><span class="lp-prompt">$</span> curl -fsSL https://get.jenesis.build | bash
+    <figure class="lp-terminal" aria-label="A Jenesis project and its build command" data-tabs>
+      <div class="lp-terminal__bar">
+        <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+        <div class="lp-terminal__tabs" role="tablist" aria-label="What the build reads">
+          <button role="tab" id="tab-hero-module" aria-controls="panel-hero-module" aria-selected="true">module-info.java</button>
+          <button role="tab" id="tab-hero-pom" aria-controls="panel-hero-pom" aria-selected="false" tabindex="-1">pom.xml</button>
+        </div>
+      </div>
+      <div class="lp-terminal__panels">
+        <pre role="tabpanel" id="panel-hero-module" aria-labelledby="tab-hero-module"><code><span class="lp-prompt">$</span> curl -fsSL https://get.jenesis.build | bash
 <span class="lp-prompt">$</span> cat sources/module-info.java
 <span class="lp-dim">/**
  * @jenesis.release 25
@@ -64,6 +71,23 @@ module demo.app {
     requires static org.jspecify;
 }
 <span class="lp-prompt">$</span> <span class="lp-strong">java build/jenesis/Make.java</span></code></pre>
+        <pre role="tabpanel" id="panel-hero-pom" aria-labelledby="tab-hero-pom" hidden><code><span class="lp-prompt">$</span> curl -fsSL https://get.jenesis.build | bash
+<span class="lp-prompt">$</span> cat pom.xml
+&lt;project&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    &lt;groupId&gt;demo&lt;/groupId&gt;
+    &lt;artifactId&gt;app&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0&lt;/version&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;com.fasterxml.jackson.core&lt;/groupId&gt;
+            &lt;artifactId&gt;jackson-databind&lt;/artifactId&gt;
+            &lt;version&gt;2.20.0&lt;/version&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/project&gt;
+<span class="lp-prompt">$</span> <span class="lp-strong">java build/jenesis/Make.java</span></code></pre>
+      </div>
     </figure>
 
     <div class="lp-agent" aria-labelledby="agent-label">
@@ -102,16 +126,16 @@ module demo.app {
             <thead><tr><th scope="col">Project</th><th scope="col">Built with</th><th scope="col">Agent time</th><th scope="col">Full build<br>Jenesis / before</th><th scope="col">Nothing changed<br>Jenesis / before</th><th scope="col">One method edited<br>Jenesis / before</th></tr></thead>
             <tbody>
               {%- for r in p.rows %}
-              <tr><th scope="row">{{ r.name }}</th><td>{{ r.tool }}</td><td>{{ r.agent }}</td>{% for c in r.cells %}<td>{% if c.even %}<span class="lp-badge">even</span>{% endif %}{{ c.text }}</td>{% endfor %}</tr>
+              <tr><th scope="row"><a class="lp-link" href="{{ r.repository }}">{{ r.name }}</a></th><td>{{ r.tool }}</td><td>{{ r.agent }}</td>{% for c in r.cells %}<td>{% if c.even %}<span class="lp-badge">even</span>{% endif %}{{ c.text }}</td>{% endfor %}</tr>
               {%- endfor %}
             </tbody>
           </table>
         </div>
         {%- endfor %}
       </div>
-      <p class="lp-small">Every build ran alone on a four-core machine, and every time is the median of three runs,
-        except Guava's, whose builds take more than five minutes and ran once. Without a daemon, Jenesis ran as it
-        comes, Maven as plain <code>mvn</code> and Gradle with <code>--no-daemon</code>; with one, Jenesis under
+      <p class="lp-small lp-results__method">Every build ran alone on a four-core machine, and every time is the
+        median of three runs, except Guava's, whose builds take more than five minutes and ran once. Without a
+        daemon, Jenesis ran under <code>jenesis.make.mode=compiled</code>, Maven as plain <code>mvn</code> and Gradle with <code>--no-daemon</code>; with one, Jenesis under
         <code>jenesis.make.mode=daemon</code>, Maven as <code>mvnd</code> and Gradle with <code>--daemon</code>,
         each warmed up by a first build. Runs of one build differed by about 5&nbsp;%, so a pair whose runs overlap
         is marked even. After an edit, each build compiled the edited module again and ran the tests of every
