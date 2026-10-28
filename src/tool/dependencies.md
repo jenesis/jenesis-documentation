@@ -216,7 +216,8 @@ A `pom.xml` module resolves its main compile class path, its main runtime class 
 each on its own, and nearest-wins settles a conflict within each. The compile class path is resolved from the
 compile and provided dependencies, the runtime class path from the compile and runtime dependencies, and the
 tests from every dependency the POM declares. A test dependency therefore never changes the versions the main
-classes compile and run with.
+classes compile and run with. A dependency's own runtime dependencies are placed on the runtime class path
+alone, as Maven and Gradle place them.
 
 Maven resolves all of a project's dependencies as one graph instead and takes each class path from it. To
 resolve as Maven does, set `jenesis.maven.unified`, on the command line or in `jenesis.properties`:
@@ -227,7 +228,9 @@ resolve as Maven does, set `jenesis.maven.unified`, on the command line or in `j
 
 A test or runtime dependency then decides which version of a shared library the main classes compile and
 run with. A library the project declares for its tests alone also leaves the main class paths, even where a
-main dependency needs it - as Maven treats it.
+main dependency needs it - as Maven treats it. Either way, the published POM manages each version the main
+class paths resolved, which a consumer building with Maven 4 applies - see
+*[What the published POM names](/tool/publishing/#what-the-published-pom-names)*.
 
 <div class="note">
   <p><strong>Why not as Maven does?</strong> Say a library declares <code>B</code> as a dependency and

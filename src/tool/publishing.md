@@ -160,9 +160,12 @@ same one, and a module under the `modular` layout, which has no Maven coordinate
 ### What the published POM names
 
 A published POM names what the module declares, each dependency at the version the build resolved, and a
-consumer finds the rest through those dependencies' own POMs. A consumer's own resolution then settles every
-version beneath, as it settles any other: a version it overrides takes the dependencies of that version with
-it, and nothing the module once resolved is kept beside it.
+consumer finds the rest through those dependencies' own POMs. Every other version the module's class paths
+resolved is listed in its `<dependencyManagement>`, the runtime class path's version ahead of the compile class
+path's. A consumer that builds with Maven 4 applies a dependency's management to that dependency's own
+dependencies, so it resolves the versions the module was built and tested with. Maven 3 and Gradle do not
+apply it, and settle every version beneath as they settle any other: a version they override takes the
+dependencies of that version with it.
 
 A `pom.xml` module publishes every dependency it declares but those of `test` scope, with their `<optional>`
 and `<exclusions>`. A module declaration publishes each module it requires as the Maven artifact that module
