@@ -38,7 +38,8 @@ eleventyExcludeFromCollections: true
         Not moving to modules yet? Jenesis builds the <code>pom.xml</code> you already have, on the class path as
         Maven does, and the speed and the checks come with it: <code>pin</code> records the version and SHA-256
         checksum of every dependency in a comment of the <code>pom.xml</code>, which Maven ignores, and a build
-        that downloads other bytes fails. Every build timed below is built from its <code>pom.xml</code>.
+        that downloads other bytes fails. Every build <a class="lp-link" href="#migrations">timed below</a> is built from its
+        <code>pom.xml</code>.
       </p>
     </div>
 
@@ -82,9 +83,62 @@ module demo.app {
 <span class="lp-prompt">$</span> <span class="lp-strong">java build/jenesis/Make.java</span></code></pre>
       </div>
     </figure>
+  </div>
+</section>
 
+<section class="lp-band" id="build-times" aria-labelledby="migrations">
+  <div class="lp-wrap lp-results">
+    <p class="lp-eyebrow">Build times</p>
+    <h2 id="migrations">At least as fast as the build it replaces.</h2>
+    <p class="lp-section-lede">A coding agent moved eight open-source builds to Jenesis, each from the prompt below and
+      nothing else. Doing the same work as the original build, Jenesis was never slower: across the projects, a full
+      build took a median 15 to 21&nbsp;% less time, a build after one method was edited about 30&nbsp;% less, and a
+      build with nothing changed over 90&nbsp;% less, where Maven runs every test again. It does so with about 50,000
+      lines of code and no library, against about 540,000 for Maven 3.9 with the plugins and libraries it downloads
+      to build and publish a jar, and about 3.4 million for the Gradle distribution.</p>
+    <div class="lp-tabs" data-tabs>
+      <div class="lp-tabs__list" role="tablist" aria-label="Build times">
+        {%- for p in migrations.pairings %}
+        <button role="tab" id="tab-{{ p.id }}" aria-controls="panel-{{ p.id }}" aria-selected="{{ 'true' if loop.first else 'false' }}"{% if not loop.first %} tabindex="-1"{% endif %}>{{ p.label }}</button>
+        {%- endfor %}
+      </div>
+      {%- for p in migrations.pairings %}
+      <div class="lp-tabs__panel" role="tabpanel" id="panel-{{ p.id }}" aria-labelledby="tab-{{ p.id }}"{% if not loop.first %} hidden{% endif %}>
+        <table class="lp-matrix">
+          <colgroup><col class="lp-results__project"><col class="lp-results__tool"><col class="lp-results__agent"><col class="lp-results__full"><col class="lp-results__again"><col class="lp-results__edit"></colgroup>
+          <thead><tr><th scope="col">Project</th><th scope="col">Built with</th><th scope="col">Agent time</th><th scope="col">Full build<br>Jenesis / before</th><th scope="col">Nothing changed<br>Jenesis / before</th><th scope="col">One method edited<br>Jenesis / before</th></tr></thead>
+          <tbody>
+            {%- for r in p.rows %}
+            <tr><th scope="row"><a class="lp-link" href="{{ r.repository }}">{{ r.name }}</a></th><td>{{ r.tool }}</td><td>{{ r.agent }}</td>{% for c in r.cells %}<td><span class="lp-speedup{% if c.spread %} lp-speedup--spread{% endif %}">{{ c.saving }}</span><span class="lp-times">{{ c.times }}</span></td>{% endfor %}</tr>
+            {%- endfor %}
+          </tbody>
+          <tfoot>
+            <tr><th scope="row" colspan="3">Median saving</th>{% for m in p.medians %}<td><span class="lp-speedup">{{ m }}</span></td>{% endfor %}</tr>
+          </tfoot>
+        </table>
+      </div>
+      {%- endfor %}
+    </div>
+    <p class="lp-small lp-results__method">Each build ran alone on a four-core machine, and a time is the median of
+      three runs, or of one for Guava; a saving within the 5&nbsp;% by which runs of one build differed is set in
+      grey. Without a daemon, Maven ran as <code>mvn</code> and Gradle with <code>--no-daemon</code>; with one,
+      Jenesis' daemon ran against <code>mvnd</code> and Gradle's, each warmed up by a first build; from an
+      ahead-of-time cache, Jenesis is set beside the original build without a daemon. Every build stayed on
+      <code>pom.xml</code> and ran the same tests, apart from the few Jenesis leaves to the old build. One machine
+      and a few runs make this imperfect, but the tendency holds for every project. Lines of code are counted
+      without comments or blank lines.</p>
+    <p class="lp-after">
+      <a class="lp-link" href="https://github.com/jenesis/jenesis-documentation/tree/main/benchmarks">Each migration's patch and the script that timed it, to run on your own machine &rarr;</a>
+    </p>
+  </div>
+</section>
+
+<section class="lp-band lp-band--tint" id="agent" aria-labelledby="agent-title">
+  <div class="lp-wrap">
+    <p class="lp-eyebrow">Moving a build</p>
+    <h2 id="agent-title">Hand the move to a coding agent.</h2>
     <div class="lp-agent" aria-labelledby="agent-label">
-      <p class="lp-agent__label" id="agent-label">Moving a build with a coding agent? Hand it this prompt, or start one with it from the root of the project.</p>
+      <p class="lp-agent__label" id="agent-label">Hand it this prompt, or start one with it from the root of the project.</p>
       <div class="lp-agent__row">
         <span class="lp-agent__name">Prompt</span>
         <code id="agent-prompt">Run `curl -fsSL https://get.jenesis.build | bash` in the root of this project, then run `java build/jenesis/Make.java prompt/migrate` and carry out the task it prints.</code>
@@ -100,58 +154,6 @@ module demo.app {
         <code id="agent-codex" class="lp-agent__command">codex 'Run `curl -fsSL https://get.jenesis.build | bash` in the root of this project, then run `java build/jenesis/Make.java prompt/migrate` and carry out the task it prints.'</code>
         <button class="lp-button lp-button--small" type="button" data-copy="agent-codex" aria-describedby="agent-label">Copy</button>
       </div>
-    </div>
-
-    <div class="lp-results" aria-labelledby="migrations">
-      <h2 class="lp-results__title" id="migrations">Builds an agent has moved</h2>
-      <p class="lp-small">A coding agent moved each of these open-source builds, starting from the prompt above and
-        nothing else; agent time is the whole migration, from reading the build to comparing jars, tests and POMs
-        until they matched. Each cell shows how much less time Jenesis took than the original build doing the same work,
-        above the two times.</p>
-      <div class="lp-tabs" data-tabs>
-        <div class="lp-tabs__list" role="tablist" aria-label="Build times">
-          {%- for p in migrations.pairings %}
-          <button role="tab" id="tab-{{ p.id }}" aria-controls="panel-{{ p.id }}" aria-selected="{{ 'true' if loop.first else 'false' }}"{% if not loop.first %} tabindex="-1"{% endif %}>{{ p.label }}</button>
-          {%- endfor %}
-        </div>
-        {%- for p in migrations.pairings %}
-        <div class="lp-tabs__panel" role="tabpanel" id="panel-{{ p.id }}" aria-labelledby="tab-{{ p.id }}"{% if not loop.first %} hidden{% endif %}>
-          <table class="lp-matrix">
-            <colgroup><col class="lp-results__project"><col class="lp-results__tool"><col class="lp-results__agent"><col class="lp-results__full"><col class="lp-results__again"><col class="lp-results__edit"></colgroup>
-            <thead><tr><th scope="col">Project</th><th scope="col">Built with</th><th scope="col">Agent time</th><th scope="col">Full build<br>Jenesis / before</th><th scope="col">Nothing changed<br>Jenesis / before</th><th scope="col">One method edited<br>Jenesis / before</th></tr></thead>
-            <tbody>
-              {%- for r in p.rows %}
-              <tr><th scope="row"><a class="lp-link" href="{{ r.repository }}">{{ r.name }}</a></th><td>{{ r.tool }}</td><td>{{ r.agent }}</td>{% for c in r.cells %}<td><span class="lp-speedup{% if c.spread %} lp-speedup--spread{% endif %}">{{ c.saving }}</span><span class="lp-times">{{ c.times }}</span></td>{% endfor %}</tr>
-              {%- endfor %}
-            </tbody>
-            <tfoot>
-              <tr><th scope="row" colspan="3">Median saving</th>{% for m in p.medians %}<td><span class="lp-speedup">{{ m }}</span></td>{% endfor %}</tr>
-            </tfoot>
-          </table>
-        </div>
-        {%- endfor %}
-      </div>
-      <p class="lp-small lp-results__method">Every build ran alone on a four-core machine, and every time is the
-        median of three runs, except Guava's without and with a daemon, whose builds take more than five minutes and
-        ran once. Without a
-        daemon, Jenesis ran under <code>jenesis.make.mode=compiled</code>, Maven as plain <code>mvn</code> and Gradle with <code>--no-daemon</code>; with one, Jenesis under
-        <code>jenesis.make.mode=daemon</code>, Maven as <code>mvnd</code> and Gradle with <code>--daemon</code>,
-        each warmed up by a first build. From an ahead-of-time cache, Jenesis ran under
-        <code>jenesis.make.mode=aot</code> from its compiled classes, with every cache trained by that first build,
-        as a CI server restores them, and is set beside the original build without a daemon. Runs of one build differed by about 5&nbsp;%, so a saving within that
-        spread is set in grey. After an edit, each build compiled the edited module again and ran the tests of every
-        module that depends on it; each edit was a new one, so no build cache held its result. Every build stayed on
-        <code>pom.xml</code>, and the two builds ran the same tests, except those Jenesis leaves to the old build:
-        AssertJ's 31 and Gson's 12 tests that rely on the Java Module System, and in Guava, Mockito and JUnit 5 the
-        test classes outside Jenesis' default naming, under 1&nbsp;% of their tests, beside 39 tests the JUnit 5
-        migration leaves out. <code>mvnd</code> builds AssertJ only once its Spring Boot tests declare
-        <code>assertj-core</code>, which its parallel reactor otherwise starts too early. Each migration's patch and
-        the script that measured it are <a class="lp-link" href="https://github.com/jenesis/jenesis-documentation/tree/main/benchmarks">on GitHub</a>,
-        to run again on a machine of your own. Measuring builds this way is imperfect - one machine, a few runs and
-        builds an agent moved - but the figures still show the general tendency: Jenesis was at least as fast as the
-        original build in every case, from about 50,000 lines of Java and no library, against about 540,000 for Maven
-        3.9 with the plugins and libraries it downloads to build, test and publish a jar, and about 3.4 million for
-        the Gradle distribution, counting lines of code without comments or blank lines.</p>
     </div>
   </div>
 </section>
@@ -335,7 +337,7 @@ java build/jenesis/Make.java</code></pre></div>
       changing anything else of the build. The result is validated by comparing what both builds produce: the
       jar contents, the dependency tree, the number of tests run and the POM a consumer receives.</p>
     <p>The builds an agent has moved this way, and how long each build takes before and after, are
-      <a class="lp-link" href="#migrations">at the top of this page</a>.</p>
+      <a class="lp-link" href="#migrations">under Build times</a>.</p>
     <p class="lp-after">
       <a class="lp-link" href="{{ docs }}migrating/">Migrating a Maven or Gradle build, step by step &rarr;</a>
     </p>
