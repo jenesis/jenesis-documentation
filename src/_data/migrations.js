@@ -6,7 +6,8 @@
 const projects = [
   { name: "Guava", repository: "https://github.com/google/guava", tool: "Maven", agent: "57 min",
     nodaemon: { full: [703.0, 819.2], again: [3.8, 802.2], edit: [664.8, 836.3] },
-    daemon: { full: [673.5, 789.2], again: [2.8, 779.2], edit: [637.3, 818.3] } },
+    daemon: { full: [673.5, 789.2], again: [2.8, 779.2], edit: [637.3, 818.3] },
+    aot: { full: 668.1, again: 2.1, edit: 627.9 } },
   { name: "JUnit 5", repository: "https://github.com/junit-team/junit-framework", tool: "Gradle", agent: "1 h 18 min",
     nodaemon: { full: [222.2, 258.2], again: [6.6, 17.6], edit: [131.8, 173.8] },
     daemon: { full: [160.2, 236.5], again: [4.1, 6.7], edit: [103.7, 170.1] },
