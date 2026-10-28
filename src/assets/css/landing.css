@@ -155,7 +155,7 @@
 .lp-pills strong { color: var(--lp-accent); font-weight: 700; }
 .lp-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
 .lp-agent {
-  grid-column: 1 / -1; margin-top: -2rem; padding: 1rem 1.25rem; border-radius: var(--app-radius-md);
+  padding: 1rem 1.25rem; border-radius: var(--app-radius-md);
   border: 1px dashed color-mix(in srgb, var(--lp-accent) 60%, transparent); background: var(--lp-surface);
 }
 .lp-agent__label { margin: 0 0 0.75rem; font-size: 0.9rem; font-weight: 600; color: var(--lp-text); }
@@ -167,7 +167,6 @@
   background: transparent; color: var(--lp-muted); padding: 0;
 }
 .lp-agent__row .lp-agent__command { color: var(--lp-text); }
-@media (max-width: 860px) { .lp-agent { margin-top: 0; } }
 @media (max-width: 560px) { .lp-agent__row { grid-template-columns: minmax(0, 1fr); gap: 0.4rem; } .lp-agent__row .lp-button { justify-self: start; } }
 
 .lp-terminal {
@@ -537,14 +536,13 @@
   .lp-footer p { margin-left: 0; }
 }
 
-/* ---- Migration results in the hero ------------------------------------------------------------------------ */
-.lp-results { grid-column: 1 / -1; margin-top: -1.5rem; }
+/* ---- Build times ------------------------------------------------------------------------------------------- */
 .lp-speedup { display: block; font-size: 1.05rem; font-weight: 700; color: var(--lp-ok); }
 .lp-speedup--spread { color: var(--lp-muted); font-weight: 600; }
 .lp-times { display: block; font-size: 0.8rem; color: var(--lp-muted); }
 .lp-results .lp-matrix tfoot th, .lp-results .lp-matrix tfoot td { border-top: 2px solid var(--lp-border); }
 .lp-results__method { font-size: 0.8rem; color: var(--lp-muted); }
-.lp .lp-results__title { font-size: clamp(1.4rem, 2.2vw, 1.75rem); margin: 0 0 0.25rem; scroll-margin-top: 6rem; }
+.lp-results h2 { scroll-margin-top: 6rem; }
 .lp-results .lp-tabs { margin-top: 1rem; }
 .lp-results .lp-tabs__panel { padding: 0; overflow-x: auto; }
 .lp-results .lp-matrix { border: 0; border-radius: 0; table-layout: fixed; min-width: 50rem; }
@@ -555,4 +553,3 @@
 .lp-results__full, .lp-results__edit { width: 22%; }
 .lp-results__again { width: 17%; }
 .lp-results .lp-matrix td { white-space: nowrap; }
-@media (max-width: 860px) { .lp-results { margin-top: 0; } }
