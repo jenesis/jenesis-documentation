@@ -52,7 +52,7 @@ object per line, and the next build replaces it. The second progress line, `[EVE
 script or a coding agent reads it instead of parsing the console:
 
 ```
-{"status":"started","target":"/.../demo-01-java-pom/target","directory":"/.../demo-01-java-pom","run":"20261005T180707.205894Z"}
+{"status":"started","target":"/.../demo-01-java-pom/target","directory":"/.../demo-01-java-pom","mode":"daemon","run":"20261005T180707.205894Z"}
 {"status":"resolved","module":"build","start":0.001,"seconds":0.067}
 {"status":"skipped","step":"build/maven/identifier/prepare","start":0.071,"folder":"/.../target/build/maven/identifier/prepare","run":"20261005T180659.583809Z"}
 {"status":"completed","seconds":0.342,"executed":1,"skipped":18,"failed":0}
@@ -62,7 +62,7 @@ Every object leads with its `status`:
 
 | `status` | Written for | Beside it |
 | --- | --- | --- |
-| `started` | the build, first line | `target`, the `directory` the build ran in, and the `run` |
+| `started` | the build, first line | `target`, the `directory` the build ran in, the `mode` the engine ran in, and the `run` |
 | `executed` | a step that ran | `step`, `start`, `seconds` and `folder`, which holds the step's `output/` |
 | `skipped` | a step none of whose inputs changed | `step`, `start`, `folder`, and the earlier `run` that produced the folder |
 | `loaded`, `stored` | a step's output fetched from or stored in the build cache | `step` and `seconds` |
