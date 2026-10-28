@@ -65,7 +65,7 @@ The numbers say most where nothing else runs on the machine. The published ones 
 | `mockito` | Mockito | Gradle | `pom.xml` |
 | `assertj` | AssertJ | Maven | `pom.xml` |
 | `auto` | Google Auto | Maven | `pom.xml` |
-| `jackson-databind` | Jackson Databind | Maven | `module-info.java` |
+| `jackson-databind` | Jackson Databind | Maven | `pom.xml` |
 | `gson` | Gson | Maven | `pom.xml` |
 | `jsoup` | jsoup | Maven | `pom.xml` |
 
