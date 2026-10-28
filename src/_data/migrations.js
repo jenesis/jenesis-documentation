@@ -1,7 +1,7 @@
 // The builds a coding agent moved to Jenesis, and the medians of the benchmark that compares each with its original:
 // in seconds, [Jenesis, before], for a full build, a build with nothing changed and one after a method body was edited.
-// Each pair is shown with its speed-up, the time before divided by Jenesis' time, and each tab with the median speed-up
-// of every kind of build across the projects.
+// Each pair is shown with the share of the time before that Jenesis saved, rounded down, and each tab with the median
+// saving of every kind of build across the projects.
 const projects = [
   { name: "Guava", repository: "https://github.com/google/guava", tool: "Maven", agent: "57 min",
     nodaemon: { full: [703.0, 819.2], again: [3.8, 802.2], edit: [664.8, 836.3] },
@@ -38,8 +38,9 @@ function time(seconds) {
   return rest === 0 ? `${minutes} min` : `${minutes} min ${rest} s`;
 }
 
-function speedup(factor) {
-  return factor < 10 ? `${factor.toFixed(1)}×` : `${Math.round(factor)}×`;
+function saving(share) {
+  const percent = Math.floor(Math.abs(share) * 100);
+  return `${percent === 0 ? "" : share < 0 ? "+" : "−"}${percent}\u00a0%`;
 }
 
 const kinds = ["full", "again", "edit"];
@@ -53,11 +54,11 @@ function rows(pairing) {
       tool: project.tool,
       agent: project.agent,
       cells: kinds.map(kind => {
-        const factor = measured[kind][1] / measured[kind][0];
+        const share = 1 - measured[kind][0] / measured[kind][1];
         return {
           times: `${time(measured[kind][0])} / ${time(measured[kind][1])}`,
-          speedup: speedup(factor),
-          spread: factor < 1.05,
+          saving: saving(share),
+          spread: share < 0.05,
         };
       }),
     };
@@ -66,9 +67,9 @@ function rows(pairing) {
 
 function medians(pairing) {
   return kinds.map(kind => {
-    const factors = projects.map(project => project[pairing][kind][1] / project[pairing][kind][0]).sort((a, b) => a - b);
-    const middle = factors.length / 2;
-    return speedup(factors.length % 2 ? factors[Math.floor(middle)] : (factors[middle - 1] + factors[middle]) / 2);
+    const shares = projects.map(project => 1 - project[pairing][kind][0] / project[pairing][kind][1]).sort((a, b) => a - b);
+    const middle = shares.length / 2;
+    return saving(shares.length % 2 ? shares[Math.floor(middle)] : (shares[middle - 1] + shares[middle]) / 2);
   });
 }
 
