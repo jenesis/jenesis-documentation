@@ -23,7 +23,7 @@ jenesis() {
     local excluded=()
     if root; then
         local core=assertj-core/src/test/java/.* tests=assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/.*
-        excluded=("-Djenesis.test.exclude=$core[.]Assumptions_assumeThat_with_Path_size_Test,$tests[.]Assertions_linesOf_Test,$core[.]Files_assertHasDigest_.*_Test,$tests[.]Paths_(assertHasBinaryContent|assertHasDigest_with_.*|assertHasSameBinaryContentAs|assertHasSameTextualContentAs|assertHasTextualContent|assertIsReadable|assertIsWritable)_Test")
+        excluded=("-Djenesis.test.exclude=$core[.]Files_assertHasDigest_.*_Test,$tests[.]Paths_(assertHasBinaryContent|assertHasDigest_with_.*|assertHasSameBinaryContentAs|assertHasSameTextualContentAs|assertHasTextualContent|assertIsReadable|assertIsWritable)_Test")
     fi
     java $JENESIS_MODE "${excluded[@]}" build/jenesis/Make.java
 }

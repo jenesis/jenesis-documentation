@@ -29,8 +29,8 @@ project side by side.
 A parallel reactor orders modules only by the dependencies they declare, so a build that works with `mvn` can fail
 with `mvnd`. AssertJ does: its Spring Boot integration tests reach `assertj-core` only through Spring Boot's test
 starter, and `mvnd` started them before `assertj-core` was packaged. Its migration patch declares the dependency so
-that `mvnd` builds the project at all; `mvn` resolves the same dependency without it, and Jenesis, which builds
-from `module-info.java`, does not build that module.
+that `mvnd` builds the project at all; `mvn` resolves the same dependency without it, and Jenesis reads the
+module's `module-info.java` instead.
 
 Downloaded dependencies stay where each tool keeps them (`~/.m2`, `~/.gradle`, `~/.jenesis`), as on a developer's
 machine. Neither build reads a remote build cache, and Jenesis runs with `-Djenesis.make.global=`, so the
