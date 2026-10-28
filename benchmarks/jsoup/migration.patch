@@ -637,3 +637,20 @@ index 0000000..46767df
 +-Djunit.jupiter.execution.parallel.mode.classes.default=same_thread
 +-Djunit.jupiter.execution.parallel.config.strategy=fixed
 +-Djunit.jupiter.execution.parallel.config.fixed.parallelism=8
+diff --git a/src/test/java11/org/jsoup/integration/MultiReleaseJarIT.java b/src/test/java11/org/jsoup/integration/MultiReleaseJarIT.java
+index f7f266d..94f3728 100644
+--- a/src/test/java11/org/jsoup/integration/MultiReleaseJarIT.java
++++ b/src/test/java11/org/jsoup/integration/MultiReleaseJarIT.java
+@@ -19,8 +19,10 @@ public class MultiReleaseJarIT {
+ 
+         String testJar = System.getProperty("jsoup.test.jar");
+         // skip outside Failsafe if there is no packaged JAR to test
+-        assumeTrue(testJar != null, "Requires the packaged JAR path from Maven Failsafe");
+-        Path jarPath = Paths.get(testJar);
++        Path jarPath = testJar != null
++            ? Paths.get(testJar)
++            : Paths.get(org.jsoup.Jsoup.class.getProtectionDomain().getCodeSource().getLocation().toURI());
++        assumeTrue(jarPath.toString().endsWith(".jar"), "Requires the packaged JAR");
+         String classEntry = "org/jsoup/helper/HttpClientExecutor.class";
+         String versionedEntry = "META-INF/versions/11/" + classEntry;
+ 
