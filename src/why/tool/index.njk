@@ -149,9 +149,9 @@ module demo.app {
         the script that measured it are <a class="lp-link" href="https://github.com/jenesis/jenesis-documentation/tree/main/benchmarks">on GitHub</a>,
         to run again on a machine of your own. Measuring builds this way is imperfect - one machine, a few runs and
         builds an agent moved - but the figures still show the general tendency: Jenesis was at least as fast as the
-        original build in every case, from about 58,000 lines of Java with no dependencies, against about 220,000 for
-        Maven 3.9's core, resolver and the plugins it binds to build, test and publish a jar, and over a million for
-        Gradle.</p>
+        original build in every case, from about 50,000 lines of Java and no library, against about 540,000 for Maven
+        3.9 with the plugins and libraries it downloads to build, test and publish a jar, and about 3.4 million for
+        the Gradle distribution, counting lines of code without comments or blank lines.</p>
     </div>
   </div>
 </section>
