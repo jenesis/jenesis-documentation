@@ -2,7 +2,7 @@
 layout: landing.njk
 permalink: /why/tool/
 title: Jenesis - you already wrote the build script
-description: The Java build tool that reads your module-info.java as the build. Fourteen common builds, side by side with Maven, Gradle and Bazel, each one built and run.
+description: The Java build tool that reads your module-info.java as the build - or the pom.xml you already have, on the class path. Fourteen common builds, side by side with Maven, Gradle and Bazel, each one built and run.
 contact: hello@jenesis.build
 contactSubject: Jenesis
 docs: /tool/
@@ -34,12 +34,18 @@ eleventyExcludeFromCollections: true
         names what the project requires, and its Javadoc carries any metadata. There is nothing else to write,
         and no build tool to download.
       </p>
+      <p class="lp-lede">
+        Not moving to modules yet? Jenesis builds the <code>pom.xml</code> you already have, on the class path as
+        Maven does, and the speed and the checks come with it: <code>pin</code> records the version and SHA-256
+        checksum of every dependency in a comment of the <code>pom.xml</code>, which Maven ignores, and a build
+        that downloads other bytes fails. Every build timed below is built from its <code>pom.xml</code>.
+      </p>
       <ul class="lp-pills" aria-label="At a glance">
         <li><strong>Supply-chain security, end to end</strong></li>
         <li><strong>Embedded as source</strong></li>
         <li><strong>Lean and fast</strong></li>
         <li>Uses the tools the JDK ships</li>
-        <li>Reads a <code>pom.xml</code> too</li>
+        <li><strong>Reads your <code>pom.xml</code> too</strong></li>
       </ul>
     </div>
 
