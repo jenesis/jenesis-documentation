@@ -113,7 +113,8 @@ module demo.app {
       <h2 class="lp-results__title" id="migrations">Builds an agent has moved</h2>
       <p class="lp-small">A coding agent moved each of these open-source builds, starting from the prompt above and
         nothing else; agent time is the whole migration, from reading the build to comparing jars, tests and POMs
-        until they matched. Each time pairs Jenesis with the original build, doing the same work.</p>
+        until they matched. Each cell shows how many times faster Jenesis was than the original build doing the same work -
+        the time before divided by Jenesis' time - above the two times.</p>
       <div class="lp-tabs" data-tabs>
         <div class="lp-tabs__list" role="tablist" aria-label="Build times">
           {%- for p in migrations.pairings %}
@@ -126,9 +127,12 @@ module demo.app {
             <thead><tr><th scope="col">Project</th><th scope="col">Built with</th><th scope="col">Agent time</th><th scope="col">Full build<br>Jenesis / before</th><th scope="col">Nothing changed<br>Jenesis / before</th><th scope="col">One method edited<br>Jenesis / before</th></tr></thead>
             <tbody>
               {%- for r in p.rows %}
-              <tr><th scope="row"><a class="lp-link" href="{{ r.repository }}">{{ r.name }}</a></th><td>{{ r.tool }}</td><td>{{ r.agent }}</td>{% for c in r.cells %}<td>{% if c.even %}<span class="lp-badge">even</span>{% endif %}{{ c.text }}</td>{% endfor %}</tr>
+              <tr><th scope="row"><a class="lp-link" href="{{ r.repository }}">{{ r.name }}</a></th><td>{{ r.tool }}</td><td>{{ r.agent }}</td>{% for c in r.cells %}<td><span class="lp-speedup{% if c.spread %} lp-speedup--spread{% endif %}">{{ c.speedup }}</span><span class="lp-times">{{ c.times }}</span></td>{% endfor %}</tr>
               {%- endfor %}
             </tbody>
+            <tfoot>
+              <tr><th scope="row" colspan="3">Median speed-up</th>{% for m in p.medians %}<td><span class="lp-speedup">{{ m }}</span></td>{% endfor %}</tr>
+            </tfoot>
           </table>
         </div>
         {%- endfor %}
@@ -137,8 +141,8 @@ module demo.app {
         median of three runs, except Guava's, whose builds take more than five minutes and ran once. Without a
         daemon, Jenesis ran under <code>jenesis.make.mode=compiled</code>, Maven as plain <code>mvn</code> and Gradle with <code>--no-daemon</code>; with one, Jenesis under
         <code>jenesis.make.mode=daemon</code>, Maven as <code>mvnd</code> and Gradle with <code>--daemon</code>,
-        each warmed up by a first build. Runs of one build differed by about 5&nbsp;%, so a pair whose runs overlap
-        is marked even. After an edit, each build compiled the edited module again and ran the tests of every
+        each warmed up by a first build. Runs of one build differed by about 5&nbsp;%, so a speed-up within that
+        spread is set in grey. After an edit, each build compiled the edited module again and ran the tests of every
         module that depends on it; each edit was a new one, so no build cache held its result. Every build stayed on
         <code>pom.xml</code>, and the two builds ran the same tests, except those Jenesis leaves to the old build:
         AssertJ's 31 and Gson's 12 tests that rely on the Java Module System, and in Guava, Mockito and JUnit 5 the

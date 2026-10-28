@@ -539,6 +539,10 @@
 
 /* ---- Migration results in the hero ------------------------------------------------------------------------ */
 .lp-results { grid-column: 1 / -1; margin-top: -1.5rem; }
+.lp-speedup { display: block; font-size: 1.05rem; font-weight: 700; color: var(--lp-ok); }
+.lp-speedup--spread { color: var(--lp-muted); font-weight: 600; }
+.lp-times { display: block; font-size: 0.8rem; color: var(--lp-muted); }
+.lp-results .lp-matrix tfoot th, .lp-results .lp-matrix tfoot td { border-top: 2px solid var(--lp-border); }
 .lp-results__method { font-size: 0.8rem; color: var(--lp-muted); }
 .lp .lp-results__title { font-size: clamp(1.4rem, 2.2vw, 1.75rem); margin: 0 0 0.25rem; scroll-margin-top: 6rem; }
 .lp-results .lp-tabs { margin-top: 1rem; }
