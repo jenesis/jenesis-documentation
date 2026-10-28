@@ -13,7 +13,7 @@ edit() {
 }
 
 jenesis() {
-    java $JENESIS_MODE -Djenesis.make.profiles=release build/jenesis/Make.java
+    java $JENESIS_MODE -Djenesis.make.profiles=release $MAKE
 }
 
 old() {
