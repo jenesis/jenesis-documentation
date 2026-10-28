@@ -162,31 +162,32 @@ build that lints or generates in every module gains more from it than from a war
 
 Only `jenesis.*` properties travel with a call to a daemon, which clears and sets them again around every
 build. Everything a running JVM cannot change is the daemon's identity instead - the engine, the JVM, its
-options and the environment - and a call differing in one of them is handed to another daemon rather than
-being served by one configured for something else. A daemon is not tied to a project: every project whose
-build matches that identity hands its build to a daemon that is free, so one daemon serves many projects, one
-build at a time. At most three run at once on a machine, and starting one more first stops the one used least
-recently, once it has finished the build it is running. Every process a build starts in a daemon - a test JVM,
-a tool's warm JVM - runs in the project's root, as it does without one.
+options, the environment and the project - and a call differing in one of them is handed to another daemon
+rather than being served by one configured for something else. A daemon starts in its project's root, so a
+path a plugin or a setting names relative to the working directory means what it means without a daemon. At
+most three run at once on a machine, across every project, and starting one more first stops the one used
+least recently, once it has finished the build it is running. Every process a build starts in a daemon - a
+test JVM, a tool's warm JVM - runs in the project's root, as it does without one.
 
 | Property | Default | Effect |
 | --- | --- | --- |
-| `jenesis.daemon.shared` | `true` | Hand the build to a daemon any project may use; `false` keeps daemons for this project alone. |
+| `jenesis.daemon.shared` | `false` | Hand the build to a daemon any project may use that runs the same engine on the same JVM with the same options and environment. Such a daemon runs in a folder of its own, so it suits builds whose plugins and settings name no path relative to the working directory. |
 | `jenesis.daemon.limit` | `3` | How many daemons may run at once on the machine, across every project. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.daemon.idle` | `10800` | Seconds of idleness after which a daemon exits. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.daemon.options` | *(the client's)* | JVM options for the daemon process itself, whitespace separated. Unset, a daemon starts with the `-X`, `-D` and `-ea` options of the JVM that hands it the build, so `java -Xmx4g build/jenesis/Make.java` builds in a daemon with four gigabytes. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.daemon.folder` | `~/.jenesis/daemons` | Where daemons announce themselves, each with its log, beside a copy of every engine compiled from source that one runs. Command line or `~/.jenesis/jenesis.properties` only. |
 
-A daemon runs every build it serves in one JVM, and a build runs code its project chose - its plugins, its
+A daemon runs build after build in one JVM, several projects' builds where daemons are shared, and a build
+runs code its project chose - its plugins, its
 annotation processors, the tools it names - which can change what the whole JVM does. So after every build a
 daemon restores the system properties, the default locale and the default time zone, and it ends after a build
 that changed a JVM-wide default it cannot restore - the security providers, the default TLS context, socket
 factory and host name verifier, authenticator, proxy selector, cookie handler, response cache or uncaught
 exception handler, or the standard input - with a `[DAEMON]` line naming it; the next build starts a fresh
-daemon. That keeps one project's settings out of another's build. It is no boundary between projects: no JVM can
+daemon. That keeps one build's settings out of the next. It is no boundary between builds: no JVM can
 confine the code it runs, so code that sets out to outlast its build - a thread left running, a field changed
 by reflection - reaches the daemon's later builds. A release that publishes never runs in a daemon unless a mode
-says so. Build a project you do not trust with `-Djenesis.make.mode=compiled`, or in a container
+says so. Shared daemons are for projects you trust alike; build a project you do not trust with `-Djenesis.make.mode=compiled`, or in a container
 (`jenesis.project.docker`), which also keeps it from your files.
 
 An ahead-of-time cache answers the same cost without a process. It is a file of the engine's classes, already
