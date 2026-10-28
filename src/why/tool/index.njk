@@ -93,9 +93,12 @@ module demo.app {
     <p class="lp-section-lede">A coding agent moved eight open-source builds to Jenesis, each from the prompt below and
       nothing else. Doing the same work as the original build, Jenesis was never slower: across the projects, a full
       build took a median 15 to 21&nbsp;% less time, a build after one method was edited about 30&nbsp;% less, and a
-      build with nothing changed over 90&nbsp;% less, where Maven runs every test again. It does so with about 50,000
-      lines of code and no library, against about 540,000 for Maven 3.9 with the plugins and libraries it downloads
-      to build and publish a jar, and about 3.4 million for the Gradle distribution.</p>
+      build with nothing changed over 90&nbsp;% less, where Maven runs every test again. Its
+      <a class="lp-link" href="{{ docs }}reference/#the-entry-point-build-jenesis-make-java">ahead-of-time mode</a>
+      brings close to a daemon's speed to a CI server, where no process outlives a build, by starting each build
+      from the classes and the JIT's method profiles that earlier builds left in a cache. Jenesis does all this with
+      about 50,000 lines of code and no library, against about 540,000 for Maven 3.9 with the plugins and libraries
+      it downloads to build and publish a jar, and about 3.4 million for the Gradle distribution.</p>
     <div class="lp-tabs" data-tabs>
       <div class="lp-tabs__list" role="tablist" aria-label="Build times">
         {%- for p in migrations.pairings %}
