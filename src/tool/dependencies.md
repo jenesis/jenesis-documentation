@@ -210,6 +210,39 @@ line says so. A `-SNAPSHOT` version resolves from the local Maven repository, or
 timestamped file the remote repository's `maven-metadata.xml` names. A parent POM that cannot be fetched fails
 the build, naming the parent.
 
+### Test dependencies and the main class path
+
+A `pom.xml` module resolves its main compile class path, its main runtime class path and its test class path
+each on its own, and nearest-wins settles a conflict within each. The compile class path is resolved from the
+compile and provided dependencies, the runtime class path from the compile and runtime dependencies, and the
+tests from every dependency the POM declares. A test dependency therefore never changes the versions the main
+classes compile and run with.
+
+Maven resolves all of a project's dependencies as one graph instead and takes each class path from it. To
+resolve as Maven does, set `jenesis.maven.unified`, on the command line or in `jenesis.properties`:
+
+```
+-Djenesis.maven.unified=true
+```
+
+A test or runtime dependency then decides which version of a shared library the main classes compile and
+run with. A library the project declares for its tests alone also leaves the main class paths, even where a
+main dependency needs it - as Maven treats it.
+
+<div class="note">
+  <p><strong>Why not as Maven does?</strong> Say a library declares <code>B</code> as a dependency and
+  <code>C</code> for its tests. <code>C</code> brings slf4j at depth two, <code>B</code> brings it at depth
+  three. Maven picks the slf4j version <code>C</code> asks for, because it is nearer, and compiles the
+  library's main classes with it. A consumer of the published library never sees <code>C</code>, as test
+  dependencies are not passed on, and resolves the version <code>B</code> asks for. Where the library uses
+  something only the newer version has, the consumer meets a <code>NoSuchMethodError</code> that none of the
+  library's own tests could show.</p>
+  <p>Had the library declared slf4j itself, for its tests, Maven would leave slf4j off the main class paths
+  altogether - as if it were excluded from <code>B</code>, but only within the library - and only running the
+  library would show it. Resolving each class path on its own keeps the tests out of the main classes'
+  versions. In exchange, the tests can run with other versions than the main classes compiled against.</p>
+</div>
+
 ### Choosing a different strategy
 
 Each repository's rule is the sensible default, and each is selectable when you want another. On the Maven

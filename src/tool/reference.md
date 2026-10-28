@@ -302,6 +302,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.sigstore.issuers` | `github.com=token.actions.githubusercontent.com` | Comma-separated `<host>=<issuer>` pairs for identity hosts whose OpenID Connect issuer is not the host itself. Both sides are written without a scheme. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.resolver.maven` | `maven` | Maven version strategy: `maven`, `closest`, `latest`, `release`, `stable`, `fail`, or `managed`. `fail` refuses a coordinate two dependencies require at different versions; `managed` refuses that and every version the project neither declares nor names in dependency management. |
 | `jenesis.resolver.module` | `first` | What happens when two module descriptors record different versions: `first`, `fail`, `ignore`, or `managed`. `managed` additionally refuses a module reached through another module's `requires` that carries no pin. |
+| `jenesis.maven.unified` | `false` | Resolve the compile, provided, runtime and test dependencies a `pom.xml` module declares as one graph, as Maven does, so a test or runtime dependency decides which version of a shared library the main classes compile and run with. `false` resolves each class path on its own (see *[Test dependencies and the main class path](/tool/dependencies/#test-dependencies-and-the-main-class-path)*). |
 
 ### Repositories
 
