@@ -13,7 +13,7 @@ edit() {
 }
 
 jenesis() {
-    java $JENESIS_MODE build/jenesis/Make.java
+    java $JENESIS_MODE $MAKE
 }
 
 old() {

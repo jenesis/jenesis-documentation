@@ -4,7 +4,7 @@
 #   OLD                maven or gradle, the build the project had
 #   EDITED             the main source file the edit build changes, relative to the project's root
 #   edit <token>       makes the edit, naming a local variable <token> so that no earlier build has seen it
-#   jenesis            runs the Jenesis build (in the project's root), passing $JENESIS_MODE to java
+#   jenesis            runs the Jenesis build (in the project's root), passing $JENESIS_MODE to java, then $MAKE
 #   old full|again     runs the original build, from scratch or once more, through the mvn or gradlew below
 #
 # A project script may call root, true where the user is root, who reads a file whose read permission is taken away.
@@ -19,9 +19,13 @@
 # Settings, as environment variables:
 #   JENESIS_REF      the Jenesis commit, tag or branch to install (default: the one the published numbers used)
 #   ROUNDS           rounds per tool (default 3)
-#   PAIRINGS         nodaemon, daemon or both: without a daemon, Maven runs as mvn, Gradle with --no-daemon and
-#                    Jenesis under jenesis.make.mode=compiled; with one, Maven as the Maven Daemon, mvnd, Gradle
-#                    with --daemon and Jenesis under jenesis.make.mode=daemon (default: both)
+#   PAIRINGS         nodaemon, daemon, aot or several: without a daemon, Maven runs as mvn, Gradle with --no-daemon
+#                    and Jenesis under jenesis.make.mode=compiled; with one, Maven as the Maven Daemon, mvnd, Gradle
+#                    with --daemon and Jenesis under jenesis.make.mode=daemon; with an ahead-of-time cache, Maven and
+#                    Gradle as without a daemon and Jenesis under jenesis.make.mode=aot, run from the classes it
+#                    compiled, as the cache needs, and starting from the cache its warm-up trained (default:
+#                    nodaemon daemon)
+#   TOOLS            jenesis, old or both: the builds to measure, the others left out (default: both)
 #   MAVEN_MIRROR     a Maven Central mirror for all three tools, where repo.maven.apache.org is rate-limited
 #   BENCHMARK_FOLDER the folder to work in (default: a new temporary folder), which keeps logs/ and results.tsv
 #
@@ -56,7 +60,7 @@ case "$(locale charmap 2>/dev/null)" in UTF-8) ;; *) export LANG=C.UTF-8 ;; esac
 # Maven and Gradle follow JAVA_HOME, so all three tools run on the java the PATH names.
 export JAVA_HOME="$(java -XshowSettings:properties -version 2>&1 | sed -n 's/^ *java\.home = //p')"
 
-PAIRINGS="${PAIRINGS:-nodaemon daemon}"
+PAIRINGS="${PAIRINGS:-nodaemon daemon}" TOOLS="${TOOLS:-jenesis old}"
 case " $PAIRINGS " in
     *" daemon "*) [ "$OLD" = maven ] && ! command -v mvnd >/dev/null \
         && die "needs the Maven Daemon as mvnd for the daemon pairing, or PAIRINGS=nodaemon" ;;
@@ -246,28 +250,39 @@ curl -fsSL https://get.jenesis.build | JENESIS_MODE=vendor JENESIS_TARGET="$PROJ
 
 printf 'pairing\ttool\tmeasurement\tround\tseconds\texit\n' >"$RESULTS"
 for pairing in $PAIRINGS; do
+    MAKE=build/jenesis/Make.java
     case "$pairing" in
         nodaemon) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=compiled $JENESIS_REMOTES" \
             GRADLE_MODE=--no-daemon MAVEN_COMMAND=mvn ;;
         daemon) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=daemon $JENESIS_REMOTES" GRADLE_MODE=--daemon \
             MAVEN_COMMAND=mvnd ;;
-        *) die "PAIRINGS takes nodaemon and daemon, not $pairing" ;;
+        aot) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=aot $JENESIS_REMOTES" GRADLE_MODE=--no-daemon \
+            MAVEN_COMMAND=mvn MAKE="-cp .jenesis/classes build.jenesis.Make" ;;
+        *) die "PAIRINGS takes nodaemon, daemon and aot, not $pairing" ;;
     esac
 
-    say "Jenesis ($pairing)"
-    cd "$PROJECT" || exit 2
-    rm -rf target
-    measure "$pairing" jenesis warmup 0 jenesis || die "the warmup build failed: see $LOGS"
-    rounds jenesis jenesis_round
-    [ "$pairing" = daemon ] && java -Djenesis.make.mode=daemon build/jenesis/Make.java --stop >/dev/null 2>&1
-    rm -rf target
+    case " $TOOLS " in *" jenesis "*)
+        say "Jenesis ($pairing)"
+        cd "$PROJECT" || exit 2
+        rm -rf target .jenesis/aot
+        if [ "$pairing" = aot ]; then
+            java -Djenesis.make.global= -Djenesis.make.mode=compiled build/jenesis/Make.java help >"$LOGS/aot-compile.log" 2>&1 \
+                || die "the engine did not compile: see $LOGS/aot-compile.log"
+        fi
+        measure "$pairing" jenesis warmup 0 jenesis || die "the warmup build failed: see $LOGS"
+        rounds jenesis jenesis_round
+        [ "$pairing" = daemon ] && java -Djenesis.make.mode=daemon build/jenesis/Make.java --stop >/dev/null 2>&1
+        rm -rf target ;;
+    esac
 
-    say "$OLD ($pairing)"
-    cd "$ORIGINAL" || exit 2
-    measure "$pairing" "$OLD" warmup 0 old full || die "the warmup build failed: see $LOGS"
-    rounds "$OLD" old_round
-    [ "$OLD" = gradle ] && ./gradlew --stop >/dev/null 2>&1
-    [ "$OLD" = maven ] && [ "$pairing" = daemon ] && mvnd --stop >/dev/null 2>&1
+    case " $TOOLS " in *" old "*)
+        say "$OLD ($pairing)"
+        cd "$ORIGINAL" || exit 2
+        measure "$pairing" "$OLD" warmup 0 old full || die "the warmup build failed: see $LOGS"
+        rounds "$OLD" old_round
+        [ "$OLD" = gradle ] && ./gradlew --stop >/dev/null 2>&1
+        [ "$OLD" = maven ] && [ "$pairing" = daemon ] && mvnd --stop >/dev/null 2>&1 ;;
+    esac
 done
 
 cd "$WORK" || exit 2

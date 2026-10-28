@@ -28,7 +28,7 @@ jenesis() {
         declared="$(sed -n 's/^jenesis\.test\.exclude=//p' jenesis.properties)"
         excluded=("-Djenesis.test.exclude=${declared:+$declared,}$core.internal.files.Files_assertHasDigest_.*_Test,$tests.internal.paths.Paths_assert(HasBinaryContent|HasDigest_with_.*|HasSameBinaryContentAs|HasSameTextualContentAs|HasTextualContent|IsReadable|IsWritable)_Test")
     fi
-    java $JENESIS_MODE "${excluded[@]}" build/jenesis/Make.java
+    java $JENESIS_MODE "${excluded[@]}" $MAKE
 }
 
 old() {

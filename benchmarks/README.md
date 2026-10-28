@@ -8,6 +8,7 @@ measures it against the project's own build.
 benchmarks/gson/run.sh
 ROUNDS=1 benchmarks/mockito/run.sh
 PAIRINGS=daemon benchmarks/junit-framework/run.sh
+PAIRINGS=aot TOOLS=jenesis benchmarks/jsoup/run.sh
 ```
 
 A run clones the project at the commit the migration started from into a temporary folder, applies the patch and
@@ -27,6 +28,12 @@ and Jenesis under `jenesis.make.mode=daemon`. Both modes are named, so neither p
 Jenesis does by default. The warm-up starts the daemons, so every measured build of that pairing
 runs against a warm one, and they are stopped once it is done. `mvnd` builds as it does by default, the modules of a
 project side by side.
+
+A third pairing, `aot`, runs Jenesis under `jenesis.make.mode=aot` from the classes it compiled in `.jenesis/classes`,
+as `java -cp .jenesis/classes build.jenesis.Make`, because only an engine run from compiled classes starts from an
+ahead-of-time cache. The warm-up trains the caches of the engine and of every tool the build forks, so every measured
+build starts from them. Maven and Gradle run in it as they do without a daemon, which is what the page compares the
+cache with; `TOOLS=jenesis` measures Jenesis alone, where the builds before were measured already.
 
 A parallel reactor orders modules only by the dependencies they declare, so a build that works with `mvn` can fail
 with `mvnd`. AssertJ does: its Spring Boot integration tests reach `assertj-core` only through Spring Boot's test
@@ -54,7 +61,8 @@ The numbers say most where nothing else runs on the machine. The published ones 
 |---|---|---|
 | `JENESIS_REF` | the commit the published numbers used | the Jenesis commit, tag or branch to install |
 | `ROUNDS` | 3 | rounds per tool |
-| `PAIRINGS` | `nodaemon daemon` | `nodaemon` runs Maven as `mvn`, Gradle with `--no-daemon` and Jenesis under `jenesis.make.mode=compiled`; `daemon` runs Maven as `mvnd`, Gradle with `--daemon` and Jenesis under `jenesis.make.mode=daemon` |
+| `PAIRINGS` | `nodaemon daemon` | `nodaemon` runs Maven as `mvn`, Gradle with `--no-daemon` and Jenesis under `jenesis.make.mode=compiled`; `daemon` runs Maven as `mvnd`, Gradle with `--daemon` and Jenesis under `jenesis.make.mode=daemon`; `aot` runs Maven and Gradle as `nodaemon` does and Jenesis under `jenesis.make.mode=aot`, from its compiled classes |
+| `TOOLS` | `jenesis old` | the builds to measure: `jenesis`, `old` or both |
 | `MAVEN_MIRROR` | none | a Maven Central mirror for all three tools, where repo.maven.apache.org is rate-limited |
 | `BENCHMARK_FOLDER` | a new temporary folder | where to clone, log and record |
 

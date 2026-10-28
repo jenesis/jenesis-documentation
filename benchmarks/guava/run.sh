@@ -18,7 +18,7 @@ edit() {
 jenesis() {
     java $JENESIS_MODE -Djenesis.make.profiles=release \
         '-Djenesis.test.exclude=.*PackageSanityTest,guava-tests/com.google.common.io.MoreFilesTest,guava-tests/com.google.common.net.InetAddressesTest' \
-        build/jenesis/Make.java build stage
+        $MAKE build stage
 }
 
 old() {
