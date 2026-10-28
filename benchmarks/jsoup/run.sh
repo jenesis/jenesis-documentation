@@ -8,14 +8,18 @@ OLD=maven
 EDITED=src/main/java/org/jsoup/internal/StringUtil.java
 
 edit() {
-    replace "$EDITED" '        int l = string.length();
-' "        int l = string.length();
+    replace "$EDITED" '            return true;
+
+        int l = string.length();
+' "            return true;
+
+        int l = string.length();
         int $1 = l;
 "
 }
 
 jenesis() {
-    java $JENESIS_MODE -Djenesis.make.profiles=release build/jenesis/Make.java
+    java $JENESIS_MODE -Djenesis.make.profiles=release $MAKE
 }
 
 old() {

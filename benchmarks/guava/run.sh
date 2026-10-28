@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 # Guava: its Maven build without guava-gwt, which stays with Maven, against the Jenesis build of the migration
 # under the release profile. Both leave out MoreFilesTest, which needs a user other than root, and
-# InetAddressesTest, which needs an IPv6 interface with a scope ID. A full build takes about ten minutes, so each
-# tool runs one round unless ROUNDS says otherwise.
+# InetAddressesTest, which needs an IPv6 interface with a scope ID. A full build takes about ten minutes.
 
 UPSTREAM=https://github.com/google/guava.git
 COMMIT=7caa334327e2d6a6b75920ff939048db21cd5b72
 OLD=maven
 EDITED=guava/src/com/google/common/base/Strings.java
-ROUNDS="${ROUNDS:-1}"
 
 edit() {
     replace "$EDITED" '    return Platform.nullToEmpty(string);
@@ -20,7 +18,7 @@ edit() {
 jenesis() {
     java $JENESIS_MODE -Djenesis.make.profiles=release \
         '-Djenesis.test.exclude=.*PackageSanityTest,guava-tests/com.google.common.io.MoreFilesTest,guava-tests/com.google.common.net.InetAddressesTest' \
-        build/jenesis/Make.java build stage
+        $MAKE build stage
 }
 
 old() {

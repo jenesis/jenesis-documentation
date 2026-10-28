@@ -2,7 +2,7 @@
 layout: landing.njk
 permalink: /why/tool/
 title: Jenesis - you already wrote the build script
-description: The Java build tool that reads your module-info.java as the build. Fourteen common builds, side by side with Maven, Gradle and Bazel, each one built and run.
+description: The Java build tool that reads your module-info.java as the build - or the pom.xml you already have, on the class path. Fourteen common builds, side by side with Maven, Gradle and Bazel, each one built and run.
 contact: hello@jenesis.build
 contactSubject: Jenesis
 docs: /tool/
@@ -10,6 +10,7 @@ product: Jenesis
 logo: jenesis-tool
 repo: https://github.com/jenesis/jenesis
 nav:
+  - { href: "#migrations", label: "Build times" }
   - { href: "#examples", label: "Examples" }
   - { href: "#only-what-changed-runs-again", label: "Caching" }
   - { href: "#verify-what-the-build-downloads", label: "Supply chain" }
@@ -33,18 +34,24 @@ eleventyExcludeFromCollections: true
         names what the project requires, and its Javadoc carries any metadata. There is nothing else to write,
         and no build tool to download.
       </p>
-      <ul class="lp-pills" aria-label="At a glance">
-        <li><strong>Supply-chain security, end to end</strong></li>
-        <li><strong>Embedded as source</strong></li>
-        <li><strong>Lean and fast</strong></li>
-        <li>Uses the tools the JDK ships</li>
-        <li>Reads a <code>pom.xml</code> too</li>
-      </ul>
+      <p class="lp-lede">
+        Not moving to modules yet? Jenesis builds the <code>pom.xml</code> you already have, on the class path as
+        Maven does, and the speed and the checks come with it: <code>pin</code> records the version and SHA-256
+        checksum of every dependency in a comment of the <code>pom.xml</code>, which Maven ignores, and a build
+        that downloads other bytes fails. Every build timed below is built from its <code>pom.xml</code>.
+      </p>
     </div>
 
-    <figure class="lp-terminal" aria-label="A Jenesis project and its build command">
-      <div class="lp-terminal__bar" aria-hidden="true"><span></span><span></span><span></span></div>
-      <pre><code><span class="lp-prompt">$</span> curl -fsSL https://get.jenesis.build | bash
+    <figure class="lp-terminal" aria-label="A Jenesis project and its build command" data-tabs>
+      <div class="lp-terminal__bar">
+        <span aria-hidden="true"></span><span aria-hidden="true"></span><span aria-hidden="true"></span>
+        <div class="lp-terminal__tabs" role="tablist" aria-label="What the build reads">
+          <button role="tab" id="tab-hero-module" aria-controls="panel-hero-module" aria-selected="true">module-info.java</button>
+          <button role="tab" id="tab-hero-pom" aria-controls="panel-hero-pom" aria-selected="false" tabindex="-1">pom.xml</button>
+        </div>
+      </div>
+      <div class="lp-terminal__panels">
+        <pre role="tabpanel" id="panel-hero-module" aria-labelledby="tab-hero-module"><code><span class="lp-prompt">$</span> curl -fsSL https://get.jenesis.build | bash
 <span class="lp-prompt">$</span> cat sources/module-info.java
 <span class="lp-dim">/**
  * @jenesis.release 25
@@ -57,6 +64,23 @@ module demo.app {
     requires static org.jspecify;
 }
 <span class="lp-prompt">$</span> <span class="lp-strong">java build/jenesis/Make.java</span></code></pre>
+        <pre role="tabpanel" id="panel-hero-pom" aria-labelledby="tab-hero-pom" hidden><code><span class="lp-prompt">$</span> curl -fsSL https://get.jenesis.build | bash
+<span class="lp-prompt">$</span> cat pom.xml
+&lt;project&gt;
+    &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+    &lt;groupId&gt;demo&lt;/groupId&gt;
+    &lt;artifactId&gt;app&lt;/artifactId&gt;
+    &lt;version&gt;1.0.0&lt;/version&gt;
+    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;com.fasterxml.jackson.core&lt;/groupId&gt;
+            &lt;artifactId&gt;jackson-databind&lt;/artifactId&gt;
+            &lt;version&gt;2.20.0&lt;/version&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;
+&lt;/project&gt;
+<span class="lp-prompt">$</span> <span class="lp-strong">java build/jenesis/Make.java</span></code></pre>
+      </div>
     </figure>
 
     <div class="lp-agent" aria-labelledby="agent-label">
@@ -76,6 +100,54 @@ module demo.app {
         <code id="agent-codex" class="lp-agent__command">codex 'Run `curl -fsSL https://get.jenesis.build | bash` in the root of this project, then run `java build/jenesis/Make.java prompt/migrate` and carry out the task it prints.'</code>
         <button class="lp-button lp-button--small" type="button" data-copy="agent-codex" aria-describedby="agent-label">Copy</button>
       </div>
+    </div>
+
+    <div class="lp-results" aria-labelledby="migrations">
+      <h2 class="lp-results__title" id="migrations">Builds an agent has moved</h2>
+      <p class="lp-small">A coding agent moved each of these open-source builds, starting from the prompt above and
+        nothing else; agent time is the whole migration, from reading the build to comparing jars, tests and POMs
+        until they matched. Each cell shows how much less time Jenesis took than the original build doing the same work,
+        above the two times.</p>
+      <div class="lp-tabs" data-tabs>
+        <div class="lp-tabs__list" role="tablist" aria-label="Build times">
+          {%- for p in migrations.pairings %}
+          <button role="tab" id="tab-{{ p.id }}" aria-controls="panel-{{ p.id }}" aria-selected="{{ 'true' if loop.first else 'false' }}"{% if not loop.first %} tabindex="-1"{% endif %}>{{ p.label }}</button>
+          {%- endfor %}
+        </div>
+        {%- for p in migrations.pairings %}
+        <div class="lp-tabs__panel" role="tabpanel" id="panel-{{ p.id }}" aria-labelledby="tab-{{ p.id }}"{% if not loop.first %} hidden{% endif %}>
+          <table class="lp-matrix">
+            <colgroup><col class="lp-results__project"><col class="lp-results__tool"><col class="lp-results__agent"><col class="lp-results__full"><col class="lp-results__again"><col class="lp-results__edit"></colgroup>
+            <thead><tr><th scope="col">Project</th><th scope="col">Built with</th><th scope="col">Agent time</th><th scope="col">Full build<br>Jenesis / before</th><th scope="col">Nothing changed<br>Jenesis / before</th><th scope="col">One method edited<br>Jenesis / before</th></tr></thead>
+            <tbody>
+              {%- for r in p.rows %}
+              <tr><th scope="row"><a class="lp-link" href="{{ r.repository }}">{{ r.name }}</a></th><td>{{ r.tool }}</td><td>{{ r.agent }}</td>{% for c in r.cells %}<td><span class="lp-speedup{% if c.spread %} lp-speedup--spread{% endif %}">{{ c.saving }}</span><span class="lp-times">{{ c.times }}</span></td>{% endfor %}</tr>
+              {%- endfor %}
+            </tbody>
+            <tfoot>
+              <tr><th scope="row" colspan="3">Median saving</th>{% for m in p.medians %}<td><span class="lp-speedup">{{ m }}</span></td>{% endfor %}</tr>
+            </tfoot>
+          </table>
+        </div>
+        {%- endfor %}
+      </div>
+      <p class="lp-small lp-results__method">Every build ran alone on a four-core machine, and every time is the
+        median of three runs, except Guava's without and with a daemon, whose builds take more than five minutes and
+        ran once. Without a
+        daemon, Jenesis ran under <code>jenesis.make.mode=compiled</code>, Maven as plain <code>mvn</code> and Gradle with <code>--no-daemon</code>; with one, Jenesis under
+        <code>jenesis.make.mode=daemon</code>, Maven as <code>mvnd</code> and Gradle with <code>--daemon</code>,
+        each warmed up by a first build. From an ahead-of-time cache, Jenesis ran under
+        <code>jenesis.make.mode=aot</code> from its compiled classes, with every cache trained by that first build,
+        as a CI server restores them, and is set beside the original build without a daemon. Runs of one build differed by about 5&nbsp;%, so a saving within that
+        spread is set in grey. After an edit, each build compiled the edited module again and ran the tests of every
+        module that depends on it; each edit was a new one, so no build cache held its result. Every build stayed on
+        <code>pom.xml</code>, and the two builds ran the same tests, except those Jenesis leaves to the old build:
+        AssertJ's 31 and Gson's 12 tests that rely on the Java Module System, and in Guava, Mockito and JUnit 5 the
+        test classes outside Jenesis' default naming, under 1&nbsp;% of their tests, beside 39 tests the JUnit 5
+        migration leaves out. <code>mvnd</code> builds AssertJ only once its Spring Boot tests declare
+        <code>assertj-core</code>, which its parallel reactor otherwise starts too early. Each migration's patch and
+        the script that measured it are <a class="lp-link" href="https://github.com/jenesis/jenesis-documentation/tree/main/benchmarks">on GitHub</a>,
+        to run again on a machine of your own.</p>
     </div>
   </div>
 </section>
@@ -258,39 +330,8 @@ java build/jenesis/Make.java</code></pre></div>
       <a class="lp-link" href="{{ docs }}extending-the-build/#hook-points">hook points</a> of a plugin, without
       changing anything else of the build. The result is validated by comparing what both builds produce: the
       jar contents, the dependency tree, the number of tests run and the POM a consumer receives.</p>
-    <h3 id="migrations">Builds an agent has moved</h3>
-    <p>A coding agent moved each of these open-source builds, one after another, starting from the
-      <a class="lp-link" href="#agent-label">prompt at the top of this page</a> and nothing else. Agent time is the
-      whole migration: reading the build, porting it, and comparing jars, tests and POMs until they matched. The
-      build times compare the moved build with the original, doing the same work: a full build from scratch, a
-      second build with nothing changed, and a build after one method body in a main source file was edited.</p>
-    <table class="lp-matrix">
-      <thead><tr><th scope="col">Project</th><th scope="col">Built with</th><th scope="col">Agent time</th><th scope="col">Full build<br>Jenesis / before</th><th scope="col">Nothing changed<br>Jenesis / before</th><th scope="col">One method edited<br>Jenesis / before</th></tr></thead>
-      <tbody>
-        <tr><th scope="row">Guava</th><td>Maven</td><td>57 min</td><td>10 min 25 s / 12 min 15 s</td><td>4 s / 12 min</td><td>9 min 55 s / 12 min 20 s</td></tr>
-        <tr><th scope="row">JUnit 5</th><td>Gradle</td><td>1 h 22 min</td><td>3 min 35 s / 3 min 55 s</td><td>8 s / 16 s</td><td>2 min 10 s / 2 min 40 s</td></tr>
-        <tr><th scope="row">JUnit 5, both with a daemon</th><td>Gradle</td><td></td><td>2 min 35 s / 3 min 30 s</td><td>6 s / 6 s</td><td>1 min 50 s / 2 min 30 s</td></tr>
-        <tr><th scope="row">Mockito</th><td>Gradle</td><td>58 min</td><td>3 min 5 s / 3 min 15 s</td><td>5 s / 18 s</td><td>2 min 35 s / 2 min 35 s</td></tr>
-        <tr><th scope="row">Mockito, both with a daemon</th><td>Gradle</td><td></td><td>2 min 25 s / 2 min 40 s</td><td>3 s / 3 s</td><td>2 min 5 s / 2 min 10 s</td></tr>
-        <tr><th scope="row">AssertJ</th><td>Maven</td><td>1 h 7 min</td><td>77 s / 120 s</td><td>3 s / 98 s</td><td>53 s / 105 s</td></tr>
-        <tr><th scope="row">Google Auto</th><td>Maven</td><td>37 min</td><td>66 s / 81 s</td><td>3 s / 76 s</td><td>25 s / 78 s</td></tr>
-        <tr><th scope="row">Jackson Databind</th><td>Maven</td><td>44 min</td><td>46 s / 57 s</td><td>4 s / 55 s</td><td>37 s / 56 s</td></tr>
-        <tr><th scope="row">Gson</th><td>Maven</td><td>30 min</td><td>42 s / 55 s</td><td>3 s / 34 s</td><td>16 s / 50 s</td></tr>
-        <tr><th scope="row">jsoup</th><td>Maven</td><td>32 min</td><td>32 s / 41 s</td><td>2 s / 32 s</td><td>29 s / 34 s</td></tr>
-      </tbody>
-    </table>
-    <p class="lp-small">Each migration ran alone on a four-core machine, and every time is the median of three
-      runs, except Guava's, whose builds took longer than five minutes and ran once. Each pair of builds ran in the
-      same way: without a daemon, Jenesis as it comes, Maven as plain <code>mvn</code> and Gradle with
-      <code>--no-daemon</code>; in the rows with a daemon, Gradle with its own and Jenesis under
-      <code>jenesis.make.mode=daemon</code>. With nothing changed, Maven runs every test again, while Jenesis and
-      Gradle reuse what they ran before. After an edit, Jenesis compiled the edited module again and ran the tests of
-      every module that depends on it; each edit was a new one, so no build cache held its result. For JUnit 5 and
-      Mockito, Jenesis also wrote coverage reports and SBOMs on every run. Guava, Gson, jsoup and Google
-      Auto compile for Java 8 and stayed on <code>pom.xml</code>; AssertJ and Jackson Databind also moved to
-      <code>module-info.java</code>, and their tests of package-private code, 2&nbsp;% and 6&nbsp;% of all, run
-      with Maven only. Elsewhere the two builds ran the same tests to within about 1&nbsp;%. Both Guava builds
-      leave out <code>guava-gwt</code>, which stays with Maven.</p>
+    <p>The builds an agent has moved this way, and how long each build takes before and after, are
+      <a class="lp-link" href="#migrations">at the top of this page</a>.</p>
     <p class="lp-after">
       <a class="lp-link" href="{{ docs }}migrating/">Migrating a Maven or Gradle build, step by step &rarr;</a>
     </p>
