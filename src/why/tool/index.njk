@@ -148,7 +148,9 @@ module demo.app {
         AssertJ's 31 and Gson's 12 tests that rely on the Java Module System, and in Guava, Mockito and JUnit 5 the
         test classes outside Jenesis' default naming, under 1&nbsp;% of their tests, beside 39 tests the JUnit 5
         migration leaves out. <code>mvnd</code> builds AssertJ only once its Spring Boot tests declare
-        <code>assertj-core</code>, which its parallel reactor otherwise starts too early.</p>
+        <code>assertj-core</code>, which its parallel reactor otherwise starts too early. Each migration's patch and
+        the script that measured it are <a class="lp-link" href="https://github.com/jenesis/jenesis-documentation/tree/main/benchmarks">on GitHub</a>,
+        to run again on a machine of your own.</p>
     </div>
   </div>
 </section>
