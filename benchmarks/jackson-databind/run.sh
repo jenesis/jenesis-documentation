@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Jackson Databind: its Maven build against the Jenesis build of the migration, which builds from module-info.java;
-# the tests of package-private code run with Maven only.
+# Jackson Databind: its Maven build against the Jenesis build of the migration, which builds from the pom.xml and
+# runs the tests on the class path, where Maven patches them into the main module.
 
 UPSTREAM=https://github.com/FasterXML/jackson-databind.git
 COMMIT=f2d5472325296497fc1c2a5ea53cc622cd071339
