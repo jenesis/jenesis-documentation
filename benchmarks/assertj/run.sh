@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# AssertJ: its Maven build against the Jenesis build of the migration, which builds from module-info.java; the tests
-# of package-private code run with Maven only. Run as root, both builds leave out the tests that expect a file
-# without read permission to be unreadable.
+# AssertJ: its Maven build against the Jenesis build of the migration, which builds from the pom.xml files and runs
+# the tests on the class path. The ten test classes that assert the Java Module System's behaviour - module names in
+# stack traces, the Module_Test classes - run with Maven only, and Maven runs the OSGi tests inside Equinox where
+# Jenesis runs them on JUnit alone. Run as root, both builds leave out the tests that expect a file without read
+# permission to be unreadable.
 
 UPSTREAM=https://github.com/assertj/assertj.git
 COMMIT=170e64c0aaa3fcb1a1b371c29d499cc3472eda7a
@@ -22,8 +24,9 @@ UNREADABLE=(Files_assertHasDigest_.*_Test Paths_assertHasBinaryContent_Test 'Pat
 jenesis() {
     local excluded=()
     if root; then
-        local core=assertj-core/src/test/java/.* tests=assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/.*
-        excluded=("-Djenesis.test.exclude=$core[.]Files_assertHasDigest_.*_Test,$tests[.]Paths_(assertHasBinaryContent|assertHasDigest_with_.*|assertHasSameBinaryContentAs|assertHasSameTextualContentAs|assertHasTextualContent|assertIsReadable|assertIsWritable)_Test")
+        local declared core=assertj-core/org.assertj.core tests=assertj-tests/assertj-integration-tests/assertj-core-tests/org.assertj.tests.core
+        declared="$(sed -n 's/^jenesis\.test\.exclude=//p' jenesis.properties)"
+        excluded=("-Djenesis.test.exclude=${declared:+$declared,}$core.internal.files.Files_assertHasDigest_.*_Test,$tests.internal.paths.Paths_assert(HasBinaryContent|HasDigest_with_.*|HasSameBinaryContentAs|HasSameTextualContentAs|HasTextualContent|IsReadable|IsWritable)_Test")
     fi
     java $JENESIS_MODE "${excluded[@]}" build/jenesis/Make.java
 }
