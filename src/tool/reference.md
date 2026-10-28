@@ -167,7 +167,9 @@ rather than being served by one configured for something else. A daemon starts i
 path a plugin or a setting names relative to the working directory means what it means without a daemon. At
 most three run at once on a machine, across every project, and starting one more first stops the one used
 least recently, once it has finished the build it is running. Every process a build starts in a daemon - a
-test JVM, a tool's warm JVM - runs in the project's root, as it does without one.
+test JVM, a tool's warm JVM - runs in the project's root, as it does without one. On Windows, a folder a
+process runs in can be neither deleted nor renamed, so a project's folder stays in use for as long as its
+daemon runs, idle or not; `--stop` frees it, and a build under `jenesis.make.mode=compiled` never holds it.
 
 | Property | Default | Effect |
 | --- | --- | --- |
