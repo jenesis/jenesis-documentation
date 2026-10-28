@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # AssertJ: its Maven build against the Jenesis build of the migration, which builds from the pom.xml files and runs
-# the tests on the class path. The ten test classes that assert the Java Module System's behaviour - module names in
-# stack traces, the Module_Test classes - run with Maven only, and Maven runs the OSGi tests inside Equinox where
-# Jenesis runs them on JUnit alone. Run as root, both builds leave out the tests that expect a file without read
-# permission to be unreadable.
+# the tests on the class path. The eleven test classes that rely on the Java Module System - module names in stack
+# traces, a resource found through the test module, the Module_Test classes - run with Maven only, and Maven runs
+# the OSGi tests inside Equinox where Jenesis runs them on JUnit alone. Run as root, both builds leave out the tests
+# that expect a file without read permission to be unreadable.
 
 UPSTREAM=https://github.com/assertj/assertj.git
 COMMIT=170e64c0aaa3fcb1a1b371c29d499cc3472eda7a

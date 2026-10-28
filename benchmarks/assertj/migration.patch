@@ -1167,25 +1167,11 @@ index 5e2caeb..30d117d 100644
  </project>
 diff --git a/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/build.jenesis/process-test.properties b/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/build.jenesis/process-test.properties
 new file mode 100644
-index 0000000..07a8e02
+index 0000000..1e8eae1
 --- /dev/null
 +++ b/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/build.jenesis/process-test.properties
-@@ -0,0 +1,2 @@
+@@ -0,0 +1 @@
 +--add-opens=java.base/java.lang=ALL-UNNAMED\njava.base/java.math=ALL-UNNAMED\njava.base/java.util=ALL-UNNAMED\njava.base/sun.nio.fs=ALL-UNNAMED
-+-Dbasedir=assertj-tests/assertj-integration-tests/assertj-core-tests
-diff --git a/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/assertj/tests/core/api/Assertions_linesOf_Test.java b/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/assertj/tests/core/api/Assertions_linesOf_Test.java
-index 4b45f4c..d7e853f 100644
---- a/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/assertj/tests/core/api/Assertions_linesOf_Test.java
-+++ b/assertj-tests/assertj-integration-tests/assertj-core-tests/src/test/java/org/assertj/tests/core/api/Assertions_linesOf_Test.java
-@@ -40,7 +40,7 @@ class Assertions_linesOf_Test {
- 
-   @Test
-   void should_read_lines_of_path_with_UTF8_charset() {
--    Path path = Path.of("src", "test", "resources", "utf8.txt");
-+    Path path = Path.of(System.getProperty("basedir", ""), "src", "test", "resources", "utf8.txt");
-     assertThat(linesOf(path, "UTF-8")).isEqualTo(EXPECTED_CONTENT);
-     assertThat(linesOf(path, StandardCharsets.UTF_8)).isEqualTo(EXPECTED_CONTENT);
-   }
 diff --git a/assertj-tests/assertj-integration-tests/assertj-guava-tests/build.jenesis/packaging.properties b/assertj-tests/assertj-integration-tests/assertj-guava-tests/build.jenesis/packaging.properties
 new file mode 100644
 index 0000000..6e7126a
@@ -1907,11 +1893,11 @@ index 0000000..cd77686
 +bnd+binary/transform=./bnd-plugin
 diff --git a/jenesis.properties b/jenesis.properties
 new file mode 100644
-index 0000000..3f18117
+index 0000000..c3f151d
 --- /dev/null
 +++ b/jenesis.properties
 @@ -0,0 +1,4 @@
 +jenesis.test.jars=false
 +jenesis.maven.sources=groovy
 +jenesis.abi.mode=classpath
-+jenesis.test.exclude=assertj-core/org.example.test.(Soft|BDDSoft|AutoClosableSoft)AssertionsLineNumberTest,assertj-core/org.example.test.MultipleAssertionsError_getMessage_Test,assertj-core/org.assertj.core.util.Throwables_describeErrors_Test,assertj-tests/assertj-integration-tests/assertj-guava-tests/org.assertj.tests.guava.Module_Test,assertj-tests/assertj-integration-tests/assertj-core-tests/org.assertj.tests.core.Module_Test,assertj-tests/assertj-integration-tests/assertj-core-tests/org.assertj.tests.core.api.Assertions_assertThatNoException_Test,assertj-tests/assertj-integration-tests/assertj-core-tests/org.assertj.tests.core.presentation.StandardRepresentation_throwable_format_Test,assertj-tests/assertj-integration-tests/assertj-core-tests/org.example.test.Throwables_getFirstStackTraceElementFromTest_Test
++jenesis.test.exclude=assertj-core/org.example.test.(Soft|BDDSoft|AutoClosableSoft)AssertionsLineNumberTest,assertj-core/org.example.test.MultipleAssertionsError_getMessage_Test,assertj-core/org.assertj.core.util.Throwables_describeErrors_Test,assertj-tests/assertj-integration-tests/assertj-guava-tests/org.assertj.tests.guava.Module_Test,assertj-tests/assertj-integration-tests/assertj-core-tests/org.assertj.tests.core.Module_Test,assertj-tests/assertj-integration-tests/assertj-core-tests/org.assertj.tests.core.api.Assertions_assertThatNoException_Test,assertj-tests/assertj-integration-tests/assertj-core-tests/org.assertj.tests.core.api.Assertions_linesOf_Test,assertj-tests/assertj-integration-tests/assertj-core-tests/org.assertj.tests.core.presentation.StandardRepresentation_throwable_format_Test,assertj-tests/assertj-integration-tests/assertj-core-tests/org.example.test.Throwables_getFirstStackTraceElementFromTest_Test
