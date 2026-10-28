@@ -38,6 +38,11 @@ write instead, `jenesis.test.skip`.
 `jenesis.make.root` belongs on the command line only, because the root is what locates the file in the first
 place. Setting it in a file is reported as an error.
 
+A setting that names a file or folder, wherever it is set, resolves a relative path against the project root,
+never against the folder the build was started from. `-Djenesis.maven.local=m2` names `m2/` under the project
+root whether the build runs from that root, from elsewhere with `jenesis.make.root`, or in a daemon, which
+runs in a folder of its own.
+
 A project may name the repositories it resolves from, with `jenesis.maven.uri`, `jenesis.module.uri` and
 `jenesis.openpgp.uri`. A token never follows it there: `jenesis.maven.token` and `jenesis.module.token` go
 only to a repository named in the environment, on the command line or in your user-global file. A folder a
