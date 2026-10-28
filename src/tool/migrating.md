@@ -79,6 +79,11 @@ moves the result to `module-info.java` as a change of its own, once the `pom.xml
 old one. Code without a split package may go to `module-info.java` directly; this chapter is the `pom.xml`
 route.
 
+Phase two is worth taking only where every test can follow onto the module path. A white-box test that reaches
+package-private code, or one that needs a jar no module path can hold, would be left to the old build by the
+move, and a build that runs fewer tests than before is no step forward. Such tests keep the build on `pom.xml`,
+which runs them on the class path as the old build does.
+
 ## What a pom.xml keeps
 
 A `pom.xml` is read for what it declares, not for how Maven builds it:

@@ -15,7 +15,7 @@ edit() {
 }
 
 jenesis() {
-    java $JENESIS_MODE -Djenesis.make.profiles=release,coverage build/jenesis/Make.java stage
+    java $JENESIS_MODE -Djenesis.make.profiles=release,coverage $MAKE stage
 }
 
 old() {

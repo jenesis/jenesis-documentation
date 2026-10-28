@@ -174,8 +174,19 @@
   margin: 0; border-radius: var(--app-radius-lg); overflow: hidden;
   background: var(--lp-code-bg); box-shadow: var(--lp-shadow); border: 1px solid #2e2921;
 }
-.lp-terminal__bar { display: flex; gap: 0.4rem; padding: 0.75rem 0.9rem; background: #2a251e; }
-.lp-terminal__bar span { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: #5a5144; }
+.lp-terminal__bar { display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.6rem 0.5rem 0.9rem; background: #2a251e; }
+.lp-terminal__bar > span { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: #5a5144; }
+.lp-terminal__tabs { display: flex; gap: 0.25rem; margin-left: auto; }
+.lp-terminal__tabs [role="tab"] {
+  margin: 0; width: auto; padding: 0.2rem 0.65rem; border: 1px solid transparent; border-radius: var(--app-radius-md);
+  background: transparent; color: #a89f90; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.75rem; font-weight: 600; line-height: 1.4;
+}
+.lp-terminal__tabs [role="tab"]:hover { color: #fff; }
+.lp-terminal__tabs [role="tab"][aria-selected="true"] { background: #3a3329; border-color: #4a4236; color: #fff; }
+.lp-terminal__panels { display: grid; }
+.lp-terminal__panels > pre { grid-area: 1 / 1; }
+.lp-terminal__panels > pre[hidden] { display: block !important; visibility: hidden; }
 .lp-terminal pre {
   margin: 0; padding: 1.1rem 1.25rem 1.3rem; background: transparent; border-radius: 0;
   font-size: 0.8rem; line-height: 1.55; overflow-x: auto;
@@ -525,3 +536,23 @@
   .lp-stores span { text-align: left; }
   .lp-footer p { margin-left: 0; }
 }
+
+/* ---- Migration results in the hero ------------------------------------------------------------------------ */
+.lp-results { grid-column: 1 / -1; margin-top: -1.5rem; }
+.lp-speedup { display: block; font-size: 1.05rem; font-weight: 700; color: var(--lp-ok); }
+.lp-speedup--spread { color: var(--lp-muted); font-weight: 600; }
+.lp-times { display: block; font-size: 0.8rem; color: var(--lp-muted); }
+.lp-results .lp-matrix tfoot th, .lp-results .lp-matrix tfoot td { border-top: 2px solid var(--lp-border); }
+.lp-results__method { font-size: 0.8rem; color: var(--lp-muted); }
+.lp .lp-results__title { font-size: clamp(1.4rem, 2.2vw, 1.75rem); margin: 0 0 0.25rem; scroll-margin-top: 6rem; }
+.lp-results .lp-tabs { margin-top: 1rem; }
+.lp-results .lp-tabs__panel { padding: 0; overflow-x: auto; }
+.lp-results .lp-matrix { border: 0; border-radius: 0; table-layout: fixed; min-width: 50rem; }
+.lp-results .lp-matrix, .lp-results .lp-matrix[class] { display: table; }
+.lp-results__project { width: 18%; }
+.lp-results__tool { width: 10%; }
+.lp-results__agent { width: 11%; }
+.lp-results__full, .lp-results__edit { width: 22%; }
+.lp-results__again { width: 17%; }
+.lp-results .lp-matrix td { white-space: nowrap; }
+@media (max-width: 860px) { .lp-results { margin-top: 0; } }

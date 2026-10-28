@@ -9,6 +9,8 @@ further and declare itself in `module-info.java`, so the Java Module System desc
 requires and exports, and the published POM is generated from it. This is phase two of that chapter's
 [two phases](/tool/migrating/#two-phases): a change of its own, started once the `pom.xml` build compares equal
 with the old one. Code without a split package, as that chapter's checks found, takes the same route directly.
+A test that cannot follow without rewriting what it tests, as a white-box test of package-private code, is a
+reason to stay on `pom.xml`, which keeps it on the class path.
 
 ## Taking split packages apart
 
