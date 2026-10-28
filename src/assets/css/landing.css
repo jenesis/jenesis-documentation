@@ -525,3 +525,12 @@
   .lp-stores span { text-align: left; }
   .lp-footer p { margin-left: 0; }
 }
+
+/* ---- Migration results in the hero ------------------------------------------------------------------------ */
+.lp-results { grid-column: 1 / -1; margin-top: -1.5rem; }
+.lp .lp-results__title { font-size: clamp(1.4rem, 2.2vw, 1.75rem); margin: 0 0 0.25rem; scroll-margin-top: 6rem; }
+.lp-results .lp-tabs { margin-top: 1rem; }
+.lp-results .lp-tabs__panel { padding: 0; }
+.lp-results .lp-matrix { border: 0; border-radius: 0; }
+.lp-results .lp-matrix td { white-space: nowrap; }
+@media (max-width: 860px) { .lp-results { margin-top: 0; } }
