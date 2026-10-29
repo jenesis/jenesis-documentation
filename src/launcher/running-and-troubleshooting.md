@@ -132,9 +132,10 @@ bundled modules; the first match wins.
 
 A class the launcher loads has a `CodeSource` whose location points **inside** the outer jar (for example
 `jar:file:/…/app.jar!/jars/dep.jar/`), so `Package.getImplementationVersion`, sealed packages, and
-`getProtectionDomain().getCodeSource()` all report correctly. But a dependency is *not* a standalone jar on
-disk, so the "open my own jar file and read its entries" idiom fails. Code that walks its own jar as a file
-needs another approach.
+`getProtectionDomain().getCodeSource()` all report correctly. Code that opens that location as a URL -
+`((JarURLConnection) location.openConnection()).getJarFile()` - gets the dependency as a jar of its own and can
+read its entries. But a dependency is *not* a standalone jar on disk, so code that turns the location into a file
+path and opens that file finds no such file. Code that walks its own jar as a file needs another approach.
 
 ### Resources in a non-open module package
 

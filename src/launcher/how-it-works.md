@@ -148,8 +148,11 @@ Heap use is therefore roughly the size of the entry-name index rather than the d
 Two details make this transparent to the application:
 
 - **Resources come back as ordinary URLs.** The loader hands out standard `jar:` and `file:` URLs, so
-  `ClassLoader.getResources` - and therefore `ServiceLoader` - works through the JDK's own handlers, with no
-  custom URL scheme to configure.
+  `ClassLoader.getResources` - and therefore `ServiceLoader` - works with no custom URL scheme to configure.
+  A `jar:` URL names its entry inside the launcher jar, as `…/app.jar!/jars/dep.jar/db/migration`, while the
+  connection it opens presents `dep.jar` as a jar of its own, as a class path does. A library that lists a
+  class-path folder by opening the jar behind its URL - Flyway lists its migrations so - therefore finds the
+  folder's files, as a framework's component scan does.
 - **Multi-release jars are honoured.** For a dependency whose manifest says `Multi-Release: true`, the
   launcher serves the highest `META-INF/versions/<n>/` entry the running JVM supports, just as the JDK does
   for a real jar.
