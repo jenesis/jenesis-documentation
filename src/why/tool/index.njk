@@ -123,8 +123,7 @@ module demo.app {
       {%- endfor %}
     </div>
     <p class="lp-small lp-results__method">Each build ran alone on a four-core machine, and a time is the median of
-      three runs, or of one for Guava; a saving within the 5&nbsp;% by which runs of one build differed is set in
-      grey. Without a daemon, Maven ran as <code>mvn</code> and Gradle with <code>--no-daemon</code>; with one,
+      three runs; a saving within the 5&nbsp;% by which runs of one build differed is set in grey. Without a daemon, Maven ran as <code>mvn</code> and Gradle with <code>--no-daemon</code>; with one,
       Jenesis' daemon ran against <code>mvnd</code> and Gradle's, each warmed up by a first build; from an
       ahead-of-time cache, Jenesis is set beside the original build without a daemon. Every build stayed on
       <code>pom.xml</code> and ran the same tests, apart from the few Jenesis leaves to the old build. One machine
