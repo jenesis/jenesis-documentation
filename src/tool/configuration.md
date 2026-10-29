@@ -38,10 +38,11 @@ write instead, `jenesis.test.skip`.
 `jenesis.make.root` belongs on the command line only, because the root is what locates the file in the first
 place. Setting it in a file is reported as an error.
 
-A setting that names a file or folder, on the command line or in a project's files, resolves a relative path
-against the project root, never against the folder the build was started from. `-Djenesis.maven.local=m2` names
-`m2/` under the project root whether the build runs from that root, from elsewhere with `jenesis.make.root`, or
-in a daemon, which runs in a folder of its own. An absolute path is used as it is.
+A setting that names a file or folder resolves a relative path against the place it is written. In a project's
+files, that is the project root, wherever the build is started from and whether or not it runs in a daemon, which
+runs in a folder of its own. On the command line, as in an argument file, it is the folder the command runs in, as
+with any other program: `-Djenesis.project.target=out` typed in the project root names its `out/`, and typed
+elsewhere with `jenesis.make.root` it names an `out/` below that other folder. An absolute path is used as it is.
 
 A project may name the repositories it resolves from, with `jenesis.maven.uri`, `jenesis.module.uri` and
 `jenesis.openpgp.uri`. A token never follows it there: `jenesis.maven.token` and `jenesis.module.token` go
@@ -241,7 +242,7 @@ What this file names for the whole machine is relative to that folder as well. A
 `jenesis.maven.local`, `jenesis.module.local`, `jenesis.daemon.folder`, `jenesis.jarsigner.keystore` or the
 `file` of a jarsigner password, set there or in one of its profiles, resolves against `~/.jenesis`, so
 `jenesis.maven.local=m2` is `~/.jenesis/m2` for every project you build. The same setting on the command line
-still names a folder of the project.
+names a folder below the one the command runs in.
 
 The `jenesis.make.global` property names the base folder (default `$HOME`) whose `.jenesis/` subfolder
 holds that file. Set to an empty string, it switches the user-global layer off entirely. It is set on the
