@@ -163,21 +163,26 @@ build that lints or generates in every module gains more from it than from a war
 Only `jenesis.*` properties travel with a call to a daemon, which clears and sets them again around every
 build. Everything a running JVM cannot change is the daemon's identity instead - the engine, the JVM, its
 options, the environment and the project - and a call differing in one of them is handed to another daemon
-rather than being served by one configured for something else. A daemon starts in its project's root, so a
-path a plugin or a setting names relative to the working directory means what it means without a daemon. At
-most three run at once on a machine, across every project, and starting one more first stops the one used
-least recently, once it has finished the build it is running. Every process a build starts in a daemon - a
-test JVM, a tool's warm JVM - runs in the project's root, as it does without one.
+rather than being served by one configured for something else. Daemons are shared: every project whose
+build runs the same engine on the same JVM with the same options and environment builds in a daemon that is
+free, which runs in a folder of its own. A relative path in a setting names a path relative to the project
+root, with or without a daemon, and every process a build starts - a test JVM, a tool's warm JVM - runs in the
+project's root, so a build means the same in a shared daemon as without one; a plugin that resolves a path
+against the working directory rather than against the folders it is handed resolves it in the daemon's folder.
+At most three daemons run at once on a machine, and starting one more first stops the one used least recently,
+once it has finished the build it is running. `jenesis.daemon.shared=false` keeps a daemon for one project
+alone, started in its root. On Windows, a folder a process runs in can be neither deleted nor renamed, so the
+project's folder then stays in use for as long as its daemon runs, idle or not; `--stop` frees it.
 
 | Property | Default | Effect |
 | --- | --- | --- |
-| `jenesis.daemon.shared` | `false` | Hand the build to a daemon any project may use that runs the same engine on the same JVM with the same options and environment. Such a daemon runs in a folder of its own, so it suits builds whose plugins and settings name no path relative to the working directory. |
+| `jenesis.daemon.shared` | `true` | Hand the build to a daemon any project may use that runs the same engine on the same JVM with the same options and environment, running in a folder of its own; `false` keeps a daemon for this project alone, started in its root. |
 | `jenesis.daemon.limit` | `3` | How many daemons may run at once on the machine, across every project. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.daemon.idle` | `10800` | Seconds of idleness after which a daemon exits. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.daemon.options` | *(the client's)* | JVM options for the daemon process itself, whitespace separated. Unset, a daemon starts with the `-X`, `-D` and `-ea` options of the JVM that hands it the build, so `java -Xmx4g build/jenesis/Make.java` builds in a daemon with four gigabytes. Command line or `~/.jenesis/jenesis.properties` only. |
-| `jenesis.daemon.folder` | `~/.jenesis/daemons` | Where daemons announce themselves, each with its log, beside a copy of every engine compiled from source that one runs. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.daemon.folder` | `~/.jenesis/daemons` | Where daemons announce themselves, each with its log, beside a copy of every engine compiled from source that one runs, relative to the project root. Command line or `~/.jenesis/jenesis.properties` only. |
 
-A daemon runs build after build in one JVM, several projects' builds where daemons are shared, and a build
+A daemon runs build after build in one JVM, several projects' builds unless daemons are kept per project, and a build
 runs code its project chose - its plugins, its
 annotation processors, the tools it names - which can change what the whole JVM does. So after every build a
 daemon restores the system properties, the default locale and the default time zone, and it ends after a build
@@ -187,8 +192,9 @@ exception handler, or the standard input - with a `[DAEMON]` line naming it; the
 daemon. That keeps one build's settings out of the next. It is no boundary between builds: no JVM can
 confine the code it runs, so code that sets out to outlast its build - a thread left running, a field changed
 by reflection - reaches the daemon's later builds. A release that publishes never runs in a daemon unless a mode
-says so. Shared daemons are for projects you trust alike; build a project you do not trust with `-Djenesis.make.mode=compiled`, or in a container
-(`jenesis.project.docker`), which also keeps it from your files.
+says so. Shared daemons are for projects you trust alike; keep a project apart with `-Djenesis.daemon.shared=false`, and
+build a project you do not trust with `-Djenesis.make.mode=compiled`, or in a container (`jenesis.project.docker`),
+which also keeps it from your files.
 
 An ahead-of-time cache answers the same cost without a process. It is a file of the engine's classes, already
 loaded and linked, which a starting JVM maps instead of loading them again: nothing stays resident between
@@ -250,7 +256,7 @@ JVM later, is not in it, while every tool a plugin starts in a JVM of its own ge
 
 | Property | Default | Effect |
 | --- | --- | --- |
-| `jenesis.make.global` | `$HOME` | Base folder whose `.jenesis/` subfolder holds the user-global `jenesis.properties`; empty string disables it. Command-line only. |
+| `jenesis.make.global` | `$HOME` | Base folder whose `.jenesis/` subfolder holds the user-global `jenesis.properties`, relative to the project root; empty string disables it. Command-line only. |
 | `jenesis.make.provided` | *(derived)* | The settings the project's own files supplied, comma-separated and named without the `jenesis.` prefix. `Make` derives it, and no file may set it; it is how a repository or cache that a project's file named is never sent a credential. |
 | `jenesis.project.configuration` | `build.jenesis/` | Comma-separated project-wide configuration folders; `@` splices the default back in, and `@<name>` splices what `jenesis.<name>` or the environment variable `<name>` holds. |
 | `jenesis.project.boms` | the configuration folders | Path-separated list of folders searched for `pin-<name>.properties` files. |
@@ -355,19 +361,19 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | Key (env fallback) | Default | Effect |
 | --- | --- | --- |
 | `jenesis.maven.uri` (`MAVEN_REPOSITORY_URI`) | Maven Central | Upstream Maven repository URL(s); supports filters and references. A project's own file may name them, and `jenesis.maven.token` is then not sent. An empty value names no upstream at all, so only *[Discovery](/tool/discovery/)* and the artifacts a build stored answer. |
-| `jenesis.maven.local` (`MAVEN_REPOSITORY_LOCAL`) | `~/.m2/repository` | Local Maven repository for reads and `export`. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.maven.local` (`MAVEN_REPOSITORY_LOCAL`) | `~/.m2/repository` | Local Maven repository for reads and `export`, relative to the project root. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.maven.token` (`MAVEN_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the Maven upstream. Command line or `~/.jenesis/jenesis.properties` only. It travels only to a `jenesis.maven.uri` named in the environment, on the command line or there, never to the built-in public repository. |
 | `jenesis.maven.embed` | `true` | Carry the POM and a `pom.properties` in the jar under `META-INF/maven/<groupId>/<artifactId>/`, as Maven does, where the layout publishes to Maven (see *[Publishing](/tool/publishing/)*). |
 | `jenesis.maven.sources` | *(unset)* | Folders beside `src/main/java` and `src/test/java` that a `pom.xml` module compiles as well, comma-separated names such as `kotlin,groovy`, each read as `src/main/<name>` and `src/test/<name>` where it exists. |
 | `jenesis.maven.segments` | `2` | How many leading dot-separated segments of a module name form its Maven group ID when a module is published or resolved by the coordinate convention; a name with fewer becomes the group ID whole. A `maven:<segments>:<uri>` entry of `jenesis.module.uri` sets it for that remote alone. |
 | `jenesis.module.uri` (`JENESIS_REPOSITORY_URI`) | `https://repo.jenesis.build/` | The Jenesis Module Index URL(s) module names resolve through; same list/filter/`@` grammar. An entry may name how it is read: `maven:[<segments>:]<uri>` reads a Maven repository by the publishing convention, and `mapped:<uri or @>:<list>[;<list>...]` reads the modules that `.properties` lists, each a URI or an absolute path, map to `<groupId>/<artifactId>[/<type>[/<classifier>]]`, from the Maven repository at that URI or, for `@`, from the one `jenesis.maven.uri` configures. A project's own file may name them, and `jenesis.module.token` is then not sent. An empty value names no index at all, so only *[Discovery](/tool/discovery/)*, the local module repository (`~/.jenesis`) and the artifacts a build stored answer. |
-| `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | `~/.jenesis` | The local module repository, read first and written by `export`; it also keeps the answers of discovery under `well-known/`. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.module.local` (`JENESIS_REPOSITORY_LOCAL`) | `~/.jenesis` | The local module repository, read first and written by `export`, relative to the project root; it also keeps the answers of discovery under `well-known/`. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.module.source` | `service` | Who resolves a module name: `service` asks the index at `jenesis.module.uri`, `git` reads its published data itself and fetches from `jenesis.maven.uri`. |
 | `jenesis.module.index` (`JENESIS_INDEX_URI`) | `data/modules/` in [`jenesis/jenesis-modules`](https://github.com/jenesis/jenesis-modules/tree/main/data/modules) | Where `git` reads that data from - a fork or mirror of the index's per-module files. |
 | `jenesis.module.prerelease` | *(unset)* | Whether a module asked for without a version may resolve to a pre-release. Unset states no preference: the newest release is served, and a module that has only pre-releases resolves to nothing. |
 | `jenesis.module.speculative` | *(unset)* | Whether a version the index has not recorded may be resolved from the module's newest coordinate. Unset states no preference, and the version is guessed. |
 | `jenesis.openpgp.uri` (`OPENPGP_REPOSITORY_URI`) | `keyserver.ubuntu.com`, `keys.openpgp.org` | HKP key server roots a declared fingerprint resolves through; same list/`@` grammar, asked in order. A project's own file may name them. |
-| `jenesis.openpgp.local` (`OPENPGP_REPOSITORY_LOCAL`) | `.jenesis/keys` | Where fetched keys are held, one file per fingerprint; an empty `openpgp.uri` makes this the only source. A project's own file names only a folder inside the project. |
+| `jenesis.openpgp.local` (`OPENPGP_REPOSITORY_LOCAL`) | `.jenesis/keys` | Where fetched keys are held, one file per fingerprint, relative to the project root; an empty `openpgp.uri` makes this the only source. A project's own file names only a folder inside the project. |
 | `jenesis.module.token` (`JENESIS_REPOSITORY_TOKEN`) | *(unset)* | `Authorization` header sent to the module index. Command line or `~/.jenesis/jenesis.properties` only. It travels only to a `jenesis.module.uri` named in the environment, on the command line or there, never to the built-in public repository, and only to the first of several. |
 | `jenesis.repository.insecure` | `false` | Permit plaintext (`http://`) repositories, and over `https` accept a certificate that does not verify, such as a self-signed one. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.repository.retries` | `2` | Retries for a transient fetch failure (`0` disables). |
@@ -424,7 +430,7 @@ password location is missing.
 
 | Key | Default | Effect |
 | --- | --- | --- |
-| `jenesis.jarsigner.keystore` | *(unset)* | The key store `jarsigner` signs the produced jar with, in place of the unsigned one. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.jarsigner.keystore` | *(unset)* | The key store `jarsigner` signs the produced jar with, in place of the unsigned one, relative to the project root. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.jarsigner.alias` | *(unset)* | The name of the key within that store. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.jarsigner.storepass` | *(unset)* | Where that store's password is read from: `env <variable>` or `file <path>`, never the password itself. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.jarsigner.keypass` | *(unset)* | The same, for a key that carries a password of its own. Command line or `~/.jenesis/jenesis.properties` only. |
@@ -464,7 +470,7 @@ password location is missing.
 | `jenesis.executor.concurrency` | `0` | The most build steps that run at once across the whole build; `0` means no limit, while `jenesis.process.concurrency` still bounds the tools they run. |
 | `jenesis.process.factory` | `tool` | How JDK tool steps launch: `tool` (in-process) or `fork`; a `-J` option in `process-javac.properties` runs `javac` in a JVM of its own either way. |
 | `jenesis.process.mode` | `fork` | How a tool a plugin starts through `ofJavaMain()`, and `javac` where a `-J` option forks it, runs. `fork` starts a JVM for every call that `jenesis.process.shared` does not hand to a shared JVM, so a build without the daemon leaves no JVM running. `aot` starts that JVM from an ahead-of-time cache of the tool in `jenesis.aot.folder`, trained by its first run. `daemon` runs it in one JVM that runs its compilations side by side, as it runs the calls a plugin marks `shared`, kept for the next call with the same jars on its class path, wherever a module resolved them, and the same options, environment and working directory; an idle one ends after ten minutes. `jenesis.make.mode=aot` and `jenesis.make.mode=daemon` set it to the same unless it is set. |
-| `jenesis.process.directory` | *(unset)* | The working directory of every process the build starts, a test JVM and a tool's warm JVM included, relative to the project root. Unset, it is the directory the build was started in, and the project root where a daemon runs the build. A project's own file names only a folder inside the project. |
+| `jenesis.process.directory` | *(unset)* | The working directory of every process the build starts, a test JVM and a tool's warm JVM included, relative to the project root. Unset, it is the project root. A project's own file names only a folder inside the project. |
 | `jenesis.process.shared` | `true` | Run the calls a plugin marks `shared`, a compiler's above all, and `javac` where a `-J` option forks it, side by side in one JVM per JVM, options, jars and environment, under `fork` and `aot` as under `daemon`. The JVM ends with the build, unless `jenesis.process.mode=daemon` keeps it for the next one; `false` starts a JVM for every such call. |
 | `jenesis.process.tail` | `200` | How many of the last lines of a failed tool's output and of its error the failure prints, beside how many there were and the file under `supplement/` that holds all of them; `0` prints every line. |
 | `jenesis.process.concurrency` | *(processor count)* | The most tool runs - a compiler, a JDK tool, a forked JVM such as a test run - that happen at once across the whole build; `0` means no limit. |
