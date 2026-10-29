@@ -132,8 +132,7 @@ module demo.app {
         {%- endfor %}
       </div>
       <p class="lp-small lp-results__method">Every build ran alone on a four-core machine, and every time is the
-        median of three runs, except Guava's without and with a daemon, whose builds take more than five minutes and
-        ran once. Without a
+        median of three runs. Without a
         daemon, Jenesis ran under <code>jenesis.make.mode=compiled</code>, Maven as plain <code>mvn</code> and Gradle with <code>--no-daemon</code>; with one, Jenesis under
         <code>jenesis.make.mode=daemon</code>, Maven as <code>mvnd</code> and Gradle with <code>--daemon</code>,
         each warmed up by a first build. From an ahead-of-time cache, Jenesis ran under
