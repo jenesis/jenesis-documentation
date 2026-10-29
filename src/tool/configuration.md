@@ -38,10 +38,10 @@ write instead, `jenesis.test.skip`.
 `jenesis.make.root` belongs on the command line only, because the root is what locates the file in the first
 place. Setting it in a file is reported as an error.
 
-A setting that names a file or folder, wherever it is set, resolves a relative path against the project root,
-never against the folder the build was started from. `-Djenesis.maven.local=m2` names `m2/` under the project
-root whether the build runs from that root, from elsewhere with `jenesis.make.root`, or in a daemon, which
-runs in a folder of its own.
+A setting that names a file or folder, on the command line or in a project's files, resolves a relative path
+against the project root, never against the folder the build was started from. `-Djenesis.maven.local=m2` names
+`m2/` under the project root whether the build runs from that root, from elsewhere with `jenesis.make.root`, or
+in a daemon, which runs in a folder of its own. An absolute path is used as it is.
 
 A project may name the repositories it resolves from, with `jenesis.maven.uri`, `jenesis.module.uri` and
 `jenesis.openpgp.uri`. A token never follows it there: `jenesis.maven.token` and `jenesis.module.token` go
@@ -236,6 +236,12 @@ A **user-global `jenesis.properties`**, read from `~/.jenesis/` and applied to *
 this machine builds. It outranks what a project sets, so a `jenesis.dependency.signature=strict` there holds
 for every project you build, and only a `-D` overrides it. It is optional and ignored when absent, and it may
 declare its own profiles, resolved relative to its `.jenesis` folder.
+
+What this file names for the whole machine is relative to that folder as well. A relative path in
+`jenesis.maven.local`, `jenesis.module.local`, `jenesis.daemon.folder`, `jenesis.jarsigner.keystore` or the
+`file` of a jarsigner password, set there or in one of its profiles, resolves against `~/.jenesis`, so
+`jenesis.maven.local=m2` is `~/.jenesis/m2` for every project you build. The same setting on the command line
+still names a folder of the project.
 
 The `jenesis.make.global` property names the base folder (default `$HOME`) whose `.jenesis/` subfolder
 holds that file. Set to an empty string, it switches the user-global layer off entirely. It is set on the
