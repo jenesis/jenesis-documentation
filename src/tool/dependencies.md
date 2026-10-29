@@ -309,7 +309,10 @@ belongs to Maven.
 To make sure a build touches no network at all, say so with `-Djenesis.repository.offline=true`. Everything then
 comes from `.jenesis/artifacts`, the local Maven repository or a local module folder, and a file that is in none
 of them fails the build with its URL named instead of being downloaded. A pinned project needs nothing else once
-it has built once, which the `pinning` demo shows.
+it has built once, which the `pinning` demo shows. The local module folder, `~/.jenesis` unless
+`jenesis.module.local` names another, keeps each versioned module and POM the module index served, as the local
+Maven repository keeps what a Maven repository served. A fresh checkout on a machine that has built the project
+before therefore builds offline too, and so does a CI job that keeps both folders between runs.
 
 A resolution is still only repeated when the dependency set changes, because the step that performs it is
 cached like every other. `RELEASE` therefore means *the newest version as of the last resolution*, which is
@@ -390,6 +393,10 @@ The alias travels with the jar: its manifest records it as `Jenesis-Aliases`, so
 `demo.cli` inherits the name without declaring it again. An alias applies only where its target is resolved, so
 a downstream module that never pulls an optional dependency in, or excludes it, ignores it, and an alias a
 parent POM declares names its jar only in the modules that resolve it.
+
+An alias also covers what the build adds by module name, such as the console launcher and the engine the JUnit
+Platform needs to run a module's tests. A test module that aliases `org.junit.platform.console` has it resolved,
+and pinned, as the coordinate the alias names, so no module name reaches the module index.
 
 An alias names an artifact, never one of its classifiers: a pin of the artifact,
 `@jenesis.pin <groupId>/<artifactId> :<classifier>[:<version>]`, selects a variant. Aliases reach an artifact by its Maven
