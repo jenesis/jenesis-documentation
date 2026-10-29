@@ -52,8 +52,9 @@ to it and may wipe it. On the command line it can name any folder.
 
 The same goes for the few keys that describe your own environment rather than the project. They would make no
 sense in a project's file anyway, and a rogue project could use them to reach beyond its own build. The
-project's file and its profiles refuse them; the command line and your user-global file, described below,
-accept them.
+command line and your user-global file, described below, accept them. Set in the project's file or one of its
+profiles, such a key stops the build where the build would use it, naming the key and asking for it on the
+command line instead.
 
 Keys fall into namespaces, each grouping one concern: `jenesis.test.*` for tests, `jenesis.maven.*` and
 `jenesis.module.*` for the two kinds of repository, and so on. `jenesis.make.*` covers starting a build:
@@ -241,8 +242,9 @@ declare its own profiles, resolved relative to its `.jenesis` folder.
 What this file names for the whole machine is relative to that folder as well. A relative path in
 `jenesis.maven.local`, `jenesis.module.local`, `jenesis.daemon.folder`, `jenesis.jarsigner.keystore` or the
 `file` of a jarsigner password, set there or in one of its profiles, resolves against `~/.jenesis`, so
-`jenesis.maven.local=m2` is `~/.jenesis/m2` for every project you build. The same setting on the command line
-names a folder below the one the command runs in.
+`jenesis.maven.local=m2` is `~/.jenesis/m2` for every project you build. A folder of the project, such as
+`jenesis.project.target`, set there names that folder in each project you build. The same settings on the command
+line name a folder below the one the command runs in.
 
 The `jenesis.make.global` property names the base folder (default `$HOME`) whose `.jenesis/` subfolder
 holds that file. Set to an empty string, it switches the user-global layer off entirely. It is set on the

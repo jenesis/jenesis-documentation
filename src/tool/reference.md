@@ -257,7 +257,11 @@ JVM later, is not in it, while every tool a plugin starts in a JVM of its own ge
 | Property | Default | Effect |
 | --- | --- | --- |
 | `jenesis.make.global` | `$HOME` | Base folder whose `.jenesis/` subfolder holds the user-global `jenesis.properties`, relative to the folder the command runs in; empty string disables it. Command-line only. |
-| `jenesis.make.provided` | *(derived)* | The settings the project's own files supplied, comma-separated and named without the `jenesis.` prefix. `Make` derives it, and no file may set it; it is how a repository or cache that a project's file named is never sent a credential. |
+| `jenesis.make.provided` | *(derived)* | The settings the project's own files supplied, comma-separated and named without the `jenesis.` prefix. `Make` derives it, and no file may set it; it is how a repository or cache that a project's file named is never sent a credential, how a setting only you may make is refused there, and how a path named there resolves against the project root. |
+| `jenesis.make.personal` | *(derived)* | The settings your user-global file and its profiles supplied, likewise, so that a path of the machine named there resolves against `jenesis.make.home`. |
+| `jenesis.make.home` | *(derived)* | The `.jenesis` folder holding your user-global file. No file may set it. |
+| `jenesis.make.ambient` | *(derived)* | The settings the command line supplied, likewise, so that a path named there resolves against `jenesis.make.directory`. |
+| `jenesis.make.directory` | *(derived)* | The folder the command runs in, which a relative path on the command line resolves against. The command and the tools record it, a daemon or a container keeps the one it is handed, and no file may set it. |
 | `jenesis.project.configuration` | `build.jenesis/` | Comma-separated project-wide configuration folders; `@` splices the default back in, and `@<name>` splices what `jenesis.<name>` or the environment variable `<name>` holds. |
 | `jenesis.project.boms` | the configuration folders | Path-separated list of folders searched for `pin-<name>.properties` files. |
 | `jenesis.project.artifacts` | `.jenesis/artifacts` | The project-local folder resolved artifacts are materialised into (hard-linked from `~/.m2` where possible), in every layout. It also holds a copy of each repository's `maven-metadata.xml`, so a `RELEASE` or range still resolves when the repository is unreachable. A project's own file names only a folder inside the project. |
