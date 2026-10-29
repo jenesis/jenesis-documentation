@@ -314,6 +314,16 @@ it has built once, which the `pinning` demo shows. The local module folder, `~/.
 Maven repository keeps what a Maven repository served. A fresh checkout on a machine that has built the project
 before therefore builds offline too, and so does a CI job that keeps both folders between runs.
 
+A CI job can instead keep the project's own `.jenesis` folder alone. Set `jenesis.maven.local` and
+`jenesis.module.local` to nothing, and no local repository is read or written: what the build resolves, whichever
+module source or discovered repository served it, lands in `.jenesis/artifacts`, and so do the answers of
+discovery. A later run that restores `.jenesis` asks the network for nothing, which
+`-Djenesis.repository.offline=true` makes sure of:
+
+```bash
+java -Djenesis.maven.local= -Djenesis.module.local= -Djenesis.repository.offline=true build/jenesis/Make.java
+```
+
 A resolution is still only repeated when the dependency set changes, because the step that performs it is
 cached like every other. `RELEASE` therefore means *the newest version as of the last resolution*, which is
 what `pin` exists to make explicit.
