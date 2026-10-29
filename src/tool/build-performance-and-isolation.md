@@ -55,9 +55,9 @@ profile alike - except the settings that start it, `jenesis.project.docker` and 
 and `env`. It runs no test there and none of the
 plugins the project names until the container is up and the isolation is in place.
 
-The project also cannot undo the isolation. Its `jenesis.properties` and its profiles are refused if they set
-`jenesis.project.docker` or `jenesis.execute.docker`, or the `image`, `readable`, `writable` or `env` of either, so a
-project can neither switch Docker off nor widen
+The project also cannot undo the isolation. A `jenesis.project.docker` or `jenesis.execute.docker`, or the `image`,
+`readable`, `writable` or `env` of either, in its `jenesis.properties` or its profiles stops the build where the
+build would use it, so a project can neither switch Docker off nor widen
 the container with a mount or an environment variable. Only your command line or your own
 `~/.jenesis/jenesis.properties` configures Docker.
 
