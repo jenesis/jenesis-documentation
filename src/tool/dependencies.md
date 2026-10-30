@@ -309,7 +309,20 @@ belongs to Maven.
 To make sure a build touches no network at all, say so with `-Djenesis.repository.offline=true`. Everything then
 comes from `.jenesis/artifacts`, the local Maven repository or a local module folder, and a file that is in none
 of them fails the build with its URL named instead of being downloaded. A pinned project needs nothing else once
-it has built once, which the `pinning` demo shows.
+it has built once, which the `pinning` demo shows. The local module folder, `~/.jenesis` unless
+`jenesis.module.local` names another, keeps each versioned module and POM the module index served, as the local
+Maven repository keeps what a Maven repository served. A fresh checkout on a machine that has built the project
+before therefore builds offline too, and so does a CI job that keeps both folders between runs.
+
+A CI job can instead keep the project's own `.jenesis` folder alone. Set `jenesis.maven.local` and
+`jenesis.module.local` to nothing, and no local repository is read or written: what the build resolves, whichever
+module source or discovered repository served it, lands in `.jenesis/artifacts`, and so do the answers of
+discovery. A later run that restores `.jenesis` asks the network for nothing, which
+`-Djenesis.repository.offline=true` makes sure of:
+
+```bash
+java -Djenesis.maven.local= -Djenesis.module.local= -Djenesis.repository.offline=true build/jenesis/Make.java
+```
 
 A resolution is still only repeated when the dependency set changes, because the step that performs it is
 cached like every other. `RELEASE` therefore means *the newest version as of the last resolution*, which is
@@ -386,14 +399,23 @@ The tag maps a module name onto a `<groupId>/<artifactId>` the resolved closure 
 is then a module name like any other; the `opens` above is what lets args4j set the annotated fields by
 reflection. Nothing is synthesised and no jar is rewritten.
 
+A target with one slash is a Maven artifact, short for `maven/<groupId>/<artifactId>`. With more slashes, the
+first segment names the repository the target resolves from, as a pin's does: `maven/<groupId>/<artifactId>/pom`
+aliases an artifact of another type, and a repository an entry point configures in code is named by its own name.
+A repository the build does not resolve fails the build where the alias is required, naming the ones it does.
+
 The alias travels with the jar: its manifest records it as `Jenesis-Aliases`, so a module that depends on
 `demo.cli` inherits the name without declaring it again. An alias applies only where its target is resolved, so
 a downstream module that never pulls an optional dependency in, or excludes it, ignores it, and an alias a
 parent POM declares names its jar only in the modules that resolve it.
 
+An alias also covers what the build adds by module name, such as the console launcher and the engine the JUnit
+Platform needs to run a module's tests. A test module that aliases `org.junit.platform.console` has it resolved,
+and pinned, as the coordinate the alias names, so no module name reaches the module index.
+
 An alias names an artifact, never one of its classifiers: a pin of the artifact,
-`@jenesis.pin <groupId>/<artifactId> :<classifier>[:<version>]`, selects a variant. Aliases reach an artifact by its Maven
-coordinate, which the strict `modular` layout does not use, so an alias there fails the build and names
+`@jenesis.pin <groupId>/<artifactId> :<classifier>[:<version>]`, selects a variant. The strict `modular` layout
+resolves no Maven coordinate, so an alias to a Maven artifact there fails the build and names
 `-Djenesis.project.layout=modular_to_maven`. A
 `pom.xml` project declares the same lines in a `<!--jenesis.alias ... -->` comment of the POM, one per line,
 and a module inherits those of a local parent. That is how the `module-info.java` a `pom.xml` build compiles in

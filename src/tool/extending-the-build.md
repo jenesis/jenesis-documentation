@@ -582,7 +582,8 @@ but binds no files. Only a module that runs tests is observed.
 
 A plugin of the hook point `test` provides a `TestFrameworkFactory`, is handed the same, and returns a
 `TestFramework`: the runner the tests' JVM starts, the arguments it takes, and the modules that mark a test module as
-its own. The frameworks a project declares are consulted first, in the order `jenesis.plugins.properties` names
+its own. A framework that writes a report can also return, from `failed`, the test methods that failed in a run,
+which `jenesis.test.mode=failed` and `failedfirst` run again the next time; one that returns nothing runs every test by class name. The frameworks a project declares are consulted first, in the order `jenesis.plugins.properties` names
 them, and the built-in JUnit Platform, JUnit 4 and TestNG after them, so the first framework a module of the tests
 marks runs them. A `framework=<name>` line in `test.properties` names a declared framework by its plugin name, as it
 names a built-in one.
