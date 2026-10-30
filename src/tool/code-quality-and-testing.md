@@ -615,20 +615,30 @@ one runs the tests again and starts a new memory.
 
 Jenesis already skips a module's whole test step when none of that module's inputs changed. **Test selection**
 is the finer-grained companion: within a module that *did* change, it runs only the test classes the change
-can reach and leaves the rest cached. Turn it on with `-Djenesis.test.incremental`:
+can reach and leaves the rest cached. Turn it on with `-Djenesis.test.mode=incremental`:
 
 ```bash
-java -Djenesis.project.watch=true -Djenesis.test.incremental build/jenesis/Make.java
+java -Djenesis.project.watch=true -Djenesis.test.mode=incremental build/jenesis/Make.java
 ```
 
-`true`, or the setting named with no value, detects changes with `MD5`; the name of another message digest
-the JDK provides detects them with that one, and `false` or leaving it unset disables selection. Any other value
-fails the build with the valid ones listed. A filter, an exclusion and a tag selection each switch it off, so
-such a run runs every test it selects rather than only those a change reaches. On each run the test step builds a class-to-test dependency graph from the
-compiled bytecode and records a per-class content hash. On the next run it diffs the hashes, takes the classes
-whose bytecode changed, walks the graph to the tests that reach them, and passes only those to the runner. A
-change that reaches no test runs nothing; any non-class change (a resource, a dependency) falls back to the
-full suite.
+`jenesis.test.mode` takes three values:
+
+| Value | What runs |
+|---|---|
+| `alphabetic` (default) | Every test, the classes handed to the runner in order of their names. |
+| `incremental` | Only the tests a change reaches. |
+| `prioritized` | Every test, the ones a change reaches handed to the runner first and the rest after them. |
+
+Any other value fails the build with the valid ones listed. The JUnit Platform runs the classes in the order
+it is handed them, so under `prioritized` the results of the tests a change reaches appear before the rest
+has run. A filter, an exclusion and a tag selection each switch `incremental` off, so such a run runs every
+test it selects; `prioritized` still hands the reached ones over first.
+
+On each run the test step builds a class-to-test dependency graph from the compiled bytecode and records a
+per-class content hash. On the next run it diffs the hashes, takes the classes whose bytecode changed and
+walks the graph to the tests that reach them. A change that reaches no test runs nothing under `incremental`,
+and a run with no earlier record, or a non-class change (a resource, a dependency), runs every test in order
+of their names.
 
 Test selection is meant mainly for **watching** a project (see *[Building & running](/tool/building-and-running/)*), where the build re-runs
 on every save and a narrowed test pass keeps the feedback loop tight.
@@ -636,7 +646,7 @@ on every save and a narrowed test pass keeps the feedback loop tight.
 <div class="warning">
   Test selection is a development-loop optimisation, <strong>not a correctness gate</strong>. Static selection
   cannot see reflection, resources or other indirect couplings, so continuous integration should keep running
-  the whole suite - a plain <code>build</code> with selection off.
+  the whole suite - a plain <code>build</code>, or <code>prioritized</code>, which runs every test.
 </div>
 
 {% demos 39 %}
