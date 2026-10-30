@@ -621,18 +621,26 @@ can reach and leaves the rest cached. Turn it on with `-Djenesis.test.mode=incre
 java -Djenesis.project.watch=true -Djenesis.test.mode=incremental build/jenesis/Make.java
 ```
 
-`jenesis.test.mode` takes three values:
+`jenesis.test.mode` takes five values:
 
 | Value | What runs |
 |---|---|
 | `alphabetic` (default) | Every test, the classes handed to the runner in order of their names. |
 | `incremental` | Only the tests a change reaches. |
 | `prioritized` | Every test, the ones a change reaches handed to the runner first and the rest after them. |
+| `failed` | Only the classes that failed in the run before. |
+| `failedfirst` | Every test, the classes that failed in the run before handed to the runner first and the rest after them. |
 
 Any other value fails the build with the valid ones listed. The JUnit Platform runs the classes in the order
 it is handed them, so under `prioritized` the results of the tests a change reaches appear before the rest
 has run. A filter, an exclusion and a tag selection each switch `incremental` off, so such a run runs every
-test it selects; `prioritized` still hands the reached ones over first.
+test it selects; `prioritized` and `failedfirst` still hand their classes over first.
+
+`failed` and `failedfirst` turn on the reports of `jenesis.test.reporting` and read from them which test
+methods failed, for the JUnit Platform and TestNG. They keep them for the module's next run, a failed run
+included, as long as the module's test configuration is unchanged, and rerun whole classes. Where nothing
+failed or nothing is recorded, both run every test. JUnit 4 writes no report they read, so under JUnit 4 both
+run every test in order of their names.
 
 On each run the test step builds a class-to-test dependency graph from the compiled bytecode and records a
 per-class content hash. On the next run it diffs the hashes, takes the classes whose bytecode changed and
@@ -646,7 +654,8 @@ on every save and a narrowed test pass keeps the feedback loop tight.
 <div class="warning">
   Test selection is a development-loop optimisation, <strong>not a correctness gate</strong>. Static selection
   cannot see reflection, resources or other indirect couplings, so continuous integration should keep running
-  the whole suite - a plain <code>build</code>, or <code>prioritized</code>, which runs every test.
+  the whole suite - a plain <code>build</code>, or <code>prioritized</code> or <code>failedfirst</code>, which run
+  every test.
 </div>
 
 {% demos 39 %}
