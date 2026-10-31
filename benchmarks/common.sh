@@ -17,7 +17,7 @@
 # failed round stays in results.tsv and logs/, marked as discarded, and no median counts it.
 #
 # Settings, as environment variables:
-#   JENESIS_REF      the Jenesis commit, tag or branch to install (default: the one the published numbers used)
+#   JENESIS_REF      the Jenesis commit, tag or branch to install (default: v0.18.0)
 #   ROUNDS           rounds per tool (default 3)
 #   PAIRINGS         nodaemon, daemon, aot or several: without a daemon, Maven runs as mvn, Gradle with --no-daemon
 #                    and Jenesis under jenesis.make.mode=compiled; with one, Maven as the Maven Daemon, mvnd, Gradle
@@ -35,7 +35,7 @@
 
 set -uo pipefail
 
-JENESIS_REF="${JENESIS_REF:-f5aadaf7f2291e45f96341e61409e8b1c6e10454}"
+JENESIS_REF="${JENESIS_REF:-v0.18.0}"
 BENCHMARKS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NAME="$(basename "$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)")"
 PATCH="$BENCHMARKS/$NAME/migration.patch"

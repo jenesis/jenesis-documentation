@@ -10,7 +10,7 @@
 # (bazel) and a Docker daemon; each Gradle example's wrapper downloads Gradle 9.8.0. The tools the selected
 # examples need are checked before any of them runs.
 #
-# Jenesis 0.16.1, the release the page names, is installed once per run into examples/.jenesis-install/ with
+# Jenesis 0.18.0, the release the page names, is installed once per run into examples/.jenesis-install/ with
 # https://get.jenesis.build - or the git ref JENESIS_REF names (a branch such as main, or a commit) - and every
 # Jenesis example links it as build/jenesis. JENESIS_SOURCES instead names a folder holding Make.java, such as a checkout's
 # sources/build/jenesis. JENESIS_HOME is not read: SDKMAN sets it to its own installation, which is no such folder.
@@ -73,8 +73,8 @@ if needs jenesis; then
         rm -rf "${install:?}"
         mkdir -p "$install"
         curl -fsSL https://get.jenesis.build \
-            | JENESIS_MODE=vendor JENESIS_TARGET="$install" bash -s -- "${JENESIS_REF:-v0.16.1}" \
-            || die "could not install Jenesis at ${JENESIS_REF:-v0.16.1}"
+            | JENESIS_MODE=vendor JENESIS_TARGET="$install" bash -s -- "${JENESIS_REF:-v0.18.0}" \
+            || die "could not install Jenesis at ${JENESIS_REF:-v0.18.0}"
         sources="$install/build/jenesis"
     fi
     echo "Jenesis from $sources"

@@ -135,7 +135,7 @@ function listed(path, count, generated, note) {
   return { path, count, generated, note, lines: null };
 }
 
-const JENESIS = { key: "jenesis", name: "Jenesis", release: "Jenesis 0.16.1" };
+const JENESIS = { key: "jenesis", name: "Jenesis", release: "Jenesis 0.18.0" };
 const MAVEN = { key: "maven", name: "Maven", release: "Maven 3.9.16" };
 const GRADLE = { key: "gradle", name: "Gradle", release: "Gradle 9.8.0" };
 const BAZEL = { key: "bazel", name: "Bazel", release: "Bazel 9.2.0" };
@@ -169,7 +169,7 @@ export default {
           ],
           terminal: [
             "$ java build/jenesis/Execute.java",
-            "[COMPLETED] Finished in 0.99 seconds",
+            "[COMPLETED] Finished in 0.44 seconds",
             "Hello, world!",
           ],
           notes: [
@@ -347,17 +347,17 @@ export default {
           terminal: [
             "$ java build/jenesis/Make.java",
             "tests >>>>       └─ greets() ✔",
-            "[COMPLETED] Finished in 4.13 seconds",
+            "[COMPLETED] Finished in 2.59 seconds",
             "$ java build/jenesis/Make.java    # nothing changed",
-            "[COMPLETED] Finished in 0.91 seconds",
+            "[COMPLETED] Finished in 0.17 seconds",
             "$ java build/jenesis/Make.java    # Main.java edited",
-            "[COMPLETED] Finished in 2.54 seconds",
+            "[COMPLETED] Finished in 1.37 seconds",
             "$ java build/jenesis/Make.java    # Greeter.java edited",
             "tests >>>>       └─ greets() ✔",
-            "[COMPLETED] Finished in 3.85 seconds",
+            "[COMPLETED] Finished in 1.99 seconds",
             "$ rm -rf target",
             "$ java build/jenesis/Make.java",
-            "[COMPLETED] Finished in 1.10 seconds",
+            "[COMPLETED] Finished in 0.35 seconds",
           ],
           notes: [
             "<code>GreeterTest</code> reaches <code>Greeter</code> but not <code>Main</code>. The terminal shows the test each build ran and its last line; <code>-Djenesis.print.tests=true</code> prints the tests.",
@@ -586,11 +586,11 @@ export default {
           terminal: [
             "$ java build/jenesis/Make.java stage",
             "$ find target/stage/*/output -type f -exec sha256sum {} + | sort -k 2 | sha256sum",
-            "8793305d00474bb3180ae4441790b5cc63a6e058782784e9a12b67d1c650348b  -",
+            "77bd479b0f37f7f7f9e989c37ee9edd375ccdbad326a32877ca5c8a19218c8e0  -",
             "$ rm -rf target",
             "$ java build/jenesis/Make.java stage",
             "$ find target/stage/*/output -type f -exec sha256sum {} + | sort -k 2 | sha256sum",
-            "8793305d00474bb3180ae4441790b5cc63a6e058782784e9a12b67d1c650348b  -",
+            "77bd479b0f37f7f7f9e989c37ee9edd375ccdbad326a32877ca5c8a19218c8e0  -",
           ],
           notes: ["<code>jenesis.archive.timestamp</code> sets another date, such as the last commit's."],
         },
@@ -647,13 +647,13 @@ export default {
           verdict: "<code>pin</code> writes every checksum; you name whom you trust.",
           files: [
             file("supply-chain/jenesis", "sources/module-info.java", {
-              fold: { match: "@jenesis.pin ", label: "{n} lines written by pin - a version and SHA-256 checksum for every dependency" },
+              fold: { match: "@jenesis.pin ", label: "{n} lines written by pin - a version and SHA-256 checksum for every dependency and every POM it was resolved through" },
             }),
             file("supply-chain/jenesis", "jenesis.properties"),
           ],
           commands: "java build/jenesis/Make.java pin",
           notes: [
-            "<code>pin</code> resolves the whole dependency tree and records each version with its SHA-256. With <code>-Djenesis.dependency.pin=ignore</code> it resolves again and rewrites them.",
+            "<code>pin</code> resolves the whole dependency tree and records each version with its SHA-256, and the SHA-256 of every POM the resolution read. With <code>-Djenesis.dependency.pin=ignore</code> it resolves again and rewrites them.",
             "OpenPGP signatures are checked by the system's <code>gpgv</code>, so it must be installed.",
             "Sigstore bundles are checked in process, with the JDK's own cryptography.",
           ],

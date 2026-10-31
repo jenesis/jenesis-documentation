@@ -18,7 +18,7 @@ identity and a jar and expect each build to fail, and the reproducible examples 
 It needs a JDK 25 on the `PATH`, a UTF-8 locale, as some examples look for the `✔` a passing test prints, and,
 for the examples of each tool:
 
-- Jenesis: nothing - `verify.sh` installs Jenesis 0.16.1, the release the page names, once per run with
+- Jenesis: nothing - `verify.sh` installs Jenesis 0.18.0, the release the page names, once per run with
   https://get.jenesis.build and links it into every Jenesis project as `build/jenesis/`. `JENESIS_REF` names
   another git ref (a branch such as `main`, or a commit), and `JENESIS_SOURCES` a local folder holding `Make.java`,
   such as a checkout's `sources/build/jenesis`. `JENESIS_HOME`, which SDKMAN sets, is not read;
