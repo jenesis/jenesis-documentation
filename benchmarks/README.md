@@ -59,7 +59,7 @@ The numbers say most where nothing else runs on the machine. The published ones 
 
 | Variable | Default | Effect |
 |---|---|---|
-| `JENESIS_REF` | the commit the published numbers used | the Jenesis commit, tag or branch to install |
+| `JENESIS_REF` | `v0.18.0` | the Jenesis commit, tag or branch to install |
 | `ROUNDS` | 3 | rounds per tool |
 | `PAIRINGS` | `nodaemon daemon` | `nodaemon` runs Maven as `mvn`, Gradle with `--no-daemon` and Jenesis under `jenesis.make.mode=compiled`; `daemon` runs Maven as `mvnd`, Gradle with `--daemon` and Jenesis under `jenesis.make.mode=daemon`; `aot` runs Maven and Gradle as `nodaemon` does and Jenesis under `jenesis.make.mode=aot`, from its compiled classes |
 | `TOOLS` | `jenesis old` | the builds to measure: `jenesis`, `old` or both |
