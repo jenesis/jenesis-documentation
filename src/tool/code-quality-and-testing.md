@@ -324,12 +324,19 @@ markdown.steps=flexmark,trimTrailingWhitespace,endWithNewline
 | `removeUnusedImports` | `version` of google-java-format |
 | `googleJavaFormat` | `version`, `style` (`GOOGLE` or `AOSP`), `reflowLongStrings`, `reorderImports`, `formatJavadoc` |
 | `palantirJavaFormat` | `version`, `style` (`PALANTIR`, `AOSP` or `GOOGLE`), `formatJavadoc` |
+| `princeOfSpace` | `version`, `wrapStyle`, `indentStyle`, `indentSize`, `lineLength`, `closingParenOnNewLine`, `trailingCommas`, `javaLanguageLevel` |
+| `ktfmt` | `version`, `style` (`META`, `GOOGLE` or `KOTLINLANG`), `maxWidth`, `blockIndent`, `continuationIndent`, `removeUnusedImports` |
+| `ktlint` | `version`, and any `.editorconfig` property, as `indent_size` |
+| `scalafmt` | `version`, which it requires, `scalaMajorVersion`, and any key of `.scalafmt.conf`, as `maxColumn` |
+| `licenseHeader` | `header`, its lines separated by `\n`, and `delimiter` |
 
 A key, step or option the plugin does not take fails the build, naming those it takes. Each step that needs a tool
 resolves it in a group of its own, as `spotless:jacksonjson`, so no two tools share a version; a tool floats on its
-newest release unless `version` names one, and is pinned like any other. Steps that need Node.js or a native program
-are not offered. A set running `googleJavaFormat` or `palantirJavaFormat` makes Spotless a Java formatter; any other
-set runs beside the Java formatter.
+newest release unless `version` names one, and is pinned like any other. The plugin reads no other tool's file: a
+Spotless setup moves into `spotless.properties` as a whole, its options handed to each step as Spotless hands them.
+Spotless's Eclipse steps, which resolve from Eclipse's own repositories, and the steps that need Node.js or a native
+program are not offered. A set running a Java, Kotlin or Scala formatter, or `licenseHeader`, makes Spotless that tool
+of the build, so the build refuses it beside that tool's own file, naming both; any other set runs beside them.
 
 Two formatters would fight over the same sources. A build that finds the files of two Java formatters fails,
 naming them, and so does a `ktfmt.properties` beside a ktlint that formats the same Kotlin sources. A profile that
