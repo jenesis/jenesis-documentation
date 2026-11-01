@@ -154,7 +154,8 @@ lived inside a plugin's own configuration moves here:
 | The jacoco-maven-plugin or pitest-maven | A `jacoco.properties` or a `pitest.properties` |
 | The jaxb2, protobuf, avro, jaxws, openapi-generator or antlr4 Maven plugin | An `xjc.properties`, `protoc.properties`, `avro.properties`, `wsimport.properties`, `openapi.properties` or `antlr.properties` that binds the contracts |
 | The spotbugs-maven-plugin, forbiddenapis, japicmp or revapi | A `spotbugs.properties`, `forbiddenapis.properties`, `japicmp.properties` or `revapi.properties` with its values |
-| Spotless, the fmt-maven-plugin or the formatter-maven-plugin | A `googlejavaformat.properties`, `palantir.properties`, `princeofspace.properties` or `eclipse.properties` for the Java formatter, a `ktfmt.properties`, or the `.editorconfig` of ktlint and the `.scalafmt.conf` of scalafmt; `-Djenesis.format.rewrite=true` rewrites the sources |
+| Spotless | A `spotless.properties` alone, one set of files per format with the steps Spotless runs and their options as Spotless names them; Spotless's Eclipse steps and the steps that need npm have no counterpart; `-Djenesis.format.rewrite=true` rewrites the files |
+| The fmt-maven-plugin, the formatter-maven-plugin or a formatter's own Gradle plugin | A `googlejavaformat.properties`, `palantir.properties`, `princeofspace.properties` or `eclipse.properties` for the Java formatter, a `ktfmt.properties`, or the `.editorconfig` of ktlint and the `.scalafmt.conf` of scalafmt; `-Djenesis.format.rewrite=true` rewrites the sources |
 | Checkstyle's `propertyExpansion`, `configProperties` | The other lines of `checkstyle.properties` |
 | PMD's `minimumPriority`, `rulesMinimumPriority` | `-Djenesis.pmd.priority` |
 | The `mainClass` of the jar, shade or exec plugin | A `<mainClass>` property |
