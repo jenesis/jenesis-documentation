@@ -258,7 +258,8 @@ parent POM in the project.
 ## Formatting
 
 Formatters are the rewriting counterpart to the linters: where a linter reads your sources and writes a
-report, a formatter reads them and can rewrite them in place. Each formatter is switched on by a properties file
+report, a formatter reads them and can rewrite them in place. A formatter reads a module's resources as well, such
+as the files under `src/main/resources` of a `pom.xml` project. Each formatter is switched on by a properties file
 named after it, whose lines are its values; an empty file formats with the defaults:
 
 ```properties
@@ -297,11 +298,45 @@ ktlint and scalafmt both check and format, and the one file of each, or its conv
 `.scalafmt.conf`, switches on both. They are switched off apart: `jenesis.check.ktlint=false` leaves out the
 linting and `jenesis.format.ktlint=false` the formatting, and the same holds for scalafmt.
 
+### Other files with Spotless
+
+A `spotless.properties` formats files of any kind with [Spotless](https://github.com/diffplug/spotless). Its lines
+name sets of files, each with the Spotless steps applied to them in order:
+
+```properties
+# build.jenesis/spotless.properties
+json.target=*.json
+json.steps=jacksonJson,endWithNewline
+markdown.target=*.md
+markdown.steps=flexmark,trimTrailingWhitespace,endWithNewline
+```
+
+`<set>.target` names the globs a file of the module's sources or resources matches, and `<set>.steps` the steps;
+`<set>.<step>.<option>` configures one of them, as `java.googleJavaFormat.style=AOSP`:
+
+| Step | Options |
+| --- | --- |
+| `trimTrailingWhitespace`, `endWithNewline`, `formatAnnotations` | none |
+| `leadingTabsToSpaces`, `leadingSpacesToTabs` | `size`, `4` by default |
+| `replaceRegex` | `regex`, and `replacement`, empty by default |
+| `importOrder` | `order`, the comma-separated import groups |
+| `jacksonJson`, `jacksonYaml`, `flexmark` | `version` of Jackson or flexmark |
+| `removeUnusedImports` | `version` of google-java-format |
+| `googleJavaFormat` | `version`, `style` (`GOOGLE` or `AOSP`), `reflowLongStrings`, `reorderImports`, `formatJavadoc` |
+| `palantirJavaFormat` | `version`, `style` (`PALANTIR`, `AOSP` or `GOOGLE`), `formatJavadoc` |
+
+A key, step or option the plugin does not take fails the build, naming those it takes. Each step that needs a tool
+resolves it in a group of its own, as `spotless:jacksonjson`, so no two tools share a version; a tool floats on its
+newest release unless `version` names one, and is pinned like any other. Steps that need Node.js or a native program
+are not offered. A set running `googleJavaFormat` or `palantirJavaFormat` makes Spotless a Java formatter; any other
+set runs beside the Java formatter.
+
 Two formatters would fight over the same sources. A build that finds the files of two Java formatters fails,
 naming them, and so does a `ktfmt.properties` beside a ktlint that formats the same Kotlin sources. A profile that
 brings in one formatter therefore switches the other off in its `jenesis-<profile>.properties`, as
 `jenesis.format.googlejavaformat=false` or `jenesis.format.ktlint=false`. Each formatter has its setting of
-`jenesis.format.<tool>`: `googlejavaformat`, `palantir`, `princeofspace`, `eclipse`, `ktlint`, `ktfmt` and `scalafmt`.
+`jenesis.format.<tool>`: `googlejavaformat`, `palantir`, `princeofspace`, `eclipse`, `spotless`, `ktlint`, `ktfmt`
+and `scalafmt`.
 
 ### Verify mode, and how to reformat
 
