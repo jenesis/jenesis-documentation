@@ -276,6 +276,13 @@ every source again:
 | | `javadoc` | `false` leaves Javadoc as it is written |
 | | `imports` | what happens to the imports: `sort,remove`, the default, `sort`, `remove` or `none` |
 | `palantir.properties` | `reflow`, `imports` | as for google-java-format |
+| `princeofspace.properties` | `wrap-style` | `balanced`, the default, `wide` or `narrow` |
+| | `indent-style` | `spaces`, the default, or `tabs` |
+| | `indent-size` | indent units per level, `4` by default; with `tabs` each unit is a tab |
+| | `line-length` | the length wrapping aims for, `120` by default |
+| | `closing-paren-on-new-line` | `false` keeps the closing parenthesis of a wrapped argument list on its last line |
+| | `trailing-commas` | `true` adds trailing commas to multi-line enums and array literals |
+| | `java-version` | the language level the sources are parsed at, `17` by default |
 | `eclipse.properties` | `configuration` | the formatter profile Eclipse exports, relative to the file; without it, the Eclipse formatter's defaults |
 | `ktlint.properties` | `configuration` | the `.editorconfig` that drives ktlint |
 | `ktfmt.properties` | `style` | `meta`, the default, `google` or `kotlinlang` |
@@ -294,7 +301,7 @@ Two formatters would fight over the same sources. A build that finds the files o
 naming them, and so does a `ktfmt.properties` beside a ktlint that formats the same Kotlin sources. A profile that
 brings in one formatter therefore switches the other off in its `jenesis-<profile>.properties`, as
 `jenesis.format.googlejavaformat=false` or `jenesis.format.ktlint=false`. Each formatter has its setting of
-`jenesis.format.<tool>`: `googlejavaformat`, `palantir`, `eclipse`, `ktlint`, `ktfmt` and `scalafmt`.
+`jenesis.format.<tool>`: `googlejavaformat`, `palantir`, `princeofspace`, `eclipse`, `ktlint`, `ktfmt` and `scalafmt`.
 
 ### Verify mode, and how to reformat
 
