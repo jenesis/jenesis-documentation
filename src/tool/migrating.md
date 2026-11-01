@@ -233,12 +233,10 @@ Before retiring the old build, compare what both produce: the contents of each j
 (`dependencies` against `mvn dependency:tree` or `gradle dependencies`), the number of tests run, and the POM a
 consumer receives, which is generated rather than copied from yours. A `pom.xml` resolves a
 conflict as Maven does, the nearest version winning, where Gradle takes the highest; manage each version Gradle
-resolved higher in `<dependencyManagement>`. Each class path is resolved on its own, so a version that a test
-dependency wins in `mvn dependency:tree` does not reach the main classes here, unless `jenesis.maven.unified=true`
-resolves them as one graph (see *[Test dependencies and the main class path](/tool/dependencies/#test-dependencies-and-the-main-class-path)*).
-Where the compile and runtime class paths settle on different versions of a library with a module name, the
-build stops and names both. Manage that version, or set `jenesis.maven.unified=true` if the old build relied
-on Maven's single graph.
+resolved higher in `<dependencyManagement>`. A `pom.xml` module resolves its class paths as one graph, as Maven
+does, so its versions are those of `mvn dependency:tree`. `jenesis.maven.unified=false` resolves each class path on its own, and then stops the build
+where the compile and runtime class paths settle on different versions of a library with a module name (see
+*[Test dependencies and the main class path](/tool/dependencies/#test-dependencies-and-the-main-class-path)*).
 
 ## Retiring the old build
 

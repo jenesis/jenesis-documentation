@@ -212,32 +212,33 @@ the build, naming the parent.
 
 ### Test dependencies and the main class path
 
-A `pom.xml` module resolves its main compile class path, its main runtime class path and its test class path
-each on its own, and nearest-wins settles a conflict within each. The compile class path is resolved from the
-compile and provided dependencies, the runtime class path from the compile and runtime dependencies, and the
-tests from every dependency the POM declares. A test dependency therefore never changes the versions the main
-classes compile and run with. A dependency's own runtime dependencies are placed on the runtime class path
-alone, as Maven and Gradle place them.
+A `pom.xml` module resolves all of its dependencies - compile, provided, runtime and test - as one graph, as
+Maven does, and takes each class path from it. Nearest-wins settles a conflict across the whole graph, so the
+versions match `mvn dependency:tree`, and a test or runtime dependency can decide which version of a shared
+library the main classes compile and run with. A library the project declares for its tests alone leaves the
+main class paths, even where a main dependency needs it - as Maven treats it.
 
-The compile and runtime class paths can settle on different versions of one library. Where that library
-carries a module name, a module path could hold either version, so the build stops and names both. Manage
-the version in `<dependencyManagement>`, or resolve the class paths as one graph, as below.
-
-Maven resolves all of a project's dependencies as one graph instead and takes each class path from it. To
-resolve as Maven does, set `jenesis.maven.unified`, on the command line or in `jenesis.properties`:
+To resolve each class path on its own instead, set `jenesis.maven.unified` to `false`, on the command line or in
+`jenesis.properties`:
 
 ```
--Djenesis.maven.unified=true
+-Djenesis.maven.unified=false
 ```
 
-A test or runtime dependency then decides which version of a shared library the main classes compile and
-run with. A library the project declares for its tests alone also leaves the main class paths, even where a
-main dependency needs it - as Maven treats it. Either way, the published POM manages each version the main
-class paths resolved, which a consumer building with Maven 4 applies - see
-*[What the published POM names](/tool/publishing/#what-the-published-pom-names)*.
+The compile class path is then resolved from the compile and provided dependencies, the runtime class path from
+the compile and runtime dependencies, and the tests from every dependency the POM declares. A test dependency
+then never changes the versions the main classes compile and run with, and a dependency's own runtime
+dependencies are placed on the runtime class path alone, as Maven and Gradle place them.
+
+Resolved apart, the compile and runtime class paths can settle on different versions of one library. Where that
+library carries a module name, a module path could hold either version, so the build stops and names both.
+Manage the version in `<dependencyManagement>`, or resolve the class paths as one graph again.
+
+Either way, the published POM manages each version the main class paths resolved, which a consumer building with
+Maven 4 applies - see *[What the published POM names](/tool/publishing/#what-the-published-pom-names)*.
 
 <div class="note">
-  <p><strong>Why not as Maven does?</strong> Say a library declares <code>B</code> as a dependency and
+  <p><strong>Why resolve apart?</strong> Say a library declares <code>B</code> as a dependency and
   <code>C</code> for its tests. <code>C</code> brings slf4j at depth two, <code>B</code> brings it at depth
   three. Maven picks the slf4j version <code>C</code> asks for, because it is nearer, and compiles the
   library's main classes with it. A consumer of the published library never sees <code>C</code>, as test
@@ -247,7 +248,8 @@ class paths resolved, which a consumer building with Maven 4 applies - see
   <p>Had the library declared slf4j itself, for its tests, Maven would leave slf4j off the main class paths
   altogether - as if it were excluded from <code>B</code>, but only within the library - and only running the
   library would show it. Resolving each class path on its own keeps the tests out of the main classes'
-  versions. In exchange, the tests can run with other versions than the main classes compiled against.</p>
+  versions. In exchange, the tests can run with other versions than the main classes compiled against, and a
+  build migrated from Maven can resolve other versions than it did there.</p>
 </div>
 
 ### Choosing a different strategy
