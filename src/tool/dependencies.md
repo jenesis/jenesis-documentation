@@ -219,6 +219,10 @@ tests from every dependency the POM declares. A test dependency therefore never 
 classes compile and run with. A dependency's own runtime dependencies are placed on the runtime class path
 alone, as Maven and Gradle place them.
 
+The compile and runtime class paths can settle on different versions of one library. Where that library
+carries a module name, a module path could hold either version, so the build stops and names both. Manage
+the version in `<dependencyManagement>`, or resolve the class paths as one graph, as below.
+
 Maven resolves all of a project's dependencies as one graph instead and takes each class path from it. To
 resolve as Maven does, set `jenesis.maven.unified`, on the command line or in `jenesis.properties`:
 

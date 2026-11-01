@@ -236,6 +236,9 @@ conflict as Maven does, the nearest version winning, where Gradle takes the high
 resolved higher in `<dependencyManagement>`. Each class path is resolved on its own, so a version that a test
 dependency wins in `mvn dependency:tree` does not reach the main classes here, unless `jenesis.maven.unified=true`
 resolves them as one graph (see *[Test dependencies and the main class path](/tool/dependencies/#test-dependencies-and-the-main-class-path)*).
+Where the compile and runtime class paths settle on different versions of a library with a module name, the
+build stops and names both. Manage that version, or set `jenesis.maven.unified=true` if the old build relied
+on Maven's single graph.
 
 ## Retiring the old build
 
