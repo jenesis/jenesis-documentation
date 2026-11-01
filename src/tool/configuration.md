@@ -138,7 +138,7 @@ What these folders can hold - presence activates, contents configure:
   `rewrite.yml`, `jreleaser.yml` - switches it on alone.
 - **Code quality**: `jdeps.properties`, `jdeprscan.properties`, and the linters' files above.
 - **Formatting**: `licenseheader.properties`, and one Java formatter's `googlejavaformat.properties`,
-  `palantir.properties` or `eclipse.properties`.
+  `palantir.properties`, `princeofspace.properties` or `eclipse.properties`.
 - **Plugins of the project**: `plugin-<name>.properties` - a plugin `jenesis.plugins.properties` names runs
   where its file is found, with its values and the files it binds.
 - **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`,
