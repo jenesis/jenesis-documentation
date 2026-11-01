@@ -125,7 +125,7 @@ unconfigured build leaves every choice with the index and gets the same answer a
 
 | What you set | What the index is told |
 | --- | --- |
-| `jenesis.maven.uri` (`MAVEN_REPOSITORY_URI`) | Redirect to the same repository Jenesis resolves Maven artifacts from, so module jars and Maven artifacts come from one host rather than two that disagree on what exists yet. |
+| `jenesis.maven.uri` (`MAVEN_REPOSITORY_URI`) | Redirect to the same repository Jenesis resolves Maven artifacts from, so module jars and Maven artifacts come from one host rather than two that disagree on what exists yet: the first remote of the list that serves every group. Where that remote answers 404, as a mirror does for a release it has not synced yet, the build asks the index again naming the next such remote; where the index itself knows no such module, it asks no further. |
 | `jenesis.module.prerelease` | Whether a module asked for without a version may resolve to a pre-release. |
 | `jenesis.module.speculative` | Whether a version the index has not recorded may be resolved from the module's newest coordinate, rather than answering that it has never seen it. |
 
