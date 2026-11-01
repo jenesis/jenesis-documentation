@@ -938,7 +938,9 @@ root.execute(args);
 
 The descriptor runs the module's tests, attaches no sources or javadoc jar and pins leniently unless told
 otherwise; `test(false)`, `source(true)`, `documentation(true)` and `pinning(Pinning.STRICT)` change one of
-those each.
+those each. A `pom.xml` module resolves its class paths as one graph, as Maven does: `make` reads
+`jenesis.maven.unified` from the environment it is handed, and a `MavenProject` built by its constructor resolves
+each class path on its own only after `unified(false)`.
 
 This is a middle ground: no layout, no goals, no `Project`, yet you did not wire every step by hand either.
 `ModularProject.make` is the modular counterpart; its convenience form builds pure modules (a modular jar,
