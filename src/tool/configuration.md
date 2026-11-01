@@ -137,8 +137,8 @@ What these folders can hold - presence activates, contents configure:
   tool's one conventional file in a configuration folder - `checkstyle.xml`, `pmd.xml`, `.editorconfig`,
   `rewrite.yml`, `jreleaser.yml` - switches it on alone.
 - **Code quality**: `jdeps.properties`, `jdeprscan.properties`, and the linters' files above.
-- **Formatting**: `licenseheader.properties`, and one Java formatter's `googlejavaformat.properties`,
-  `palantir.properties`, `princeofspace.properties` or `eclipse.properties`.
+- **Formatting**: `licenseheader.properties`, one Java formatter's `googlejavaformat.properties`,
+  `palantir.properties`, `princeofspace.properties` or `eclipse.properties`, and `spotless.properties`.
 - **Plugins of the project**: `plugin-<name>.properties` - a plugin `jenesis.plugins.properties` names runs
   where its file is found, with its values and the files it binds.
 - **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`,
