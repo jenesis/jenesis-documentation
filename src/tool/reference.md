@@ -144,8 +144,10 @@ order of precedence.
 | --- | --- | --- |
 | `jenesis.make.root` | `.` | The directory scanned for `module-info.java` / `pom.xml`. Command-line only. |
 | `jenesis.make.profiles` | *(unset)* | Comma-separated **profile** names to activate. |
-| `jenesis.make.mode` | `daemon` | How the engine runs. `source` runs it from the build sources, which the launcher compiles class by class as it loads them. `compiled` compiles them once and runs the build from those classes, over a class loader of their own; one batch compile beats the launcher, so this is faster even for a build that runs a single time. `aot` starts those classes from an ahead-of-time cache, trained by the first build and read by every later one. `daemon` hands the build to a reused JVM, which keeps a warm JIT between calls; `--stop` as the sole selector shuts down every daemon. Unset, a build runs in the daemon, or `compiled` where `jenesis.process.mode` names `fork` or `aot`, `jenesis.project.docker` is set, or `jenesis.release.publish` publishes. The first progress line and the `started` event name the mode a build ran in. |
+| `jenesis.make.mode` | `daemon` | How the engine runs. `source` runs it from the build sources, which the launcher compiles class by class as it loads them. `compiled` compiles them once and runs the build from those classes, over a class loader of their own; one batch compile beats the launcher, so this is faster even for a build that runs a single time. `aot` starts those classes from an ahead-of-time cache, trained by the first build and read by every later one. `native` runs a native image of the engine and the plugins the project loads, compiled once by `jenesis.make.graalvm`. `daemon` hands the build to a reused JVM, which keeps a warm JIT between calls; `--stop` as the sole selector shuts down every daemon. Unset, a build runs in the daemon, or `compiled` where `jenesis.process.mode` names `fork` or `aot`, `jenesis.project.docker` is set, or `jenesis.release.publish` publishes. The first progress line and the `started` event name the mode a build ran in. |
 | `jenesis.make.classes` | `.jenesis/classes` | Where those classes land, relative to the folder the command runs in on the command line and to the project root in a file. They go under `.jenesis/` with the rest of the build's by-products, so nothing lands in the sources. A project's own file names only a folder inside the project. |
+| `jenesis.make.graalvm` | *(the JDK running `Make`)* | The GraalVM whose `native-image` compiles the native image of the engine in `native` mode, and whose JDK the build then forks its tools from. Unset, it is the JDK running `Make`, where that is a GraalVM. Only the command line or your own `~/.jenesis/jenesis.properties` may set it. |
+| `jenesis.make.plugins` | *(unset)* | The file a build records the plugins it loaded to. `native` mode sets it for the JVM build whose plugins it compiles into the image; only the command line may name it. |
 | `jenesis.toolchain.version` | *(unset)* | The JDK the build runs on, as `25`, `25.0.3` or `25-temurin`. `Make.java` and `Execute.java` start again on a matching installed JDK when the running one does not match (see *[Building &amp; running](/tool/building-and-running/#the-jdk-a-build-runs-on)*). |
 | `jenesis.toolchain.searchpath` | `@` | Comma-separated folders searched for that JDK, absolute or under `~`, with `*` for any one folder name; `@` stands for the operating system's usual locations, and empty only checks the running JDK. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.toolchain.installer` (`JENESIS_TOOLCHAIN_INSTALLER`) | *(unset)* | A program run with the version as its last argument when no JDK on the search path matches, such as `jenesis-jdk`; a name is looked up on the `PATH`, a path is absolute or starts with `~`. Command line, `~/.jenesis/jenesis.properties` or the environment only, and an empty value runs none; the `jenesis` command sets the variable to its own `jenesis-jdk`, for the run it starts, where SDKMAN, mise or Scoop installed it and the variable is unset (see *[Building &amp; running](/tool/building-and-running/#installing-a-missing-jdk)*). |
@@ -248,6 +250,25 @@ Each run saves what it trained under a key of its own and restores the latest of
 engine or another JDK clears the folder, so a restored cache never serves a build it was not trained for. The
 engine's cache holds what its JVM loads before the build's own code runs, so a plugin's code, loaded into that
 JVM later, is not in it, while every tool a plugin starts in a JVM of its own gets a cache of its own.
+
+A native image goes one step further: `jenesis.make.mode=native` compiles the engine, and the plugins a project
+loads, into one executable with the `native-image` of a GraalVM, named by `jenesis.make.graalvm` or found as the
+JDK running `Make`. The first build runs on that GraalVM's JVM under its tracing agent, which records what the
+image needs while the build records the plugins it loaded; `Make` then compiles the image into
+`jenesis.aot.folder`, which takes some minutes and happens again only when the engine, the plugins or what a build
+recorded change. Every later build runs the image, which compiles and packages in process and forks every other
+tool from the GraalVM. In the code quality demo, with its five plugins compiled in, a build that finds nothing to
+do finishes in about 0.15 seconds in the image against about 0.9 seconds in a compiled JVM, while `java
+build/jenesis/Make.java` still starts a JVM of its own, which costs more than a second, to hand the build over.
+
+A plugin is compiled in with its own classes, linked against the engine rather than against the release of the
+build tool it was built for, so its steps can run once more when a project moves between the image and a JVM.
+A plugin the project compiles itself, two plugins that need different versions of one library, and a build that
+reads the modules of the JDK - an annotation processor on the module path, a dependency it modularises, an
+image holding module layers - stay on the JVM. When the image meets one of them, or something its metadata
+lacks, the build continues on the JVM under the agent, and `Make` compiles a new image when that taught it
+anything; a project whose image can learn nothing more keeps building on the JVM until the engine or its plugins
+change.
 
 | Property | Default | Effect |
 | --- | --- | --- |
