@@ -396,6 +396,29 @@ places among them included, as Maven's and Gradle's sources jars do.
 
 {% demos 74 %}
 
+### One site for every module
+
+A project of several modules can also be documented as one site, with one index and one search over all of its
+modules, where a type links to the types of another module it names. `jenesis.documentation.aggregate` runs
+`javadoc` once over every staged module and stages the result:
+
+```bash
+java -Djenesis.project.sources=true \
+     -Djenesis.documentation.aggregate=true \
+     build/jenesis/Make.java stage
+```
+
+The site lands in `target/stage/javadoc/output/javadoc/`, and `javadoc.jar` beside it holds the same pages.
+`javadoc` reads each module's sources jar, so the setting needs `jenesis.project.sources`; without it, the stage
+fails naming that setting. Test modules, modules staged with `stage=false` and modules that are a POM alone are
+left out. The modules' compile dependencies are handed to `javadoc`, while the modules themselves are read from
+their sources. When every module declares a `module-info.java`, each is documented as a module with its own
+summary page; otherwise their packages are documented together. The jar belongs to no Maven coordinate, so the
+Maven tree under `stage/maven` is unchanged. The run uses `javadoc`'s defaults with `-Xdoclint:none` and does not
+read the modules' `process-javadoc.properties`.
+
+{% demos 3 %}
+
 ### Reproducible archives
 
 Every jar, jmod and zip comes out the same from the same inputs: a fixed entry order, no Unix permissions,
