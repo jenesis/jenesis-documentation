@@ -16,15 +16,15 @@ installs Jenesis into it with https://get.jenesis.build. The original build runs
 commit, so neither tool reads what the other wrote. Each tool gets one unmeasured warm-up build, then three rounds
 of:
 
-- a full build from scratch - Jenesis after `rm -rf target`, Maven with `clean`, Gradle with `clean` and
+- a full build from scratch - Jenesis after `rm -rf target`, Maven and Mill with `clean`, Gradle with `clean` and
   `--no-build-cache`;
 - the same build again, with nothing changed;
 - the build after one method body in a main source file was edited, a module others depend on. Each edit names a
   variable no earlier build saw, so no build cache holds its result, and it is reverted afterwards.
 
-Each tool runs twice over, without a daemon and with one. Without, Maven runs as `mvn`, Gradle with `--no-daemon`
-and Jenesis under `jenesis.make.mode=compiled`; with one, Maven as the Maven Daemon, `mvnd`, Gradle with `--daemon`
-and Jenesis under `jenesis.make.mode=daemon`. Both modes are named, so neither pairing relies on what the installed
+Each tool runs twice over, without a daemon and with one. Without, Maven runs as `mvn`, Gradle and Mill with
+`--no-daemon` and Jenesis under `jenesis.make.mode=compiled`; with one, Maven as the Maven Daemon, `mvnd`, Gradle with
+`--daemon`, Mill with its daemon and Jenesis under `jenesis.make.mode=daemon`. Both modes are named, so neither pairing relies on what the installed
 Jenesis does by default. The warm-up starts the daemons, so every measured build of that pairing
 runs against a warm one, and they are stopped once it is done. `mvnd` builds as it does by default, the modules of a
 project side by side.
@@ -40,7 +40,7 @@ with `mvnd`. AssertJ does: its Spring Boot integration tests reach `assertj-core
 starter, and `mvnd` started them before `assertj-core` was packaged. Its migration patch declares the dependency so
 that `mvnd` builds the project at all; `mvn` and Jenesis resolve the same dependency without it.
 
-Downloaded dependencies stay where each tool keeps them (`~/.m2`, `~/.gradle`, `~/.jenesis`), as on a developer's
+Downloaded dependencies stay where each tool keeps them (`~/.m2`, `~/.gradle`, Mill's `~/.cache`, `~/.jenesis`), as on a developer's
 machine. Neither build reads a remote build cache, and Jenesis runs with `-Djenesis.make.global=`, so the
 `~/.jenesis/jenesis.properties` of the machine cannot replace what the migration declares. The script prints the median of each measurement and leaves every
 run in `results.tsv` and every build's output in `logs/` of its temporary folder; the clone itself is removed.
@@ -52,7 +52,7 @@ The numbers say most where nothing else runs on the machine. The published ones 
 
 - a JDK 25 or newer as `java`, `git`, `curl` and `python3`;
 - Maven 3.9 as `mvn` and the Maven Daemon 1.x as `mvnd` for the Maven projects; the Gradle projects bring their
-  wrapper;
+  wrapper, and the Mill project the Mill launcher, which downloads Mill;
 - about 5 GB of free disk for Guava, less for the others.
 
 ## Settings
@@ -61,9 +61,9 @@ The numbers say most where nothing else runs on the machine. The published ones 
 |---|---|---|
 | `JENESIS_REF` | `v0.18.0` | the Jenesis commit, tag or branch to install |
 | `ROUNDS` | 3 | rounds per tool |
-| `PAIRINGS` | `nodaemon daemon` | `nodaemon` runs Maven as `mvn`, Gradle with `--no-daemon` and Jenesis under `jenesis.make.mode=compiled`; `daemon` runs Maven as `mvnd`, Gradle with `--daemon` and Jenesis under `jenesis.make.mode=daemon`; `aot` runs Maven and Gradle as `nodaemon` does and Jenesis under `jenesis.make.mode=aot`, from its compiled classes |
+| `PAIRINGS` | `nodaemon daemon` | `nodaemon` runs Maven as `mvn`, Gradle and Mill with `--no-daemon` and Jenesis under `jenesis.make.mode=compiled`; `daemon` runs Maven as `mvnd`, Gradle with `--daemon`, Mill with its daemon and Jenesis under `jenesis.make.mode=daemon`; `aot` runs Maven, Gradle and Mill as `nodaemon` does and Jenesis under `jenesis.make.mode=aot`, from its compiled classes |
 | `TOOLS` | `jenesis old` | the builds to measure: `jenesis`, `old` or both |
-| `MAVEN_MIRROR` | none | a Maven Central mirror for all three tools, where repo.maven.apache.org is rate-limited |
+| `MAVEN_MIRROR` | none | a Maven Central mirror for every tool, where repo.maven.apache.org is rate-limited |
 | `BENCHMARK_FOLDER` | a new temporary folder | where to clone, log and record |
 
 ## The projects
@@ -78,5 +78,8 @@ The numbers say most where nothing else runs on the machine. The published ones 
 | `jackson-databind` | Jackson Databind | Maven | `pom.xml` |
 | `gson` | Gson | Maven | `pom.xml` |
 | `jsoup` | jsoup | Maven | `pom.xml` |
+| `commons-io` | Apache Commons IO | Mill | `pom.xml` |
 
-Each `run.sh` names the commands of both builds and what one leaves out that the other runs.
+Each `run.sh` names the commands of both builds and what one leaves out that the other runs. The Commons IO patch is
+no agent's migration: it adds the Mill build that Mill's own examples keep for the project, which stands in for the
+original build, and the three lines Jenesis needs to build the project from its `pom.xml`.

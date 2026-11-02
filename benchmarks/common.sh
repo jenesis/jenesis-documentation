@@ -1,11 +1,11 @@
 # Sourced by benchmarks/<project>/run.sh, which sets, before sourcing it:
 #
 #   UPSTREAM, COMMIT   the project's repository and the commit the migration starts from
-#   OLD                maven or gradle, the build the project had
+#   OLD                maven, gradle or mill, the build the project had
 #   EDITED             the main source file the edit build changes, relative to the project's root
 #   edit <token>       makes the edit, naming a local variable <token> so that no earlier build has seen it
 #   jenesis            runs the Jenesis build (in the project's root), passing $JENESIS_MODE to java, then $MAKE
-#   old full|again     runs the original build, from scratch or once more, through the mvn or gradlew below
+#   old full|again     runs the original build, from scratch or once more, through the mvn, gradlew or mill below
 #
 # A project script may call root, true where the user is root, who reads a file whose read permission is taken away.
 #
@@ -19,19 +19,19 @@
 # Settings, as environment variables:
 #   JENESIS_REF      the Jenesis commit, tag or branch to install (default: v0.18.0)
 #   ROUNDS           rounds per tool (default 3)
-#   PAIRINGS         nodaemon, daemon, aot or several: without a daemon, Maven runs as mvn, Gradle with --no-daemon
-#                    and Jenesis under jenesis.make.mode=compiled; with one, Maven as the Maven Daemon, mvnd, Gradle
-#                    with --daemon and Jenesis under jenesis.make.mode=daemon; with an ahead-of-time cache, Maven and
-#                    Gradle as without a daemon and Jenesis under jenesis.make.mode=aot, run from the classes it
-#                    compiled, as the cache needs, and starting from the cache its warm-up trained (default:
-#                    nodaemon daemon)
+#   PAIRINGS         nodaemon, daemon, aot or several: without a daemon, Maven runs as mvn, Gradle and Mill with
+#                    --no-daemon and Jenesis under jenesis.make.mode=compiled; with one, Maven as the Maven Daemon,
+#                    mvnd, Gradle with --daemon, Mill with its daemon and Jenesis under jenesis.make.mode=daemon; with
+#                    an ahead-of-time cache, Maven, Gradle and Mill as without a daemon and Jenesis under
+#                    jenesis.make.mode=aot, run from the classes it compiled, as the cache needs, and starting from the
+#                    cache its warm-up trained (default: nodaemon daemon)
 #   TOOLS            jenesis, old or both: the builds to measure, the others left out (default: both)
-#   MAVEN_MIRROR     a Maven Central mirror for all three tools, where repo.maven.apache.org is rate-limited
+#   MAVEN_MIRROR     a Maven Central mirror for every tool, where repo.maven.apache.org is rate-limited
 #   BENCHMARK_FOLDER the folder to work in (default: a new temporary folder), which keeps logs/ and results.tsv
 #
-# Downloaded dependencies stay in ~/.m2, ~/.gradle and ~/.jenesis, as they would on a developer's machine. Jenesis
-# runs with -Djenesis.make.global= and so reads no ~/.jenesis/jenesis.properties: the settings of the machine it runs
-# on cannot replace what the migration declares, such as the repositories a project resolves from.
+# Downloaded dependencies stay in ~/.m2, ~/.gradle, Mill's ~/.cache and ~/.jenesis, as they would on a developer's
+# machine. Jenesis runs with -Djenesis.make.global= and so reads no ~/.jenesis/jenesis.properties: the settings of the
+# machine it runs on cannot replace what the migration declares, such as the repositories a project resolves from.
 
 set -uo pipefail
 
@@ -83,7 +83,7 @@ if [ -n "${MAVEN_MIRROR:-}" ]; then
 </settings>
 EOF
     MAVEN_ARGS=(-s "$WORK/settings.xml")
-    export MAVEN_REPOSITORY_URI="$MAVEN_MIRROR"
+    export MAVEN_REPOSITORY_URI="$MAVEN_MIRROR" COURSIER_REPOSITORIES="ivy2Local|$MAVEN_MIRROR|central"
 fi
 # Neither build reads a remote build cache, and Gradle reads the mirror where one is named: in place of Central, and
 # ahead of every repository list a build declares, as the Plugin Portal redirects to Central what it holds there.
@@ -143,6 +143,10 @@ mvn() {
 
 gradlew() {
     ./gradlew "$GRADLE_MODE" "${GRADLE_ARGS[@]}" "$@"
+}
+
+mill() {
+    ./mill $MILL_MODE "$@"
 }
 
 # replace <file> <old> <new>: replaces the one occurrence of <old>, failing where there is none or more than one.
@@ -253,11 +257,11 @@ for pairing in $PAIRINGS; do
     MAKE=build/jenesis/Make.java
     case "$pairing" in
         nodaemon) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=compiled $JENESIS_REMOTES" \
-            GRADLE_MODE=--no-daemon MAVEN_COMMAND=mvn ;;
+            GRADLE_MODE=--no-daemon MAVEN_COMMAND=mvn MILL_MODE=--no-daemon ;;
         daemon) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=daemon $JENESIS_REMOTES" GRADLE_MODE=--daemon \
-            MAVEN_COMMAND=mvnd ;;
+            MAVEN_COMMAND=mvnd MILL_MODE= ;;
         aot) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=aot $JENESIS_REMOTES" GRADLE_MODE=--no-daemon \
-            MAVEN_COMMAND=mvn MAKE="-cp .jenesis/classes build.jenesis.Make" ;;
+            MAVEN_COMMAND=mvn MILL_MODE=--no-daemon MAKE="-cp .jenesis/classes build.jenesis.Make" ;;
         *) die "PAIRINGS takes nodaemon, daemon and aot, not $pairing" ;;
     esac
 
@@ -281,7 +285,8 @@ for pairing in $PAIRINGS; do
         measure "$pairing" "$OLD" warmup 0 old full || die "the warmup build failed: see $LOGS"
         rounds "$OLD" old_round
         [ "$OLD" = gradle ] && ./gradlew --stop >/dev/null 2>&1
-        [ "$OLD" = maven ] && [ "$pairing" = daemon ] && mvnd --stop >/dev/null 2>&1 ;;
+        [ "$OLD" = maven ] && [ "$pairing" = daemon ] && mvnd --stop >/dev/null 2>&1
+        [ "$OLD" = mill ] && [ "$pairing" = daemon ] && ./mill shutdown >/dev/null 2>&1 ;;
     esac
 done
 
