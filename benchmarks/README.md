@@ -35,6 +35,11 @@ ahead-of-time cache. The warm-up trains the caches of the engine and of every to
 build starts from them. Maven and Gradle run in it as they do without a daemon, which is what the page compares the
 cache with; `TOOLS=jenesis` measures Jenesis alone, where the builds before were measured already.
 
+A fourth pairing, `native`, runs Jenesis under `jenesis.make.mode=native` with the GraalVM that `GRAALVM_HOME`
+names. Its warm-up runs the build on that GraalVM's JVM under the tracing agent and compiles the native image of the
+engine and the plugins the project loads, which takes some minutes, so every measured build runs the image. Maven
+and Gradle run in it as they do without a daemon.
+
 A parallel reactor orders modules only by the dependencies they declare, so a build that works with `mvn` can fail
 with `mvnd`. AssertJ does: its Spring Boot integration tests reach `assertj-core` only through Spring Boot's test
 starter, and `mvnd` started them before `assertj-core` was packaged. Its migration patch declares the dependency so
@@ -61,7 +66,8 @@ The numbers say most where nothing else runs on the machine. The published ones 
 |---|---|---|
 | `JENESIS_REF` | `v0.18.0` | the Jenesis commit, tag or branch to install |
 | `ROUNDS` | 3 | rounds per tool |
-| `PAIRINGS` | `nodaemon daemon` | `nodaemon` runs Maven as `mvn`, Gradle with `--no-daemon` and Jenesis under `jenesis.make.mode=compiled`; `daemon` runs Maven as `mvnd`, Gradle with `--daemon` and Jenesis under `jenesis.make.mode=daemon`; `aot` runs Maven and Gradle as `nodaemon` does and Jenesis under `jenesis.make.mode=aot`, from its compiled classes |
+| `PAIRINGS` | `nodaemon daemon` | `nodaemon` runs Maven as `mvn`, Gradle with `--no-daemon` and Jenesis under `jenesis.make.mode=compiled`; `daemon` runs Maven as `mvnd`, Gradle with `--daemon` and Jenesis under `jenesis.make.mode=daemon`; `aot` runs Maven and Gradle as `nodaemon` does and Jenesis under `jenesis.make.mode=aot`, from its compiled classes; `native` runs them as `nodaemon` does and Jenesis under `jenesis.make.mode=native`, whose warm-up trains and compiles the native image |
+| `GRAALVM_HOME` | none | the GraalVM 25 whose `native-image` the `native` pairing compiles with |
 | `TOOLS` | `jenesis old` | the builds to measure: `jenesis`, `old` or both |
 | `MAVEN_MIRROR` | none | a Maven Central mirror for all three tools, where repo.maven.apache.org is rate-limited |
 | `BENCHMARK_FOLDER` | a new temporary folder | where to clone, log and record |

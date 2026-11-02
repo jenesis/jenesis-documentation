@@ -23,8 +23,9 @@
 #                    and Jenesis under jenesis.make.mode=compiled; with one, Maven as the Maven Daemon, mvnd, Gradle
 #                    with --daemon and Jenesis under jenesis.make.mode=daemon; with an ahead-of-time cache, Maven and
 #                    Gradle as without a daemon and Jenesis under jenesis.make.mode=aot, run from the classes it
-#                    compiled, as the cache needs, and starting from the cache its warm-up trained (default:
-#                    nodaemon daemon)
+#                    compiled, as the cache needs, and starting from the cache its warm-up trained; with a native
+#                    image, Maven and Gradle as without a daemon and Jenesis under jenesis.make.mode=native, compiled
+#                    by the GraalVM that GRAALVM_HOME names during its warm-up (default: nodaemon daemon)
 #   TOOLS            jenesis, old or both: the builds to measure, the others left out (default: both)
 #   MAVEN_MIRROR     a Maven Central mirror for all three tools, where repo.maven.apache.org is rate-limited
 #   BENCHMARK_FOLDER the folder to work in (default: a new temporary folder), which keeps logs/ and results.tsv
@@ -258,7 +259,10 @@ for pairing in $PAIRINGS; do
             MAVEN_COMMAND=mvnd ;;
         aot) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=aot $JENESIS_REMOTES" GRADLE_MODE=--no-daemon \
             MAVEN_COMMAND=mvn MAKE="-cp .jenesis/classes build.jenesis.Make" ;;
-        *) die "PAIRINGS takes nodaemon, daemon and aot, not $pairing" ;;
+        native) [ -x "${GRAALVM_HOME:-}/bin/native-image" ] || die "the native pairing needs GRAALVM_HOME naming a GraalVM 25"
+            JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=native -Djenesis.make.graalvm=$GRAALVM_HOME $JENESIS_REMOTES" \
+            GRADLE_MODE=--no-daemon MAVEN_COMMAND=mvn ;;
+        *) die "PAIRINGS takes nodaemon, daemon, aot and native, not $pairing" ;;
     esac
 
     case " $TOOLS " in *" jenesis "*)
