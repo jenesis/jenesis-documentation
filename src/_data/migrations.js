@@ -1,4 +1,5 @@
-// The builds a coding agent moved to Jenesis, and the medians of the benchmark that compares each with its original:
+// The builds a coding agent moved to Jenesis, and Commons IO beside the Mill build that Mill's own examples keep for it,
+// with the medians of the benchmark that compares each with its original:
 // in seconds, [Jenesis, before], for a full build, a build with nothing changed and one after a method body was edited.
 // Jenesis from an ahead-of-time cache is compared with the original build without a daemon.
 // Each pair is shown with the share of the time before that Jenesis saved, rounded down, and each tab with the median
@@ -36,6 +37,9 @@ const projects = [
     nodaemon: { full: [40.8, 51.6], again: [2.7, 39.7], edit: [36.3, 39.5] },
     daemon: { full: [35.4, 37.8], again: [1.7, 30.6], edit: [31.0, 31.4] },
     aot: { full: 37.9, again: 1.2, edit: 32.2 } },
+  { name: "Commons IO", repository: "https://github.com/apache/commons-io", tool: "Mill", agent: "by hand",
+    nodaemon: { full: [75.6, 77.9], again: [2.3, 86.7], edit: [75.3, 79.4] },
+    daemon: { full: [71.3, 74.6], again: [1.6, 80.6], edit: [71.2, 72.5] } },
 ];
 
 const kinds = ["full", "again", "edit"];
