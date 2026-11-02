@@ -40,7 +40,8 @@ const projects = [
   { name: "Commons IO*", repository: "https://github.com/com-lihaoyi/mill/tree/1.3.1/example/thirdparty/commons-io",
     tool: "Mill", agent: "by hand",
     nodaemon: { full: [75.6, 77.9], again: [2.3, 86.7], edit: [75.3, 79.4] },
-    daemon: { full: [71.3, 74.6], again: [1.6, 80.6], edit: [71.2, 72.5] } },
+    daemon: { full: [71.3, 74.6], again: [1.6, 80.6], edit: [71.2, 72.5] },
+    aot: { full: 75.5, again: 1.1, edit: 75.9 } },
 ];
 
 const kinds = ["full", "again", "edit"];
