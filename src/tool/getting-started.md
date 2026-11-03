@@ -38,7 +38,9 @@ java build/jenesis/Make.java
 
 Set `JENESIS_VERSION=X.Y.Z` to pin a release, or pass a git ref to install an arbitrary tag, commit, or
 branch: `curl -fsSL https://get.jenesis.build | bash -s -- main`. A release is installed from the sources jar
-it publishes to Maven Central, and only if the jar matches the SHA-256 checksum published beside it.
+it publishes to Maven Central, and only if the jar matches the SHA-256 checksum published beside it. The script
+is served over HTTPS only: asked over plain HTTP, the address answers with a script that names the HTTPS address
+and exits with an error, so nothing is installed.
 
 ### A package manager
 
