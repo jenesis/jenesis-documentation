@@ -9,6 +9,9 @@ You ask for a module name, optionally a version, and a file name. The service an
 redirect** to the real file, on Google's Maven Central mirror by default. Nothing is re-hosted: the module index only decides *which*
 Maven artifact a module name maps to and points you at it.
 
+The service answers over HTTPS only. A request over plain HTTP is refused with `403`, naming the HTTPS address,
+rather than redirected, as a redirect sent in plain text could be rewritten on its way.
+
 The whole contract is a small, stable set of URL shapes, so anything that can follow a redirect is a
 client - `curl -L`, a browser, or the Jenesis build tool. Every redirect is derived from one row of a
 plain text file, and you can [read those files directly](#reading-the-index-directly) if you would
@@ -201,6 +204,7 @@ fetched without parsing the `Location`:
 | Status | Meaning |
 | --- | --- |
 | `400` | The `Jenesis-Repository` header is not a usable repository URL. |
+| `403` | The request came over plain HTTP; the body names the HTTPS address to ask instead. |
 | `404` | Nothing could be served. The body says why when the module or version is the problem. |
 | `405` | The request was not `GET` or `HEAD`. |
 | `500` | The service failed unexpectedly. |
