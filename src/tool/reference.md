@@ -464,7 +464,7 @@ password location is missing.
 | `jenesis.print.divergence` | `false` | Print a `[DIVERGED]` line per coordinate the project pins at more than one version; `divergence.properties` is written either way. |
 | `jenesis.print.aliases` | `false` | Print an `[ALIAS]` line per `@jenesis.alias` whose target already declares that module name. |
 | `jenesis.print.reproduce` | `true` | Name the steps that did not reproduce under `jenesis.project.reproduce`, beside the summary line. |
-| `jenesis.tree.format` | `full` | The `dependencies` tree rendering: `full` or `compact`. |
+| `jenesis.tree.format` | `full` | What the `dependencies` selector prints: `full` or `compact` trees, or `java`, the arguments `java` runs each module but the test modules with, as the lines of an argument file (see *[Dependencies](/tool/dependencies/#seeing-what-resolved)*). |
 | `jenesis.tree.merge` | `true` | Print one `dependencies` tree per module whose every node names the scopes it is resolved in; `false` prints one tree per module and scope. |
 | `jenesis.tree.internal` | `false` | List the project's own modules among the resolved dependencies of the `dependencies` trees and count them in the licence and module summary. |
 | `jenesis.tree.tools` | `false` | Show apart, under a heading naming each, the groups a module resolves for its build rather than for itself - a linter, a formatter, a plugin, an annotation processor - and count them in the licence summary. |
