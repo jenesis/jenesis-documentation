@@ -179,8 +179,26 @@ When the whole closure is more than you want to read, `-Djenesis.tree.format` na
 | --- | --- |
 | `full` | *(the default)* Every module's graph in full, external closure and all. |
 | `compact` | Only the `local` modules, with everything external folded into a count per branch, so a large multi-module project shows its own shape at a glance. |
+| `java` | No trees, but the arguments `java` runs each module with, as the lines of an argument file. |
 
-`-Djenesis.tree.tests=false` is a second, independent switch that applies under either format. It leaves out
+The `java` format answers a different question: what to hand `java` to run a module outside the build, from a
+script, an IDE or a debugger. Each module prints as a comment naming it and its main class, followed by the
+options of its `process-java.properties`, its attached agents, its module path and class path, its grants of
+native access and, where it names one, its main class, as `-m <module>/<class>` for a module with a
+`module-info.java`. These are the arguments `Execute.java` runs the module with. A module without a main class
+prints its paths alone, and test modules are left out:
+
+```bash
+java -Djenesis.print.progress=false -Djenesis.tree.format=java \
+     build/jenesis/Make.java dependencies > target/run.args
+java @target/run.args
+```
+
+The paths are absolute and point into `target/`, so they hold until the next clean build. The build writes its
+own messages to the same output, and `jenesis.print.progress=false` keeps its progress lines out of it.
+
+`-Djenesis.tree.tests=false` is a second, independent switch that applies under the `full` and the `compact`
+format. It leaves out
 the test modules (see *[Building and running](/tool/building-and-running/)*), which are not part of what the
 project releases, so neither the trees nor the licence summary count what only a test run pulls in.
 
@@ -189,6 +207,8 @@ annotation processor - each resolve in a group of their own and are no dependenc
 leave them out. `-Djenesis.tree.tools=true` prints each such group apart, under a heading naming it, as
 `Group checkstyle, resolved to build maven/demo.quality/demo.quality 0-SNAPSHOT:`, and counts it in the licence
 summary.
+
+{% demos 4, 9 %}
 
 ## Version negotiation
 
