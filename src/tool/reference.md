@@ -145,7 +145,7 @@ order of precedence.
 | --- | --- | --- |
 | `jenesis.make.root` | `.` | The directory scanned for `module-info.java` / `pom.xml`. Command-line only. |
 | `jenesis.make.profiles` | *(unset)* | Comma-separated **profile** names to activate. |
-| `jenesis.make.mode` | `daemon` | How the engine runs. `source` runs it from the build sources, which the launcher compiles class by class as it loads them. `compiled` compiles them once and runs the build from those classes, over a class loader of their own; one batch compile beats the launcher, so this is faster even for a build that runs a single time. `aot` starts those classes from an ahead-of-time cache, trained by the first build and read by every later one. `daemon` hands the build to a reused JVM, which keeps a warm JIT between calls; `--stop` as the sole selector shuts down every daemon. Unset, a build runs in the daemon, or `compiled` where `jenesis.process.mode` names `fork` or `aot`, `jenesis.project.docker` is set, or `jenesis.release.publish` publishes. The first progress line and the `started` event name the mode a build ran in. |
+| `jenesis.make.mode` | `daemon` | How the engine runs. `source` runs it from the build sources, which the launcher compiles class by class as it loads them. `compiled` compiles them once and runs the build from those classes, over a class loader of their own; one batch compile beats the launcher, so this is faster even for a build that runs a single time. `aot` starts those classes from an ahead-of-time cache, trained by the first build and read by every later one. `native` runs a native image of the engine, compiled by the `native-image` of the GraalVM running `Make` from what its tracing agent recorded, and continues a build the image cannot run on that GraalVM's JVM. `daemon` hands the build to a reused JVM, which keeps a warm JIT between calls; `--stop` as the sole selector shuts down every daemon. Unset, a build runs in the daemon, or `compiled` where `jenesis.process.mode` names `fork` or `aot`, `jenesis.project.docker` is set, or `jenesis.release.publish` publishes. The first progress line and the `started` event name the mode a build ran in. |
 | `jenesis.make.classes` | `.jenesis/classes` | Where those classes land, relative to the folder the command runs in on the command line and to the project root in a file. They go under `.jenesis/` with the rest of the build's by-products, so nothing lands in the sources. A project's own file names only a folder inside the project. |
 | `jenesis.toolchain.version` | *(unset)* | The JDK the build runs on, as `25`, `25.0.3` or `25-temurin`. `Make.java` and `Execute.java` start again on a matching installed JDK when the running one does not match (see *[Building &amp; running](/tool/building-and-running/#the-jdk-a-build-runs-on)*). |
 | `jenesis.toolchain.searchpath` | `@` | Comma-separated folders searched for that JDK, absolute or under `~`, with `*` for any one folder name; `@` stands for the operating system's usual locations, and empty only checks the running JDK. Command line or `~/.jenesis/jenesis.properties` only. |
@@ -249,6 +249,22 @@ Each run saves what it trained under a key of its own and restores the latest of
 engine or another JDK clears the folder, so a restored cache never serves a build it was not trained for. The
 engine's cache holds what its JVM loads before the build's own code runs, so a plugin's code, loaded into that
 JVM later, is not in it, while every tool a plugin starts in a JVM of its own gets a cache of its own.
+
+A native image of the engine is kept beside these to follow what GraalVM makes of Jenesis, rather than as the
+fastest way to build. `jenesis.make.mode=native` needs `Make` to run on the `java` of a GraalVM 25 or newer, whose
+`native-image` compiles it:
+
+```bash
+$GRAALVM_HOME/bin/java -Djenesis.make.mode=native build/jenesis/Make.java
+```
+
+The first build runs on that GraalVM's JVM under its tracing agent, which records what an image of the engine
+needs, and then compiles the image into `.jenesis/aot/native/`, which takes some minutes. Every later build runs
+the image, with `javac` inside it and every other tool forked from the GraalVM. A build the image cannot run
+prints the step it stopped at as failed and continues on the JVM. One that reaches something the agent never
+recorded runs under the agent again, so the next build compiles an image that holds it. One that loads a plugin -
+one the project names, or an official plugin such as Checkstyle - or reads the module descriptors of the JDK
+cannot run in an image at all, and its project keeps building on the JVM until the engine changes.
 
 | Property | Default | Effect |
 | --- | --- | --- |
