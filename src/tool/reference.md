@@ -145,7 +145,7 @@ order of precedence.
 | --- | --- | --- |
 | `jenesis.make.root` | `.` | The directory scanned for `module-info.java` / `pom.xml`. Command-line only. |
 | `jenesis.make.profiles` | *(unset)* | Comma-separated **profile** names to activate. |
-| `jenesis.make.mode` | `daemon` | How the engine runs. `source` runs it from the build sources, which the launcher compiles class by class as it loads them. `compiled` compiles them once and runs the build from those classes, over a class loader of their own; one batch compile beats the launcher, so this is faster even for a build that runs a single time. `aot` starts those classes from an ahead-of-time cache, trained by the first build and read by every later one. `native` runs a native image of the engine, compiled by the `native-image` of the GraalVM running `Make` from what its tracing agent recorded, and continues a build the image cannot run on that GraalVM's JVM. `daemon` hands the build to a reused JVM, which keeps a warm JIT between calls; `--stop` as the sole selector shuts down every daemon. Unset, a build runs in the daemon, or `compiled` where `jenesis.process.mode` names `fork` or `aot`, `jenesis.project.docker` is set, or `jenesis.release.publish` publishes. The first progress line and the `started` event name the mode a build ran in. |
+| `jenesis.make.mode` | `daemon` | How the engine runs. `source` runs it from the build sources, which the launcher compiles class by class as it loads them. `compiled` compiles them once and runs the build from those classes, over a class loader of their own; one batch compile beats the launcher, so this is faster even for a build that runs a single time. `aot` starts those classes from an ahead-of-time cache, trained by the first build and read by every later one. `native` runs a native image of the engine, compiled by the `native-image` of the GraalVM running `Make` from what its tracing agent recorded; a build the image cannot run fails. `daemon` hands the build to a reused JVM, which keeps a warm JIT between calls; `--stop` as the sole selector shuts down every daemon. Unset, a build runs in the daemon, or `compiled` where `jenesis.process.mode` names `fork` or `aot`, `jenesis.project.docker` is set, or `jenesis.release.publish` publishes. The first progress line and the `started` event name the mode a build ran in. |
 | `jenesis.make.classes` | `.jenesis/classes` | Where those classes land, relative to the folder the command runs in on the command line and to the project root in a file. They go under `.jenesis/` with the rest of the build's by-products, so nothing lands in the sources. A project's own file names only a folder inside the project. |
 | `jenesis.toolchain.version` | *(unset)* | The JDK the build runs on, as `25`, `25.0.3` or `25-temurin`. `Make.java` and `Execute.java` start again on a matching installed JDK when the running one does not match (see *[Building &amp; running](/tool/building-and-running/#the-jdk-a-build-runs-on)*). |
 | `jenesis.toolchain.searchpath` | `@` | Comma-separated folders searched for that JDK, absolute or under `~`, with `*` for any one folder name; `@` stands for the operating system's usual locations, and empty only checks the running JDK. Command line or `~/.jenesis/jenesis.properties` only. |
@@ -251,7 +251,7 @@ engine's cache holds what its JVM loads before the build's own code runs, so a p
 JVM later, is not in it, while every tool a plugin starts in a JVM of its own gets a cache of its own.
 
 A native image of the engine is kept beside these to follow what GraalVM makes of Jenesis, rather than as the
-fastest way to build. `jenesis.make.mode=native` needs `Make` to run on the `java` of a GraalVM 25 or newer, whose
+fastest way to build. `jenesis.make.mode=native` needs `Make` to run on the `java` of a GraalVM 25.5 or newer, whose
 `native-image` compiles it:
 
 ```bash
@@ -260,11 +260,18 @@ $GRAALVM_HOME/bin/java -Djenesis.make.mode=native build/jenesis/Make.java
 
 The first build runs on that GraalVM's JVM under its tracing agent, which records what an image of the engine
 needs, and then compiles the image into `.jenesis/aot/native/`, which takes some minutes. Every later build runs
-the image, with `javac` inside it and every other tool forked from the GraalVM. A build the image cannot run
-prints the step it stopped at as failed and continues on the JVM. One that reaches something the agent never
-recorded runs under the agent again, so the next build compiles an image that holds it. One that loads a plugin -
-one the project names, or an official plugin such as Checkstyle - or reads the module descriptors of the JDK
-cannot run in an image at all, and its project keeps building on the JVM until the engine changes.
+the image, with `javac` inside it and every other tool forked from the GraalVM. A compilation with annotation
+processors forks `javac` as well, so that the processors run on a JVM.
+
+Where no build the agent watched loaded a plugin, the image holds the engine alone and is about 75 MB. Where one
+did - a plugin the project names, or an official plugin such as Checkstyle - the image is compiled with GraalVM's
+experimental runtime class loading. It then loads each plugin from its jars as a JVM does, a plugin added later
+included. Such an image keeps the JDK modules a plugin can reach whole and is about 320 MB; a plugin reaching another
+module of the JDK stops it with a fatal error.
+
+A plugin added to a project whose image holds the engine alone fails that build, and the next build trains an image
+that loads plugins. Any other build reaching something the agent never recorded fails like any build does. The image
+is compiled again once the engine changes, or after the `native` folder of `jenesis.aot.folder` is deleted.
 
 | Property | Default | Effect |
 | --- | --- | --- |
@@ -279,6 +286,7 @@ cannot run in an image at all, and its project keeps building on the JVM until t
 | `jenesis.make.home` | *(derived)* | The `.jenesis` folder holding your user-global file. No file may set it. |
 | `jenesis.make.ambient` | *(derived)* | The settings the command line supplied, likewise, so that a path named there resolves against `jenesis.make.directory`. |
 | `jenesis.make.directory` | *(derived)* | The folder the command runs in, which a relative path on the command line resolves against. The command and the tools record it, a daemon or a container keeps the one it is handed, and no file may set it. |
+| `jenesis.make.native` | *(derived)* | The file in the `native` folder of `jenesis.aot.folder` that a build loading a plugin creates. `Make` names it for the builds that train a native image and for an image that holds the engine alone, so that the next build trains an image that loads plugins. Command-line only. |
 | `jenesis.project.configuration` | `build.jenesis/` | Comma-separated project-wide configuration folders; `@` splices the default back in, and `@<name>` splices what `jenesis.<name>` or the environment variable `<name>` holds. |
 | `jenesis.project.boms` | the configuration folders | Path-separated list of folders searched for `pin-<name>.properties` files. |
 | `jenesis.project.artifacts` | `.jenesis/artifacts` | The project-local folder resolved artifacts are materialised into (hard-linked from `~/.m2` where possible), in every layout. It also holds a copy of each repository's `maven-metadata.xml`, so a `RELEASE` or range still resolves when the repository is unreachable. A project's own file names only a folder inside the project. |
