@@ -113,6 +113,7 @@ export default {
         { slug: "demo-51-scala-quality", name: "Scala quality", blurb: "Scala with code-quality checks." },
         { slug: "demo-52-groovy", name: "Groovy", blurb: "A Groovy (and mixed Java/Groovy) project." },
         { slug: "demo-53-groovy-quality", name: "Groovy quality", blurb: "Groovy with code-quality checks." },
+        { slug: "demo-82-clojure", name: "Clojure", blurb: "A Java type and a Clojure namespace in one pom.xml module, the namespace compiled ahead of time." },
       ],
     },
     {

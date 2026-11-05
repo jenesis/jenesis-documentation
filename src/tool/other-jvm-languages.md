@@ -1,16 +1,16 @@
 ---
 order: 8
 title: Other JVM languages
-description: Compiling Kotlin, Scala and Groovy, each resolved as an official plugin wherever a module holds its sources - alone or mixed with Java in one module - the compile order that decides which packages you can export, the standard-library dependency each needs, and enabling a Kotlin or Scala compiler plugin.
+description: Compiling Kotlin, Scala, Groovy and Clojure, each resolved as an official plugin wherever a module holds its sources - alone or mixed with Java in one module - the compile order that decides which packages you can export, the standard-library dependency each needs, and enabling a Kotlin or Scala compiler plugin.
 ---
 
-Jenesis is not a Java-only build tool. Drop `.kt`, `.scala` or `.groovy` sources into a module, and the build
-resolves the matching compiler and builds them, mixed freely with Java, into one modular jar and its generated
+Jenesis is not a Java-only build tool. Drop `.kt`, `.scala`, `.groovy` or `.clj` sources into a module, and the
+build resolves the matching compiler and builds them, mixed freely with Java, into one jar and its generated
 POM, with **no build script to write** and no file to switch a language on.
 
-Kotlin, Scala and Groovy are official plugins: the build resolves each by itself, as `build.jenesis.plugin.kotlin`,
-`build.jenesis.plugin.scala` or `build.jenesis.plugin.groovy`, in every module that holds a source of its
-extension, and wires its compiler into the same step graph *[Core concepts](/tool/core-concepts/)* described. No
+Kotlin, Scala, Groovy and Clojure are official plugins: the build resolves each by itself, as
+`build.jenesis.plugin.kotlin`, `build.jenesis.plugin.scala`, `build.jenesis.plugin.groovy` or
+`build.jenesis.plugin.clojure`, in every module that holds a source of its extension, and wires its compiler into the same step graph *[Core concepts](/tool/core-concepts/)* described. No
 line of `jenesis.plugins.properties` names them.
 
 | Language | Extension | Switched off by |
@@ -18,11 +18,13 @@ line of `jenesis.plugins.properties` names them.
 | Kotlin | `.kt` | `jenesis.language.kotlin=false` |
 | Scala | `.scala` | `jenesis.language.scala=false` |
 | Groovy | `.groovy` | `jenesis.language.groovy=false` |
+| Clojure | `.clj` | `jenesis.language.clojure=false` |
 
 Each of these compilers comes from its plugin alone, so a module holding a source of a language switched off
 fails the build, naming the extension and the setting. A `pom.xml` project reads a folder beside its source
 directories, such as `src/main/kotlin` and `src/test/kotlin`, only where `jenesis.maven.sources` names it - `jenesis.maven.sources=kotlin,groovy` in
-`jenesis.properties` reads the folders the Kotlin and GMavenPlus plugins read by default.
+`jenesis.properties` reads the folders the Kotlin and GMavenPlus plugins read by default, and
+`jenesis.maven.sources=clojure` reads `src/main/clojure`.
 
 This chapter covers what changes when a module holds more than Java: how two compilers share one module, the one
 rule that decides which packages you can export, the standard-library dependency each language needs, and how
@@ -42,12 +44,13 @@ The order is not arbitrary, and it differs by language:
 | Kotlin | `kotlinc`, then `javac` | `kotlinc` reads `.java` as source for symbol resolution but emits only Kotlin classes |
 | Scala | `scalac`, then `javac` | `scalac` reads `.java` as source for symbol resolution but emits only Scala classes |
 | Groovy | `javac`, then `groovyc` | `groovyc` cannot read `.java` as source; it resolves Java from the compiled class path |
+| Clojure | `javac`, then Clojure's compiler | a namespace reaches Java types as classes, from the compiled class path |
 
 For Kotlin and Scala, the language compiler runs **first**: it reads your `.java` files only to resolve symbols
 (so `Sample.kt` can call a Java `Greeter`) but leaves the Java output to `javac`, which compiles the `.java`
 sources and `module-info.java` afterwards. For Groovy it is the mirror image: `javac` runs **first** and owns all
 Java output, then `groovyc` compiles the `.groovy` sources, reaching Java types through the classes `javac`
-already produced.
+already produced. Clojure follows Groovy's order.
 
 <div class="note">
   <strong>Who owns <code>module-info.java</code>.</strong> Neither <code>kotlinc</code> nor <code>scalac</code>
@@ -77,6 +80,30 @@ do not exist yet and only Java types count. The rule is:
   Jenesis one - it follows from <code>groovyc</code> resolving Java only from the compiled class path.
 </div>
 
+## Clojure
+
+The Clojure plugin copies every `.clj` and `.cljc` source of a module into its jar, as a Clojure library ships
+them, and compiles each namespace ahead of time. A namespace with `(:gen-class)` thereby becomes a class with a
+`main` method, which `java build/jenesis/Execute.java` runs where the `pom.xml` names it as its `mainClass`.
+
+Classes compiled ahead of time are tied to the Clojure that compiled them, so the plugin compiles with the
+`org.clojure:clojure` the module depends on rather than with one of its own. A module that holds a Clojure source
+but does not depend on `org.clojure:clojure` fails the build, naming it. Compiling a namespace also compiles every
+namespace it requires; the plugin keeps the classes of a dependency's namespaces out of the module's jar, as they
+ship in the dependency's own.
+
+Clojure's jar declares no module name, so the demo declares it as a dependency of a `pom.xml` project:
+
+```xml
+<dependency>
+    <groupId>org.clojure</groupId>
+    <artifactId>clojure</artifactId>
+    <version>1.12.6</version>
+</dependency>
+```
+
+{% demos 82 %}
+
 ## The standard-library dependency
 
 Each language needs its standard library on the module path. You declare it as a normal `requires` in
@@ -100,12 +127,13 @@ module path with no hand-written wiring.
 
 ## Pinning the compiler
 
-Every language compiler resolves in **the tool group of its plugin** - `kotlin:tool`, `scala:tool` or
+Every language compiler but Clojure's resolves in **the tool group of its plugin** - `kotlin:tool`, `scala:tool` or
 `groovy:tool` - kept completely apart from your module's own `main`-group dependencies. That separation matters: the
 running compiler is locked independently of the standard library your module ships against, so pinning a
 different `kotlin-stdlib` for your code can never downgrade the `kotlinc` that compiles it. The documentation
 tools and Zinc resolve beside them, in `kotlin:dokka`, `scala:scaladoc` and `scala:zinc`; Groovydoc shares the
-`groovy:tool` group.
+`groovy:tool` group. Clojure compiles with the `org.clojure:clojure` of your module, which is pinned as any other
+dependency of it is.
 
 The compilers float a latest version by default. Run the `pin` step to record each resolved compiler jar with its
 version and SHA-256, exactly as it pins your Java compilers and dependencies (see *[Pinning & bills of materials](/tool/pinning/)*):
@@ -197,7 +225,7 @@ The plugin's version is pinned the usual way, coordinated to the compiler - the 
 
 When you build documentation jars (`jenesis.project.documentation`, *Building & running*), each language
 documents its own sources: Dokka for Kotlin, `scaladoc` for Scala, `groovydoc` for Groovy, beside `javadoc` for
-Java. A module with one language and no Java is documented by that language's tool at the root of the
+Java; the Clojure plugin documents nothing. A module with one language and no Java is documented by that language's tool at the root of the
 archive. Where a module mixes languages, `javadoc` renders the Java at the root and each other language renders
 in a folder named after its language - `kotlin/`, `scala/` or `groovy/`. Where a module holds Java beside
 Groovy, `groovydoc` documents the Java sources as well, so its folder covers the whole module. Either way the produced `-javadoc.jar`
