@@ -19,12 +19,15 @@
 # Settings, as environment variables:
 #   JENESIS_REF      the Jenesis commit, tag or branch to install (default: v0.18.0)
 #   ROUNDS           rounds per tool (default 3)
-#   PAIRINGS         nodaemon, daemon, aot or several: without a daemon, Maven runs as mvn, Gradle and Mill with
-#                    --no-daemon and Jenesis under jenesis.make.mode=compiled; with one, Maven as the Maven Daemon,
-#                    mvnd, Gradle with --daemon, Mill with its daemon and Jenesis under jenesis.make.mode=daemon; with
-#                    an ahead-of-time cache, Maven, Gradle and Mill as without a daemon and Jenesis under
-#                    jenesis.make.mode=aot, run from the classes it compiled, as the cache needs, and starting from the
-#                    cache its warm-up trained (default: nodaemon daemon)
+#   PAIRINGS         nodaemon, daemon, aot, native or several: without a daemon, Maven runs as mvn, Gradle and Mill
+#                    with --no-daemon and Jenesis under jenesis.make.mode=compiled; with one, Maven as the Maven
+#                    Daemon, mvnd, Gradle with --daemon, Mill with its daemon and Jenesis under
+#                    jenesis.make.mode=daemon; with an ahead-of-time cache, Maven, Gradle and Mill as without a daemon
+#                    and Jenesis under jenesis.make.mode=aot, run from the classes it compiled, as the cache needs, and
+#                    starting from the cache its warm-up trained; with a native image, the same, Jenesis under
+#                    jenesis.make.mode=native from the image its first warm-up compiled, and skipped where the java on
+#                    the PATH is no GraalVM, as only one ships the native-image that compiles it (default: nodaemon
+#                    daemon)
 #   TOOLS            jenesis, old or both: the builds to measure, the others left out (default: both)
 #   MAVEN_MIRROR     a Maven Central mirror for every tool, where repo.maven.apache.org is rate-limited
 #   BENCHMARK_FOLDER the folder to work in (default: a new temporary folder), which keeps logs/ and results.tsv
@@ -262,18 +265,28 @@ for pairing in $PAIRINGS; do
             MAVEN_COMMAND=mvnd MILL_MODE= ;;
         aot) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=aot $JENESIS_REMOTES" GRADLE_MODE=--no-daemon \
             MAVEN_COMMAND=mvn MILL_MODE=--no-daemon MAKE="-cp .jenesis/classes build.jenesis.Make" ;;
-        *) die "PAIRINGS takes nodaemon, daemon and aot, not $pairing" ;;
+        native) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=native $JENESIS_REMOTES" \
+            GRADLE_MODE=--no-daemon MAVEN_COMMAND=mvn MILL_MODE=--no-daemon MAKE="-cp .jenesis/classes build.jenesis.Make"
+            if [ ! -x "$JAVA_HOME/bin/native-image" ]; then
+                say "Skipping the native pairing, as $JAVA_HOME is no GraalVM: run with the java of a GraalVM 25.5 or newer"
+                continue
+            fi ;;
+        *) die "PAIRINGS takes nodaemon, daemon, aot and native, not $pairing" ;;
     esac
 
     case " $TOOLS " in *" jenesis "*)
         say "Jenesis ($pairing)"
         cd "$PROJECT" || exit 2
         rm -rf target .jenesis/aot
-        if [ "$pairing" = aot ]; then
-            java -Djenesis.make.global= -Djenesis.make.mode=compiled build/jenesis/Make.java help >"$LOGS/aot-compile.log" 2>&1 \
-                || die "the engine did not compile: see $LOGS/aot-compile.log"
+        if [ "$pairing" = aot ] || [ "$pairing" = native ]; then
+            java -Djenesis.make.global= -Djenesis.make.mode=compiled build/jenesis/Make.java help >"$LOGS/$pairing-compile.log" 2>&1 \
+                || die "the engine did not compile: see $LOGS/$pairing-compile.log"
         fi
         measure "$pairing" jenesis warmup 0 jenesis || die "the warmup build failed: see $LOGS"
+        if [ "$pairing" = native ]; then
+            rm -rf target
+            measure "$pairing" jenesis warmup 1 jenesis || die "the first build in the native image failed: see $LOGS"
+        fi
         rounds jenesis jenesis_round
         [ "$pairing" = daemon ] && java -Djenesis.make.mode=daemon build/jenesis/Make.java --stop >/dev/null 2>&1
         rm -rf target ;;

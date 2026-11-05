@@ -9,6 +9,7 @@ benchmarks/gson/run.sh
 ROUNDS=1 benchmarks/mockito/run.sh
 PAIRINGS=daemon benchmarks/junit-framework/run.sh
 PAIRINGS=aot TOOLS=jenesis benchmarks/jsoup/run.sh
+PAIRINGS=native TOOLS=jenesis benchmarks/gson/run.sh
 ```
 
 A run clones the project at the commit the migration started from into a temporary folder, applies the patch and
@@ -35,6 +36,13 @@ ahead-of-time cache. The warm-up trains the caches of the engine and of every to
 build starts from them. Maven and Gradle run in it as they do without a daemon, which is what the page compares the
 cache with; `TOOLS=jenesis` measures Jenesis alone, where the builds before were measured already.
 
+A fourth pairing, `native`, runs Jenesis under `jenesis.make.mode=native`, from the same compiled classes. It needs
+the `java` on the `PATH` to be a GraalVM 25.5 or newer, whose `native-image` compiles the image, and a Jenesis that
+has the mode; on any other JDK the pairing is skipped with a line saying so, and the others run as before. The first
+warm-up builds on the GraalVM's JVM under its tracing agent and compiles the image, which takes some minutes; a
+second warm-up is the first build in the image, so every measured build runs a warm one. Maven, Gradle and Mill run
+in it as they do without a daemon, as in `aot`.
+
 A parallel reactor orders modules only by the dependencies they declare, so a build that works with `mvn` can fail
 with `mvnd`. AssertJ does: its Spring Boot integration tests reach `assertj-core` only through Spring Boot's test
 starter, and `mvnd` started them before `assertj-core` was packaged. Its migration patch declares the dependency so
@@ -50,7 +58,8 @@ The numbers say most where nothing else runs on the machine. The published ones 
 
 ## What it needs
 
-- a JDK 25 or newer as `java`, `git`, `curl` and `python3`;
+- a JDK 25 or newer as `java`, `git`, `curl` and `python3`, and a GraalVM 25.5 or newer as `java` for the `native`
+  pairing;
 - Maven 3.9 as `mvn` and the Maven Daemon 1.x as `mvnd` for the Maven projects; the Gradle projects bring their
   wrapper, and the Mill project the Mill launcher, which downloads Mill;
 - about 5 GB of free disk for Guava, less for the others.
@@ -61,7 +70,7 @@ The numbers say most where nothing else runs on the machine. The published ones 
 |---|---|---|
 | `JENESIS_REF` | `v0.18.0` | the Jenesis commit, tag or branch to install |
 | `ROUNDS` | 3 | rounds per tool |
-| `PAIRINGS` | `nodaemon daemon` | `nodaemon` runs Maven as `mvn`, Gradle and Mill with `--no-daemon` and Jenesis under `jenesis.make.mode=compiled`; `daemon` runs Maven as `mvnd`, Gradle with `--daemon`, Mill with its daemon and Jenesis under `jenesis.make.mode=daemon`; `aot` runs Maven, Gradle and Mill as `nodaemon` does and Jenesis under `jenesis.make.mode=aot`, from its compiled classes |
+| `PAIRINGS` | `nodaemon daemon` | `nodaemon` runs Maven as `mvn`, Gradle and Mill with `--no-daemon` and Jenesis under `jenesis.make.mode=compiled`; `daemon` runs Maven as `mvnd`, Gradle with `--daemon`, Mill with its daemon and Jenesis under `jenesis.make.mode=daemon`; `aot` runs Maven, Gradle and Mill as `nodaemon` does and Jenesis under `jenesis.make.mode=aot`, from its compiled classes; `native` runs them as `aot` does and Jenesis under `jenesis.make.mode=native`, and is skipped where `java` is no GraalVM |
 | `TOOLS` | `jenesis old` | the builds to measure: `jenesis`, `old` or both |
 | `MAVEN_MIRROR` | none | a Maven Central mirror for every tool, where repo.maven.apache.org is rate-limited |
 | `BENCHMARK_FOLDER` | a new temporary folder | where to clone, log and record |
