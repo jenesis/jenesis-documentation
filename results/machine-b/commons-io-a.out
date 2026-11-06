@@ -1,0 +1,24 @@
+
+== Cloning https://github.com/apache/commons-io.git at b91a48074231ef813bc9b91a815d77f6343ff8f0 into /home/user/bm/commons-io-a/commons-io
+
+== Installing Jenesis at ccr-3e52e402-3aif21
+jenesis-install: using ref ccr-3e52e402-3aif21
+jenesis-install: downloading https://github.com/jenesis/jenesis/archive/ccr-3e52e402-3aif21.zip
+jenesis-install: installed Jenesis ccr-3e52e402-3aif21 to /home/user/bm/commons-io-a/commons-io/build/jenesis
+jenesis-install: next: run 'java build/jenesis/Make.java' from /home/user/bm/commons-io-a/commons-io
+
+== Jenesis (nodaemon)
+nodaemon        jenesis  warmup   0    75.1 s
+nodaemon        jenesis  full     1    67.1 s
+nodaemon        jenesis  again    1     1.8 s
+nodaemon        jenesis  edit     1    65.9 s
+nodaemon        jenesis  full     2    66.2 s
+nodaemon        jenesis  again    2     1.7 s
+nodaemon        jenesis  edit     2    66.0 s
+nodaemon        jenesis  full     3    66.4 s
+nodaemon        jenesis  again    3     1.7 s
+nodaemon        jenesis  edit     3    66.0 s
+
+== mill (nodaemon)
+nodaemon        mill     warmup   0     3.2 s  FAILED, see /home/user/bm/commons-io-a/logs/nodaemon-mill-warmup-0.log
+commons-io: the warmup build failed: see /home/user/bm/commons-io-a/logs
