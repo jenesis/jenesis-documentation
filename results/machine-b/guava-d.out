@@ -1,0 +1,39 @@
+
+== Cloning https://github.com/google/guava.git at 7caa334327e2d6a6b75920ff939048db21cd5b72 into /home/user/bm/guava-d/guava
+
+== Installing Jenesis at ccr-3e52e402-3aif21
+jenesis-install: using ref ccr-3e52e402-3aif21
+jenesis-install: downloading https://github.com/jenesis/jenesis/archive/ccr-3e52e402-3aif21.zip
+jenesis-install: installed Jenesis ccr-3e52e402-3aif21 to /home/user/bm/guava-d/guava/build/jenesis
+jenesis-install: next: run 'java build/jenesis/Make.java' from /home/user/bm/guava-d/guava
+
+== Jenesis (daemon)
+daemon          jenesis  warmup   0   576.7 s
+daemon          jenesis  full     1   545.1 s
+daemon          jenesis  again    1     1.9 s
+daemon          jenesis  edit     1   528.5 s
+daemon          jenesis  full     2   543.7 s
+daemon          jenesis  again    2     1.9 s
+daemon          jenesis  edit     2   521.8 s
+daemon          jenesis  full     3   549.6 s
+daemon          jenesis  again    3     1.8 s
+daemon          jenesis  edit     3   533.1 s
+
+== maven (daemon)
+daemon          maven    warmup   0   701.3 s
+daemon          maven    full     1   634.8 s
+daemon          maven    again    1   621.5 s
+daemon          maven    edit     1   642.6 s
+daemon          maven    full     2   645.1 s
+daemon          maven    again    2   623.2 s
+daemon          maven    edit     2   635.9 s
+daemon          maven    full     3   642.3 s
+daemon          maven    again    3   615.5 s
+daemon          maven    edit     3   629.3 s
+
+== Medians of 3 round(s), in seconds
+pairing         tool         full    again     edit
+daemon          jenesis     545.1      1.9    528.5
+daemon          maven       642.3    621.5    635.9
+
+Every run is in /home/user/bm/guava-d/results.tsv, its output in /home/user/bm/guava-d/logs.
