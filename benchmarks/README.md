@@ -43,6 +43,11 @@ warm-up builds on the GraalVM's JVM under its tracing agent and compiles the ima
 second warm-up is the first build in the image, so every measured build runs a warm one. Maven, Gradle and Mill run
 in it as they do without a daemon, as in `aot`.
 
+A fifth pairing, `nativetools`, runs as `native` does and adds `jenesis.process.mode=native`, so that the test JVMs
+and every other JVM the build forks run from native images of their own as well, compiled after the first run of each
+under the tracing agent. Where a build fails that way, the pairing's rows are marked as discarded and Jenesis runs
+again from the start with `jenesis.process.mode=aot`, its rows marked `nativetools-aot`.
+
 A parallel reactor orders modules only by the dependencies they declare, so a build that works with `mvn` can fail
 with `mvnd`. AssertJ does: its Spring Boot integration tests reach `assertj-core` only through Spring Boot's test
 starter, and `mvnd` started them before `assertj-core` was packaged. Its migration patch declares the dependency so
@@ -69,8 +74,10 @@ The numbers say most where nothing else runs on the machine. The published ones 
 | Variable | Default | Effect |
 |---|---|---|
 | `JENESIS_REF` | `v0.18.0` | the Jenesis commit, tag or branch to install |
+| `JENESIS_SOURCES` | | a checkout of jenesis/jenesis whose `sources/build/jenesis` is copied in place of `JENESIS_REF`, to measure work that is not pushed |
+| `JENESIS_OPTIONS` | | further `-Djenesis.*` settings handed to every Jenesis build, after those of its pairing |
 | `ROUNDS` | 3 | rounds per tool |
-| `PAIRINGS` | `nodaemon daemon` | `nodaemon` runs Maven as `mvn`, Gradle and Mill with `--no-daemon` and Jenesis under `jenesis.make.mode=compiled`; `daemon` runs Maven as `mvnd`, Gradle with `--daemon`, Mill with its daemon and Jenesis under `jenesis.make.mode=daemon`; `aot` runs Maven, Gradle and Mill as `nodaemon` does and Jenesis under `jenesis.make.mode=aot`, from its compiled classes; `native` runs them as `aot` does and Jenesis under `jenesis.make.mode=native`, and is skipped where `java` is no GraalVM |
+| `PAIRINGS` | `nodaemon daemon` | `nodaemon` runs Maven as `mvn`, Gradle and Mill with `--no-daemon` and Jenesis under `jenesis.make.mode=compiled`; `daemon` runs Maven as `mvnd`, Gradle with `--daemon`, Mill with its daemon and Jenesis under `jenesis.make.mode=daemon`; `aot` runs Maven, Gradle and Mill as `nodaemon` does and Jenesis under `jenesis.make.mode=aot`, from its compiled classes; `native` runs them as `aot` does and Jenesis under `jenesis.make.mode=native`, and is skipped where `java` is no GraalVM; `nativetools` runs as `native` does with `jenesis.process.mode=native`, or as `nativetools-aot` with `jenesis.process.mode=aot` where that fails |
 | `TOOLS` | `jenesis old` | the builds to measure: `jenesis`, `old` or both |
 | `MAVEN_MIRROR` | none | a Maven Central mirror for every tool, where repo.maven.apache.org is rate-limited |
 | `BENCHMARK_FOLDER` | a new temporary folder | where to clone, log and record |
