@@ -1,0 +1,43 @@
+project	pairing	tool	full	again	edit	note
+gson	nodaemon	jenesis	54.3	3.1	18.9
+gson	nodaemon	maven	74.1	46.0	67.8
+gson	daemon	jenesis	30.0	1.8	11.5
+gson	daemon	maven	49.7	27.4	45.1
+gson	aot	jenesis	48.8	2.3	17.6
+gson	native	jenesis	43.0	1.1	15.0
+jsoup	nodaemon	jenesis	33.8	2.2	31.2
+jsoup	nodaemon	maven	43.2	33.7	35.1
+jsoup	daemon	jenesis	28.7	1.5	26.8
+jsoup	daemon	maven	36.2	28.5	29.5
+jsoup	aot	jenesis	35.0	1.3	32.3
+jsoup	native	jenesis	30.9	0.6	28.9
+auto	nodaemon	jenesis	70.9	3.0	24.9
+auto	nodaemon	maven	90.8	86.0	91.3
+auto	daemon	jenesis	68.8	1.9	17.7
+auto	daemon	maven	62.9	62.3	61.1
+auto	aot	jenesis	66.7	1.9	22.1
+auto	native	jenesis	64.8	1.0	22.3
+commons-io	nodaemon	jenesis	70.5	2.1	71.1
+commons-io	aot	jenesis	70.1	1.1	69.7
+commons-io	native	jenesis	66.1	0.7	65.8
+jackson-databind	nodaemon	jenesis	57.8	4.3	50.8
+jackson-databind	nodaemon	maven	67.7	67.7	65.7
+jackson-databind	daemon	jenesis	44.4	2.2	35.8
+jackson-databind	daemon	maven	49.7	49.2	49.8
+jackson-databind	aot	jenesis	51.4	2.9	42.0
+jackson-databind	native	jenesis	54.1	1.7	43.4
+assertj	nodaemon	jenesis	86.8	3.6	60.8
+assertj	nodaemon	maven	134.1	109.3	115.0	one maven edit round failed and was rerun
+assertj	daemon	jenesis	59.0	2.5	48.3
+assertj	daemon	maven	86.1	65.4	69.8
+assertj	aot	jenesis	84.7	3.0	57.4
+assertj	native	jenesis	80.3	1.5	57.5
+mockito	aot	jenesis	166.2	4.4	134.7	one edit round failed and was rerun
+mockito	native	jenesis	163.2	2.8	128.8	one again round hung (native image) and was rerun
+junit-framework	nodaemon	jenesis	188.7	5.7	110.6
+junit-framework	nodaemon	gradle	218.5	14.5	145.3
+junit-framework	daemon	jenesis	127.4	3.4	89.7
+junit-framework	daemon	gradle	193.8	4.9	131.0
+junit-framework	aot	jenesis	182.5	4.8	107.1
+guava	nodaemon	jenesis	623.2	3.1	595.5
+guava	nodaemon	maven	730.8	707.7	710.2
