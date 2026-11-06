@@ -1,0 +1,40 @@
+
+== Cloning https://github.com/google/guava.git at 7caa334327e2d6a6b75920ff939048db21cd5b72 into /home/user/bm/guava-b/guava
+
+== Installing Jenesis at ccr-3e52e402-3aif21
+jenesis-install: using ref ccr-3e52e402-3aif21
+jenesis-install: downloading https://github.com/jenesis/jenesis/archive/ccr-3e52e402-3aif21.zip
+jenesis-install: installed Jenesis ccr-3e52e402-3aif21 to /home/user/bm/guava-b/guava/build/jenesis
+jenesis-install: next: run 'java build/jenesis/Make.java' from /home/user/bm/guava-b/guava
+
+== Jenesis (aot)
+aot             jenesis  warmup   0   565.0 s
+aot             jenesis  full     1   566.4 s
+aot             jenesis  again    1     1.9 s
+aot             jenesis  edit     1   540.8 s
+aot             jenesis  full     2   552.5 s
+aot             jenesis  again    2     2.0 s
+aot             jenesis  edit     2   539.5 s
+aot             jenesis  full     3   554.1 s
+aot             jenesis  again    3     2.0 s
+aot             jenesis  edit     3   542.1 s
+
+== Jenesis (native)
+native          jenesis  warmup   0  1100.4 s
+native          jenesis  warmup   1   558.1 s
+native          jenesis  full     1   551.2 s
+native          jenesis  again    1     0.8 s
+native          jenesis  edit     1   536.0 s
+native          jenesis  full     2   554.7 s
+native          jenesis  again    2     0.9 s
+native          jenesis  edit     2   524.3 s
+native          jenesis  full     3   553.8 s
+native          jenesis  again    3     0.8 s
+native          jenesis  edit     3   529.3 s
+
+== Medians of 3 round(s), in seconds
+pairing         tool         full    again     edit
+native          jenesis     553.8      0.8    529.3
+aot             jenesis     554.1      2.0    540.8
+
+Every run is in /home/user/bm/guava-b/results.tsv, its output in /home/user/bm/guava-b/logs.
