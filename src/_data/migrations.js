@@ -48,10 +48,10 @@ const projects = [
     native: { full: 30.9, again: 0.6, edit: 28.9 } },
   { name: "Commons IO*", repository: "https://github.com/com-lihaoyi/mill/tree/1.3.1/example/thirdparty/commons-io",
     tool: "Mill", agent: "by hand",
-    nodaemon: { full: [71.3, 69.1], again: [2.0, 78.5], edit: [70.4, 72.3] },
-    daemon: { full: [67.1, 66.3], again: [1.5, 72.0], edit: [67.9, 67.2] },
-    aot: { full: 70.1, again: 1.1, edit: 69.7 },
-    native: { full: 66.1, again: 0.7, edit: 65.8 } },
+    nodaemon: { full: [69.3, 70.1], again: [2.0, 79.0], edit: [69.3, 71.6] },
+    daemon: { full: [65.7, 65.9], again: [1.4, 72.5], edit: [65.7, 67.0] },
+    aot: { full: [69.9, 71.2], again: [1.1, 77.2], edit: [69.5, 71.9] },
+    native: { full: [69.8, 70.8], again: [1.0, 80.0], edit: [70.6, 72.8] } },
 ];
 
 const kinds = ["full", "again", "edit"];
