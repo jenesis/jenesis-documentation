@@ -2,7 +2,7 @@
 // with the medians of the benchmark that compares each with its original:
 // in seconds, [Jenesis, before], for a full build, a build with nothing changed and one after a method body was edited.
 // Jenesis from an ahead-of-time cache and as a native image is compared with the original build without a daemon,
-// measured beside it where a pair is given. A project whose daemon pairing is marked ran a daemon per project.
+// measured beside it where a pair is given; the native image is summed up in a sentence rather than a tab. A project whose daemon pairing is marked ran a daemon per project.
 // Each pair is shown with the share of the time before that Jenesis saved, rounded down, and each tab with the median
 // saving of every kind of build across the projects.
 const projects = [
@@ -110,11 +110,20 @@ function medians(pairing) {
   });
 }
 
+function share(pairing, kind) {
+  const shares = projects.map(project => measured(project, pairing))
+    .filter(times => times)
+    .map(times => 1 - times[kind][0] / times[kind][1])
+    .sort((a, b) => a - b);
+  const middle = shares.length / 2;
+  return Math.floor(100 * (shares.length % 2 ? shares[Math.floor(middle)] : (shares[middle - 1] + shares[middle]) / 2));
+}
+
 export default {
+  native: Object.fromEntries(kinds.map(kind => [kind, share("native", kind)])),
   pairings: [
     { id: "nodaemon", label: "Without a daemon", rows: rows("nodaemon"), medians: medians("nodaemon") },
     { id: "daemon", label: "With a daemon", rows: rows("daemon"), medians: medians("daemon") },
     { id: "aot", label: "With an ahead-of-time cache", rows: rows("aot"), medians: medians("aot") },
-    { id: "native", label: "As a native image", rows: rows("native"), medians: medians("native") },
   ],
 };
