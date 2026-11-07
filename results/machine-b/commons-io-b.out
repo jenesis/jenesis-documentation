@@ -1,0 +1,118 @@
+
+== Cloning https://github.com/apache/commons-io.git at b91a48074231ef813bc9b91a815d77f6343ff8f0 into /home/user/bm/commons-io-b/commons-io
+
+== Installing Jenesis at ccr-3e52e402-3aif21
+jenesis-install: using ref ccr-3e52e402-3aif21
+jenesis-install: downloading https://github.com/jenesis/jenesis/archive/ccr-3e52e402-3aif21.zip
+jenesis-install: installed Jenesis ccr-3e52e402-3aif21 to /home/user/bm/commons-io-b/commons-io/build/jenesis
+jenesis-install: next: run 'java build/jenesis/Make.java' from /home/user/bm/commons-io-b/commons-io
+
+== Jenesis (nodaemon)
+nodaemon        jenesis  warmup   0    82.2 s
+nodaemon        jenesis  full     1    73.6 s
+nodaemon        jenesis  again    1     2.1 s
+nodaemon        jenesis  edit     1    70.5 s
+nodaemon        jenesis  full     2    68.9 s
+nodaemon        jenesis  again    2     2.0 s
+nodaemon        jenesis  edit     2    69.3 s
+nodaemon        jenesis  full     3    69.3 s
+nodaemon        jenesis  again    3     2.0 s
+nodaemon        jenesis  edit     3    67.9 s
+
+== mill (nodaemon)
+nodaemon        mill     warmup   0   102.8 s
+nodaemon        mill     full     1    80.1 s
+nodaemon        mill     again    1    77.3 s
+nodaemon        mill     edit     1    71.8 s
+nodaemon        mill     full     2    68.7 s
+nodaemon        mill     again    2    80.8 s
+nodaemon        mill     edit     2    70.7 s
+nodaemon        mill     full     3    70.1 s
+nodaemon        mill     again    3    79.0 s
+nodaemon        mill     edit     3    71.6 s
+
+== Jenesis (daemon)
+daemon          jenesis  warmup   0    70.4 s
+daemon          jenesis  full     1    65.7 s
+daemon          jenesis  again    1     1.6 s
+daemon          jenesis  edit     1    65.1 s
+daemon          jenesis  full     2    65.3 s
+daemon          jenesis  again    2     1.4 s
+daemon          jenesis  edit     2    65.7 s
+daemon          jenesis  full     3    67.0 s
+daemon          jenesis  again    3     1.4 s
+daemon          jenesis  edit     3    66.2 s
+
+== mill (daemon)
+daemon          mill     warmup   0    70.8 s
+daemon          mill     full     1    76.6 s
+daemon          mill     again    1    72.4 s
+daemon          mill     edit     1    67.0 s
+daemon          mill     full     2    65.9 s
+daemon          mill     again    2    73.0 s
+daemon          mill     edit     2    67.1 s
+daemon          mill     full     3    65.8 s
+daemon          mill     again    3    72.5 s
+daemon          mill     edit     3    66.5 s
+
+== Jenesis (aot)
+aot             jenesis  warmup   0    71.3 s
+aot             jenesis  full     1    69.3 s
+aot             jenesis  again    1     1.1 s
+aot             jenesis  edit     1    69.8 s
+aot             jenesis  full     2    73.2 s
+aot             jenesis  again    2     1.1 s
+aot             jenesis  edit     2    69.5 s
+aot             jenesis  full     3    69.9 s
+aot             jenesis  again    3     1.0 s
+aot             jenesis  edit     3    68.9 s
+
+== mill (aot)
+aot             mill     warmup   0    69.0 s
+aot             mill     full     1    77.0 s
+aot             mill     again    1    76.0 s
+aot             mill     edit     1    71.0 s
+aot             mill     full     2    69.4 s
+aot             mill     again    2    78.0 s
+aot             mill     edit     2    71.9 s
+aot             mill     full     3    71.2 s
+aot             mill     again    3    77.2 s
+aot             mill     edit     3    73.6 s
+
+== Jenesis (native)
+native          jenesis  warmup   0   347.9 s
+native          jenesis  warmup   1    67.4 s
+native          jenesis  full     1    71.1 s
+native          jenesis  again    1     1.1 s
+native          jenesis  edit     1    72.0 s
+native          jenesis  full     2    68.8 s
+native          jenesis  again    2     0.9 s
+native          jenesis  edit     2    70.5 s
+native          jenesis  full     3    69.8 s
+native          jenesis  again    3     1.0 s
+native          jenesis  edit     3    70.6 s
+
+== mill (native)
+native          mill     warmup   0    69.2 s
+native          mill     full     1    79.1 s
+native          mill     again    1    80.1 s
+native          mill     edit     1    72.4 s
+native          mill     full     2    70.8 s
+native          mill     again    2    79.9 s
+native          mill     edit     2    75.2 s
+native          mill     full     3    68.3 s
+native          mill     again    3    80.0 s
+native          mill     edit     3    72.8 s
+
+== Medians of 3 round(s), in seconds
+pairing         tool         full    again     edit
+nodaemon        jenesis      69.3      2.0     69.3
+nodaemon        mill         70.1     79.0     71.6
+native          jenesis      69.8      1.0     70.6
+native          mill         70.8     80.0     72.8
+daemon          jenesis      65.7      1.4     65.7
+daemon          mill         65.9     72.5     67.0
+aot             jenesis      69.9      1.1     69.5
+aot             mill         71.2     77.2     71.9
+
+Every run is in /home/user/bm/commons-io-b/results.tsv, its output in /home/user/bm/commons-io-b/logs.
