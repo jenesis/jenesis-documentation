@@ -1,0 +1,69 @@
+
+== Cloning https://github.com/apache/commons-io.git at b91a48074231ef813bc9b91a815d77f6343ff8f0 into /home/user/bm/commons-io-a2/commons-io
+
+== Installing Jenesis at ccr-3e52e402-3aif21
+jenesis-install: using ref ccr-3e52e402-3aif21
+jenesis-install: downloading https://github.com/jenesis/jenesis/archive/ccr-3e52e402-3aif21.zip
+jenesis-install: installed Jenesis ccr-3e52e402-3aif21 to /home/user/bm/commons-io-a2/commons-io/build/jenesis
+jenesis-install: next: run 'java build/jenesis/Make.java' from /home/user/bm/commons-io-a2/commons-io
+
+== Jenesis (nodaemon)
+nodaemon        jenesis  warmup   0    75.6 s
+nodaemon        jenesis  full     1    71.3 s
+nodaemon        jenesis  again    1     2.0 s
+nodaemon        jenesis  edit     1    70.7 s
+nodaemon        jenesis  full     2    71.6 s
+nodaemon        jenesis  again    2     1.9 s
+nodaemon        jenesis  edit     2    70.4 s
+nodaemon        jenesis  full     3    70.6 s
+nodaemon        jenesis  again    3     2.1 s
+nodaemon        jenesis  edit     3    70.1 s
+
+== mill (nodaemon)
+nodaemon        mill     warmup   0   108.5 s
+nodaemon        mill     full     1    78.5 s
+nodaemon        mill     again    1    78.5 s
+nodaemon        mill     edit     1    69.3 s
+nodaemon        mill     full     2    68.0 s
+nodaemon        mill     again    2    76.7 s
+nodaemon        mill     edit     2    72.3 s
+nodaemon        mill     full     3    69.9 s
+nodaemon        mill     again    3    76.6 s  FAILED, see /home/user/bm/commons-io-a2/logs/nodaemon-mill-again-3.log
+
+== mill (nodaemon): round 3 failed, so it runs once more
+nodaemon        mill     full     3    69.1 s
+nodaemon        mill     again    3    79.5 s
+nodaemon        mill     edit     3    73.0 s
+
+== Jenesis (daemon)
+daemon          jenesis  warmup   0    73.1 s
+daemon          jenesis  full     1    70.0 s
+daemon          jenesis  again    1     1.6 s
+daemon          jenesis  edit     1    67.9 s
+daemon          jenesis  full     2    67.1 s
+daemon          jenesis  again    2     1.5 s
+daemon          jenesis  edit     2    69.3 s
+daemon          jenesis  full     3    67.0 s
+daemon          jenesis  again    3     1.5 s
+daemon          jenesis  edit     3    66.7 s
+
+== mill (daemon)
+daemon          mill     warmup   0    72.2 s
+daemon          mill     full     1    76.4 s
+daemon          mill     again    1    71.6 s
+daemon          mill     edit     1    65.9 s
+daemon          mill     full     2    65.9 s
+daemon          mill     again    2    72.0 s
+daemon          mill     edit     2    67.2 s
+daemon          mill     full     3    66.3 s
+daemon          mill     again    3    72.2 s
+daemon          mill     edit     3    68.0 s
+
+== Medians of 3 round(s), in seconds
+pairing         tool         full    again     edit
+nodaemon        jenesis      71.3      2.0     70.4
+nodaemon        mill         69.1     78.5     72.3
+daemon          jenesis      67.1      1.5     67.9
+daemon          mill         66.3     72.0     67.2
+
+Every run is in /home/user/bm/commons-io-a2/results.tsv, its output in /home/user/bm/commons-io-a2/logs.
