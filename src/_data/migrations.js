@@ -1,47 +1,57 @@
 // The builds a coding agent moved to Jenesis, and Commons IO beside the Mill build that Mill's own examples keep for it,
 // with the medians of the benchmark that compares each with its original:
 // in seconds, [Jenesis, before], for a full build, a build with nothing changed and one after a method body was edited.
-// Jenesis from an ahead-of-time cache is compared with the original build without a daemon.
+// Jenesis from an ahead-of-time cache and as a native image is compared with the original build without a daemon,
+// measured beside it where a pair is given. A project whose daemon pairing is marked ran a daemon per project.
 // Each pair is shown with the share of the time before that Jenesis saved, rounded down, and each tab with the median
 // saving of every kind of build across the projects.
 const projects = [
-  { name: "Guava", repository: "https://github.com/google/guava", tool: "Maven", agent: "57 min",
-    nodaemon: { full: [682.5, 811.8], again: [3.5, 772.3], edit: [640.0, 784.1] },
-    daemon: { full: [644.6, 760.5], again: [2.5, 738.3], edit: [620.0, 759.5] },
-    aot: { full: 668.1, again: 2.1, edit: 627.9 } },
+  { name: "Guava", repository: "https://github.com/google/guava", tool: "Maven", agent: "57 min", apart: ["daemon"],
+    nodaemon: { full: [623.2, 730.8], again: [3.1, 707.7], edit: [595.5, 710.2] },
+    daemon: { full: [545.1, 642.3], again: [1.9, 621.5], edit: [528.5, 635.9] },
+    aot: { full: 554.1, again: 2.0, edit: 540.8 },
+    native: { full: 553.8, again: 0.8, edit: 529.3 } },
   { name: "JUnit 5", repository: "https://github.com/junit-team/junit-framework", tool: "Gradle", agent: "1 h 18 min",
-    nodaemon: { full: [222.2, 258.2], again: [6.6, 17.6], edit: [131.8, 173.8] },
-    daemon: { full: [160.2, 236.5], again: [4.1, 6.7], edit: [103.7, 170.1] },
-    aot: { full: 206.1, again: 5.3, edit: 130.0 } },
-  { name: "Mockito", repository: "https://github.com/mockito/mockito", tool: "Gradle", agent: "53 min",
-    nodaemon: { full: [202.1, 223.5], again: [6.0, 23.0], edit: [174.1, 177.2] },
-    daemon: { full: [159.7, 191.6], again: [3.5, 6.5], edit: [143.1, 152.8] },
-    aot: { full: 200.8, again: 4.6, edit: 173.7 } },
+    nodaemon: { full: [188.7, 218.5], again: [5.7, 14.5], edit: [110.6, 145.3] },
+    daemon: { full: [127.4, 193.8], again: [3.4, 4.9], edit: [89.7, 131.0] },
+    aot: { full: 182.5, again: 4.8, edit: 107.1 },
+    native: { full: 166.4, again: 7.0, edit: 96.6 } },
+  { name: "Mockito", repository: "https://github.com/mockito/mockito", tool: "Gradle", agent: "53 min", apart: ["daemon"],
+    nodaemon: { full: [167.7, 185.3], again: [5.1, 18.5], edit: [133.2, 140.0] },
+    daemon: { full: [112.9, 132.7], again: [2.7, 4.6], edit: [98.7, 106.7] },
+    aot: { full: 166.2, again: 4.4, edit: 134.7 },
+    native: { full: 163.2, again: 2.8, edit: 128.8 } },
   { name: "AssertJ", repository: "https://github.com/assertj/assertj", tool: "Maven", agent: "45 min",
-    nodaemon: { full: [95.2, 142.3], again: [4.4, 117.9], edit: [65.2, 123.7] },
-    daemon: { full: [69.9, 103.3], again: [2.5, 79.7], edit: [58.5, 88.3] },
-    aot: { full: 92.6, again: 3.0, edit: 65.5 } },
+    nodaemon: { full: [86.8, 134.1], again: [3.6, 109.3], edit: [60.8, 115.0] },
+    daemon: { full: [59.0, 86.1], again: [2.5, 65.4], edit: [48.3, 69.8] },
+    aot: { full: 84.7, again: 3.0, edit: 57.4 },
+    native: { full: 80.3, again: 1.5, edit: 57.5 } },
   { name: "Google Auto", repository: "https://github.com/google/auto", tool: "Maven", agent: "37 min",
     nodaemon: { full: [79.7, 99.2], again: [3.5, 95.2], edit: [30.6, 98.6] },
     daemon: { full: [71.5, 71.7], again: [2.0, 70.2], edit: [20.2, 70.2] },
-    aot: { full: 82.7, again: 2.1, edit: 26.6 } },
+    aot: { full: 82.7, again: 2.1, edit: 26.6 },
+    native: { full: [66.5, 82.6], again: [0.9, 77.8], edit: [23.0, 83.3] } },
   { name: "Jackson Databind", repository: "https://github.com/FasterXML/jackson-databind", tool: "Maven", agent: "23 min",
-    nodaemon: { full: [55.1, 65.5], again: [4.2, 66.7], edit: [43.7, 66.2] },
-    daemon: { full: [48.7, 53.4], again: [2.1, 53.6], edit: [36.1, 52.0] },
-    aot: { full: 51.0, again: 2.5, edit: 42.0 } },
+    nodaemon: { full: [57.8, 67.7], again: [4.3, 67.7], edit: [50.8, 65.7] },
+    daemon: { full: [44.4, 49.7], again: [2.2, 49.2], edit: [35.8, 49.8] },
+    aot: { full: 51.4, again: 2.9, edit: 42.0 },
+    native: { full: 54.1, again: 1.7, edit: 43.4 } },
   { name: "Gson", repository: "https://github.com/google/gson", tool: "Maven", agent: "30 min",
-    nodaemon: { full: [55.1, 73.3], again: [3.6, 44.4], edit: [19.9, 67.2] },
-    daemon: { full: [33.2, 49.2], again: [2.0, 22.0], edit: [13.6, 43.0] },
-    aot: { full: 44.7, again: 1.7, edit: 15.8 } },
+    nodaemon: { full: [54.3, 74.1], again: [3.1, 46.0], edit: [18.9, 67.8] },
+    daemon: { full: [30.0, 49.7], again: [1.8, 27.4], edit: [11.5, 45.1] },
+    aot: { full: 48.8, again: 2.3, edit: 17.6 },
+    native: { full: 43.0, again: 1.1, edit: 15.0 } },
   { name: "jsoup", repository: "https://github.com/jhy/jsoup", tool: "Maven", agent: "32 min",
-    nodaemon: { full: [40.8, 51.6], again: [2.7, 39.7], edit: [36.3, 39.5] },
-    daemon: { full: [35.4, 37.8], again: [1.7, 30.6], edit: [31.0, 31.4] },
-    aot: { full: 37.9, again: 1.2, edit: 32.2 } },
+    nodaemon: { full: [33.8, 43.2], again: [2.2, 33.7], edit: [31.2, 35.1] },
+    daemon: { full: [28.7, 36.2], again: [1.5, 28.5], edit: [26.8, 29.5] },
+    aot: { full: 35.0, again: 1.3, edit: 32.3 },
+    native: { full: 30.9, again: 0.6, edit: 28.9 } },
   { name: "Commons IO*", repository: "https://github.com/com-lihaoyi/mill/tree/1.3.1/example/thirdparty/commons-io",
     tool: "Mill", agent: "by hand",
-    nodaemon: { full: [75.6, 77.9], again: [2.3, 86.7], edit: [75.3, 79.4] },
-    daemon: { full: [71.3, 74.6], again: [1.6, 80.6], edit: [71.2, 72.5] },
-    aot: { full: 75.5, again: 1.1, edit: 75.9 } },
+    nodaemon: { full: [71.3, 69.1], again: [2.0, 78.5], edit: [70.4, 72.3] },
+    daemon: { full: [67.1, 66.3], again: [1.5, 72.0], edit: [67.9, 67.2] },
+    aot: { full: 70.1, again: 1.1, edit: 69.7 },
+    native: { full: 66.1, again: 0.7, edit: 65.8 } },
 ];
 
 const kinds = ["full", "again", "edit"];
@@ -61,17 +71,19 @@ function saving(share) {
 }
 
 function measured(project, pairing) {
-  if (pairing !== "aot") {
-    return project[pairing];
+  const times = project[pairing];
+  if (pairing === "nodaemon" || pairing === "daemon" || !times) {
+    return times;
   }
-  return project.aot && Object.fromEntries(kinds.map(kind => [kind, [project.aot[kind], project.nodaemon[kind][1]]]));
+  return Object.fromEntries(kinds.map(kind => [kind,
+    Array.isArray(times[kind]) ? times[kind] : [times[kind], project.nodaemon[kind][1]]]));
 }
 
 function rows(pairing) {
   return projects.filter(project => measured(project, pairing)).map(project => {
     const times = measured(project, pairing);
     return {
-      name: project.name,
+      name: project.name + ((project.apart || []).includes(pairing) ? "\u2020" : ""),
       repository: project.repository,
       tool: project.tool,
       agent: project.agent,
@@ -103,5 +115,6 @@ export default {
     { id: "nodaemon", label: "Without a daemon", rows: rows("nodaemon"), medians: medians("nodaemon") },
     { id: "daemon", label: "With a daemon", rows: rows("daemon"), medians: medians("daemon") },
     { id: "aot", label: "With an ahead-of-time cache", rows: rows("aot"), medians: medians("aot") },
+    { id: "native", label: "As a native image", rows: rows("native"), medians: medians("native") },
   ],
 };
