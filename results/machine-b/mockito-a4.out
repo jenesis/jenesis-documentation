@@ -1,0 +1,15 @@
+
+== Cloning https://github.com/mockito/mockito.git at 220c594adceebf92a0d06e2fb1e4398b25344d46 into /home/user/bm/mockito-a4/mockito
+/home/user/jenesis-documentation/benchmarks/mockito/migration.patch:72: new blank line at EOF.
++
+warning: 1 line adds whitespace errors.
+
+== Installing Jenesis at ccr-3e52e402-3aif21
+jenesis-install: using ref ccr-3e52e402-3aif21
+jenesis-install: downloading https://github.com/jenesis/jenesis/archive/ccr-3e52e402-3aif21.zip
+jenesis-install: installed Jenesis ccr-3e52e402-3aif21 to /home/user/bm/mockito-a4/mockito/build/jenesis
+jenesis-install: next: run 'java build/jenesis/Make.java' from /home/user/bm/mockito-a4/mockito
+
+== Jenesis (daemon)
+daemon          jenesis  warmup   0   167.5 s  FAILED, see /home/user/bm/mockito-a4/logs/daemon-jenesis-warmup-0.log
+mockito: the warmup build failed: see /home/user/bm/mockito-a4/logs
