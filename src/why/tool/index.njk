@@ -92,8 +92,8 @@ module demo.app {
     <h2 id="migrations">At least as fast as the build it replaces.</h2>
     <p class="lp-section-lede">A coding agent moved eight open-source builds to Jenesis, each from the prompt below and
       nothing else, and Commons IO is set beside the Mill build that Mill's own examples keep for it. Doing the same
-      work as the original build, Jenesis was never slower: across the projects, a full build took a median 15 to
-      20&nbsp;% less time, a build after one method was edited 24 to 30&nbsp;% less, and a build with nothing changed
+      work as the original build, Jenesis was never slower: across the projects, a full build took a median 14 to
+      23&nbsp;% less time, a build after one method was edited 22 to 33&nbsp;% less, and a build with nothing changed
       over 90&nbsp;% less, where Maven and Mill run every test again. Its
       <a class="lp-link" href="{{ docs }}reference/#the-entry-point-build-jenesis-make-java">ahead-of-time mode</a>
       brings close to a daemon's speed to a CI server, where no process outlives a build, by starting each build
@@ -127,12 +127,16 @@ module demo.app {
       three runs. Without a daemon, Maven ran as <code>mvn</code>, Gradle and Mill with <code>--no-daemon</code>; with
       one, Jenesis' daemon ran against <code>mvnd</code>, Gradle's and Mill's, each warmed up by a first build. From an
       ahead-of-time cache, Jenesis is set beside the original build without a daemon, as on a CI server, where a
-      daemon often does not outlive a build but a cache kept in a file does. Every build stayed on
+      daemon often does not outlive a build but a cache kept in a file does. Run as a native image of the engine,
+      against the original build without a daemon, Jenesis took a median {{ migrations.native.full }}&nbsp;% less
+      time for a full build, {{ migrations.native.edit }}&nbsp;% less after an edit and
+      {{ migrations.native.again }}&nbsp;% less with nothing changed. Every build stayed on
       <code>pom.xml</code> and ran the same tests, apart from the few Jenesis leaves to the old build. One machine
       and a few runs make this imperfect, but the tendency holds for every project. Lines of code are counted
       without comments or blank lines. *&nbsp;Commons IO is the Mill port that Mill's own examples keep for it, which
       Mill built with <code>mill test</code>, running every test again on each build, with its tests in one JVM at a
-      time, as Maven, Gradle and Jenesis run them.</p>
+      time, as Maven, Gradle and Jenesis run them. &dagger;&nbsp;Guava and Mockito ran with a Jenesis daemon of their
+      own, under <code>-Djenesis.daemon.shared=false</code>.</p>
     <p class="lp-after">
       <a class="lp-link" href="https://github.com/jenesis/jenesis-documentation/tree/main/benchmarks">Each migration's patch and the script that timed it, to run on your own machine &rarr;</a>
     </p>
