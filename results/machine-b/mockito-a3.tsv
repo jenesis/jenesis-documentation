@@ -1,0 +1,11 @@
+pairing	tool	measurement	round	seconds	exit
+nodaemon	gradle	warmup	0	203.3	0
+nodaemon	gradle	full	1	187.3	0
+nodaemon	gradle	again	1	18.5	0
+nodaemon	gradle	edit	1	140.0	0
+nodaemon	gradle	full	2	185.3	0
+nodaemon	gradle	again	2	18.8	0
+nodaemon	gradle	edit	2	142.9	0
+nodaemon	gradle	full	3	178.0	0
+nodaemon	gradle	again	3	18.5	0
+nodaemon	gradle	edit	3	137.5	0
