@@ -1,0 +1,12 @@
+pairing	tool	measurement	round	seconds	exit
+native	jenesis	warmup	0	799.6	0
+native	jenesis	warmup	1	168.1	0
+native	jenesis	full	1	169.9	0
+native	jenesis	again	1	6.9	0
+native	jenesis	edit	1	96.3	0
+native	jenesis	full	2	165.5	0
+native	jenesis	again	2	7.0	0
+native	jenesis	edit	2	96.6	0
+native	jenesis	full	3	166.4	0
+native	jenesis	again	3	7.0	0
+native	jenesis	edit	3	97.0	0

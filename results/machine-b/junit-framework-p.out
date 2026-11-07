@@ -1,0 +1,23 @@
+
+== Cloning https://github.com/junit-team/junit-framework.git at bf5b78f7aec4bef69240703e94d984ae04e1cafa into /home/user/bm/junit-framework-p/junit-framework
+
+== Installing Jenesis at /home/user/bm/jenesis-exp
+
+== Jenesis (native)
+native          jenesis  warmup   0   799.6 s
+native          jenesis  warmup   1   168.1 s
+native          jenesis  full     1   169.9 s
+native          jenesis  again    1     6.9 s
+native          jenesis  edit     1    96.3 s
+native          jenesis  full     2   165.5 s
+native          jenesis  again    2     7.0 s
+native          jenesis  edit     2    96.6 s
+native          jenesis  full     3   166.4 s
+native          jenesis  again    3     7.0 s
+native          jenesis  edit     3    97.0 s
+
+== Medians of 3 round(s), in seconds
+pairing         tool         full    again     edit
+native          jenesis     166.4      7.0     96.6
+
+Every run is in /home/user/bm/junit-framework-p/results.tsv, its output in /home/user/bm/junit-framework-p/logs.
