@@ -1,0 +1,11 @@
+pairing	tool	measurement	round	seconds	exit
+daemon	jenesis	warmup	0	75.6	0
+daemon	jenesis	full	1	64.5	0
+daemon	jenesis	again	1	1.8	0
+daemon	jenesis	edit	1	27.0	0
+daemon	jenesis	full	2	67.1	0
+daemon	jenesis	again	2	1.7	0
+daemon	jenesis	edit	2	20.3	0
+daemon	jenesis	full	3	64.9	0
+daemon	jenesis	again	3	1.6	0
+daemon	jenesis	edit	3	19.7	0

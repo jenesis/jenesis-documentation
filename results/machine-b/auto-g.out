@@ -1,0 +1,26 @@
+
+== Cloning https://github.com/google/auto.git at 973d60f68d75ffe1b548e7892b358dee91c73753 into /home/user/bm/auto-g/auto
+
+== Installing Jenesis at ccr-3e52e402-3aif21
+jenesis-install: using ref ccr-3e52e402-3aif21
+jenesis-install: downloading https://github.com/jenesis/jenesis/archive/ccr-3e52e402-3aif21.zip
+jenesis-install: installed Jenesis ccr-3e52e402-3aif21 to /home/user/bm/auto-g/auto/build/jenesis
+jenesis-install: next: run 'java build/jenesis/Make.java' from /home/user/bm/auto-g/auto
+
+== Jenesis (daemon)
+daemon          jenesis  warmup   0    75.6 s
+daemon          jenesis  full     1    64.5 s
+daemon          jenesis  again    1     1.8 s
+daemon          jenesis  edit     1    27.0 s
+daemon          jenesis  full     2    67.1 s
+daemon          jenesis  again    2     1.7 s
+daemon          jenesis  edit     2    20.3 s
+daemon          jenesis  full     3    64.9 s
+daemon          jenesis  again    3     1.6 s
+daemon          jenesis  edit     3    19.7 s
+
+== Medians of 3 round(s), in seconds
+pairing         tool         full    again     edit
+daemon          jenesis      64.9      1.7     20.3
+
+Every run is in /home/user/bm/auto-g/results.tsv, its output in /home/user/bm/auto-g/logs.
