@@ -1,0 +1,13 @@
+
+== Cloning https://github.com/junit-team/junit-framework.git at bf5b78f7aec4bef69240703e94d984ae04e1cafa into /home/user/bm/junit-framework-n/junit-framework
+
+== Installing Jenesis at ccr-3e52e402-3aif21
+jenesis-install: using ref ccr-3e52e402-3aif21
+jenesis-install: downloading https://github.com/jenesis/jenesis/archive/ccr-3e52e402-3aif21.zip
+jenesis-install: installed Jenesis ccr-3e52e402-3aif21 to /home/user/bm/junit-framework-n/junit-framework/build/jenesis
+jenesis-install: next: run 'java build/jenesis/Make.java' from /home/user/bm/junit-framework-n/junit-framework
+
+== Jenesis (native)
+native          jenesis  warmup   0   809.9 s
+native          jenesis  warmup   1   795.2 s  FAILED, see /home/user/bm/junit-framework-n/logs/native-jenesis-warmup-1.log
+junit-framework: the warmup build failed: see /home/user/bm/junit-framework-n/logs
