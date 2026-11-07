@@ -1,0 +1,118 @@
+
+== Cloning https://github.com/google/auto.git at 973d60f68d75ffe1b548e7892b358dee91c73753 into /home/user/bm/auto-e/auto
+
+== Installing Jenesis at ccr-3e52e402-3aif21
+jenesis-install: using ref ccr-3e52e402-3aif21
+jenesis-install: downloading https://github.com/jenesis/jenesis/archive/ccr-3e52e402-3aif21.zip
+jenesis-install: installed Jenesis ccr-3e52e402-3aif21 to /home/user/bm/auto-e/auto/build/jenesis
+jenesis-install: next: run 'java build/jenesis/Make.java' from /home/user/bm/auto-e/auto
+
+== Jenesis (nodaemon)
+nodaemon        jenesis  warmup   0    91.5 s
+nodaemon        jenesis  full     1    71.1 s
+nodaemon        jenesis  again    1     3.2 s
+nodaemon        jenesis  edit     1    25.6 s
+nodaemon        jenesis  full     2    69.9 s
+nodaemon        jenesis  again    2     3.0 s
+nodaemon        jenesis  edit     2    23.7 s
+nodaemon        jenesis  full     3    70.0 s
+nodaemon        jenesis  again    3     3.0 s
+nodaemon        jenesis  edit     3    24.2 s
+
+== maven (nodaemon)
+nodaemon        maven    warmup   0   102.2 s
+nodaemon        maven    full     1    86.1 s
+nodaemon        maven    again    1    78.8 s
+nodaemon        maven    edit     1    81.7 s
+nodaemon        maven    full     2    83.1 s
+nodaemon        maven    again    2    80.5 s
+nodaemon        maven    edit     2    84.8 s
+nodaemon        maven    full     3    86.6 s
+nodaemon        maven    again    3    80.7 s
+nodaemon        maven    edit     3    86.8 s
+
+== Jenesis (daemon)
+daemon          jenesis  warmup   0    74.7 s
+daemon          jenesis  full     1    64.8 s
+daemon          jenesis  again    1     1.8 s
+daemon          jenesis  edit     1    23.5 s
+daemon          jenesis  full     2    67.2 s
+daemon          jenesis  again    2     1.9 s
+daemon          jenesis  edit     2    17.4 s
+daemon          jenesis  full     3    60.3 s
+daemon          jenesis  again    3     1.5 s
+daemon          jenesis  edit     3    15.8 s
+
+== maven (daemon)
+daemon          maven    warmup   0    68.3 s
+daemon          maven    full     1    58.4 s
+daemon          maven    again    1    59.2 s
+daemon          maven    edit     1    58.1 s
+daemon          maven    full     2    58.0 s
+daemon          maven    again    2    55.2 s
+daemon          maven    edit     2    55.0 s
+daemon          maven    full     3    54.8 s
+daemon          maven    again    3    52.1 s
+daemon          maven    edit     3    55.5 s
+
+== Jenesis (aot)
+aot             jenesis  warmup   0    68.9 s
+aot             jenesis  full     1    67.3 s
+aot             jenesis  again    1     2.0 s
+aot             jenesis  edit     1    23.5 s
+aot             jenesis  full     2    69.9 s
+aot             jenesis  again    2     2.0 s
+aot             jenesis  edit     2    23.2 s
+aot             jenesis  full     3    67.4 s
+aot             jenesis  again    3     2.0 s
+aot             jenesis  edit     3    23.2 s
+
+== maven (aot)
+aot             maven    warmup   0    80.9 s
+aot             maven    full     1    82.5 s
+aot             maven    again    1    78.5 s
+aot             maven    edit     1    80.0 s
+aot             maven    full     2    84.8 s
+aot             maven    again    2    78.4 s
+aot             maven    edit     2    79.8 s
+aot             maven    full     3    81.0 s
+aot             maven    again    3    75.7 s
+aot             maven    edit     3    80.8 s
+
+== Jenesis (native)
+native          jenesis  warmup   0   712.5 s
+native          jenesis  warmup   1    67.0 s
+native          jenesis  full     1    67.5 s
+native          jenesis  again    1     0.9 s
+native          jenesis  edit     1    23.0 s
+native          jenesis  full     2    66.5 s
+native          jenesis  again    2     0.9 s
+native          jenesis  edit     2    23.2 s
+native          jenesis  full     3    66.3 s
+native          jenesis  again    3     0.9 s
+native          jenesis  edit     3    23.0 s
+
+== maven (native)
+native          maven    warmup   0    82.9 s
+native          maven    full     1    82.6 s
+native          maven    again    1    77.8 s
+native          maven    edit     1    81.4 s
+native          maven    full     2    81.9 s
+native          maven    again    2    77.5 s
+native          maven    edit     2    83.3 s
+native          maven    full     3    87.2 s
+native          maven    again    3    80.5 s
+native          maven    edit     3    84.9 s
+
+== Medians of 3 round(s), in seconds
+pairing         tool         full    again     edit
+nodaemon        jenesis      70.0      3.0     24.2
+nodaemon        maven        86.1     80.5     84.8
+native          jenesis      66.5      0.9     23.0
+native          maven        82.6     77.8     83.3
+daemon          jenesis      64.8      1.8     17.4
+daemon          maven        58.0     55.2     55.5
+aot             jenesis      67.4      2.0     23.2
+aot             maven        82.5     78.4     80.0
+
+Every run is in /home/user/bm/auto-e/results.tsv, its output in /home/user/bm/auto-e/logs.
