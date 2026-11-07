@@ -33,8 +33,8 @@ to the end of a line, quotes group, `@@<text>` is a literal `@`, and a file name
 <div class="note">
   How the JDK tool steps launch is set by <code>-Djenesis.process.factory=tool|fork</code>:
   <code>tool</code> (the default) runs <code>javac</code>/<code>jar</code> in-process; <code>fork</code> runs
-  them as separate processes for stricter sandboxes. A GraalVM native image defaults to <code>fork</code>,
-  since it has no in-process JDK tools.
+  them as separate processes for stricter sandboxes. A GraalVM native image defaults to <code>fork</code>
+  unless it holds <code>javac</code>, as the engine's image under <code>jenesis.make.mode=native</code> does.
 </div>
 
 ## Targets
@@ -250,8 +250,8 @@ engine or another JDK clears the folder, so a restored cache never serves a buil
 engine's cache holds what its JVM loads before the build's own code runs, so a plugin's code, loaded into that
 JVM later, is not in it, while every tool a plugin starts in a JVM of its own gets a cache of its own.
 
-A native image of the engine is kept beside these to follow what GraalVM makes of Jenesis, rather than as the
-fastest way to build. `jenesis.make.mode=native` needs `Make` to run on the `java` of a GraalVM 25.5 or newer, whose
+A native image of the engine goes one step further: the engine starts as an executable, without a JVM.
+`jenesis.make.mode=native` needs `Make` to run on the `java` of a GraalVM 25.5 or newer, whose
 `native-image` compiles it:
 
 ```bash
@@ -260,8 +260,16 @@ $GRAALVM_HOME/bin/java -Djenesis.make.mode=native build/jenesis/Make.java
 
 The first build runs on that GraalVM's JVM under its tracing agent, which records what an image of the engine
 needs, and then compiles the image into `.jenesis/aot/native/`, which takes some minutes. Every later build runs
-the image, with `javac` inside it and every other tool forked from the GraalVM. A compilation with annotation
+the image, with `javac` inside it, and starts every tool it forks from an ahead-of-time cache, as
+`jenesis.make.mode=native` sets `jenesis.process.mode` to `aot` unless it is set. A compilation with annotation
 processors forks `javac` as well, so that the processors run on a JVM.
+
+`jenesis.process.mode=native` runs those forked JVMs from native images of their own instead: a tool, a test JVM or a
+forked `javac`. Each image is compiled by the `native-image` beside the JVM the call names, once its first call, run on
+that JVM under the tracing agent, has ended, and is kept in `jenesis.aot.folder`, keyed on the JVM, its options and
+the content of the jars. A call reaching what that first call never reached fails the build, as does a command line
+an image cannot run - one naming no main class, a source launcher, or a JVM option an image cannot carry - which
+names `jenesis.process.mode=aot` instead.
 
 Where no build the agent watched loaded a plugin, the image holds the engine alone and is about 75 MB. Where one
 did - a plugin the project names, or an official plugin such as Checkstyle - the image is compiled with GraalVM's
@@ -500,7 +508,7 @@ password location is missing.
 | `jenesis.executor.events` | `true` | Write each step's outcome of the latest build to `target/.jenesis.events.jsonl`, one JSON object per line (see *[Building &amp; running](/tool/building-and-running/#reading-a-build-s-outcome)*). |
 | `jenesis.executor.concurrency` | `0` | The most build steps that run at once across the whole build; `0` means no limit, while `jenesis.process.concurrency` still bounds the tools they run. |
 | `jenesis.process.factory` | `tool` | How JDK tool steps launch: `tool` (in-process) or `fork`; a `-J` option in `process-javac.properties` runs `javac` in a JVM of its own either way. |
-| `jenesis.process.mode` | `fork` | How a tool a plugin starts through `ofJavaMain()`, and `javac` where a `-J` option forks it, runs. `fork` starts a JVM for every call that `jenesis.process.shared` does not hand to a shared JVM, so a build without the daemon leaves no JVM running. `aot` starts that JVM from an ahead-of-time cache of the tool in `jenesis.aot.folder`, trained by its first run. `daemon` runs it in one JVM that runs its compilations side by side, as it runs the calls a plugin marks `shared`, kept for the next call with the same jars on its class path, wherever a module resolved them, and the same options, environment and working directory; an idle one ends after ten minutes. `jenesis.make.mode=aot` and `jenesis.make.mode=daemon` set it to the same unless it is set. |
+| `jenesis.process.mode` | `fork` | How a tool a plugin starts through `ofJavaMain()`, and `javac` where a `-J` option forks it, runs. `fork` starts a JVM for every call that `jenesis.process.shared` does not hand to a shared JVM, so a build without the daemon leaves no JVM running. `aot` starts that JVM from an ahead-of-time cache of the tool in `jenesis.aot.folder`, trained by its first run. `native` starts it from a native image of the tool in `jenesis.aot.folder`, which the `native-image` beside that JVM compiles once its first run, on the JVM under the tracing agent, has ended; a run reaching what that first run never reached fails the build, and so does a JVM option an image cannot carry. `daemon` runs it in one JVM that runs its compilations side by side, as it runs the calls a plugin marks `shared`, kept for the next call with the same jars on its class path, wherever a module resolved them, and the same options, environment and working directory; an idle one ends after ten minutes. `jenesis.make.mode=aot` and `jenesis.make.mode=daemon` set it to the same unless it is set, and `jenesis.make.mode=native` sets it to `aot`. |
 | `jenesis.process.directory` | *(unset)* | The working directory of every process the build starts, a test JVM and a tool's warm JVM included, relative to the folder the command runs in on the command line and to the project root in a file. Unset, it is the project root. A project's own file names only a folder inside the project. |
 | `jenesis.process.shared` | `true` | Run the calls a plugin marks `shared`, a compiler's above all, and `javac` where a `-J` option forks it, side by side in one JVM per JVM, options, jars and environment, under `fork` and `aot` as under `daemon`. The JVM ends with the build, unless `jenesis.process.mode=daemon` keeps it for the next one; `false` starts a JVM for every such call. |
 | `jenesis.process.tail` | `200` | How many of the last lines of a failed tool's output and of its error the failure prints, beside how many there were and the file under `supplement/` that holds all of them; `0` prints every line. |
