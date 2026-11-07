@@ -1,0 +1,42 @@
+
+== Cloning https://github.com/mockito/mockito.git at 220c594adceebf92a0d06e2fb1e4398b25344d46 into /home/user/bm/mockito-a6/mockito
+/home/user/jenesis-documentation/benchmarks/mockito/migration.patch:72: new blank line at EOF.
++
+warning: 1 line adds whitespace errors.
+
+== Installing Jenesis at ccr-3e52e402-3aif21
+jenesis-install: using ref ccr-3e52e402-3aif21
+jenesis-install: downloading https://github.com/jenesis/jenesis/archive/ccr-3e52e402-3aif21.zip
+jenesis-install: installed Jenesis ccr-3e52e402-3aif21 to /home/user/bm/mockito-a6/mockito/build/jenesis
+jenesis-install: next: run 'java build/jenesis/Make.java' from /home/user/bm/mockito-a6/mockito
+
+== Jenesis (daemon)
+daemon          jenesis  warmup   0   147.1 s
+daemon          jenesis  full     1   112.5 s
+daemon          jenesis  again    1     2.8 s
+daemon          jenesis  edit     1    98.7 s
+daemon          jenesis  full     2   112.9 s
+daemon          jenesis  again    2     2.7 s
+daemon          jenesis  edit     2    98.4 s
+daemon          jenesis  full     3   113.6 s
+daemon          jenesis  again    3     2.5 s
+daemon          jenesis  edit     3    99.3 s
+
+== gradle (daemon)
+daemon          gradle   warmup   0   231.9 s
+daemon          gradle   full     1   131.5 s
+daemon          gradle   again    1     5.1 s
+daemon          gradle   edit     1   107.5 s
+daemon          gradle   full     2   132.7 s
+daemon          gradle   again    2     4.6 s
+daemon          gradle   edit     2   105.8 s
+daemon          gradle   full     3   133.9 s
+daemon          gradle   again    3     4.3 s
+daemon          gradle   edit     3   106.7 s
+
+== Medians of 3 round(s), in seconds
+pairing         tool         full    again     edit
+daemon          gradle      132.7      4.6    106.7
+daemon          jenesis     112.9      2.7     98.7
+
+Every run is in /home/user/bm/mockito-a6/results.tsv, its output in /home/user/bm/mockito-a6/logs.
