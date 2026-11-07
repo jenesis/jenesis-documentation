@@ -1,0 +1,29 @@
+
+== Cloning https://github.com/mockito/mockito.git at 220c594adceebf92a0d06e2fb1e4398b25344d46 into /home/user/bm/mockito-a5/mockito
+/home/user/jenesis-documentation/benchmarks/mockito/migration.patch:72: new blank line at EOF.
++
+warning: 1 line adds whitespace errors.
+
+== Installing Jenesis at ccr-3e52e402-3aif21
+jenesis-install: using ref ccr-3e52e402-3aif21
+jenesis-install: downloading https://github.com/jenesis/jenesis/archive/ccr-3e52e402-3aif21.zip
+jenesis-install: installed Jenesis ccr-3e52e402-3aif21 to /home/user/bm/mockito-a5/mockito/build/jenesis
+jenesis-install: next: run 'java build/jenesis/Make.java' from /home/user/bm/mockito-a5/mockito
+
+== Jenesis (nodaemon)
+nodaemon        jenesis  warmup   0   180.0 s
+nodaemon        jenesis  full     1   183.6 s
+nodaemon        jenesis  again    1     5.5 s
+nodaemon        jenesis  edit     1   145.5 s
+nodaemon        jenesis  full     2   167.7 s
+nodaemon        jenesis  again    2     5.1 s
+nodaemon        jenesis  edit     2   131.3 s
+nodaemon        jenesis  full     3   167.3 s
+nodaemon        jenesis  again    3     5.1 s
+nodaemon        jenesis  edit     3   133.2 s
+
+== Medians of 3 round(s), in seconds
+pairing         tool         full    again     edit
+nodaemon        jenesis     167.7      5.1    133.2
+
+Every run is in /home/user/bm/mockito-a5/results.tsv, its output in /home/user/bm/mockito-a5/logs.
