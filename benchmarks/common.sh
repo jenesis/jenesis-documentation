@@ -18,13 +18,19 @@
 #
 # Settings, as environment variables:
 #   JENESIS_REF      the Jenesis commit, tag or branch to install (default: v0.18.0)
+#   JENESIS_SOURCES  a checkout of jenesis/jenesis whose sources/build/jenesis is copied in place of JENESIS_REF
+#   JENESIS_OPTIONS  further -Djenesis.* settings handed to every Jenesis build, after those of its pairing
 #   ROUNDS           rounds per tool (default 3)
-#   PAIRINGS         nodaemon, daemon, aot or several: without a daemon, Maven runs as mvn, Gradle and Mill with
-#                    --no-daemon and Jenesis under jenesis.make.mode=compiled; with one, Maven as the Maven Daemon,
-#                    mvnd, Gradle with --daemon, Mill with its daemon and Jenesis under jenesis.make.mode=daemon; with
-#                    an ahead-of-time cache, Maven, Gradle and Mill as without a daemon and Jenesis under
-#                    jenesis.make.mode=aot, run from the classes it compiled, as the cache needs, and starting from the
-#                    cache its warm-up trained (default: nodaemon daemon)
+#   PAIRINGS         nodaemon, daemon, aot, native, nativetools or several: without a daemon, Maven runs as mvn, Gradle and Mill
+#                    with --no-daemon and Jenesis under jenesis.make.mode=compiled; with one, Maven as the Maven
+#                    Daemon, mvnd, Gradle with --daemon, Mill with its daemon and Jenesis under
+#                    jenesis.make.mode=daemon; with an ahead-of-time cache, Maven, Gradle and Mill as without a daemon
+#                    and Jenesis under jenesis.make.mode=aot, run from the classes it compiled, as the cache needs, and
+#                    starting from the cache its warm-up trained; with a native image, the same, Jenesis under
+#                    jenesis.make.mode=native from the image its first warm-up compiled, and skipped where the java on
+#                    the PATH is no GraalVM, as only one ships the native-image that compiles it; with native tools,
+#                    as with a native image and jenesis.process.mode=native, or, where a build fails that way, again
+#                    from the start under jenesis.process.mode=aot as nativetools-aot (default: nodaemon daemon)
 #   TOOLS            jenesis, old or both: the builds to measure, the others left out (default: both)
 #   MAVEN_MIRROR     a Maven Central mirror for every tool, where repo.maven.apache.org is rate-limited
 #   BENCHMARK_FOLDER the folder to work in (default: a new temporary folder), which keeps logs/ and results.tsv
@@ -177,7 +183,7 @@ measure() {
     local seconds
     seconds="$(awk -v s="$start" -v e="$end" 'BEGIN { printf "%.1f", e - s }')"
     printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$pairing" "$tool" "$measurement" "$round" "$seconds" "$code" >>"$RESULTS"
-    printf '%-9s %-8s %-8s %s  %6s s%s\n' "$pairing" "$tool" "$measurement" "$round" "$seconds" \
+    printf '%-15s %-8s %-8s %s  %6s s%s\n' "$pairing" "$tool" "$measurement" "$round" "$seconds" \
         "$([ "$code" -eq 0 ] || echo "  FAILED, see $log")"
     return "$code"
 }
@@ -222,9 +228,24 @@ rounds() {
         if ! "$2" "$pairing" "$round" a; then
             discard "$pairing" "$1" "$round"
             say "$1 ($pairing): round $round failed, so it runs once more"
-            "$2" "$pairing" "$round" b || die "round $round of $1 failed twice: see $LOGS"
+            "$2" "$pairing" "$round" b || { [ "$pairing" = nativetools ] && [ "$1" = jenesis ] && return 1; } \
+                || die "round $round of $1 failed twice: see $LOGS"
         fi
     done
+}
+
+# jenesis_warmups: the unmeasured builds before the rounds, the second one the first build inside a native image.
+jenesis_warmups() {
+    rm -rf target .jenesis/aot
+    case "$pairing" in aot|native|nativetools*)
+        java -Djenesis.make.global= -Djenesis.make.mode=compiled build/jenesis/Make.java help >"$LOGS/$pairing-compile.log" 2>&1 \
+            || die "the engine did not compile: see $LOGS/$pairing-compile.log" ;;
+    esac
+    measure "$pairing" jenesis warmup 0 jenesis || return 1
+    case "$pairing" in native|nativetools*)
+        rm -rf target
+        measure "$pairing" jenesis warmup 1 jenesis || return 1 ;;
+    esac
 }
 
 say "Cloning $UPSTREAM at $COMMIT into $PROJECT"
@@ -235,6 +256,8 @@ git checkout -q FETCH_HEAD
 git apply --index "$PATCH" || die "the migration patch does not apply to $COMMIT"
 git -c user.name=benchmark -c user.email=benchmark@example.invalid commit -q -m "Build with Jenesis"
 git worktree add -q --detach "$ORIGINAL" HEAD
+
+JENESIS_OPTIONS="${JENESIS_OPTIONS:-}"
 
 # A migration naming its own Maven remotes outranks the variable, so the mirror takes Central's place in that list,
 # handed to Jenesis on the command line, which outranks the project's file.
@@ -248,33 +271,50 @@ if [ -n "${MAVEN_MIRROR:-}" ] && [ -f jenesis.properties ]; then
     fi
 fi
 
-say "Installing Jenesis at $JENESIS_REF"
-curl -fsSL https://get.jenesis.build | JENESIS_MODE=vendor JENESIS_TARGET="$PROJECT" bash -s -- "$JENESIS_REF" \
-    || die "cannot install Jenesis at $JENESIS_REF"
+say "Installing Jenesis at ${JENESIS_SOURCES:-$JENESIS_REF}"
+if [ -n "${JENESIS_SOURCES:-}" ]; then
+    [ -d "$JENESIS_SOURCES/sources/build/jenesis" ] || die "no checkout of jenesis/jenesis at $JENESIS_SOURCES"
+    rm -rf "$PROJECT/build/jenesis" && mkdir -p "$PROJECT/build" \
+        && cp -R "$JENESIS_SOURCES/sources/build/jenesis" "$PROJECT/build/jenesis" \
+        || die "cannot copy Jenesis from $JENESIS_SOURCES"
+else
+    curl -fsSL https://get.jenesis.build | JENESIS_MODE=vendor JENESIS_TARGET="$PROJECT" bash -s -- "$JENESIS_REF" \
+        || die "cannot install Jenesis at $JENESIS_REF"
+fi
 
 printf 'pairing\ttool\tmeasurement\tround\tseconds\texit\n' >"$RESULTS"
 for pairing in $PAIRINGS; do
     MAKE=build/jenesis/Make.java
     case "$pairing" in
-        nodaemon) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=compiled $JENESIS_REMOTES" \
+        nodaemon) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=compiled $JENESIS_REMOTES $JENESIS_OPTIONS" \
             GRADLE_MODE=--no-daemon MAVEN_COMMAND=mvn MILL_MODE=--no-daemon ;;
-        daemon) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=daemon $JENESIS_REMOTES" GRADLE_MODE=--daemon \
+        daemon) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=daemon $JENESIS_REMOTES $JENESIS_OPTIONS" GRADLE_MODE=--daemon \
             MAVEN_COMMAND=mvnd MILL_MODE= ;;
-        aot) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=aot $JENESIS_REMOTES" GRADLE_MODE=--no-daemon \
+        aot) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=aot $JENESIS_REMOTES $JENESIS_OPTIONS" GRADLE_MODE=--no-daemon \
             MAVEN_COMMAND=mvn MILL_MODE=--no-daemon MAKE="-cp .jenesis/classes build.jenesis.Make" ;;
-        *) die "PAIRINGS takes nodaemon, daemon and aot, not $pairing" ;;
+        native|nativetools) JENESIS_MODE="-Djenesis.make.global= -Djenesis.make.mode=native $JENESIS_REMOTES $JENESIS_OPTIONS" \
+            GRADLE_MODE=--no-daemon MAVEN_COMMAND=mvn MILL_MODE=--no-daemon MAKE="-cp .jenesis/classes build.jenesis.Make"
+            [ "$pairing" = nativetools ] && JENESIS_MODE="$JENESIS_MODE -Djenesis.process.mode=native"
+            if [ ! -x "$JAVA_HOME/bin/native-image" ]; then
+                say "Skipping the $pairing pairing, as $JAVA_HOME is no GraalVM: run with the java of a GraalVM 25.5 or newer"
+                continue
+            fi ;;
+        *) die "PAIRINGS takes nodaemon, daemon, aot, native and nativetools, not $pairing" ;;
     esac
 
     case " $TOOLS " in *" jenesis "*)
         say "Jenesis ($pairing)"
         cd "$PROJECT" || exit 2
-        rm -rf target .jenesis/aot
-        if [ "$pairing" = aot ]; then
-            java -Djenesis.make.global= -Djenesis.make.mode=compiled build/jenesis/Make.java help >"$LOGS/aot-compile.log" 2>&1 \
-                || die "the engine did not compile: see $LOGS/aot-compile.log"
+        if ! { jenesis_warmups && rounds jenesis jenesis_round; }; then
+            [ "$pairing" = nativetools ] || die "the warmup build failed: see $LOGS"
+            say "Jenesis failed with its tools as native images, so it runs again with them from ahead-of-time caches"
+            awk -F'\t' -v OFS='\t' '$1 == "nativetools" && $2 == "jenesis" && $4 !~ /discarded/ { $4 = $4 "-discarded" } 1' \
+                "$RESULTS" >"$RESULTS.tmp" && mv "$RESULTS.tmp" "$RESULTS"
+            pairing=nativetools-aot JENESIS_MODE="${JENESIS_MODE/process.mode=native/process.mode=aot}"
+            jenesis_warmups || die "the warmup build failed: see $LOGS"
+            rounds jenesis jenesis_round
+            pairing=nativetools
         fi
-        measure "$pairing" jenesis warmup 0 jenesis || die "the warmup build failed: see $LOGS"
-        rounds jenesis jenesis_round
         [ "$pairing" = daemon ] && java -Djenesis.make.mode=daemon build/jenesis/Make.java --stop >/dev/null 2>&1
         rm -rf target ;;
     esac
@@ -297,10 +337,10 @@ rm -rf "${PROJECT:?}"
 say "Medians of $ROUNDS round(s), in seconds"
 awk -F'\t' 'NR > 1 && $3 != "warmup" && $6 == 0 && $4 !~ /discarded/ { v[$1 "\t" $2 "\t" $3] = v[$1 "\t" $2 "\t" $3] " " $5 }
     END {
-        printf "%-9s %-8s %8s %8s %8s\n", "pairing", "tool", "full", "again", "edit"
+        printf "%-15s %-8s %8s %8s %8s\n", "pairing", "tool", "full", "again", "edit"
         for (key in v) { split(key, k, "\t"); seen[k[1] "\t" k[2]] = 1 }
         for (pair in seen) {
-            split(pair, p, "\t"); line = sprintf("%-9s %-8s", p[1], p[2])
+            split(pair, p, "\t"); line = sprintf("%-15s %-8s", p[1], p[2])
             for (i = 1; i <= 3; i++) {
                 m = (i == 1 ? "full" : i == 2 ? "again" : "edit")
                 n = split(v[pair "\t" m], xs, " ")
