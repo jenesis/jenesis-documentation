@@ -73,7 +73,7 @@ The numbers say most where nothing else runs on the machine. The published ones 
 
 | Variable | Default | Effect |
 |---|---|---|
-| `JENESIS_REF` | `v0.18.0` | the Jenesis commit, tag or branch to install |
+| `JENESIS_REF` | `v0.18.2` | the Jenesis commit, tag or branch to install |
 | `JENESIS_SOURCES` | | a checkout of jenesis/jenesis whose `sources/build/jenesis` is copied in place of `JENESIS_REF`, to measure work that is not pushed |
 | `JENESIS_OPTIONS` | | further `-Djenesis.*` settings handed to every Jenesis build, after those of its pairing |
 | `ROUNDS` | 3 | rounds per tool |
