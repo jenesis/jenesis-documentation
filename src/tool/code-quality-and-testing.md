@@ -479,9 +479,10 @@ with `src/test/build.jenesis/`.
 
 With coverage on, the test step is launched with the JaCoCo agent attached as a `-javaagent`. It
 instruments the run without touching your sources and writes its execution data (`jacoco.exec`); a downstream
-report step renders an HTML and XML report under `reports/jacoco/`, over the classes of the code under test,
-never the compiled tests themselves. Open the `index.html` to browse coverage
-line by line. JaCoCo's CLI resolves in the tool group of its plugin, `jacoco:tool`, apart from your
+report step renders an HTML and XML report under `reports/jacoco/`, over the classes of the module the tests
+name by `@jenesis.test`, or the artifact a `pom.xml` module's tests belong to, never the compiled tests
+themselves nor another module of the project the tested one requires. Open the `index.html` to browse coverage
+line by line, beside the source of each class. JaCoCo's CLI resolves in the tool group of its plugin, `jacoco:tool`, apart from your
 dependencies, and its agent in `jacoco:agent`. The agent writes the data the CLI reads, so it follows the release the tool group
 pins for the CLI: a pin of `jacoco:tool/maven/org.jacoco/org.jacoco.cli` alone runs the tests under that
 version's agent as well, until `pin` records both.
@@ -719,28 +720,30 @@ noticed.
 
 A `pitest.properties` in a configuration folder switches PIT on, in every test module where the file is found:
 the suite runs as usual *and* PIT then re-runs it against mutants of the code under test, to assess how good it
-is. The file carries the options PIT needs:
+is. PIT mutates the module the tests name by `@jenesis.test`, or the artifact a `pom.xml` module's tests belong
+to, and never the tests themselves. The file carries the options PIT needs:
 
 ```properties
 # build.jenesis/pitest.properties
-targetClasses=calc.Calculator   # which classes to mutate
 targetTests=calctest.*          # which tests to run against the mutants
 outputFormats=XML,HTML          # report formats (an optional `mutators` key selects a mutator set)
 ```
 
 | Key | Meaning | Default |
 | --- | --- | --- |
-| `targetClasses` | globs of the classes to mutate | `*` |
+| `targetClasses` | globs of the classes to mutate | every package of the tested module |
 | `targetTests` | globs of the tests to run against the mutants | `*` |
 | `outputFormats` | the report formats, of `XML`, `HTML` and `CSV` | `XML` |
 | `mutators` | the mutators or mutator groups PIT applies | PIT's own default |
 | `failWhenNoMutations` | fail when PIT finds nothing to mutate | `false` |
 
-An unknown key, or a format that is not one of the three, fails the build naming the ones that exist.
+An unknown key, or a format that is not one of the three, fails the build naming the ones that exist. PIT
+refuses `*` for `targetClasses`, as that would select PIT itself.
 
 PIT and its JUnit 5 plugin resolve in the tool group of the PIT plugin, `pitest:tool`, apart from your
 dependencies. PIT runs the tests with the JUnit Platform launcher of the version the test module pins or
-resolved, so it lines up with the test framework you use. The report lands under `reports/pitest/`, and
+resolved, so it lines up with the test framework you use. The report lands under `reports/pitest/`, with the
+source of every mutated class in its HTML, and
 `-Djenesis.observe.pitest=false` suppresses the run while keeping the file in place.
 
 {% demos 42 %}
