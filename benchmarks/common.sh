@@ -17,7 +17,7 @@
 # failed round stays in results.tsv and logs/, marked as discarded, and no median counts it.
 #
 # Settings, as environment variables:
-#   JENESIS_REF      the Jenesis commit, tag or branch to install (default: v0.18.0)
+#   JENESIS_REF      the Jenesis commit, tag or branch to install (default: v0.18.2)
 #   JENESIS_SOURCES  a checkout of jenesis/jenesis whose sources/build/jenesis is copied in place of JENESIS_REF
 #   JENESIS_OPTIONS  further -Djenesis.* settings handed to every Jenesis build, after those of its pairing
 #   ROUNDS           rounds per tool (default 3)
@@ -41,7 +41,7 @@
 
 set -uo pipefail
 
-JENESIS_REF="${JENESIS_REF:-v0.18.0}"
+JENESIS_REF="${JENESIS_REF:-v0.18.2}"
 BENCHMARKS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NAME="$(basename "$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)")"
 PATCH="$BENCHMARKS/$NAME/migration.patch"
