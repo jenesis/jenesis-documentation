@@ -57,8 +57,8 @@ property). The top-level targets the shipped layouts register:
 | `skill` | Print the briefing a coding agent works from, every page of it; `skill/start` prints the overview, which names the pages, and `skill/<page>` one page. |
 | `prompt` | Print a task to hand a coding agent; `prompt/migrate` is the move of a Maven or Gradle build (see *[Migrating a Maven or Gradle build](/tool/migrating/#migrating-with-a-coding-agent)*). |
 | `metadata` | Refresh the metadata module outputs without building artifacts. |
-| `configuration` | Print every setting with the value in force, one per line: `jenesis.<key>=<value> [set\|default\|unset] <what it does>`. Built to grep, and the tool's own property reference. |
-| `properties` | Print every `jenesis.*` setting in force for this run - from the command line, `jenesis.properties` or a profile alike - sorted by key. |
+| `configuration` | Print every setting with the value in force, one per line: `jenesis.<key>=<value> [set\|default\|unset] <what it does>`. Built to grep, and the tool's own property reference. A setting whose name ends in `.token` is printed as `***`. |
+| `properties` | Print every `jenesis.*` setting in force for this run - from the command line, `jenesis.properties` or a profile alike - sorted by key. A setting whose name ends in `.token` is printed as `***`. |
 
 ## Selectors
 
@@ -432,10 +432,10 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.cache.uri` | *(none)* | Shared build cache: a `file://` or `http(s)://` URI (see *[Build performance &amp; isolation](/tool/build-performance-and-isolation/)*; [Jenesis Repository](/repository/build-cache/) is a reference cache server). Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.project.cache` | *(off)* | Project-local on-disk build cache (a path; empty enables `.jenesis/cache`). A project's own file names only a folder inside the project. |
 | `jenesis.cache.project` (`JENESIS_CACHE_PROJECT`) | *(unset)* | Project header sent to an HTTP cache. |
-| `jenesis.cache.key` (`JENESIS_CACHE_KEY`) | *(unset)* | Auth key sent to an HTTP cache. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.cache.token` (`JENESIS_CACHE_TOKEN`) | *(unset)* | Token sent to an HTTP cache, in the `Jenesis-Cache-Key` header. Command line or `~/.jenesis/jenesis.properties` only. The former names, `jenesis.cache.key` and `JENESIS_CACHE_KEY`, are refused. |
 | `jenesis.cache.connect` | `PT1S` | HTTP cache connect timeout, as an ISO-8601 duration. |
 | `jenesis.cache.read` | `PT10S` | HTTP cache read timeout, as an ISO-8601 duration. |
-| `jenesis.cache.insecure` | `false` | Permit the cache key over plaintext `http://`, and over `https` accept a certificate that does not verify, such as a self-signed one. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.cache.insecure` | `false` | Permit the cache token over plaintext `http://`, and over `https` accept a certificate that does not verify, such as a self-signed one. Command line or `~/.jenesis/jenesis.properties` only. |
 
 ### Running & containers
 

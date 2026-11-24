@@ -227,7 +227,8 @@ builds. The folder search follows the same spirit: a profile's `<name>/` folder 
 module-local folder beats a project-wide one.
 
 When you are unsure what the layers add up to, ask the build. The `properties` selector prints every
-effective `jenesis.*` property, sorted by key:
+effective `jenesis.*` property, sorted by key. A setting whose name ends in `.token` holds a credential, so
+it is printed as `***` and never with its value:
 
 ```bash
 java -Djenesis.make.profiles=release build/jenesis/Make.java properties
