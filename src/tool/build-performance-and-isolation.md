@@ -243,7 +243,7 @@ checked against its checksum before it is kept.
 The build keeps the files of a cache server in a folder of this machine, in the layout shown above:
 `~/.jenesis/cache`, or the folder `-Djenesis.cache.local=<folder>` names. Every project shares it, so a file any
 build already brought there is not downloaded again. The folder is capped at 10 GiB unless its
-`cache.properties` names another `size`.
+`cache.properties` names another `size`, which a build applies as it does for a cache folder of its own.
 
 [Jenesis Repository](/repository/build-cache/) serves this protocol, and is the reference implementation of a
 cache server for it: projects, keys granted per project, and size limits, on the same server as your artifacts.
@@ -292,8 +292,10 @@ so the file may be omitted entirely:
 | `read` | `true` | serve cache reads; `read=false` makes every lookup a miss |
 | `write` | `true` | populate the cache; `write=false` serves reads but never writes, evicts, or touches |
 
-Eviction runs on write. `steps`, `versions` and `ttl` evict manifests by their timestamp, which `touch` keeps
-fresh on every read, and a file that no remaining manifest names leaves with them. `size` evicts files: a file
+`steps` and `versions` are applied as each step is stored. `size` and `ttl` are applied once per build, in the
+background, when the build first stores a step, so a build that stores nothing evicts nothing. `steps`,
+`versions` and `ttl` evict manifests by their timestamp, which `touch` keeps fresh on every read, and a file
+that no remaining manifest names leaves with them. `size` evicts files: a file
 that an output folder still links costs no space of its own and stays, and of the others the one linked least
 recently goes first. A manifest naming an evicted file is dropped the next time it is asked for.
 
