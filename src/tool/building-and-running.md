@@ -801,17 +801,42 @@ adds one to the `java` commands that module owns: its test run, and the `Execute
 ```java
 /**
  * @jenesis.main demo.agents.Application
- * @jenesis.attach io.opentelemetry.javaagent/opentelemetry-javaagent
+ * @jenesis.attach io.opentelemetry.javaagent/opentelemetry-javaagent otel.service.name=demo-agents
  */
 module demo.agents {
     exports demo.agents;
 }
 ```
 
-The token is a module name or a `<groupId>/<artifactId>`, and everything after it is passed to the agent as
-its option string. There is no version slot: the version comes from a dependency you declare, from a pin, or
-floats to the latest. A `pom.xml` project declares the same lines in a project-level
-`<!--jenesis.attach ... -->` block.
+The token is a module name or a `<groupId>/<artifactId>`. There is no version slot: the version comes from
+a dependency you declare, from a pin, or floats to the latest.
+
+What follows the token is the agent's options, handed to it after `-javaagent:<jar>=`. They are taken as
+written: spaces within a line are kept, and a following comment line continues them with nothing put in
+between. `&amp;`, `&lt;`, `&gt;` and a numeric entity such as `&#64;` stand for their character.
+
+A `pom.xml` project declares the same in a project-level `<!--jenesis.attach ... -->` block, one agent per
+line. An XML comment cannot hold a double dash, so `&#45;&#45;` writes one there.
+
+The options in the declaration are the ones every build uses. An `agents.properties` in the configuration
+folder replaces them, a line per agent, keyed by the token as the declaration writes it. In a profile's
+folder it applies only when that profile is selected:
+
+```properties
+# build.jenesis/staging/agents.properties
+io.opentelemetry.javaagent/opentelemetry-javaagent=otel.service.name=demo-agents-staging
+```
+
+| Declaration | `agents.properties` in scope | The agent is handed |
+| --- | --- | --- |
+| `@jenesis.attach <token> a=1` | none, or no line for the token | `a=1` |
+| `@jenesis.attach <token> a=1` | `<token>=b=2` | `b=2` |
+| `@jenesis.attach <token> a=1` | `<token>=` | no options |
+| `@jenesis.attach <token>` | `<token>=b=2` | `b=2` |
+
+A line replaces the declared options whole and nothing is merged. Everything after the first `=` is passed
+on as it stands, and a value `@<key>` is the setting `jenesis.variable.<key>`. A line for an agent a module
+does not attach configures nothing there, so one file at the project root serves every module.
 
 One tag covers both shapes. The OpenTelemetry agent above is **agent-only** - required by nothing, on no
 compile or runtime path. Mockito is the other shape, a **dependency that also attaches**, named by a
