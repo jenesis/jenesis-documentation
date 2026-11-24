@@ -808,10 +808,22 @@ module demo.agents {
 }
 ```
 
-The token is a module name or a `<groupId>/<artifactId>`, and everything after it is passed to the agent as
-its option string. There is no version slot: the version comes from a dependency you declare, from a pin, or
-floats to the latest. A `pom.xml` project declares the same lines in a project-level
-`<!--jenesis.attach ... -->` block.
+The token is a module name or a `<groupId>/<artifactId>`, and the tag takes nothing else. There is no version
+slot: the version comes from a dependency you declare, from a pin, or floats to the latest. A `pom.xml`
+project declares the same tokens, a line each, in a project-level `<!--jenesis.attach ... -->` block.
+
+What an agent is handed is configuration, so it is a line of an `agents.properties` in the configuration
+folder, keyed by the token as the declaration writes it:
+
+```properties
+# build.jenesis/agents.properties
+io.opentelemetry.javaagent/opentelemetry-javaagent=otel.service.name=demo-agents
+```
+
+Everything after the first `=` follows `-javaagent:<jar>=` as it stands, spaces included, and a value
+`@<key>` is the setting `jenesis.variable.<key>`. A file in a profile's folder replaces this one, so a
+profile changes an agent's options while the declaration stays as it is. A line for an agent a module does
+not attach configures nothing there, so one file at the project root serves every module.
 
 One tag covers both shapes. The OpenTelemetry agent above is **agent-only** - required by nothing, on no
 compile or runtime path. Mockito is the other shape, a **dependency that also attaches**, named by a
