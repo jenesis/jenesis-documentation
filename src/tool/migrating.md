@@ -132,7 +132,7 @@ Most plugins become a file that switches a tool on, a line of `packaging.propert
 a setting. A file sits in a [configuration folder](/tool/configuration/#where-tool-configuration-lives) of the
 module, the first one found being the whole configuration. A tool the build downloads is switched on by its
 `<name>.properties`, whose `configuration=<path>` names the tool's own file and whose other lines are its
-values, or by that file alone where no properties are found; `jenesis.<part>.<name>=false` switches it off. What
+values, or by that file alone where no properties are found; `jenesis.<name>.<part>=false` switches it off. What
 lived inside a plugin's own configuration moves here:
 
 | In Maven or Gradle | In Jenesis |

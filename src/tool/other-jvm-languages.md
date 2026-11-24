@@ -15,10 +15,10 @@ line of `jenesis.plugins.properties` names them.
 
 | Language | Extension | Switched off by |
 | --- | --- | --- |
-| Kotlin | `.kt` | `jenesis.language.kotlin=false` |
-| Scala | `.scala` | `jenesis.language.scala=false` |
-| Groovy | `.groovy` | `jenesis.language.groovy=false` |
-| Clojure | `.clj` | `jenesis.language.clojure=false` |
+| Kotlin | `.kt` | `jenesis.kotlin.language=false` |
+| Scala | `.scala` | `jenesis.scala.language=false` |
+| Groovy | `.groovy` | `jenesis.groovy.language=false` |
+| Clojure | `.clj` | `jenesis.clojure.language=false` |
 
 Each of these compilers comes from its plugin alone, so a module holding a source of a language switched off
 fails the build, naming the extension and the setting. A `pom.xml` project reads a folder beside its source
