@@ -180,11 +180,27 @@ java -Djenesis.project.cache build/jenesis/Make.java
 ```
 
 The value is a **filesystem path** (never a URI): an empty value, as above, resolves to `.jenesis/cache` under
-the project root, and a value relocates it. Each entry lives at `.jenesis/cache/<step-hash>/<inputs-hash>/`,
-where the step hash identifies the step by its **serialised form** and the inputs hash folds every input
-file's content hash. On a miss the build runs the step and stores the result. On a hit it materialises the
-cached output - hard-linked, so near free - and the step body never runs. Because it sits outside `target/`,
-it survives a `target/` wipe.
+the project root, and a value relocates it. On a miss the build runs the step and stores the result. On a hit it
+restores the cached output - hard-linked, so near free - and the step body never runs. Because it sits outside
+`target/`, it survives a `target/` wipe.
+
+The cache keeps every file once, under the checksum of its content, and one small manifest per step result
+that names the files the step wrote:
+
+```
+.jenesis/cache
+└── sha-256                        one store per jenesis.executor.digest
+    ├── blobs/<2 hex>/<62 hex>     a file, named by its checksum
+    └── steps/<step>/<inputs>      a manifest: <checksum> <size> <path> per line
+```
+
+The step hash identifies the step by its **serialised form** and the inputs hash folds every input file's
+content hash. A jar that several steps hand on, or a class file that did not change between two builds, costs
+its bytes once.
+
+Every file is checked against its name as it is restored. A file that is no longer what its name says is
+deleted with the manifest that named it, and the step runs again. A manifest naming a file the cache no longer
+holds is dropped the same way.
 
 That survival is the point. `-Djenesis.executor.rebuild=true` deletes `target/` first, so the incremental
 cache is gone and *every* step is a forced miss that would normally re-run from scratch. The build cache
@@ -211,13 +227,23 @@ explicit location with `-Djenesis.cache.uri=`. The value is a URI:
 -Djenesis.cache.uri=file:///mnt/team/jenesis-cache  # a shared (or local) folder
 ```
 
-A `file://` URI resolves the same on-disk format as the local cache. An `http(s)://` URL selects an HTTP
-backend that GETs and PUTs the same entries to a cache server, naming the project with
+A `file://` URI resolves the same on-disk format as the local cache. An `http(s)://` URL selects a cache
+server, naming the project with
 `-Djenesis.cache.project=<project>` and authenticating with `-Djenesis.cache.token=<token>`. Both are sent as
 **headers, never in the URL**, and both fall back to the `JENESIS_CACHE_PROJECT` / `JENESIS_CACHE_TOKEN`
 environment variables. `-Djenesis.cache.connect` and `-Djenesis.cache.read` set the HTTP timeouts as ISO-8601
 durations (`PT1S` and `PT10S` by default). A non-URI value is rejected; use `file://` for an on-disk
 location.
+
+A cache server is asked for files, never for a step's whole output. To restore a step, the build asks for its
+manifest and then, in one request, for the files this machine does not hold. To store a step, it sends the
+manifest and uploads, in one request, only the files the server answers that it lacks. A downloaded file is
+checked against its checksum before it is kept.
+
+The build keeps the files of a cache server in a folder of this machine, in the layout shown above:
+`~/.jenesis/cache`, or the folder `-Djenesis.cache.local=<folder>` names. Every project shares it, so a file any
+build already brought there is not downloaded again. The folder is capped at 10 GiB unless its
+`cache.properties` names another `size`.
 
 [Jenesis Repository](/repository/build-cache/) serves this protocol, and is the reference implementation of a
 cache server for it: projects, keys granted per project, and size limits, on the same server as your artifacts.
@@ -228,7 +254,7 @@ The shared cache can be used two ways:
   thrown away anyway: pass `jenesis.cache.uri` alone.
 - **Layered behind the local cache** - set both `-Djenesis.project.cache` *and* `-Djenesis.cache.uri=...`. Every
   read tries `.jenesis/cache` first and falls through to the shared cache only on a miss. A shared hit is
-  copied into the local cache on the way past, so the next read is local, and a store writes through to both.
+  stored in the local cache on the way past, so the next read is local, and a store writes through to both.
 
 ```bash
 java -Djenesis.project.cache \
@@ -238,17 +264,15 @@ java -Djenesis.project.cache \
 ```
 
 <div class="note">
-  Serving a step from the local tier means no <code>GET</code> reaches the server, which would let that shared
-  entry age toward eviction even while in active use. So a local hit also sends the server a best-effort
-  <code>HEAD</code>, never the body, and the server treats it as a read and bumps the entry's recency. Each
-  tier keeps its own LRU and both stay warm.
+  Serving a step from the local tier means no <code>GET</code> reaches the server, which would let that step's
+  manifest age toward eviction even while in active use. So a local hit also sends the server a best-effort
+  <code>HEAD</code>, never the body, and the server treats it as a read and bumps the manifest's recency. Each
+  tier keeps its own LRU.
 </div>
 
-A step can hold itself back from the shared tier: a custom step that overrides `shouldCacheRemotely()` to
-return `false` is never fetched from, stored in or announced to a cache server, and is still cached locally.
-Use it for a step whose output is large against what it costs to produce, or is re-derivable from what the
-machine already has, so the shared cache carries the results that are worth downloading. See
-*[extending the build](/tool/extending-the-build/)*.
+A step with an effect outside its output folder is stored in no cache: the stock release, export, pin and IDE
+steps are, as restoring their folder would leave the effect out, and a custom step says the same on the result
+it returns. See *[extending the build](/tool/extending-the-build/#writing-a-build-step)*.
 
 ### Tuning with `cache.properties`
 
@@ -258,19 +282,20 @@ so the file may be omitted entirely:
 
 | key | default | effect |
 | --- | --- | --- |
-| `digest` | `SHA-256` | algorithm folding the inputs into the entry-folder name |
-| `steps` | `250` | maximum number of step folders kept |
-| `versions` | `10` | maximum input-variants kept per step |
-| `size` | unset | maximum total bytes; over it, whole entries are evicted by `lru` until under (unset = no cap) |
-| `lru` | `true` | evict the least-recently-updated entry when over a limit (`false` = most-recently) |
-| `touch` | `true` | bump an entry's timestamp on read, so reads keep hot entries alive |
-| `ttl` | unset | ISO-8601 duration (e.g. `P30D`); entries not touched within it are evicted on a background sweep |
-| `compressed` | `false` | store each entry as a single zip file rather than a folder of files |
+| `digest` | `SHA-256` | algorithm folding a step's inputs into the name of its manifest |
+| `steps` | `250` | maximum number of steps that keep manifests |
+| `versions` | `10` | maximum number of manifests kept per step, one per variant of its inputs |
+| `size` | unset | maximum total bytes of files; over it, files no output folder links are evicted by `lru` until under (unset = no cap) |
+| `lru` | `true` | evict the least recently used when over a limit (`false` = most recently) |
+| `touch` | `true` | bump a manifest's timestamp on read, so reads keep hot steps alive |
+| `ttl` | unset | ISO-8601 duration (e.g. `P30D`); manifests not touched within it are evicted on a background sweep |
 | `read` | `true` | serve cache reads; `read=false` makes every lookup a miss |
 | `write` | `true` | populate the cache; `write=false` serves reads but never writes, evicts, or touches |
 
-Eviction runs on write and goes by file timestamp, which `touch` keeps fresh on every read - so the three caps
-(`steps`, `versions`, `size`) approximate an LRU, and `ttl` adds an age dimension on top of them.
+Eviction runs on write. `steps`, `versions` and `ttl` evict manifests by their timestamp, which `touch` keeps
+fresh on every read, and a file that no remaining manifest names leaves with them. `size` evicts files: a file
+that an output folder still links costs no space of its own and stays, and of the others the one linked least
+recently goes first. A manifest naming an evicted file is dropped the next time it is asked for.
 
 <div class="tip">
   <code>read</code> and <code>write</code> are the typical CI split: a privileged job builds with the defaults
