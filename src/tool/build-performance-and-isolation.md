@@ -213,8 +213,8 @@ explicit location with `-Djenesis.cache.uri=`. The value is a URI:
 
 A `file://` URI resolves the same on-disk format as the local cache. An `http(s)://` URL selects an HTTP
 backend that GETs and PUTs the same entries to a cache server, naming the project with
-`-Djenesis.cache.project=<project>` and authenticating with `-Djenesis.cache.key=<key>`. Both are sent as
-**headers, never in the URL**, and both fall back to the `JENESIS_CACHE_PROJECT` / `JENESIS_CACHE_KEY`
+`-Djenesis.cache.project=<project>` and authenticating with `-Djenesis.cache.token=<token>`. Both are sent as
+**headers, never in the URL**, and both fall back to the `JENESIS_CACHE_PROJECT` / `JENESIS_CACHE_TOKEN`
 environment variables. `-Djenesis.cache.connect` and `-Djenesis.cache.read` set the HTTP timeouts as ISO-8601
 durations (`PT1S` and `PT10S` by default). A non-URI value is rejected; use `file://` for an on-disk
 location.
@@ -233,7 +233,7 @@ The shared cache can be used two ways:
 ```bash
 java -Djenesis.project.cache \
      -Djenesis.cache.uri=https://cache.example.com \
-     -Djenesis.cache.project=acme -Djenesis.cache.key=alice \
+     -Djenesis.cache.project=acme -Djenesis.cache.token=alice \
      build/jenesis/Make.java
 ```
 

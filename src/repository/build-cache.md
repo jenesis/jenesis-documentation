@@ -79,14 +79,14 @@ Give the Jenesis build tool the tenant's cache as its address, with the project 
 ```bash
 java -Djenesis.cache.uri=https://repo.example.com/build/releases \
      -Djenesis.cache.project=my_project \
-     -Djenesis.cache.key="$KEY" \
+     -Djenesis.cache.token="$KEY" \
      build/jenesis/Make.java
 ```
 
 The build tool appends each result's address - the step and the digest of its inputs, `/<step>/<inputs>` - to
 that URL. The project and the key travel as headers (`Jenesis-Cache-Project` and `Jenesis-Cache-Key`), never in
 the URL, and both can come from the environment instead -
-`JENESIS_CACHE_PROJECT` and `JENESIS_CACHE_KEY` - which is the usual way in CI. The build tool's chapter on
+`JENESIS_CACHE_PROJECT` and `JENESIS_CACHE_TOKEN` - which is the usual way in CI. The build tool's chapter on
 [build performance](/tool/build-performance-and-isolation/) covers the rest of the client side: layering the
 remote cache behind the local one, and timeouts.
 
