@@ -142,7 +142,7 @@ What these folders can hold - presence activates, contents configure:
   `spotless.properties`.
 - **Plugins of the project**: `plugin-<name>.properties` - a plugin `jenesis.plugins.properties` names runs
   where its file is found, with its values and the files it binds.
-- **Packaging and output**: `packaging.properties`, `modules.properties`, `sbom.properties`, `bom.properties`,
+- **Packaging and output**: `packaging.properties`, `aot.properties`, `modules.properties`, `sbom.properties`, `bom.properties`,
   `classifiers.properties`.
 - **Compliance**: `licensing.properties`, `vulnerability.properties`, `spdx.properties`.
 - **Tests**: `test.properties`, naming the engine a module's tests run on.

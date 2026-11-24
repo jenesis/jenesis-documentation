@@ -320,6 +320,7 @@ is compiled again once the engine changes, or after the `native` folder of `jene
 | `jenesis.sbom.cyclonedx` | `true` | Emit a CycloneDX SBOM; set `false` to skip it. |
 | `jenesis.graalvm.license` | *(unset)* | Licence the SBOM beside a native image records for the GraalVM that compiled it, as an SPDX identifier or a name; unset records none (see *[Supply-chain features](/tool/supply-chain/)*). |
 | `jenesis.legal.notices` | `META-INF/NOTICE,META-INF/LICENSE,META-INF/license/,META-INF/licenses/,LICENSE,about.html` | Comma-separated jar entries taken as legal notices into a `.jmod`, a linked or packaged image and beside a native image, from the module's jar and from each runtime dependency's jar; names match regardless of case and also with an extension, and an entry ending in `/` takes the folder below it (see *[Packaging](/tool/packaging/#licences-in-each-form)*). |
+| `jenesis.package.aot` | `true` | Train an ahead-of-time cache for the application where a configuration folder holds `aot.properties`; `false` links and packages without one. |
 | `jenesis.compliance.license` | `true` | Run the licence check a `licensing.properties` activates; `false` skips it. |
 | `jenesis.compliance.vulnerability` | `true` | Run the vulnerability check a `vulnerability.properties` activates; `false` skips it. |
 | `jenesis.check.checkstyle` | `true` | Checkstyle, switched on by a `checkstyle.properties` naming its `checkstyle.xml` as `configuration=` or, where no configuration folder holds one, by a `checkstyle.xml` in a configuration folder; `false` leaves it out. |
@@ -552,6 +553,7 @@ Wired by keys in `packaging.properties` - see *[Packaging](/tool/packaging/)*.
 | `legal` | The legal notices of the module's jar and its runtime dependencies, for its `.jmod` and a native image. |
 | `jmod` | A `.jmod` link-time module. |
 | `jlink` | A custom runtime image. |
+| `aot` | An ahead-of-time cache trained on the runtime image, where a configuration folder holds `aot.properties`. |
 | `jpackage` | A native installer or self-contained app image; with several types, every package `jpackage` lists. |
 | `jpackage-<type>` | One type's package, where several types are built or the container image needs one `jpackage` does not list. |
 | `bundle` | A self-contained `bundle.zip` of the application. |
