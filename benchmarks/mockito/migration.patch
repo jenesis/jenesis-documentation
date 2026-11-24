@@ -113,7 +113,7 @@ index 0000000..02e5101
 +++ b/jenesis.properties
 @@ -0,0 +1,5 @@
 +jenesis.maven.sources=kotlin,groovy
-+jenesis.strict.checkstyle=true
++jenesis.checkstyle.strict=true
 +jenesis.project.resources=LICENSE:LICENSE
 +jenesis.test.exclude=mockito-core/.*StubbingWithBadThrowablesTest,mockito-integration-tests/inline-mocks-tests/.*PremainClinitSuppressionTest,mockito-integration-tests/inline-mocks-premain-tests/(?!.*PremainClinitSuppressionTest$).*
 +jenesis.abi.mode=classpath

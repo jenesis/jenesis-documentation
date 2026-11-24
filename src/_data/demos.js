@@ -33,7 +33,7 @@ export default {
       blurb: "Turning a build's output into something that runs on its own.",
       demos: [
         { slug: "demo-09-java-pom-executable", name: "Executable (Maven)", blurb: "A runnable Maven project packaged with jpackage, plus bundle, launcher jar, and a container context." },
-        { slug: "demo-10-java-modular-executable", name: "Executable (modular)", blurb: "The same for a module: an app image, a .jmod and jlink runtime, a bundle, a launcher jar, and a Dockerfile." },
+        { slug: "demo-10-java-modular-executable", name: "Executable (modular)", blurb: "The same for a module: an app image, a .jmod and jlink runtime, a bundle, a launcher jar, a Dockerfile, and an ahead-of-time cache." },
         { slug: "demo-11-bundle", name: "Bundle", blurb: "Ship only the jars as a bundle.zip and run them on a stock JRE." },
       ],
     },

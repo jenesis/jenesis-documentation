@@ -361,7 +361,7 @@ mvn demo:greet-maven-plugin:1.0:hello -Dgreet.name=Jenesis
 | `maven` | The release of Maven whose API the descriptor is generated with, `3.9.11` by default. |
 | `tools` | The release of Maven's plugin tools, `3.15.1` by default. |
 
-Any other value is refused, and `-Djenesis.artifact.mavenplugin=false` switches the descriptor off.
+Any other value is refused, and `-Djenesis.mavenplugin.artifact=false` switches the descriptor off.
 
 {% demos 75 %}
 
@@ -392,7 +392,7 @@ that repository in `pluginManagement` then applies the plugin with `plugins { id
 The file takes no values. An ID that is not a valid plugin ID, one in a namespace Gradle reserves (`org.gradle`,
 `com.gradleware`), a descriptor naming no `implementation-class` or a class its jar does not hold, and an ID two
 jars declare each fail the build. Publishing to the Gradle Plugin Portal takes the portal's own tooling.
-`-Djenesis.artifact.gradleplugin=false` switches the markers off.
+`-Djenesis.gradleplugin.artifact=false` switches the markers off.
 
 {% demos 76 %}
 
@@ -424,7 +424,7 @@ Any other key fails the build. The documents alone switch nothing on, so `.adoc`
 stay untouched, and a project laid out for the Maven or Gradle plugins of Asciidoctor names
 `documents=../src/docs/asciidoc`. The HTML names neither the time nor the Asciidoctor version, so two builds
 stage the same bytes, and a document that includes a file that does not exist fails the build.
-`-Djenesis.documentation.asciidoctor=false` switches the conversion off. `export`, and the repositories a
+`-Djenesis.asciidoctor.documentation=false` switches the conversion off. `export`, and the repositories a
 `release` puts into, take the staged Maven and module trees only, so the documents stay in the staged tree for
 a release plugin to publish.
 
@@ -635,7 +635,7 @@ java -Djenesis.release.publish=true -Djenesis.project.version=1.0.0 build/jenesi
 
 Where no `jreleaser.properties` is found, a `jreleaser.yml` (or a `.yaml`, `.toml` or `.json`) in a
 configuration folder switches the plugin on alone. A file at the project root, where JReleaser's own command
-reads it, switches nothing on unless `configuration` names it. `-Djenesis.release.jreleaser=false` leaves the
+reads it, switches nothing on unless `configuration` names it. `-Djenesis.jreleaser.release=false` leaves the
 plugin out.
 
 | Value | Meaning |
