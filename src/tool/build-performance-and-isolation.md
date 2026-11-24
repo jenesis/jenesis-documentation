@@ -198,9 +198,9 @@ The step hash identifies the step by its **serialised form** and the inputs hash
 content hash. A jar that several steps hand on, or a class file that did not change between two builds, costs
 its bytes once.
 
-Every file is checked against its name as it is restored. A file that is no longer what its name says is
-deleted with the manifest that named it, and the step runs again. A manifest naming a file the cache no longer
-holds is dropped the same way.
+Every file is checked against its name as it is restored. A file whose content does not match its name is
+deleted with the manifest that named it, and the step runs. A manifest naming a file the cache does not hold
+is dropped the same way.
 
 That survival is the point. `-Djenesis.executor.rebuild=true` deletes `target/` first, so the incremental
 cache is gone and *every* step is a forced miss that would normally re-run from scratch. The build cache
@@ -270,9 +270,9 @@ java -Djenesis.project.cache \
   tier keeps its own LRU.
 </div>
 
-A step with an effect outside its output folder is stored in no cache: the stock release, export, pin and IDE
-steps are, as restoring their folder would leave the effect out, and a custom step says the same on the result
-it returns. See *[extending the build](/tool/extending-the-build/#writing-a-build-step)*.
+A step with an effect outside its output folder is stored in no cache, as restoring its folder would leave
+the effect out. The stock release, export, pin and IDE steps are such steps, and a custom step says so on the
+result it returns. See *[extending the build](/tool/extending-the-build/#writing-a-build-step)*.
 
 ### Tuning with `cache.properties`
 

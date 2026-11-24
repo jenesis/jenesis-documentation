@@ -424,7 +424,7 @@ index 0000000..55f9db4
 +jenesis.maven.sources=kotlin,groovy
 +jenesis.test.exclude=.*(?<!Tests?),platform-tests/.*ConfigurationMetadataAnnotationProcessorTests,platform-tests/.*\\.FlightRecording.*IntegrationTests,junit-vintage-engine/.*JUnit4VersionCheckTests,junit-vintage-engine/junit-4.12/.*JUnit4VersionCheckTests,junit-vintage-engine/without-junit4/(?!.*JUnit4VersionCheckTests$).*,jupiter-tests/junit-4.12/(?!org\\.junit\\.jupiter\\.migrationsupport\\.).*,platform-tests/woodstox/(?!org\\.junit\\.platform\\.reporting\\.).*
 +jenesis.test.jars=false
-+jenesis.strict.checkstyle=true
++jenesis.checkstyle.strict=true
 +jenesis.project.resources=LICENSE.md:META-INF/LICENSE.md,NOTICE.md:META-INF/LICENSE-notice.md
 +jenesis.abi.mode=classpath
 diff --git a/junit-bom/pom.xml b/junit-bom/pom.xml

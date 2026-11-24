@@ -72,8 +72,8 @@ something says so in one line, with the number of findings and where its report 
 ```
 
 `-Djenesis.print.findings=false` leaves that line out. To fail the build on a linter's findings, set its
-`jenesis.strict.<tool>` to `true`, on the command line or in `jenesis.properties`, as
-`-Djenesis.strict.checkstyle=true`. The setting exists for `checkstyle`, `pmd`, `detekt`, `ktlint`,
+`jenesis.<tool>.strict` to `true`, on the command line or in `jenesis.properties`, as
+`-Djenesis.checkstyle.strict=true`. The setting exists for `checkstyle`, `pmd`, `detekt`, `ktlint`,
 `scalastyle`, `scalafmt`, `codenarc`, `spotbugs`, `forbiddenapis`, `jdeps` and `jdeprscan`. Like every boolean
 setting, it is `true` when named with no value, and any value other than `true` or `false` is refused.
 
@@ -115,14 +115,14 @@ value is refused.
 ### Switching a tool off
 
 A tool found by its file can be switched off without deleting the file. Every such setting is a boolean,
-`true` by default, and `false` leaves the tool out. It is named after the part of the build the tool runs in:
+`true` by default, and `false` leaves the tool out. It is named after the tool and the part of the build the tool runs in:
 
 | Setting | Covers |
 | --- | --- |
-| `jenesis.check.<tool>` | `checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc` |
-| `jenesis.validate.<tool>` | `spotbugs`, `forbiddenapis`, `jdeps`, `jdeprscan` |
+| `jenesis.<tool>.check` | `checkstyle`, `pmd`, `detekt`, `ktlint`, `scalastyle`, `scalafmt`, `codenarc` |
+| `jenesis.<tool>.validate` | `spotbugs`, `forbiddenapis`, `jdeps`, `jdeprscan` |
 
-For example, `-Djenesis.check.checkstyle=false` keeps `checkstyle.properties` in place but skips Checkstyle,
+For example, `-Djenesis.checkstyle.check=false` keeps `checkstyle.properties` in place but skips Checkstyle,
 while PMD and SpotBugs still run. Every other tool that a file of this chapter switches on has a setting of the
 same kind, which its section names. A plugin of the project's own, which `jenesis.plugins.properties` names, is switched off by
 `-Djenesis.plugin.<name>=false` instead, so it shares no setting with an official plugin, whatever it is named.
@@ -296,8 +296,8 @@ switches the Eclipse formatter on alone, as its profile. The formatter runs from
 JVM, with no Eclipse installation.
 
 ktlint and scalafmt both check and format, and the one file of each, or its conventional `.editorconfig` or
-`.scalafmt.conf`, switches on both. They are switched off apart: `jenesis.check.ktlint=false` leaves out the
-linting and `jenesis.format.ktlint=false` the formatting, and the same holds for scalafmt.
+`.scalafmt.conf`, switches on both. They are switched off apart: `jenesis.ktlint.check=false` leaves out the
+linting and `jenesis.ktlint.format=false` the formatting, and the same holds for scalafmt.
 
 ### Other files with Spotless
 
@@ -342,8 +342,8 @@ of the build, so the build refuses it beside that tool's own file, naming both; 
 Two formatters would fight over the same sources. A build that finds the files of two Java formatters fails,
 naming them, and so does a `ktfmt.properties` beside a ktlint that formats the same Kotlin sources. A profile that
 brings in one formatter therefore switches the other off in its `jenesis-<profile>.properties`, as
-`jenesis.format.googlejavaformat=false` or `jenesis.format.ktlint=false`. Each formatter has its setting of
-`jenesis.format.<tool>`: `googlejavaformat`, `palantir`, `openjavaformat`, `princeofspace`, `eclipse`, `spotless`, `ktlint`, `ktfmt`
+`jenesis.googlejavaformat.format=false` or `jenesis.ktlint.format=false`. Each formatter has its setting of
+`jenesis.<tool>.format`: `googlejavaformat`, `palantir`, `openjavaformat`, `princeofspace`, `eclipse`, `spotless`, `ktlint`, `ktfmt`
 and `scalafmt`.
 
 ### Verify mode, and how to reformat
@@ -406,7 +406,7 @@ A recipe of OpenRewrite's own Java module needs nothing more. A recipe library i
 beside OpenRewrite, as `@jenesis.plugin openrewrite:tool maven/org.openrewrite.recipe/rewrite-static-analysis`
 in `module-info.java`, and resolves with it in the group `openrewrite:tool`. The module's dependencies are
 OpenRewrite's class path, so a recipe that matches a type of a library the module uses finds it. A recipe that
-would add, delete or move a file fails the build, and `-Djenesis.format.openrewrite=false` switches OpenRewrite
+would add, delete or move a file fails the build, and `-Djenesis.openrewrite.format=false` switches OpenRewrite
 off.
 
 ### Licence headers
@@ -426,7 +426,7 @@ with a different one, fails the build, naming the file. The header is checked or
 runs. Under
 `-Djenesis.format.rewrite=true` the header is inserted as it stands, or replaces a leading comment that names a
 copyright or a licence, so a rewrite gives the same sources whenever it runs. Generated sources are not checked,
-and `jenesis.format.license=false` switches the check off.
+and `jenesis.license.format=false` switches the check off.
 
 Without `text`, the header is derived from what the project declares: the one licence of its `pom.xml` or its
 `project.properties`, named by its SPDX identifier, and its `copyright` where one is declared. An empty
@@ -505,7 +505,7 @@ a covered ratio of 0.9 of methods is not met: 2 of 3 covered, a ratio of 0.6667
 ```
 
 A counter with nothing to count, such as `branch` in code without a branch, meets every limit. An unknown key, or a
-value that is no ratio or count, fails the build naming the valid ones. Set `-Djenesis.observe.jacoco=false` to
+value that is no ratio or count, fails the build naming the valid ones. Set `-Djenesis.jacoco.observe=false` to
 suppress coverage even when the file is present.
 
 ## Recording the tests with Java Flight Recorder
@@ -526,7 +526,7 @@ under `target/stage/reports/output/jfr/<module>/tests.jfr`. Open it in JDK Missi
 
 Because the file lives in a configuration folder, a profile switches the recording on for one build:
 `build.jenesis/profiling/jfr.properties` records only under `-Djenesis.make.profiles=profiling`. Changing the
-file runs the tests again. Set `-Djenesis.observe.jfr=false` to suppress the recording even when the file is
+file runs the tests again. Set `-Djenesis.jfr.observe=false` to suppress the recording even when the file is
 present.
 
 ## Profiling the tests with async-profiler
@@ -552,7 +552,7 @@ comma. It writes `reports/asyncprofiler/tests.html`, a flame graph to open in a 
 The agent, `tools.profiler:async-profiler`, carries the profiler's native library and resolves in the group
 `asyncprofiler:agent`; the tests' JVM is granted native access for it. async-profiler ships its library for Linux
 on x64 and arm64 and for macOS, and elsewhere the build fails. Kept in a profile folder, as above, the file
-profiles only the builds run with `-Djenesis.make.profiles=profiling`, and `-Djenesis.observe.asyncprofiler=false`
+profiles only the builds run with `-Djenesis.make.profiles=profiling`, and `-Djenesis.asyncprofiler.observe=false`
 switches it off.
 
 {% demos 41 %}
@@ -745,7 +745,7 @@ PIT and its JUnit 5 plugin resolve in the tool group of the PIT plugin, `pitest:
 dependencies. PIT runs the tests with the JUnit Platform launcher of the version the test module pins or
 resolved, so it lines up with the test framework you use. The report lands under `reports/pitest/`, with the
 source of every mutated class in its HTML, and
-`-Djenesis.observe.pitest=false` suppresses the run while keeping the file in place.
+`-Djenesis.pitest.observe=false` suppresses the run while keeping the file in place.
 
 {% demos 42 %}
 
@@ -803,7 +803,7 @@ japicmp and the baseline artifact resolve in the tool group of the japicmp plugi
 dependencies; the baseline resolves **without** its transitive dependencies, because only its own byte code
 is compared. It is a released artifact like any other, so `pin` records it with a checksum alongside the
 tool - one line, not a closure. The plugin resolves both with the project's repositories.
-`-Djenesis.artifact.japicmp=false` suppresses the comparison while keeping the file in place.
+`-Djenesis.japicmp.artifact=false` suppresses the comparison while keeping the file in place.
 
 ### revapi beside japicmp
 
@@ -837,8 +837,8 @@ Any other key fails the build, as does a `configuration` naming a file that is n
 a linter: `reports/revapi/revapi.json` holds one entry per difference, with its code and classification, and a
 `[FINDINGS]` line counts them.
 
-The build stays green on those findings unless `-Djenesis.strict.revapi=true` fails it on any difference
-reported, and `-Djenesis.artifact.revapi=false` skips revapi. It resolves in the tool group of its plugin,
+The build stays green on those findings unless `-Djenesis.revapi.strict=true` fails it on any difference
+reported, and `-Djenesis.revapi.artifact=false` skips revapi. It resolves in the tool group of its plugin,
 `revapi:tool`, with `revapi-java`, `revapi-basic-features` and `revapi-reporter-json` and what they depend on,
 beside the baseline.
 

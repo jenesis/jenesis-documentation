@@ -21,8 +21,8 @@ comes last.
 The plugins for the tools the earlier chapters describe - Checkstyle, the code generators, Kotlin, JReleaser and
 the others - are official plugins, and the build finds them by itself: each runs where a configuration folder holds
 its `<name>.properties`, or the tool's own conventional file, and a language wherever its sources are. Every one
-is switched off by `jenesis.<part>.<tool>=false`, named after the part of the build it belongs to, as
-`jenesis.check.pmd=false` or `jenesis.language.kotlin=false`.
+is switched off by `jenesis.<tool>.<part>=false`, named after the tool and the part of the build it belongs to, as
+`jenesis.pmd.check=false` or `jenesis.kotlin.language=false`.
 
 Any other plugin is named by the project in `jenesis.plugins.properties`, beside `jenesis.properties` at its root,
 one per line:
@@ -170,7 +170,7 @@ there as `xjc\:tool/maven/…`.
 
 `-Djenesis.plugin.<name>=false` leaves out a plugin the file names, without editing the file, and
 `-Djenesis.project.plugins=false` leaves out every plugin the file names. The setting is a plugin's own: an
-official plugin of the same name is switched by `jenesis.<part>.<tool>` alone, so the two never share a setting.
+official plugin of the same name is switched by `jenesis.<tool>.<part>` alone, so the two never share a setting.
 
 A plugin hands the **tests** a file the same way: in the test module's `binary/compiled`, it writes the file below
 `classes/`, where only the tests' jar holds it, and the tests read it as a resource. Its

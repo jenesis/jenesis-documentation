@@ -446,6 +446,71 @@ when it does. A type both name is built once:
 
 {% demos 9, 10 %}
 
+## A faster start with an ahead-of-time cache
+
+A JVM spends its first moments loading and linking classes. It can record that work in a training run and start
+from the recording afterwards, as an ahead-of-time (AOT) cache. The build trains one for a modular application
+where an `aot.properties` sits in the configuration folder:
+
+```properties
+# build.jenesis/aot.properties
+arguments=Ada
+```
+
+The file has the build link a runtime image, even without `jlink=true`, and run the module's main class once
+on that image's own `bin/java`. The run gets the words of `arguments`, the options of
+`process-java.properties` and an empty working directory. A run that ends with an exit code other than 0 fails
+the build.
+
+| Key in `aot.properties` | Meaning |
+| --- | --- |
+| `arguments=<words>` | the arguments of the training run, separated by whitespace; may be empty |
+| `main=<class>` | a main class of the module to run in place of its `@jenesis.main` |
+| `timeout=<duration>` | an ISO-8601 duration such as `PT30S`, after which a run that has not returned is ended and its cache kept |
+
+An application image uses the cache without further configuration. `jpackage` places it in the image as
+`lib/app/<module>.aot` on Linux, and the launcher is handed `-XX:AOTCache`, the options of the training run and
+`-Xlog:aot=off`. A JVM that refuses the cache then starts without it and prints nothing.
+
+With `jlink=true`, the staged runtime image carries the cache as `lib/<module>.aot`. That image has no launcher
+to hold an option, so you name the cache yourself:
+
+```bash
+R=target/stage/runtime/output/module-sources
+$R/bin/java -XX:AOTCache=$R/lib/demo.modular.executable.aot \
+    -m demo.modular.executable/sample.Sample Ada
+```
+
+### Training an application that keeps running
+
+The recording ends when the main method returns, so the main class of a command-line tool trains itself. For
+an application that needs exercising first, write a main class that starts it, sends it typical work and
+returns, and name it as `main=`.
+
+A server never returns. `timeout=` gives it a time to start and work in: when the time is up, the build ends
+the recording, stops the process and keeps the cache. A run that returns before its timeout is still judged
+by its exit code.
+
+### What a cache is tied to
+
+- **One runtime image.** A cache serves only the JVM that recorded it. A `bundle.zip`, a launcher jar and a
+  container image that starts the jars on its base image's JVM therefore carry none. A container build context that holds
+  the application image, with `docker.jpackage`, holds its cache with it.
+- **The module options of the training run.** An `--add-opens`, `--add-modules` or `--enable-native-access`
+  that the launch adds makes the JVM refuse the cache. Put such an option in `process-java.properties`, which
+  the training run and the launcher share.
+- **Named modules, one layer.** An application launched from the class path is refused, since the runtime
+  image holds named modules alone, and so is one that declares further module layers.
+
+<div class="note">
+  A cache is never the same bytes twice: two training runs on the same image differ, so this step does not
+  reproduce.
+</div>
+
+`-Djenesis.package.aot=false` links and packages without the training run.
+
+{% demos 10 %}
+
 ## A single executable jar
 
 `launcher=true` produces a **single executable jar** you run with `java -jar app.jar`, without flattening
@@ -502,7 +567,7 @@ Two other differences are handled as well:
 A module that ships its own `META-INF/services/<service>` for a service it also `provides` fails the build,
 because the build writes that file itself.
 
-`-Djenesis.generate.classpath=false` switches the step off, in a profile if need be, without deleting the file.
+`-Djenesis.classpath.generate=false` switches the step off, in a profile if need be, without deleting the file.
 
 {% demos 27 %}
 
