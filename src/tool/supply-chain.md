@@ -234,7 +234,7 @@ The keys:
 An unrecognised key fails the build. The licence and vulnerability checks are two halves of the same
 `compliance` step, each turned on by the presence of its own file, so you can run either, both, or neither.
 To keep both files in place but skip a check for a single build, pass its default-`true` override as `false`:
-`-Djenesis.compliance.license=false` or `-Djenesis.compliance.vulnerability=false`.
+`-Djenesis.license.compliance=false` or `-Djenesis.vulnerability.compliance=false`.
 
 {% demos 35 %}
 
