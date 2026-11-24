@@ -210,10 +210,10 @@ go in `process-ksp.properties`.
 
 ## Turning one off
 
-Each generator is switched off by `jenesis.generate.<name>=false`, which keeps its configuration in place:
+Each generator is switched off by `jenesis.<name>.generate=false`, which keeps its configuration in place:
 
 ```
--Djenesis.generate.xjc=false
+-Djenesis.xjc.generate=false
 ```
 
 The same shape works for `protoc`, `avro`, `wsimport`, `openapi`, `antlr` and `ksp`.

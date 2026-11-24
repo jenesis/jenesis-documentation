@@ -154,8 +154,8 @@ What these folders can hold - presence activates, contents configure:
 
 Each of these is the subject of a later chapter; here the point is only *where* they go and that a file's mere
 presence switches its feature on. A setting switches a tool off without removing its file:
-`jenesis.<part>.<name>=false`, named after the part of the build the tool belongs to, as
-`jenesis.check.pmd=false` or `jenesis.generate.xjc=false`, and `jenesis.plugin.<name>=false` for a plugin
+`jenesis.<name>.<part>=false`, named after the tool and the part of the build it belongs to, as
+`jenesis.pmd.check=false` or `jenesis.xjc.generate=false`, and `jenesis.plugin.<name>=false` for a plugin
 `jenesis.plugins.properties` names.
 
 <div class="warning">

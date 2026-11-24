@@ -502,7 +502,7 @@ Two other differences are handled as well:
 A module that ships its own `META-INF/services/<service>` for a service it also `provides` fails the build,
 because the build writes that file itself.
 
-`-Djenesis.generate.classpath=false` switches the step off, in a profile if need be, without deleting the file.
+`-Djenesis.classpath.generate=false` switches the step off, in a profile if need be, without deleting the file.
 
 {% demos 27 %}
 
