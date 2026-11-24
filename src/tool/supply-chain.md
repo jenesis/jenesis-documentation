@@ -236,6 +236,11 @@ An unrecognised key fails the build. The licence and vulnerability checks are tw
 To keep both files in place but skip a check for a single build, pass its default-`true` override as `false`:
 `-Djenesis.license.compliance=false` or `-Djenesis.vulnerability.compliance=false`.
 
+The advisory service answers one result per dependency. An answer with any other number of results does not
+say which dependency is affected, so the build reports no advisory for them and records the answer in
+`reports/compliance/advisories.txt`. Pass `-Djenesis.vulnerability.strict=true` to fail the build on such an
+answer instead.
+
 {% demos 35 %}
 
 ## Hardening the whole build
