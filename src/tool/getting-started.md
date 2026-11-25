@@ -156,6 +156,20 @@ jbang jenesis-make@jenesis/jenesis -Djenesis.project.version=1.0.0 stage
 A setting may also go before the alias, where JBang passes it to the JVM as a system property - the two forms
 configure the build the same way.
 
+The catalogue names one release, the newest, and moves with every release. JBang fetches a catalogue again
+once its copy is twelve hours old, so a build moves to a new release by itself, and `--fresh` moves it at once:
+
+```bash
+jbang --fresh jenesis-make@jenesis/jenesis
+```
+
+To stay on one release, name its coordinate and the main class in place of the alias. `Execute` and `Jpx` are
+the main classes of the other two commands:
+
+```bash
+jbang --java 25+ --main build.jenesis.Make build.jenesis:build.jenesis:0.18.2 stage
+```
+
 ### What to ignore
 
 Jenesis writes in exactly two places under your project root, so two rules cover it:
