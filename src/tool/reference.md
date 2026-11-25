@@ -435,7 +435,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.project.cache` | *(off)* | Project-local on-disk build cache (a path; empty enables `.jenesis/cache`). A project's own file names only a folder inside the project. |
 | `jenesis.cache.local` | `~/.jenesis/cache` | Folder that keeps the files of an HTTP cache on this machine, each once under its checksum and shared by every project. Capped at 10 GiB unless its `cache.properties` names another `size`. Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.cache.inline` | `65536` | Size in bytes from which a file of a step is stored on an HTTP cache apart from the step, once however many steps wrote it. A smaller file travels within its step. |
-| `jenesis.cache.write` | `true` | `false` has a build read its cache, a folder or a server, and store nothing. |
+| `jenesis.cache.write` | `true` | `false` has a build read its cache, a folder or a server, and store nothing in it. What it downloads from a server is kept in `jenesis.cache.local`. |
 | `jenesis.cache.project` (`JENESIS_CACHE_PROJECT`) | *(unset)* | Project header sent to an HTTP cache. |
 | `jenesis.cache.token` (`JENESIS_CACHE_TOKEN`) | *(unset)* | Token sent to an HTTP cache, in the `Jenesis-Cache-Key` header. Command line or `~/.jenesis/jenesis.properties` only. The former names, `jenesis.cache.key` and `JENESIS_CACHE_KEY`, are refused. |
 | `jenesis.cache.connect` | `PT1S` | HTTP cache connect timeout, as an ISO-8601 duration. |

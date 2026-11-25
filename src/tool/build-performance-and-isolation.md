@@ -251,7 +251,9 @@ file any build brought there is not downloaded again. The folder is capped at 10
 
 A cache server that refuses a request, is not there or does not answer within the timeouts never fails a build:
 the step runs, or its result is left unstored. `-Djenesis.cache.write=false` has a build read its cache, a
-folder or a server, and store nothing.
+folder or a server, and store nothing: a cache folder is left as it is, and a server is sent nothing, while
+what the build downloads from it is kept in the folder of this machine. A cache folder that cannot be written
+to - a read-only mount, a folder of another user - is read the same way without the setting.
 
 A cache server needs to do no more than store an entry it is sent with `PUT`, answer it to `GET` and `HEAD`,
 and keep the entries of one project apart from those of another. [Jenesis Repository](/repository/build-cache/)
