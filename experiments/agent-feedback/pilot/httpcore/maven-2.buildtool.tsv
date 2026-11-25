@@ -1,0 +1,4 @@
+maven	1795645108.403	11.492	1	7458	-q -o test -pl httpcore5 -f ../pom.xml -Dtest=TestDefaultBHttp*,TestBHttpConnectionBase -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795645134.310	11.578	0	2248	-q -o test -pl httpcore5 -f ../pom.xml -Dtest=TestDefaultBHttp*,TestBHttpConnectionBase -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795645149.227	1.807	1	2824	-o verify -pl httpcore5
+maven	1795645153.444	18.083	0	41724	-o test -pl httpcore5

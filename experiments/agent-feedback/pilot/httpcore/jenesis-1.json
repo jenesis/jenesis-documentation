@@ -1,0 +1,21 @@
+{
+  "task": "httpcore",
+  "arm": "jenesis",
+  "attempt": 1,
+  "model": "claude-opus-5-5",
+  "effort": "medium",
+  "passed": true,
+  "agent_ended": "success",
+  "wall_seconds": 153.7,
+  "build_seconds": 88.2,
+  "build_invocations": 2,
+  "build_failures": 1,
+  "build_output_bytes": 109823,
+  "turns": 13,
+  "cost_usd": 0.5570684000000001,
+  "input_tokens": 26,
+  "cache_write_tokens": 36845,
+  "cache_read_tokens": 642522,
+  "output_tokens": 6685,
+  "prompt_bytes": 8011
+}

@@ -1,0 +1,6 @@
+jenesis	1795645249.302	8.784	0	3122	build/jenesis/Make.java skill/selectors
+jenesis	1795645259.925	9.277	1	18544	build/jenesis/Make.java +httpcore5
+jenesis	1795645276.442	14.409	0	12820	build/jenesis/Make.java +httpcore5
+jenesis	1795645297.791	1.683	0	14795	build/jenesis/Make.java skill/tools
+jenesis	1795645301.987	1.748	0	72803	build/jenesis/Make.java configuration
+jenesis	1795645306.586	3.495	0	12493	-Djenesis.test.filter=.*TestDefaultBHttp(Client|Server)Connection -Djenesis.test.force=true -Djenesis.test.reporting=true build/jenesis/Make.java +httpcore5

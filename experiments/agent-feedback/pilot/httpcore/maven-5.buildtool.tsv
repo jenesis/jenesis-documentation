@@ -1,0 +1,2 @@
+maven	1795645900.332	13.311	0	2248	-q -o -pl httpcore5 test -Dtest=TestDefaultBHttp*,TestBHttpConnectionBase,TestHttpRequestExecutor,TestHttpService -Dsurefire.failIfNoSpecifiedTests=false -Drat.skip -Dcheckstyle.skip
+maven	1795645918.653	20.185	0	41724	-o -pl httpcore5 test -Drat.skip

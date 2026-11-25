@@ -1,0 +1,1 @@
+maven	1795645679.830	12.731	0	2248	-q -o -pl httpcore5 test -Dtest=TestDefaultBHttp*,TestHttpRequestExecutor,TestHttpService,TestBHttpConnectionBase -Drat.skip

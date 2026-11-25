@@ -1,0 +1,269 @@
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/BHttpConnectionBase.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-2/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/BHttpConnectionBase.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/BHttpConnectionBase.java	2026-11-25 22:01:37.036774153 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-2/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/BHttpConnectionBase.java	2026-11-25 22:18:54.280839656 +0000
+@@ -228,6 +228,26 @@
+         return Timeout.INFINITE;
+     }
+ 
++    /**
++     * Aborts an outgoing message whose content could not be written completely.
++     * Content already written is flushed on a best effort basis unless the failure
++     * occurred while the message was being finished (in which case the pending output
++     * may contain the message terminator), and the connection is then closed
++     * without terminating the message.
++     */
++    void abortOutput(final SocketHolder socketHolder, final boolean finishing) {
++        if (finishing) {
++            this.outbuffer.clear();
++        } else {
++            try {
++                this.outbuffer.flush(socketHolder.getOutputStream());
++            } catch (final IOException | RuntimeException ignore) {
++                this.outbuffer.clear();
++            }
++        }
++        close(CloseMode.IMMEDIATE);
++    }
++
+     @Override
+     public void close(final CloseMode closeMode) {
+         final SocketHolder socketHolder = this.socketHolderRef.getAndSet(null);
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-2/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java	2026-11-25 22:01:37.163876118 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-2/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java	2026-11-25 22:18:54.280193602 +0000
+@@ -209,7 +209,7 @@
+         if (len == ContentLengthStrategy.UNDEFINED) {
+             throw new LengthRequiredException();
+         }
+-        try (final OutputStream outStream = createContentOutputStream(
++        final OutputStream outStream = createContentOutputStream(
+                 len, this.outbuffer, new OutputStream() {
+ 
+                     final OutputStream socketOutputStream = socketHolder.getOutputStream();
+@@ -281,12 +281,27 @@
+                         socketOutputStream.close();
+                     }
+ 
+-                }, entity.getTrailers())) {
++                }, entity.getTrailers());
++        boolean finishing = false;
++        try {
+             entity.writeTo(outStream);
++            // Only a completely written entity may be finished
++            // (e.g. terminated with the last chunk)
++            finishing = true;
++            outStream.close();
+         } catch (final ResponseOutOfOrderException ex) {
+-            if (len > 0) {
++            // The request body has been abandoned because of an early response.
++            // The content stream must not be closed as that would terminate
++            // the message as if it were complete. Discard any pending output
++            // and keep the connection open so that the response can be read.
++            this.outbuffer.clear();
++            if (len != 0) {
+                 this.consistent = false;
+             }
++        } catch (final IOException | RuntimeException ex) {
++            this.consistent = false;
++            abortOutput(socketHolder, finishing);
++            throw ex;
+         }
+     }
+ 
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-2/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java	2026-11-25 22:01:37.163876118 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-2/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java	2026-11-25 22:18:54.280568613 +0000
+@@ -193,8 +193,18 @@
+             return;
+         }
+         final long len = this.outgoingContentStrategy.determineLength(response);
+-        try (final OutputStream outStream = createContentOutputStream(len, this.outbuffer, socketHolder.getOutputStream(), entity.getTrailers())) {
++        final OutputStream outStream = createContentOutputStream(len, this.outbuffer, socketHolder.getOutputStream(), entity.getTrailers());
++        boolean finishing = false;
++        try {
+             entity.writeTo(outStream);
++            // Only a completely written entity may be finished
++            // (e.g. terminated with the last chunk)
++            finishing = true;
++            outStream.close();
++        } catch (final IOException | RuntimeException ex) {
++            // Never terminate an incomplete message; the connection is unusable
++            abortOutput(socketHolder, finishing);
++            throw ex;
+         }
+     }
+ }
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/SessionOutputBufferImpl.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-2/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/SessionOutputBufferImpl.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/SessionOutputBufferImpl.java	2026-11-25 22:01:37.036774153 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-2/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/SessionOutputBufferImpl.java	2026-11-25 22:17:59.323096924 +0000
+@@ -113,6 +113,13 @@
+         return capacity() - length();
+     }
+ 
++    /**
++     * Discards any output pending in the buffer.
++     */
++    void clear() {
++        this.buffer.clear();
++    }
++
+     private void flushBuffer(final OutputStream outputStream) throws IOException {
+         final int len = this.buffer.length();
+         if (len > 0) {
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpClientConnection.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-2/project/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpClientConnection.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpClientConnection.java	2026-11-25 22:01:37.163876118 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-2/project/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpClientConnection.java	2026-11-25 22:18:28.374774271 +0000
+@@ -28,6 +28,8 @@
+ 
+ import java.io.ByteArrayInputStream;
+ import java.io.ByteArrayOutputStream;
++import java.io.EOFException;
++import java.io.IOException;
+ import java.io.InputStream;
+ import java.net.Socket;
+ import java.nio.charset.StandardCharsets;
+@@ -42,6 +44,7 @@
+ import org.apache.hc.core5.http.config.Http1Config;
+ import org.apache.hc.core5.http.impl.DefaultContentLengthStrategy;
+ import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
++import org.apache.hc.core5.http.io.entity.InputStreamEntity;
+ import org.apache.hc.core5.http.io.entity.StringEntity;
+ import org.apache.hc.core5.http.message.BasicClassicHttpRequest;
+ import org.junit.jupiter.api.Assertions;
+@@ -415,4 +418,74 @@
+         Assertions.assertFalse(conn.isConsistent());
+     }
+ 
++    static InputStream failingSource(final int goodBytes) {
++        return new InputStream() {
++
++            int count;
++
++            @Override
++            public int read() throws IOException {
++                if (count >= goodBytes) {
++                    throw new EOFException("Unexpected end of source");
++                }
++                count++;
++                return 'a';
++            }
++
++        };
++    }
++
++    @Test
++    void testWriteChunkedRequestEntityFailure() throws Exception {
++        final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
++        Mockito.when(socket.getOutputStream()).thenReturn(outStream);
++
++        conn.bind(socket);
++
++        final ClassicHttpRequest request = new BasicClassicHttpRequest(Method.POST, "/stuff");
++        request.addHeader("Transfer-Encoding", "chunked");
++        request.setEntity(new InputStreamEntity(failingSource(10000), -1, ContentType.TEXT_PLAIN));
++
++        conn.sendRequestHeader(request);
++        Assertions.assertThrows(EOFException.class, () -> conn.sendRequestEntity(request));
++
++        final String s = new String(outStream.toByteArray(), StandardCharsets.US_ASCII);
++        Assertions.assertTrue(s.startsWith("POST /stuff HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n"));
++        Assertions.assertFalse(s.endsWith("0\r\n\r\n"));
++        Assertions.assertFalse(conn.isOpen());
++        Assertions.assertFalse(conn.isConsistent());
++    }
++
++    @Test
++    void testChunkedRequestEntityAbandonedOnEarlyResponse() throws Exception {
++        conn = new DefaultBHttpClientConnection(Http1Config.DEFAULT,
++                null, null,
++                DefaultContentLengthStrategy.INSTANCE,
++                DefaultContentLengthStrategy.INSTANCE,
++                (request, connection, inputStream, totalBytesSent, nextWriteSize) -> totalBytesSent > 0,
++                DefaultHttpRequestWriterFactory.INSTANCE,
++                DefaultHttpResponseParserFactory.INSTANCE);
++        final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
++        Mockito.when(socket.getOutputStream()).thenReturn(outStream);
++        final String r = "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n";
++        Mockito.when(socket.getInputStream()).thenReturn(new ByteArrayInputStream(r.getBytes(StandardCharsets.US_ASCII)));
++
++        conn.bind(socket);
++
++        final ClassicHttpRequest request = new BasicClassicHttpRequest(Method.POST, "/stuff");
++        request.addHeader("Transfer-Encoding", "chunked");
++        request.setEntity(new ByteArrayEntity(new byte[20000], ContentType.TEXT_PLAIN, true));
++
++        conn.sendRequestHeader(request);
++        conn.sendRequestEntity(request);
++        conn.flush();
++
++        final String s = new String(outStream.toByteArray(), StandardCharsets.US_ASCII);
++        Assertions.assertFalse(s.endsWith("0\r\n\r\n"));
++        Assertions.assertTrue(conn.isOpen());
++        Assertions.assertFalse(conn.isConsistent());
++        final ClassicHttpResponse response = conn.receiveResponseHeader();
++        Assertions.assertEquals(400, response.getCode());
++    }
++
+ }
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpServerConnection.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-2/project/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpServerConnection.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpServerConnection.java	2026-11-25 22:01:37.163876118 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-2/project/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpServerConnection.java	2026-11-25 22:18:28.375144282 +0000
+@@ -28,6 +28,8 @@
+ 
+ import java.io.ByteArrayInputStream;
+ import java.io.ByteArrayOutputStream;
++import java.io.EOFException;
++import java.io.IOException;
+ import java.io.InputStream;
+ import java.net.Socket;
+ import java.nio.charset.StandardCharsets;
+@@ -41,6 +43,7 @@
+ import org.apache.hc.core5.http.ProtocolException;
+ import org.apache.hc.core5.http.config.Http1Config;
+ import org.apache.hc.core5.http.impl.DefaultContentLengthStrategy;
++import org.apache.hc.core5.http.io.entity.InputStreamEntity;
+ import org.apache.hc.core5.http.io.entity.StringEntity;
+ import org.apache.hc.core5.http.message.BasicClassicHttpResponse;
+ import org.apache.hc.core5.util.Timeout;
+@@ -337,4 +340,41 @@
+         Assertions.assertEquals("HTTP/1.1 200 OK\r\nServer: test\r\n\r\n", s);
+     }
+ 
++    static InputStream failingSource(final int goodBytes) {
++        return new InputStream() {
++
++            int count;
++
++            @Override
++            public int read() throws IOException {
++                if (count >= goodBytes) {
++                    throw new EOFException("Unexpected end of source");
++                }
++                count++;
++                return 'a';
++            }
++
++        };
++    }
++
++    @Test
++    void testWriteChunkedResponseEntityFailure() throws Exception {
++        final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
++        Mockito.when(socket.getOutputStream()).thenReturn(outStream);
++
++        conn.bind(socket);
++
++        final ClassicHttpResponse response = new BasicClassicHttpResponse(200, "OK");
++        response.addHeader("Transfer-Encoding", "chunked");
++        response.setEntity(new InputStreamEntity(failingSource(10000), -1, ContentType.TEXT_PLAIN));
++
++        conn.sendResponseHeader(response);
++        Assertions.assertThrows(EOFException.class, () -> conn.sendResponseEntity(response));
++
++        final String s = new String(outStream.toByteArray(), StandardCharsets.US_ASCII);
++        Assertions.assertTrue(s.startsWith("HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n"));
++        Assertions.assertFalse(s.endsWith("0\r\n\r\n"));
++        Assertions.assertFalse(conn.isOpen());
++    }
++
+ }
