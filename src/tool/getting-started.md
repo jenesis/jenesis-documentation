@@ -130,6 +130,43 @@ over while the `build/jenesis` link into it is followed.
 On a platform without symlinks, replace the `ln -s` with `cp -r build/.upstream/sources/build/jenesis
 build/jenesis` and refresh the copy after each submodule update.
 
+### JBang
+
+[JBang](https://www.jbang.dev) runs the released engine without installing Jenesis. The `jenesis/jenesis`
+repository carries a JBang catalogue with an alias for each of three commands, under the command's own name:
+
+```bash
+jbang jenesis-make@jenesis/jenesis stage      # build; settings and selectors follow the alias
+jbang jenesis-exec@jenesis/jenesis            # build, then run the main class
+jbang app install jenesis-make@jenesis/jenesis   # put jenesis-make on the path
+```
+
+Each alias runs the release the catalogue names, from Maven Central, on Java 25 or newer - JBang downloads a
+newer JDK where the machine's own is older. JBang fetches the catalogue again once its copy is twelve hours
+old, or at once under `--fresh`, so an alias follows the releases. To stay on one release, name it instead:
+`jbang --java 25+ --main build.jenesis.Make build.jenesis:build.jenesis:0.18.2`.
+
+This route checks less than the others, in three ways:
+
+- **The project's engine is not verified, and not used.** `jenesis` compares `build/jenesis/` with the sources
+  its release published, refuses a tree that differs, and refuses a release that is no longer considered safe.
+  An alias makes neither check. Like `jenesis-make`, it builds with the release it names and reads neither
+  `build/jenesis/` nor the version recorded there, so a project that records another version is built by a
+  different engine than the one it vendors, without a message.
+- **The download is not verified beyond its connection.** JBang fetches the jar over HTTPS and the SHA-1
+  published beside it, runs the jar where the two do not match, and checks no signature. The curl bootstrap
+  installs a release only if it matches the SHA-256 published beside it, and the Homebrew formula and the Scoop
+  manifest name the SHA-256 of the archive they install; these check no signature either. Whatever JBang
+  resolves - the engine and, for a build that is itself a JBang script, every dependency the script names with
+  its transitive dependencies - lands on the class path and is not covered by the versions and checksums a
+  project [pins](/tool/pinning/).
+- **The catalogue decides what runs.** JBang reads it from the default branch of the repository when an alias
+  runs, and asks for no confirmation. Whoever can change that file changes what the alias runs for everyone
+  who uses it. Naming the release by its coordinate, as above, takes the catalogue out.
+
+None of this concerns what a build may do: a build runs the project's code and its plugins whichever engine
+runs it, and however that engine was obtained.
+
 ### What to ignore
 
 Jenesis writes in exactly two places under your project root, so two rules cover it:
