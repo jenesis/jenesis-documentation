@@ -83,11 +83,10 @@ java -Djenesis.cache.uri=https://repo.example.com/build/releases \
      build/jenesis/Make.java
 ```
 
-The build tool keeps a step's result as a manifest of the files the step wrote, at
-`/step/<step>/<inputs>` under that URL, and the files themselves apart, each stored once in its project under
-the checksum of its content. It uploads and downloads files in batches, at `/blobs`, and only those the other
-side lacks. The server stores a manifest only while the project holds every file it names, stores an uploaded
-file only if it is what its checksum says, and neither serves nor confirms one project's files to another. The
+The build tool stores each step's result as one entry under that URL, at `/<step>/<inputs>`: an archive of the
+files the step wrote. It stores a file of 64 KiB or more apart, as an entry of its own named by the file's
+checksum, so that a file many steps write is held once in its project. To the server every entry is opaque: it
+is stored once, never rewritten, and read back as it was sent. The
 project and the key travel as headers (`Jenesis-Cache-Project` and `Jenesis-Cache-Key`), never in
 the URL, and both can come from the environment instead -
 `JENESIS_CACHE_PROJECT` and `JENESIS_CACHE_TOKEN` - which is the usual way in CI. The build tool's chapter on

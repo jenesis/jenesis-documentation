@@ -235,18 +235,27 @@ environment variables. `-Djenesis.cache.connect` and `-Djenesis.cache.read` set 
 durations (`PT1S` and `PT10S` by default). A non-URI value is rejected; use `file://` for an on-disk
 location.
 
-A cache server is asked for files, never for a step's whole output. To restore a step, the build asks for its
-manifest and then, in one request, for the files this machine does not hold. To store a step, it sends the
-manifest and uploads, in one request, only the files the server answers that it lacks. A downloaded file is
-checked against its checksum before it is kept.
+A cache server is sent one archive per step, which leaves out what is held elsewhere. A file that an input of
+the step holds is not sent. A file of 64 KiB or more is stored once on the server, under its checksum, however
+many steps wrote it - a dependency's jar that every module resolves is uploaded once. Every other file travels
+within the archive of its step. `-Djenesis.cache.inline=<bytes>` moves that size.
+
+To restore a step, the build reads its archive, takes the files of the step's inputs from their folders, and
+downloads a large file only where this machine does not hold it. Every file is checked against its checksum, and
+a file that fails the check makes the step a miss, so it runs.
 
 The build keeps the files of a cache server in a folder of this machine, in the layout shown above:
-`~/.jenesis/cache`, or the folder `-Djenesis.cache.local=<folder>` names. Every project shares it, so a file any
-build already brought there is not downloaded again. The folder is capped at 10 GiB unless its
+`~/.jenesis/cache`, or the folder `-Djenesis.cache.local=<folder>` names. Every project shares it, so a large
+file any build brought there is not downloaded again. The folder is capped at 10 GiB unless its
 `cache.properties` names another `size`, which a build applies as it does for a cache folder of its own.
 
-[Jenesis Repository](/repository/build-cache/) serves this protocol, and is the reference implementation of a
-cache server for it: projects, keys granted per project, and size limits, on the same server as your artifacts.
+A cache server that refuses a request, is not there or does not answer within the timeouts never fails a build:
+the step runs, or its result is left unstored. `-Djenesis.cache.write=false` has a build read its cache, a
+folder or a server, and store nothing.
+
+A cache server needs to do no more than store an entry it is sent with `PUT`, answer it to `GET` and `HEAD`,
+and keep the entries of one project apart from those of another. [Jenesis Repository](/repository/build-cache/)
+is such a server: projects, keys granted per project, and size limits, on the same server as your artifacts.
 
 The shared cache can be used two ways:
 
@@ -264,10 +273,10 @@ java -Djenesis.project.cache \
 ```
 
 <div class="note">
-  Serving a step from the local tier means no <code>GET</code> reaches the server, which would let that step's
-  manifest age toward eviction even while in active use. So a local hit also sends the server a best-effort
-  <code>HEAD</code>, never the body, and the server treats it as a read and bumps the manifest's recency. Each
-  tier keeps its own LRU.
+  Serving a step from the local tier means no <code>GET</code> reaches the server, which would let that step
+  age toward eviction there even while in active use. So a local hit also sends the server a best-effort
+  <code>HEAD</code>, never the body, and the server treats it as a read and bumps the step's recency. A large
+  file held on this machine is announced the same way, once per build. Each tier keeps its own LRU.
 </div>
 
 A step with an effect outside its output folder is stored in no cache, as restoring its folder would leave
