@@ -117,6 +117,122 @@ mirror of that repository in its place - for the Maven remotes in `jenesis.maven
 
 {% demos 77 %}
 
+### Authenticating a CI build without a stored secret
+
+A CI job can sign in to a private repository with the identity token its platform issues, in place of a token
+kept as a secret. One setting names where that token is exchanged:
+
+```bash
+java -Djenesis.maven.uri=https://repository.example.com/repository/acme/maven/ \
+     -Djenesis.maven.exchange=/api/token \
+     build/jenesis/Make.java
+```
+
+At the first fetch the build posts the job's identity token to that path on the repository's own host, as
+OAuth 2.0 Token Exchange ([RFC 8693](https://www.rfc-editor.org/rfc/rfc8693)) lays the request out. The token
+the server issues is sent as `Authorization: Bearer <token>` from then on. It is asked for once for a build, and
+again when the `expires_in` of the answer has run out.
+
+Each credential of a build has an exchange of its own, so three servers may sign a job in three ways:
+
+| Credential of | Stored token | Exchange |
+| --- | --- | --- |
+| the Maven upstream, `jenesis.maven.uri` | `jenesis.maven.token` | `jenesis.maven.exchange` |
+| the module index, `jenesis.module.uri` | `jenesis.module.token` | `jenesis.module.exchange` |
+| the cache server, `jenesis.cache.uri` | `jenesis.cache.token` | `jenesis.cache.exchange` |
+| a module release, `jenesis.release.uri` | `jenesis.release.token` | `jenesis.release.exchange` |
+| a Maven release, `jenesis.deploy.uri` | `jenesis.deploy.token` | `jenesis.deploy.exchange` |
+
+A credential has one source. Naming a token and an exchange for the same credential is refused, and the message
+names both.
+
+**Where the identity token comes from.** On GitHub Actions the build requests it itself, once the workflow
+grants `id-token: write`:
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+      - run: >
+          java
+          -Djenesis.maven.uri=https://repository.example.com/repository/acme/maven/
+          -Djenesis.maven.exchange=/api/token
+          build/jenesis/Make.java
+```
+
+The token is requested for an audience, which the server checks. By default that is the scheme, host and port
+of the exchange, `https://repository.example.com` above; `jenesis.maven.audience` names another.
+
+On any other platform a setting says where the job's token is read from. It names a variable or a file and
+never the token, so no token is a value that `configuration` or a log prints:
+
+```bash
+-Djenesis.exchange.identity=env CI_JOB_JWT
+-Djenesis.exchange.identity=file /var/run/secrets/tokens/jenesis
+```
+
+`jenesis.exchange.identity` serves every credential, and `jenesis.maven.identity`, `jenesis.cache.identity` and
+their siblings name one for a single credential. Without any of them the environment variable
+`JENESIS_IDENTITY_TOKEN` is read, which a GitLab job fills with an `id_tokens:` entry of that name. A file is
+read anew for every exchange, so a token that Kubernetes rotates in a projected volume is followed.
+
+**What the build refuses.** The exchange is on the server the credential is for:
+
+- The setting is a path on the repository's host. A URL is accepted where it names the same scheme, host and
+  port, and any other is refused before anything is sent.
+- The identity token is sent to that address only, and the issued token to that host only.
+- The connection is `https`, unless `jenesis.repository.insecure` allows plaintext - or `jenesis.cache.insecure`
+  for a cache server.
+- Only the command line and `~/.jenesis/jenesis.properties` name an exchange, an identity or a helper. A
+  project's own file naming one is refused, and a repository that a project's file named is never exchanged
+  with.
+- Nothing is exchanged under `jenesis.repository.offline`, and a build in a container under
+  `jenesis.project.docker` is handed none of these settings.
+
+A fetch or a release that cannot exchange its token fails, naming the server and the `error` it answered. A
+cache server that cannot be signed in to counts as a cache that misses, and the build passes.
+
+**Jenesis Repository** serves the exchange at `/api/token`, so the one setting above is the whole
+configuration, with the repository's address ending in its layout, as `.../repository/acme/libraries/maven/`.
+Its trust names the issuer, the audience and the subject it admits - see
+*[Keyless CI](/repository/access/#keyless-ci)*. Name the address of the server as the audience of the trust,
+or the audience of the trust as `jenesis.maven.audience`.
+
+**JFrog Artifactory** exchanges at `/access/api/v1/oidc/token`, reads the request as JSON and expects the name of
+its OIDC integration as `provider_name`:
+
+```bash
+-Djenesis.maven.uri=https://acme.jfrog.io/artifactory/libs-release/
+-Djenesis.maven.exchange=/access/api/v1/oidc/token
+-Djenesis.maven.encoding=json
+-Djenesis.maven.parameters=provider_name=github-oidc,resource=
+```
+
+`jenesis.maven.parameters` adds members to the request, and an entry without a value, as `resource=`, leaves a
+member out. `jenesis.maven.encoding=json` writes the request as a JSON object in place of a form.
+
+**Any other server** is asked by a helper, a program that `jenesis.maven.helper` names:
+
+```bash
+-Djenesis.maven.helper=/usr/local/bin/issue-token --realm build
+```
+
+The build runs it at the first fetch, once for a build, with the address of the repository as its last
+argument and the environment of the build. The first line it prints is sent as `Authorization: Bearer <token>`
+and is never printed. A helper that prints nothing sends no credential, and any exit code but `0` fails the
+fetch.
+
+{% demos 83 %}
+
 ### What the build tells the module index
 
 The [module index](/modules/resolving/) does not serve jars, it redirects to them, and three of its

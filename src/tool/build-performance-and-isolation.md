@@ -236,6 +236,12 @@ environment variables. `-Djenesis.cache.connect` and `-Djenesis.cache.read` set 
 durations (`PT1S` and `PT10S` by default). A non-URI value is rejected; use `file://` for an on-disk
 location.
 
+A CI job needs no stored token for a cache server that exchanges identity tokens:
+`-Djenesis.cache.exchange=/api/token` exchanges the token the CI platform issues the job for a short-lived
+one, sent as `Authorization: Bearer <token>` in place of `jenesis.cache.token`, as
+*[Authenticating a CI build without a stored secret](/tool/dependencies/#authenticating-a-ci-build-without-a-stored-secret)*
+describes it for a repository. A cache server that cannot be signed in to counts as a cache that misses.
+
 A cache server is sent one archive per step, which leaves out what is held elsewhere. A file that an input of
 the step holds is not sent. A file of 64 KiB or more is stored once on the server, under its checksum, however
 many steps wrote it - a dependency's jar that every module resolves is uploaded once. Every other file travels
