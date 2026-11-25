@@ -502,6 +502,32 @@ by its exit code.
 - **Named modules, one layer.** An application launched from the class path is refused, since the runtime
   image holds named modules alone, and so is one that declares further module layers.
 
+### Running under a Java agent
+
+A `-javaagent` adds the module `java.instrument` to the JVM, which is a module option like the ones above: a
+cache trained without it is refused once an agent is attached. An application meant to run under an agent,
+such as a monitoring agent in production, therefore names the module in both places:
+
+```java
+module demo.application {
+    requires java.instrument;
+}
+```
+
+```properties
+# build.jenesis/process-java.properties
+--add-modules=java.instrument
+```
+
+The `requires` puts the module into the runtime image, and the option reaches the training run and the
+launcher alike. The application image then uses its cache whether an agent is attached or not.
+
+<div class="note">
+  The JVM loads the classes of a cache before an agent starts. An agent that only transforms a class as it
+  loads never sees those classes; one that retransforms loaded classes, as the OpenTelemetry agent does, still
+  applies its changes.
+</div>
+
 <div class="note">
   A cache is never the same bytes twice: two training runs on the same image differ, so this step does not
   reproduce.
