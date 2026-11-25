@@ -17,7 +17,7 @@ A task is a folder under `tasks/`, made from a bug fix the project merged after 
 
 | File | Holds |
 |---|---|
-| `task.env` | The repository, the commit before the fix, the modules and test classes the verdict is taken on |
+| `task.env` | The repository, the commit before the fix, the modules and test classes the verdict is taken on, and the selector of the Jenesis build where the project needs one |
 | `issue.md` | The bug as a user reports it. The agent is given this text and nothing else about the bug |
 | `hidden/` | The test files of the fix. The agent never sees them; they decide the verdict |
 | `reference.patch` | The fix's change to the main sources, which `prepare.sh` checks the task with |

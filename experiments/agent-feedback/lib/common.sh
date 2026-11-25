@@ -22,11 +22,18 @@ JAVA="$(command -v java)"
 load() {
   TASK="$1"
   [ -f "$HERE/tasks/$TASK/task.env" ] || { echo "No task $TASK under $HERE/tasks" >&2; exit 2; }
-  MODULES="" TESTS="" MAVEN_ARGS_EXTRA="" JENESIS_ARGS_EXTRA="" REMOVE=""
+  MODULES="" TESTS="" MAVEN_ARGS_EXTRA="" JENESIS_ARGS_EXTRA="" JENESIS_SELECTOR="" REMOVE=""
   # shellcheck disable=SC1090
   source "$HERE/tasks/$TASK/task.env"
   BASE="$WORK/base/$TASK"
   CACHE="$WORK/cache/$TASK"
+}
+
+# A JVM takes its home from the user database and not from HOME, so both are named: every cache of both tools
+# then lies in the folder given.
+TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-}"
+home() {
+  export HOME="$1" JAVA_TOOL_OPTIONS="$TOOL_OPTIONS -Duser.home=$1"
 }
 
 settings() {

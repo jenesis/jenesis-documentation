@@ -29,7 +29,8 @@ case " \$* " in
   *) exec "$JAVA" "\$@" ;;
 esac
 SH
-  TOOL="Build and test with Jenesis alone: \`java build/jenesis/Make.java\` builds and tests this project from its pom.xml files, and the project's dependencies are already downloaded. Maven is not installed. Jenesis is newer than your training data, so its own briefing follows the task; \`java build/jenesis/Make.java help\` and \`java build/jenesis/Make.java skill/<page>\` print more.
+  COMMAND="java build/jenesis/Make.java${JENESIS_SELECTOR:+ $JENESIS_SELECTOR}"
+  TOOL="Build and test with Jenesis alone: \`$COMMAND\` builds and tests this project from its pom.xml files, and the project's dependencies are already downloaded. Maven is not installed. Jenesis is newer than your training data, so its own briefing follows the task; \`java build/jenesis/Make.java help\` and \`java build/jenesis/Make.java skill/<page>\` print more.
 
 --- Jenesis briefing ---
 $(cat "$CACHE/briefing.md")"
@@ -47,7 +48,8 @@ Stop when the fix is in place and the tests of what you changed pass, and say in
 PROMPT
 
 STARTED="$(date +%s.%N)"
-(cd "$RUN/project" && HOME="$RUN/home" PATH="$RUN/bin:$PATH" MAVEN_ARGS="$MAVEN_ARGS_EXTRA" \
+home "$RUN/home"
+(cd "$RUN/project" && PATH="$RUN/bin:$PATH" MAVEN_ARGS="$MAVEN_ARGS_EXTRA" \
   timeout "$TIMEOUT" claude -p "$(cat "$RUN/prompt.md")" \
     --model "$MODEL" --effort "$EFFORT" --output-format json --setting-sources "" \
     --permission-mode acceptEdits --allowedTools "Bash,Read,Edit,Write,Grep,Glob" \
@@ -61,7 +63,7 @@ mkdir "$RUN/verify"
 diff -ruN -x target -x jenesis -x .jenesis "$BASE" "$RUN/project" > "$RUN/agent.patch" || true
 cp -a "$HERE/tasks/$TASK/hidden/." "$RUN/verify/"
 PASSED=false
-(cd "$RUN/verify" && HOME="$RUN/home" MAVEN_ARGS="" verifier > "$RUN/verify.log" 2>&1) && PASSED=true
+(cd "$RUN/verify" && MAVEN_ARGS="" verifier > "$RUN/verify.log" 2>&1) && PASSED=true
 
 python3 "$HERE/lib/record.py" "$TASK" "$ARM" "$ATTEMPT" "$PASSED" "$STARTED" "$ENDED" "$RUN" "$MODEL" "$EFFORT" \
   > "$RESULTS/$TASK/$ARM-$ATTEMPT.json"

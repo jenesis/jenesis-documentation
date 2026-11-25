@@ -16,7 +16,8 @@ fi
 if [ ! -f "$CACHE/checked" ]; then
   rm -rf "$CACHE" && mkdir -p "$CACHE/home"
   settings "$CACHE/home"
-  export HOME="$CACHE/home" MAVEN_ARGS="$MAVEN_ARGS_EXTRA"
+  home "$CACHE/home"
+  export MAVEN_ARGS="$MAVEN_ARGS_EXTRA"
 
   # Maven: the modules' own tests once, which resolves every plugin and dependency the verifier and an agent need.
   cp -a "$BASE" "$CACHE/maven"
@@ -37,7 +38,7 @@ if [ ! -f "$CACHE/checked" ]; then
   mkdir -p "$CACHE/jenesis/build" && cp -a "$(engine)" "$CACHE/jenesis/build/jenesis"
   [ -d "$HERE/tasks/$TASK/overlay-jenesis" ] && cp -a "$HERE/tasks/$TASK/overlay-jenesis/." "$CACHE/jenesis/"
   # shellcheck disable=SC2086
-  (cd "$CACHE/jenesis" && "$JAVA" $JENESIS_ARGS_EXTRA build/jenesis/Make.java > "$CACHE/jenesis.log" 2>&1) || true
+  (cd "$CACHE/jenesis" && "$JAVA" $JENESIS_ARGS_EXTRA build/jenesis/Make.java $JENESIS_SELECTOR > "$CACHE/jenesis.log" 2>&1) || true
   (cd "$CACHE/jenesis" && "$JAVA" -Djenesis.make.mode=compiled build/jenesis/Make.java skill/start > "$CACHE/briefing.md" 2> /dev/null)
   pkill -f "$CACHE/home" 2> /dev/null || true
   rm -rf "$CACHE/maven" "$CACHE/jenesis"

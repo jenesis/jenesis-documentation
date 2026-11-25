@@ -1,0 +1,74 @@
+diff --git a/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java b/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java
+index 3ad869161..6fad738cf 100644
+--- a/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java
++++ b/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java
+@@ -61,6 +61,7 @@
+ import org.apache.hc.core5.http.io.HttpMessageWriterFactory;
+ import org.apache.hc.core5.http.io.ResponseOutOfOrderStrategy;
+ import org.apache.hc.core5.http.message.MessageSupport;
++import org.apache.hc.core5.io.CloseMode;
+ import org.apache.hc.core5.util.Args;
+ 
+ /**
+@@ -209,7 +210,7 @@ public void sendRequestEntity(final ClassicHttpRequest request) throws HttpExcep
+         if (len == ContentLengthStrategy.UNDEFINED) {
+             throw new LengthRequiredException();
+         }
+-        try (final OutputStream outStream = createContentOutputStream(
++        final OutputStream outStream = createContentOutputStream(
+                 len, this.outbuffer, new OutputStream() {
+ 
+                     final OutputStream socketOutputStream = socketHolder.getOutputStream();
+@@ -281,15 +282,22 @@ public void close() throws IOException {
+                         socketOutputStream.close();
+                     }
+ 
+-                }, entity.getTrailers())) {
++                }, entity.getTrailers());
++        try {
+             entity.writeTo(outStream);
++            outStream.close();
+         } catch (final ResponseOutOfOrderException ex) {
+-            if (len > 0) {
++            if (len != 0) {
+                 this.consistent = false;
+             }
++        } catch (final IOException | RuntimeException ex) {
++            this.consistent = false;
++            close(CloseMode.IMMEDIATE);
++            throw ex;
+         }
+     }
+ 
++
+     @Override
+     public boolean isConsistent() {
+         return this.consistent;
+diff --git a/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java b/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java
+index ab674c7da..d569b9d85 100644
+--- a/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java
++++ b/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java
+@@ -52,6 +52,7 @@
+ import org.apache.hc.core5.http.io.HttpMessageWriter;
+ import org.apache.hc.core5.http.io.HttpMessageWriterFactory;
+ import org.apache.hc.core5.http.io.HttpServerConnection;
++import org.apache.hc.core5.io.CloseMode;
+ import org.apache.hc.core5.util.Args;
+ 
+ /**
+@@ -193,8 +194,14 @@ public void sendResponseEntity(final ClassicHttpResponse response)
+             return;
+         }
+         final long len = this.outgoingContentStrategy.determineLength(response);
+-        try (final OutputStream outStream = createContentOutputStream(len, this.outbuffer, socketHolder.getOutputStream(), entity.getTrailers())) {
++        final OutputStream outStream = createContentOutputStream(
++                len, this.outbuffer, socketHolder.getOutputStream(), entity.getTrailers());
++        try {
+             entity.writeTo(outStream);
++            outStream.close();
++        } catch (final IOException | RuntimeException ex) {
++            close(CloseMode.IMMEDIATE);
++            throw ex;
+         }
+     }
+ }
