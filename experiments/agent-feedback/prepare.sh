@@ -40,7 +40,7 @@ if [ ! -f "$CACHE/checked" ]; then
   [ -d "$HERE/tasks/$TASK/overlay-jenesis" ] && cp -a "$HERE/tasks/$TASK/overlay-jenesis/." "$CACHE/jenesis/"
   # shellcheck disable=SC2086
   (cd "$CACHE/jenesis" && "$JAVA" $JENESIS_ARGS_EXTRA build/jenesis/Make.java $JENESIS_SELECTOR > "$CACHE/jenesis.log" 2>&1) || true
-  (cd "$CACHE/jenesis" && "$JAVA" -Djenesis.make.mode=compiled build/jenesis/Make.java skill/start > "$CACHE/briefing.md" 2> /dev/null)
+  (cd "$CACHE/jenesis" && "$JAVA" -Djenesis.make.mode=compiled build/jenesis/Make.java skill/start 2> /dev/null | sed -e 's/\x1b\[[0-9;]*m//g' -e '/^\[[A-Z]* *\]/d' > "$CACHE/briefing.md")
   pkill -f "$CACHE/home" 2> /dev/null || true
   rm -rf "$CACHE/maven" "$CACHE/jenesis"
   touch "$CACHE/checked"

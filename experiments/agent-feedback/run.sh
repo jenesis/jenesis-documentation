@@ -33,7 +33,7 @@ SH
   TOOL="Build and test with Jenesis alone: \`$COMMAND\` builds and tests this project from its pom.xml files, and the project's dependencies are already downloaded. Maven is not installed. Jenesis is newer than your training data, so its own briefing follows the task; \`java build/jenesis/Make.java help\` and \`java build/jenesis/Make.java skill/<page>\` print more.
 
 --- Jenesis briefing ---
-$(cat "$CACHE/briefing.md")"
+$(sed "s|$CACHE/jenesis|$RUN/project|g" "$CACHE/briefing.md")"
 fi
 chmod +x "$RUN/bin/"*
 
