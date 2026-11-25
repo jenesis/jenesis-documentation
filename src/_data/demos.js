@@ -167,7 +167,7 @@ export default {
         { slug: "demo-80-jpx", name: "Running a released program", blurb: "jpx installs and launches a published tool - named as a module and as a coordinate, pinned and hash-verified." },
         { slug: "demo-81-tools-api", name: "Running a build in-process", blurb: "A build, and the program it produced, run inside another program's JVM through java.util.spi.ToolProvider." },
         { slug: "demo-83-credential-exchange", name: "Signing in without a stored secret", blurb: "A build that exchanges its CI job's identity token for a short-lived credential of a cache server, and one that asks a helper program." },
-        { slug: "demo-84-jbang", name: "A build as a JBang script", blurb: "A project with no build/jenesis folder: its build program is a JBang script that names the released engine, stages the module and runs it." },
+        { slug: "demo-84-jbang", name: "A build as a JBang script", blurb: "A build program written as a JBang script, which names the engine it builds with, stages the module and runs it." },
       ],
     },
   ],
