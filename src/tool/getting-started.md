@@ -132,43 +132,37 @@ build/jenesis` and refresh the copy after each submodule update.
 
 ### JBang
 
-[JBang](https://www.jbang.dev) runs a released engine without installing Jenesis, on the machine or into the
-project. The `jenesis/jenesis` repository carries a JBang catalogue, `jbang-catalog.json`, with one alias
-per command:
+[JBang](https://www.jbang.dev) runs the released engine without installing Jenesis. The `jenesis/jenesis`
+repository carries a JBang catalogue with an alias for each of three commands, under the command's own name:
 
 ```bash
-jbang jenesis-make@jenesis/jenesis          # build the project in the current folder
-jbang jenesis-exec@jenesis/jenesis          # build it, then run its main class
+jbang jenesis-make@jenesis/jenesis stage      # build; settings and selectors follow the alias
+jbang jenesis-exec@jenesis/jenesis            # build, then run the main class
+jbang app install jenesis-make@jenesis/jenesis   # put jenesis-make on the path
 ```
 
-JBang reads the catalogue from the repository on GitHub and resolves the release it names,
-`build.jenesis:build.jenesis`, from Maven Central. Each alias asks for Java 25 or newer, so on a machine whose
-JDK is older, JBang downloads a newer one and runs the build on it.
+Each alias runs the release the catalogue names, from Maven Central, on Java 25 or newer - JBang downloads a
+newer JDK where the machine's own is older. JBang fetches the catalogue again once its copy is twelve hours
+old, or at once under `--fresh`, so an alias follows the releases. To stay on one release, name it instead:
+`jbang --java 25+ --main build.jenesis.Make build.jenesis:build.jenesis:0.18.2`.
 
-An alias runs that release as it stands, as `jenesis-make` and `jenesis-exec` do. The project needs no
-`build/jenesis/` folder, and where it has one, the folder and the version it records are not read. Everything
-after the alias is what the command takes, settings and selectors alike:
+This route checks less than the others, in three ways:
 
-```bash
-jbang jenesis-make@jenesis/jenesis -Djenesis.project.version=1.0.0 stage
-```
+- **The project's engine is not verified, and not used.** `jenesis` compares `build/jenesis/` with the sources
+  its release published, refuses a tree that differs, and refuses a release that is no longer considered safe.
+  An alias makes neither check. Like `jenesis-make`, it builds with the release it names and reads neither
+  `build/jenesis/` nor the version recorded there, so a project that records another version is built by a
+  different engine than the one it vendors, without a message.
+- **The download is not verified beyond its connection.** JBang fetches the jar over HTTPS and the SHA-1
+  published beside it, runs the jar where the two do not match, and checks no signature. The curl bootstrap
+  installs a release only if it matches the SHA-256 published beside it, and the Homebrew formula and the Scoop
+  manifest name the SHA-256 of the archive they install; these check no signature either.
+- **The catalogue decides what runs.** JBang reads it from the default branch of the repository when an alias
+  runs, and asks for no confirmation. Whoever can change that file changes what the alias runs for everyone
+  who uses it. Naming the release by its coordinate, as above, takes the catalogue out.
 
-A setting may also go before the alias, where JBang passes it to the JVM as a system property - the two forms
-configure the build the same way.
-
-The catalogue names one release, the newest, and moves with every release. JBang fetches a catalogue again
-once its copy is twelve hours old, so a build moves to a new release by itself, and `--fresh` moves it at once:
-
-```bash
-jbang --fresh jenesis-make@jenesis/jenesis
-```
-
-To stay on one release, name its coordinate and the main class in place of the alias. `Execute` and `Jpx` are
-the main classes of the other two commands:
-
-```bash
-jbang --java 25+ --main build.jenesis.Make build.jenesis:build.jenesis:0.18.2 stage
-```
+None of this concerns what a build may do: a build runs the project's code and its plugins whichever engine
+runs it, and however that engine was obtained.
 
 ### What to ignore
 

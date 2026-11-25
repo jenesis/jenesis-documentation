@@ -46,6 +46,9 @@ where the machine has none of version 25 or newer:
 jbang jpx@jenesis/jenesis org.junit.platform.console --version
 ```
 
+JBang verifies less of what it downloads than a package manager does, as the tool's
+[Getting started](/tool/getting-started/#jbang) describes.
+
 All three run the same program and take the same arguments. The examples in this section write `jpx`.
 
 The same three steps - resolve, install, launch - are also a public API, so a program of your own can run a
