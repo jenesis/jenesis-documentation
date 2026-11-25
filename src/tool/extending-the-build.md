@@ -961,7 +961,7 @@ script; the engine itself is one jar that depends on nothing. None of it is cove
 versions and checksums a build verifies are those of the project's own dependencies, not of what runs the
 build. *[Getting started](/tool/getting-started/#jbang)* lists what else this route leaves unchecked.
 
-{% demos 83 %}
+{% demos 84 %}
 
 ### Reusing the toolchain without `Project`
 
