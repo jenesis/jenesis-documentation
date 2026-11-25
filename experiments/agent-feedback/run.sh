@@ -61,7 +61,7 @@ pkill -f "$RUN/home" 2> /dev/null || true
 mkdir "$RUN/verify"
 (cd "$RUN/project" && tar cf - --exclude=target --exclude=build/jenesis --exclude=.jenesis .) | (cd "$RUN/verify" && tar xf -)
 diff -ruN -x target -x jenesis -x .jenesis "$BASE" "$RUN/project" > "$RUN/agent.patch" || true
-cp -a "$HERE/tasks/$TASK/hidden/." "$RUN/verify/"
+cp -r "$HERE/tasks/$TASK/hidden/." "$RUN/verify/"
 PASSED=false
 (cd "$RUN/verify" && MAVEN_ARGS="" verifier > "$RUN/verify.log" 2>&1) && PASSED=true
 

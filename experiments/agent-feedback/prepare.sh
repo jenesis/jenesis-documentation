@@ -25,7 +25,8 @@ if [ ! -f "$CACHE/checked" ]; then
   (cd "$CACHE/maven" && "$MAVEN" -B -pl "$MODULES" -am test > "$CACHE/maven.log" 2>&1) || true
 
   # The hidden tests fail on the commit before the fix and pass with the reference fix.
-  cp -a "$HERE/tasks/$TASK/hidden/." "$CACHE/maven/"
+  cp -r "$HERE/tasks/$TASK/hidden/." "$CACHE/maven/"
+  (cd "$HERE/tasks/$TASK/hidden" && find . -type f) | (cd "$CACHE/maven" && xargs touch)
   if (cd "$CACHE/maven" && verifier > "$CACHE/before.log" 2>&1); then
     echo "The hidden tests of $TASK pass without the fix: see $CACHE/before.log" >&2; exit 1
   fi
