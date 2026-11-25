@@ -231,7 +231,7 @@ works on a `pom.xml`'s `<!--jenesis.pin ... -->` block, where it selects a coord
   module unpinned.
 </div>
 
-{% demos 28, 29, 66 %}
+{% demos 28, 29, 67 %}
 
 ## Enforcing the pins
 

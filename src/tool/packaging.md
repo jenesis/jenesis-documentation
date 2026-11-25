@@ -219,7 +219,7 @@ it would be stranded there.
   <code>jlink</code> accepts.
 </div>
 
-{% demos 10, 61 %}
+{% demos 10, 62 %}
 
 ## Making a closure linkable
 
@@ -605,7 +605,7 @@ directory to maintain.
   inside every jar - the way to vet exactly what reflection is baked into a published artifact.
 </div>
 
-{% demos 57 %}
+{% demos 58 %}
 
 ### native-image or jpackage?
 
@@ -651,4 +651,4 @@ takes the whole folder below it.
   adds nothing to <code>legal/</code>, so check its licence before shipping it.
 </div>
 
-{% demos 10, 22, 57 %}
+{% demos 10, 22, 58 %}

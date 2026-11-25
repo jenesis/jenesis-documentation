@@ -102,7 +102,7 @@ Clojure's jar declares no module name, so the demo declares it as a dependency o
 </dependency>
 ```
 
-{% demos 82 %}
+{% demos 54 %}
 
 ## The standard-library dependency
 

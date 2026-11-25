@@ -218,7 +218,7 @@ path that does not exist, or one that shares a target with another binding of th
   <em><a href="/tool/build-performance-and-isolation/#what-runs-on-the-host">What runs on the host</a></em>).
 </div>
 
-{% demos 62, 63 %}
+{% demos 63, 64 %}
 
 ## Plugins for the whole project
 
@@ -357,7 +357,7 @@ any plugin:
 java -Djenesis.project.plugins=false build/jenesis/Make.java pin
 ```
 
-{% demos 65 %}
+{% demos 66 %}
 
 ## Writing a build step
 
@@ -742,7 +742,7 @@ Byte Buddy resolves into the plugin's own module layer, and what the plugin rewr
  */
 ```
 
-{% demos 64 %}
+{% demos 65 %}
 
 ### Forking a tool that cannot be a module
 
@@ -808,7 +808,7 @@ writes the library into a folder that its
 Loading a library is a restricted method, so the application grants native access to the module that loads it,
 as *[Granting native access](/tool/building-and-running/#granting-native-access)* describes.
 
-{% demos 67 %}
+{% demos 68 %}
 
 ## Writing an entry point of your own
 
@@ -906,7 +906,7 @@ points at `preprocess`. `javac`, the jar step, and the tests all consume the tra
 of the build is untouched. Any pass that produces a `sources/` tree - template expansion, code generation,
 licence-header stamping - fits the same shape.
 
-{% demos 60, 61 %}
+{% demos 61, 62 %}
 
 ### Starting on the selected JDK
 
@@ -995,7 +995,7 @@ This is a middle ground: no layout, no goals, no `Project`, yet you did not wire
 no generated POM). For full control - a custom repository, strict pinning, a different digest, or emitting a
 POM as well - switch to the longer `make(...)` overload that `Project` itself uses.
 
-{% demos 68, 69 %}
+{% demos 69, 70 %}
 
 ### Wiring the graph by hand
 
@@ -1019,7 +1019,7 @@ cached outputs whose inputs are unchanged. The `generate` step above synthesises
 There is no phase lifecycle to fit into: a build is just steps wired to steps, and here you wire them
 yourself.
 
-{% demos 70 %}
+{% demos 71 %}
 
 ## Running a build inside another program
 
@@ -1059,5 +1059,5 @@ The tools are found by name when `build.jenesis` is a resolved module or a jar o
 mode registers no service, so a program there constructs `new MakeTool()`, `new ExecuteTool()` or
 `new JpxTool()` itself; the contract is the same.
 
-{% demos 81 %}
+{% demos 83 %}
 
