@@ -1,0 +1,9 @@
+maven	1795644454.900	9.786	1	2857	-q -o test -Dtest=TestDefaultBHttp*Connection,TestBHttpConnectionBase,TestChunk* -Dsurefire.failIfNoSpecifiedTests=false -Drat.skip -Dcheckstyle.skip
+maven	1795644472.432	9.212	1	5281	-q -o test -Dtest=TestDefaultBHttp*Connection,TestBHttpConnectionBase,TestChunk* -Dsurefire.failIfNoSpecifiedTests=false -Drat.skip -Dcheckstyle.skip
+maven	1795644492.469	12.141	1	45207	-q -o test -Dtest=TestDefaultBHttp*Connection,TestBHttpConnectionBase,TestChunk* -Dsurefire.failIfNoSpecifiedTests=false -Drat.skip -Dcheckstyle.skip
+maven	1795644510.415	12.983	1	60011	-o test -Dtest=TestDefaultBHttp*Connection,TestBHttpConnectionBase,TestChunk*,TestHttpRequestExecutor,TestHttpService -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795644552.153	9.331	1	50798	-o test -Dtest=TestDefaultBHttpClientConnection
+maven	1795644570.936	9.721	1	50832	-o test -Dtest=TestDefaultBHttpClientConnection
+maven	1795644595.114	10.931	1	12603	-o test -Dtest=TestDefaultBHttp*Connection,TestBHttpConnectionBase,TestChunk*,TestHttpRequestExecutor,TestHttpService -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795644618.349	12.615	0	17087	-o test -Dtest=TestDefaultBHttp*Connection,TestBHttpConnectionBase,TestChunk*,TestHttpRequestExecutor,TestHttpService,TestMonitoring* -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795644633.178	17.406	0	41724	-o test
