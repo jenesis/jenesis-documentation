@@ -33,7 +33,7 @@ requires the module by name, and the local repositories are read before any remo
 the latest export, with a pinned version that version's build. A consumer does not notice a new export on its
 own; it takes one when it is rebuilt with `-Djenesis.executor.rebuild=true`.
 
-{% demos 73 %}
+{% demos 74 %}
 
 ## Staging the release tree
 
@@ -225,7 +225,7 @@ that is not a 40-character Git tree id fails the build. When
 notation SPDX uses for a download location: `git+https://github.com/jenesis/jenesis.git@<revision>`. A tag of
 `HEAD`, which a `pom.xml` declares for the root of its repository, counts as no tag there.
 
-{% demos 74 %}
+{% demos 75 %}
 
 ## Publishing variants of a jar
 
@@ -274,7 +274,7 @@ empty `classifiers.properties` declares none. A release that gathers several pla
 of its own. A module of the same build [selects a variant](/tool/pinning/#pinning-one-variant-of-a-module) by
 its classifier, which then takes the jar's place on every path that module is built and run with.
 
-{% demos 66 %}
+{% demos 67 %}
 
 ## Publishing a bill of materials
 
@@ -363,7 +363,7 @@ mvn demo:greet-maven-plugin:1.0:hello -Dgreet.name=Jenesis
 
 Any other value is refused, and `-Djenesis.mavenplugin.artifact=false` switches the descriptor off.
 
-{% demos 75 %}
+{% demos 77 %}
 
 ### A Gradle plugin
 
@@ -394,7 +394,7 @@ The file takes no values. An ID that is not a valid plugin ID, one in a namespac
 jars declare each fail the build. Publishing to the Gradle Plugin Portal takes the portal's own tooling.
 `-Djenesis.gradleplugin.artifact=false` switches the markers off.
 
-{% demos 76 %}
+{% demos 78 %}
 
 ## Converting the project's AsciiDoc documents
 
@@ -428,7 +428,7 @@ stage the same bytes, and a document that includes a file that does not exist fa
 `release` puts into, take the staged Maven and module trees only, so the documents stay in the staged tree for
 a release plugin to publish.
 
-{% demos 71 %}
+{% demos 72 %}
 
 ## Signing the jar itself
 
@@ -493,7 +493,7 @@ detached signature made afterwards covers the signed bytes.
   delete <code>target/</code> after a key rotation.
 </div>
 
-{% demos 72 %}
+{% demos 73 %}
 
 ## Rehearsing and publishing a release
 
@@ -608,7 +608,7 @@ and any other answer than success stops it, naming the address and the status.
   Central's snapshot repository takes a snapshot from <code>jenesis.deploy.uri</code> as any repository does.
 </div>
 
-{% demos 74 %}
+{% demos 75 %}
 
 ## The last mile: signing and uploading
 

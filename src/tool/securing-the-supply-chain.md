@@ -403,7 +403,7 @@ the diff, commit it, and the pins carry that verdict to everyone who trusts your
 Getting there is the fiddly part, and `-Djenesis.print.signatures` under `declared` makes it tractable: it
 names every coordinate no declaration covers, which is exactly the list `strict` would refuse.
 
-{% demos 59 %}
+{% demos 60 %}
 
 ## Where each one stops
 

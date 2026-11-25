@@ -115,7 +115,7 @@ A repository that answers `429 Too Many Requests` limits how often your machine 
 retries, and when the answer stays the same it fails, naming the remedy: build again later, or configure a
 mirror of that repository in its place - for the Maven remotes in `jenesis.maven.uri` or `MAVEN_REPOSITORY_URI`.
 
-{% demos 77 %}
+{% demos 79 %}
 
 ### Authenticating a CI build without a stored secret
 
@@ -231,7 +231,7 @@ argument and the environment of the build. The first line it prints is sent as `
 and is never printed. A helper that prints nothing sends no credential, and any exit code but `0` fails the
 fetch.
 
-{% demos 83 %}
+{% demos 76 %}
 
 ### What the build tells the module index
 
