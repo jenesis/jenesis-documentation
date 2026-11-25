@@ -156,7 +156,10 @@ This route checks less than the others, in three ways:
 - **The download is not verified beyond its connection.** JBang fetches the jar over HTTPS and the SHA-1
   published beside it, runs the jar where the two do not match, and checks no signature. The curl bootstrap
   installs a release only if it matches the SHA-256 published beside it, and the Homebrew formula and the Scoop
-  manifest name the SHA-256 of the archive they install; these check no signature either.
+  manifest name the SHA-256 of the archive they install; these check no signature either. Whatever JBang
+  resolves - the engine and, for a build that is itself a JBang script, every dependency the script names with
+  its transitive dependencies - lands on the class path and is not covered by the versions and checksums a
+  project [pins](/tool/pinning/).
 - **The catalogue decides what runs.** JBang reads it from the default branch of the repository when an alias
   runs, and asks for no confirmation. Whoever can change that file changes what the alias runs for everyone
   who uses it. Naming the release by its coordinate, as above, takes the catalogue out.

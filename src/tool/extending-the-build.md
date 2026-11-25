@@ -956,6 +956,11 @@ release the `//DEPS` line names, resolved from Maven Central, and moving to anot
 line. A `-Djenesis.*` setting goes before the script, where JBang passes it to the JVM and `Make` reads it;
 what follows the script are the script's own arguments.
 
+JBang resolves what `//DEPS` names with its transitive dependencies and puts all of it on the class path of the
+script; the engine itself is one jar that depends on nothing. None of it is covered by the project's pins: the
+versions and checksums a build verifies are those of the project's own dependencies, not of what runs the
+build. *[Getting started](/tool/getting-started/#jbang)* lists what else this route leaves unchecked.
+
 {% demos 83 %}
 
 ### Reusing the toolchain without `Project`
