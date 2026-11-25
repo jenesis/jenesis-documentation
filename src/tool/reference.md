@@ -433,8 +433,11 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | --- | --- | --- |
 | `jenesis.cache.uri` | *(none)* | Shared build cache: a `file://` or `http(s)://` URI (see *[Build performance &amp; isolation](/tool/build-performance-and-isolation/)*; [Jenesis Repository](/repository/build-cache/) is a reference cache server). Command line or `~/.jenesis/jenesis.properties` only. |
 | `jenesis.project.cache` | *(off)* | Project-local on-disk build cache (a path; empty enables `.jenesis/cache`). A project's own file names only a folder inside the project. |
+| `jenesis.cache.local` | `~/.jenesis/cache` | Folder that keeps the files of an HTTP cache on this machine, each once under its checksum and shared by every project. Capped at 10 GiB unless its `cache.properties` names another `size`. Command line or `~/.jenesis/jenesis.properties` only. |
+| `jenesis.cache.inline` | `65536` | Size in bytes from which a file of a step is stored on an HTTP cache apart from the step, once however many steps wrote it. A smaller file travels within its step. |
+| `jenesis.cache.write` | `true` | `false` has a build read its cache, a folder or a server, and store nothing in it. What it downloads from a server is kept in `jenesis.cache.local`. |
 | `jenesis.cache.project` (`JENESIS_CACHE_PROJECT`) | *(unset)* | Project header sent to an HTTP cache. |
-| `jenesis.cache.token` (`JENESIS_CACHE_TOKEN`) | *(unset)* | Token sent to an HTTP cache, in the `Jenesis-Cache-Key` header. Command line or `~/.jenesis/jenesis.properties` only. The former names, `jenesis.cache.key` and `JENESIS_CACHE_KEY`, are refused. |
+| `jenesis.cache.token` (`JENESIS_CACHE_TOKEN`) | *(unset)* | Token sent to an HTTP cache as `Authorization: Bearer <token>`; the value is the token alone. Command line or `~/.jenesis/jenesis.properties` only. The former names, `jenesis.cache.key` and `JENESIS_CACHE_KEY`, are refused. |
 | `jenesis.cache.connect` | `PT1S` | HTTP cache connect timeout, as an ISO-8601 duration. |
 | `jenesis.cache.read` | `PT10S` | HTTP cache read timeout, as an ISO-8601 duration. |
 | `jenesis.cache.insecure` | `false` | Permit the cache token over plaintext `http://`, and over `https` accept a certificate that does not verify, such as a self-signed one. Command line or `~/.jenesis/jenesis.properties` only. |
@@ -504,7 +507,7 @@ password location is missing.
 | `jenesis.tree.internal` | `false` | List the project's own modules among the resolved dependencies of the `dependencies` trees and count them in the licence and module summary. |
 | `jenesis.tree.tools` | `false` | Show apart, under a heading naming each, the groups a module resolves for its build rather than for itself - a linter, a formatter, a plugin, an annotation processor - and count them in the licence summary. |
 | `jenesis.tree.tests` | `true` | Include the test modules in the `dependencies` trees and their licence summary. |
-| `jenesis.executor.digest` | `MD5` | Digest for the per-file content and per-step config hashes. |
+| `jenesis.executor.digest` | `SHA-256` | Digest for the per-file content and per-step config hashes. It names the files a build cache keeps, and a cache keeps a store per digest. |
 | `jenesis.executor.timeout` | `PT0S` | ISO-8601 per-step timeout; `PT0S` disables it. |
 | `jenesis.executor.rebuild` | `false` | Delete `target/` first, forcing a full rebuild. |
 | `jenesis.executor.aggregate` | `false` | Let independent step failures aggregate into one report instead of failing at the first. |

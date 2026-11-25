@@ -256,7 +256,8 @@ and nothing is exported or released past one that fails.
 A **releaser** delivers what was staged - to an internal repository, a bucket, a registry, a release page. Naming
 `release/custom` runs the releasers alone, without the steps Jenesis runs there itself. Such a step writes outside
 the build, so it overrides `shouldRun` to run every time it is selected, as the stock release steps do, rather than
-only when what it reads has changed. `export` has no hook point: it only installs what was staged into this
+only when what it reads has changed, and returns `new BuildStepResult().cached(false)`, so that no build cache
+restores its folder in place of the delivery. `export` has no hook point: it only installs what was staged into this
 machine's local repositories, and what it installs is shaped by the plugins of `stage`.
 
 A plugin under **`plugin`** belongs to no goal and starts at once, as
@@ -388,10 +389,12 @@ The `arguments` map carries one entry per predecessor you wired in. Each exposes
 against the previous run. The default behaviour re-runs your step whenever any input changed; override
 `shouldRun(...)` if you want finer control.
 
-A step can also say that its output is not worth sending to a cache server. Override `shouldCacheRemotely()`
-to return `false` when the output is large against what it costs to produce, or when it is re-derivable from
-something the machine already has. The output is still cached locally, so a rebuild on this machine still
-skips the work. See *[the build cache](/tool/build-performance-and-isolation/#the-build-cache)*.
+A step answers with a `BuildStepResult`. `new BuildStepResult()` hands the output on to the steps that read it
+and lets a build cache store it. `new BuildStepResult().next(false)` keeps the previous run's output instead of
+what this run wrote. `new BuildStepResult().cached(false)` is for a step with an effect outside `next` - one
+that publishes, or writes a file into the project. Its output is stored in no cache, local or shared, so no
+later build restores the folder in place of the effect. See
+*[the build cache](/tool/build-performance-and-isolation/#the-build-cache)*.
 
 A step is expected to write the same bytes from the same inputs. A build checked with
 `jenesis.project.reproduce` names every step that does not, as described in
@@ -693,7 +696,7 @@ try (ClassFileLocator locator = new ClassFileLocator.Compound(classPath)) {
                     new Plugin.Factory.Simple(new ToStringPlugin()),
                     new Plugin.Factory.Simple(new Greeting(type, greeting)));
 }
-return CompletableFuture.completedStage(new BuildStepResult(true));
+return CompletableFuture.completedStage(new BuildStepResult());
 ```
 
 The class path is what lets Byte Buddy read the types a class refers to beyond the JDK. The module's own
@@ -834,7 +837,7 @@ Project project = Project.ofEnvironment(environment, Path.of("."))
                 .apply(descriptor, repositories, resolvers)
                 .andThen("sign", (sub, inherited) -> sub.addStep("sign", (executor, context, arguments) -> {
                     // read the jars in each argument's folder, write their signatures into context.next()
-                    return CompletableFuture.completedStage(new BuildStepResult(true));
+                    return CompletableFuture.completedStage(new BuildStepResult());
                 }, inherited.sequencedKeySet().stream()), AssemblyRequirement.of().after(AssemblyDescriptor.BUILD)));
 System.exit(new Execution(project).execute(args));
 ```
@@ -860,7 +863,7 @@ wired into:
 ```java
 InferredMultiProjectAssembler checked = stock.check(check -> check.custom("placeholders", (executor, context, arguments) -> {
     // fail when a source in any argument's folder still holds a ${ placeholder
-    return CompletableFuture.completedStage(new BuildStepResult(true));
+    return CompletableFuture.completedStage(new BuildStepResult());
 }));
 ```
 

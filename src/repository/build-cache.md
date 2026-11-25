@@ -83,8 +83,11 @@ java -Djenesis.cache.uri=https://repo.example.com/build/releases \
      build/jenesis/Make.java
 ```
 
-The build tool appends each result's address - the step and the digest of its inputs, `/<step>/<inputs>` - to
-that URL. The project and the key travel as headers (`Jenesis-Cache-Project` and `Jenesis-Cache-Key`), never in
+The build tool stores each step's result as one entry under that URL, at `/<step>/<inputs>`: an archive of the
+files the step wrote. It stores a file of 64 KiB or more apart, as an entry of its own named by the file's
+checksum, so that a file many steps write is held once in its project. To the server every entry is opaque: it
+is stored once, never rewritten, and read back as it was sent. The
+project travels in the `Jenesis-Cache-Project` header and the key as `Authorization: Bearer <key>`, never in
 the URL, and both can come from the environment instead -
 `JENESIS_CACHE_PROJECT` and `JENESIS_CACHE_TOKEN` - which is the usual way in CI. The build tool's chapter on
 [build performance](/tool/build-performance-and-isolation/) covers the rest of the client side: layering the
