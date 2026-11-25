@@ -918,6 +918,46 @@ A file that names `Project` or the steps is compiled by the JDK's source launche
 included. Compile it once when that matters - `javac -d .jenesis/tool $(find build/ -name '*.java')`, then
 `java -cp .jenesis/tool build.Demo` - and keep `java build/Demo.java` as the documented command.
 
+### An entry point as a JBang script
+
+An entry point that calls `Make` can be a [JBang](https://www.jbang.dev) script, and the project then carries no
+`build/jenesis/` folder: two directives at the top of the file name the JDK and the released engine, and JBang
+resolves both.
+
+```java
+//JAVA 25+
+//DEPS build.jenesis:build.jenesis:0.18.2
+
+package build;
+
+import module java.base;
+import build.jenesis.Make;
+
+public class Demo {
+
+    static void main(String[] args) throws Exception {
+        Make.Result staged = new Make("build.jenesis.Project").build("stage");
+        if (staged.code() != 0) {
+            System.exit(staged.code());
+        }
+        Path module = staged.outputs().get("stage/modular").resolve("demo.jbang");
+        // run, copy or publish what was staged
+    }
+}
+```
+
+```bash
+jbang build/Demo.java
+jbang -Djenesis.project.version=1.0.0 build/Demo.java
+```
+
+The directives are comments to the Java compiler, so the file stays plain Java. The engine that builds is the
+release the `//DEPS` line names, resolved from Maven Central, and moving to another release is an edit of that
+line. A `-Djenesis.*` setting goes before the script, where JBang passes it to the JVM and `Make` reads it;
+what follows the script are the script's own arguments.
+
+{% demos 83 %}
+
 ### Reusing the toolchain without `Project`
 
 When the stock compile/jar/test flow fits but `Project` does not, call the convenience factory

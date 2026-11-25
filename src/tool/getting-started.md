@@ -130,6 +130,32 @@ over while the `build/jenesis` link into it is followed.
 On a platform without symlinks, replace the `ln -s` with `cp -r build/.upstream/sources/build/jenesis
 build/jenesis` and refresh the copy after each submodule update.
 
+### JBang
+
+[JBang](https://www.jbang.dev) runs a released engine without installing Jenesis, on the machine or into the
+project. The `jenesis/jenesis` repository carries a JBang catalogue, `jbang-catalog.json`, with one alias
+per command:
+
+```bash
+jbang jenesis-make@jenesis/jenesis          # build the project in the current folder
+jbang jenesis-exec@jenesis/jenesis          # build it, then run its main class
+```
+
+JBang reads the catalogue from the repository on GitHub and resolves the release it names,
+`build.jenesis:build.jenesis`, from Maven Central. Each alias asks for Java 25 or newer, so on a machine whose
+JDK is older, JBang downloads a newer one and runs the build on it.
+
+An alias runs that release as it stands, as `jenesis-make` and `jenesis-exec` do. The project needs no
+`build/jenesis/` folder, and where it has one, the folder and the version it records are not read. Everything
+after the alias is what the command takes, settings and selectors alike:
+
+```bash
+jbang jenesis-make@jenesis/jenesis -Djenesis.project.version=1.0.0 stage
+```
+
+A setting may also go before the alias, where JBang passes it to the JVM as a system property - the two forms
+configure the build the same way.
+
 ### What to ignore
 
 Jenesis writes in exactly two places under your project root, so two rules cover it:

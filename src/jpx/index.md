@@ -38,7 +38,15 @@ directly:
 java build/jenesis/Jpx.java org.junit.platform.console --version
 ```
 
-Both run the same program and take the same arguments. The examples in this section write `jpx`.
+With [JBang](https://www.jbang.dev), neither is needed: the `jenesis/jenesis` repository carries a JBang
+catalogue with a `jpx` alias, which runs the released jpx from Maven Central on a JDK that JBang downloads
+where the machine has none of version 25 or newer:
+
+```bash
+jbang jpx@jenesis/jenesis org.junit.platform.console --version
+```
+
+All three run the same program and take the same arguments. The examples in this section write `jpx`.
 
 The same three steps - resolve, install, launch - are also a public API, so a program of your own can run a
 published module too.
