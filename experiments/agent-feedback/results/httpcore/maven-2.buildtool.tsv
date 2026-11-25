@@ -1,0 +1,2 @@
+maven	1795650028.454	8.583	1	1988	-o -q -pl httpcore5 test -Dtest=org.apache.hc.core5.http.impl.io.* -Drat.skip -Djapicmp.skip
+maven	1795650039.215	8.875	0	9520	-o -pl httpcore5 test -Dtest=TestDefaultBHttp*,TestBHttpConnectionBase,TestHttpRequestExecutor,TestHttpService,TestChunkCoding,TestSessionInOutBuffers -Drat.skip -Djapicmp.skip

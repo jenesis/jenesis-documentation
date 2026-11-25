@@ -1,0 +1,2 @@
+jenesis	1795649685.375	16.773	0	14068	-Djenesis.test.filter=.*(TestDefaultBHttp.*Connection|TestBHttpConnectionBase|.*Classic.*) build/jenesis/Make.java +httpcore5
+jenesis	1795649706.958	11.040	0	12468	build/jenesis/Make.java +httpcore5
