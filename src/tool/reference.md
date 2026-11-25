@@ -437,7 +437,7 @@ sources](/tool/generating-sources/)*, *[Supply-chain features](/tool/supply-chai
 | `jenesis.cache.inline` | `65536` | Size in bytes from which a file of a step is stored on an HTTP cache apart from the step, once however many steps wrote it. A smaller file travels within its step. |
 | `jenesis.cache.write` | `true` | `false` has a build read its cache, a folder or a server, and store nothing in it. What it downloads from a server is kept in `jenesis.cache.local`. |
 | `jenesis.cache.project` (`JENESIS_CACHE_PROJECT`) | *(unset)* | Project header sent to an HTTP cache. |
-| `jenesis.cache.token` (`JENESIS_CACHE_TOKEN`) | *(unset)* | Token sent to an HTTP cache, in the `Jenesis-Cache-Key` header. Command line or `~/.jenesis/jenesis.properties` only. The former names, `jenesis.cache.key` and `JENESIS_CACHE_KEY`, are refused. |
+| `jenesis.cache.token` (`JENESIS_CACHE_TOKEN`) | *(unset)* | Token sent to an HTTP cache as `Authorization: Bearer <token>`; the value is the token alone. Command line or `~/.jenesis/jenesis.properties` only. The former names, `jenesis.cache.key` and `JENESIS_CACHE_KEY`, are refused. |
 | `jenesis.cache.connect` | `PT1S` | HTTP cache connect timeout, as an ISO-8601 duration. |
 | `jenesis.cache.read` | `PT10S` | HTTP cache read timeout, as an ISO-8601 duration. |
 | `jenesis.cache.insecure` | `false` | Permit the cache token over plaintext `http://`, and over `https` accept a certificate that does not verify, such as a self-signed one. Command line or `~/.jenesis/jenesis.properties` only. |
