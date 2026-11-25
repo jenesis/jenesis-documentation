@@ -149,13 +149,30 @@ for a short-lived key instead of storing one. **Access → Keyless CI** names wh
 | Project and rights | `libraries`, `repository:read,repository:write` |
 | Lifetime | `PT15M` |
 
-The job posts its token to `/api/token` and receives a key valid for that lifetime, with its expiry:
+The job posts its token to `/api/token`, an OAuth 2.0 Token Exchange endpoint
+([RFC 8693](https://www.rfc-editor.org/rfc/rfc8693)). The request is a form, and its `resource` names the
+repository or the build cache the key is for:
 
 ```bash
-KEY=$(curl -s -X POST -H "Authorization: Bearer $ID_TOKEN" https://repo.example.com/api/token | jq -r .key)
+curl -s https://repo.example.com/api/token \
+  -d grant_type=urn:ietf:params:oauth:grant-type:token-exchange \
+  -d subject_token_type=urn:ietf:params:oauth:token-type:id_token \
+  --data-urlencode subject_token="$ID_TOKEN" \
+  --data-urlencode resource=https://repo.example.com/repository/acme/libraries/
 ```
 
-A token no trust matches is answered `401`.
+```json
+{"access_token":"jenk_acme.…","issued_token_type":"urn:ietf:params:oauth:token-type:access_token","token_type":"Bearer","expires_in":900}
+```
+
+The `access_token` is a key like any other, presented as `Authorization: Bearer <key>` until `expires_in`
+seconds have passed. The endpoint takes no key of its own, as the signed token is what authenticates the job.
+
+A token no trust matches is answered `400` with `{"error":"invalid_request","error_description":"…"}`.
+
+A build of the Jenesis build tool makes this exchange itself, once `-Djenesis.maven.exchange=/api/token` or the
+setting of another of its credentials names the endpoint - see
+*[Authenticating a CI build without a stored secret](/tool/dependencies/#authenticating-a-ci-build-without-a-stored-secret)*.
 
 Every field but the lifetime is required. A CI platform signs tokens for every one of its users, so the subject
 is what says whose jobs a trust admits. Write `*` only for an issuer that signs for your organisation alone. A trust

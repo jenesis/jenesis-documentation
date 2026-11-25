@@ -547,6 +547,12 @@ and it is never sent to a repository that a file of the project named, so a proj
 address in `jenesis.properties` releases without a key. A plaintext `http:` address is refused unless
 `-Djenesis.repository.insecure=true` allows it.
 
+A CI job releases without a stored key where the repository exchanges identity tokens:
+`-Djenesis.release.exchange=/api/token` takes the place of `jenesis.release.token`, and
+`-Djenesis.deploy.exchange` that of `jenesis.deploy.token` for a Maven repository, as
+*[Authenticating a CI build without a stored secret](/tool/dependencies/#authenticating-a-ci-build-without-a-stored-secret)*
+describes it. A release that cannot exchange its token fails before anything is put.
+
 A project that publishes to Maven does not need this step to reach module consumers: a `java` repository of a
 Jenesis Repository takes Maven publishes only, and makes a module available from one. A modular jar deployed to its
 Maven layout, by the release the next section describes, JReleaser, `mvn deploy` or any other tool, is served by
