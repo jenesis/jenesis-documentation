@@ -21,6 +21,7 @@ A task is a folder under `tasks/`, made from a bug fix the project merged after 
 | `issue.md` | The bug as a user reports it. The agent is given this text and nothing else about the bug |
 | `hidden/` | The test files of the fix. The agent never sees them; they decide the verdict |
 | `reference.patch` | The fix's change to the main sources, which `prepare.sh` checks the task with |
+| `prepare.sh` | Changes to the project that both arms get, where the poms configure a plugin with something a test run depends on: the same is then stated in the project itself |
 | `overlay-jenesis/` | Configuration the Jenesis arm needs beside the unchanged `pom.xml` files, where it needs any |
 | `NOTES.md` | Where the bug comes from, and what was run to qualify it |
 

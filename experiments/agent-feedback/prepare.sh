@@ -10,6 +10,7 @@ if [ ! -d "$BASE" ]; then
   git -C "$BASE.clone" checkout --quiet "$COMMIT"
   rm -rf "$BASE.clone/.git"
   for path in $REMOVE; do rm -rf "${BASE:?}.clone/$path"; done
+  [ -x "$HERE/tasks/$TASK/prepare.sh" ] && (cd "$BASE.clone" && "$HERE/tasks/$TASK/prepare.sh")
   mv "$BASE.clone" "$BASE"
 fi
 
