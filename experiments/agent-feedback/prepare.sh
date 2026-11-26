@@ -4,6 +4,9 @@
 source "$(dirname "$0")/lib/common.sh"
 load "$1"
 
+# The project as both arms get it: the commit before the fix, without its history, which holds the fix; without
+# what the task removes for both tools; and with the task's own changes, which state in the project what its poms
+# leave to a Maven plugin, so that neither tool does work the other does not.
 if [ ! -d "$BASE" ]; then
   mkdir -p "$WORK/base"
   git clone --quiet "$REPO" "$BASE.clone"
@@ -15,6 +18,8 @@ if [ ! -d "$BASE" ]; then
 fi
 
 if [ ! -f "$CACHE/checked" ]; then
+  # A home of its own, which every run copies: an agent then starts with the dependencies of both tools at hand
+  # and downloads nothing while it is measured.
   rm -rf "$CACHE" && mkdir -p "$CACHE/home"
   settings "$CACHE/home"
   home "$CACHE/home"

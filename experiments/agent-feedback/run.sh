@@ -6,6 +6,7 @@ ARM="$2" ATTEMPT="$3"
 case "$ARM" in maven|jenesis) ;; *) echo "The arm is maven or jenesis, not $ARM" >&2; exit 2 ;; esac
 [ -f "$CACHE/checked" ] || "$HERE/prepare.sh" "$TASK"
 
+# A folder and a home of its own per run, so that no run reads what another one built or cached.
 RUN="$WORK/runs/$TASK-$ARM-$ATTEMPT"
 rm -rf "$RUN" && mkdir -p "$RUN/bin" "$RESULTS/$TASK"
 cp -a "$BASE" "$RUN/project"
@@ -15,6 +16,10 @@ export FEEDBACK_LOG="$RUN/buildtool.tsv"
 : > "$FEEDBACK_LOG"
 
 ISSUE="$(cat "$HERE/tasks/$TASK/issue.md")"
+# The arms differ in the tool on the path and in the paragraph that names it, and in nothing else. Each tool is
+# reached through a wrapper that times its calls. The Jenesis arm is handed the briefing Jenesis prints for an
+# agent, as the model knows Maven from its training and Jenesis from nowhere, and its mvn refuses, so that a run
+# measures one tool.
 if [ "$ARM" = maven ]; then
   printf '#!/bin/sh\nexec python3 %q maven %q "$@"\n' "$HERE/lib/wrap.py" "$MAVEN" > "$RUN/bin/mvn"
   TOOL="Build and test with Maven alone: \`mvn\` is on the PATH and the project's dependencies are already downloaded. No other build tool is installed."
@@ -47,6 +52,7 @@ Find the cause and fix it in the main sources, and add or adjust a test that sho
 Stop when the fix is in place and the tests of what you changed pass, and say in two sentences what you changed.
 PROMPT
 
+# The agent sees no settings or instructions of the user: what it knows of the task is the prompt.
 STARTED="$(date +%s.%N)"
 home "$RUN/home"
 (cd "$RUN/project" && PATH="$RUN/bin:$PATH" MAVEN_ARGS="$MAVEN_ARGS_EXTRA" \
