@@ -1,0 +1,275 @@
+diff --git a/guava/src/com/google/common/collect/AbstractNavigableMap.java b/guava/src/com/google/common/collect/AbstractNavigableMap.java
+index cc3b6c8..0805b76 100644
+--- a/guava/src/com/google/common/collect/AbstractNavigableMap.java
++++ b/guava/src/com/google/common/collect/AbstractNavigableMap.java
+@@ -41,13 +41,25 @@ abstract class AbstractNavigableMap<K extends @Nullable Object, V extends @Nulla
+   @Override
+   public abstract @Nullable V get(@Nullable Object key);
+ 
+-  @Override
+-  public final @Nullable Entry<K, V> firstEntry() {
++  /*
++   * firstEntry+lastEntry+pollFirstEntry+pollLastEntry are all required to return snapshots of the
++   * Entry. If an AbstractNavigableMap subclass may return live entries from its entryIterator or
++   * descendingEntryIterator, then it must override those *Entry methods to return snapshot entries
++   * because the implementations in this class would pass through the live views.
++   *
++   * In particular, the subclass may need to override the poll* methods to snapshot the entry
++   * *before* removing it from the map: Snapshotting the result of super.pollFirstEntry() is not
++   * enough if the Entry implementation came from the entrySet of a map that is implemented like
++   * TreeMap. See Maps.snapshotFirst.
++   */
++
++  @Override
++  public @Nullable Entry<K, V> firstEntry() {
+     return Iterators.<@Nullable Entry<K, V>>getNext(entryIterator(), null);
+   }
+ 
+   @Override
+-  public final @Nullable Entry<K, V> lastEntry() {
++  public @Nullable Entry<K, V> lastEntry() {
+     return Iterators.<@Nullable Entry<K, V>>getNext(descendingEntryIterator(), null);
+   }
+ 
+diff --git a/guava/src/com/google/common/collect/ForwardingNavigableMap.java b/guava/src/com/google/common/collect/ForwardingNavigableMap.java
+index a7b43ac..7717cc1 100644
+--- a/guava/src/com/google/common/collect/ForwardingNavigableMap.java
++++ b/guava/src/com/google/common/collect/ForwardingNavigableMap.java
+@@ -16,8 +16,8 @@
+ 
+ package com.google.common.collect;
+ 
+-import static com.google.common.collect.Iterators.pollNext;
+ import static com.google.common.collect.Maps.keyOrNull;
++import static com.google.common.collect.Maps.snapshotFirst;
+ 
+ import com.google.common.annotations.GwtIncompatible;
+ import java.util.Iterator;
+@@ -187,7 +187,7 @@ public abstract class ForwardingNavigableMap<K extends @Nullable Object, V exten
+    * forward to this implementation.
+    */
+   protected @Nullable Entry<K, V> standardFirstEntry() {
+-    return Iterables.<@Nullable Entry<K, V>>getFirst(entrySet(), null);
++    return snapshotFirst(entrySet(), /* remove= */ false);
+   }
+ 
+   /**
+@@ -215,7 +215,7 @@ public abstract class ForwardingNavigableMap<K extends @Nullable Object, V exten
+    * override {@code lastEntry} to forward to this implementation.
+    */
+   protected @Nullable Entry<K, V> standardLastEntry() {
+-    return Iterables.<@Nullable Entry<K, V>>getFirst(descendingMap().entrySet(), null);
++    return snapshotFirst(descendingMap().entrySet(), /* remove= */ false);
+   }
+ 
+   /**
+@@ -242,7 +242,7 @@ public abstract class ForwardingNavigableMap<K extends @Nullable Object, V exten
+    * forward to this implementation.
+    */
+   protected @Nullable Entry<K, V> standardPollFirstEntry() {
+-    return pollNext(entrySet().iterator());
++    return snapshotFirst(entrySet(), /* remove= */ true);
+   }
+ 
+   @Override
+@@ -256,7 +256,7 @@ public abstract class ForwardingNavigableMap<K extends @Nullable Object, V exten
+    * override {@code pollFirstEntry} to forward to this implementation.
+    */
+   protected @Nullable Entry<K, V> standardPollLastEntry() {
+-    return pollNext(descendingMap().entrySet().iterator());
++    return snapshotFirst(descendingMap().entrySet(), /* remove= */ true);
+   }
+ 
+   @Override
+diff --git a/guava/src/com/google/common/collect/Iterables.java b/guava/src/com/google/common/collect/Iterables.java
+index a46ae85..4c9ca84 100644
+--- a/guava/src/com/google/common/collect/Iterables.java
++++ b/guava/src/com/google/common/collect/Iterables.java
+@@ -213,21 +213,6 @@ public final class Iterables {
+     return Iterators.removeIf(removeFrom.iterator(), predicate);
+   }
+ 
+-  /** Removes and returns the first matching element, or returns {@code null} if there is none. */
+-  static <T extends @Nullable Object> @Nullable T removeFirstMatching(
+-      Iterable<T> removeFrom, Predicate<? super T> predicate) {
+-    checkNotNull(predicate);
+-    Iterator<T> iterator = removeFrom.iterator();
+-    while (iterator.hasNext()) {
+-      T next = iterator.next();
+-      if (predicate.apply(next)) {
+-        iterator.remove();
+-        return next;
+-      }
+-    }
+-    return null;
+-  }
+-
+   /**
+    * Determines whether two iterables contain equal elements in the same order. More specifically,
+    * this method returns {@code true} if {@code iterable1} and {@code iterable2} contain the same
+diff --git a/guava/src/com/google/common/collect/Maps.java b/guava/src/com/google/common/collect/Maps.java
+index b1f6055..67ffd4b 100644
+--- a/guava/src/com/google/common/collect/Maps.java
++++ b/guava/src/com/google/common/collect/Maps.java
+@@ -18,6 +18,7 @@ package com.google.common.collect;
+ 
+ import static com.google.common.base.Preconditions.checkArgument;
+ import static com.google.common.base.Preconditions.checkNotNull;
++import static com.google.common.base.Predicates.alwaysTrue;
+ import static com.google.common.base.Predicates.and;
+ import static com.google.common.base.Predicates.compose;
+ import static com.google.common.collect.CollectPreconditions.checkEntryNotNull;
+@@ -26,9 +27,7 @@ import static com.google.common.collect.Collections2.newStringBuilderForCollecti
+ import static com.google.common.collect.Collections2.safeContains;
+ import static com.google.common.collect.Collections2.transform;
+ import static com.google.common.collect.Iterables.any;
+-import static com.google.common.collect.Iterables.removeFirstMatching;
+ import static com.google.common.collect.Iterators.contains;
+-import static com.google.common.collect.Iterators.filter;
+ import static com.google.common.collect.Iterators.transform;
+ import static com.google.common.collect.Lists.newArrayList;
+ import static com.google.common.collect.NullnessCasts.uncheckedCastNullableTToT;
+@@ -3237,14 +3236,23 @@ public final class Maps {
+       return new FilteredMapValues<>(this, unfiltered, entryPredicate);
+     }
+ 
++    /*
++     * NavigableMap methods that directly return an individual Entry are required to return
++     * snapshots, but iteration (including through submaps and the descending map) should return
++     * live views if the backing collection supports them. We want to implement each method that
++     * deals with entries according to its specific contract, rather than picking a behavior for
++     * entryIterator and descendingEntryIterator and hoping that we use those methods from exactly
++     * the right set of other methods.
++     */
++
+     @Override
+     Iterator<Entry<K, V>> entryIterator() {
+-      return filter(unfiltered.entrySet().iterator(), entryPredicate);
++      throw new AssertionError("should never be called");
+     }
+ 
+     @Override
+     Iterator<Entry<K, V>> descendingEntryIterator() {
+-      return filter(unfiltered.descendingMap().entrySet().iterator(), entryPredicate);
++      throw new AssertionError("should never be called");
+     }
+ 
+     @Override
+@@ -3292,14 +3300,26 @@ public final class Maps {
+       return filteredDelegate.entrySet();
+     }
+ 
++    @Override
++    public @Nullable Entry<K, V> firstEntry() {
++      return snapshotFirstMatching(unfiltered.entrySet(), entryPredicate, /* remove= */ false);
++    }
++
++    @Override
++    public @Nullable Entry<K, V> lastEntry() {
++      return snapshotFirstMatching(
++          unfiltered.descendingMap().entrySet(), entryPredicate, /* remove= */ false);
++    }
++
+     @Override
+     public @Nullable Entry<K, V> pollFirstEntry() {
+-      return removeFirstMatching(unfiltered.entrySet(), entryPredicate);
++      return snapshotFirstMatching(unfiltered.entrySet(), entryPredicate, /* remove= */ true);
+     }
+ 
+     @Override
+     public @Nullable Entry<K, V> pollLastEntry() {
+-      return removeFirstMatching(unfiltered.descendingMap().entrySet(), entryPredicate);
++      return snapshotFirstMatching(
++          unfiltered.descendingMap().entrySet(), entryPredicate, /* remove= */ true);
+     }
+ 
+     @Override
+@@ -3328,6 +3348,42 @@ public final class Maps {
+     }
+   }
+ 
++  @GwtIncompatible // NavigableMap
++  static <K extends @Nullable Object, V extends @Nullable Object>
++      @Nullable Entry<K, V> snapshotFirst(Iterable<Entry<K, V>> entries, boolean remove) {
++    return snapshotFirstMatching(entries, alwaysTrue(), remove);
++  }
++
++  /**
++   * Finds (and optionally removes) the first entry that satisfies the predicate and returns a
++   * snapshot of it. This method always uses {@code entries.iterator()} so that it fulfills the
++   * contract of the methods in {@link ForwardingNavigableMap} that use it and that promise to use
++   * {@code iterator()}.
++   *
++   * <p>Returning a snapshot is required by various methods in the {@link NavigableMap}
++   * specification: Entries returned from methods like {@code firstEntry()} are required not to
++   * support {@code setValue}. Additionally, returning a snapshot is the only safe way to operate
++   * when <i>removing and returning</i> an entry from the iterator of an arbitrary map, since
++   * removal may invalidate the entry.
++   */
++  @GwtIncompatible // NavigableMap
++  private static <K extends @Nullable Object, V extends @Nullable Object>
++      @Nullable Entry<K, V> snapshotFirstMatching(
++          Iterable<Entry<K, V>> entries, Predicate<? super Entry<K, V>> predicate, boolean remove) {
++    for (Iterator<Entry<K, V>> itr = entries.iterator(); itr.hasNext(); ) {
++      Entry<K, V> entry = itr.next();
++      if (predicate.apply(entry)) {
++        // Snapshot before remove() because remove() can mutate the Entry in maps like TreeMap.
++        Entry<K, V> snapshot = immutableEntry(entry.getKey(), entry.getValue());
++        if (remove) {
++          itr.remove();
++        }
++        return snapshot;
++      }
++    }
++    return null;
++  }
++
+   private static final class FilteredEntryBiMap<
+           K extends @Nullable Object, V extends @Nullable Object>
+       extends FilteredEntryMap<K, V> implements BiMap<K, V> {
+diff --git a/guava/src/com/google/common/collect/Sets.java b/guava/src/com/google/common/collect/Sets.java
+index d9e0f19..7c94540 100644
+--- a/guava/src/com/google/common/collect/Sets.java
++++ b/guava/src/com/google/common/collect/Sets.java
+@@ -21,7 +21,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
+ import static com.google.common.base.Predicates.and;
+ import static com.google.common.collect.CollectPreconditions.checkNonnegative;
+ import static com.google.common.collect.Iterables.find;
+-import static com.google.common.collect.Iterables.removeFirstMatching;
+ import static com.google.common.collect.Iterators.addAll;
+ import static com.google.common.collect.Iterators.find;
+ import static com.google.common.collect.Iterators.removeAll;
+@@ -1385,12 +1384,12 @@ public final class Sets {
+ 
+     @Override
+     public @Nullable E pollFirst() {
+-      return removeFirstMatching(unfiltered(), predicate);
++      return pollFirstMatching(unfiltered(), predicate);
+     }
+ 
+     @Override
+     public @Nullable E pollLast() {
+-      return removeFirstMatching(unfiltered().descendingSet(), predicate);
++      return pollFirstMatching(unfiltered().descendingSet(), predicate);
+     }
+ 
+     @Override
+@@ -2328,4 +2327,18 @@ public final class Sets {
+     }
+     return checkNotNull(set);
+   }
++
++  /** Removes and returns the first matching element, or returns {@code null} if there is none. */
++  private static <T extends @Nullable Object> @Nullable T pollFirstMatching(
++      Iterable<T> removeFrom, Predicate<? super T> predicate) {
++    checkNotNull(predicate);
++    for (Iterator<T> iterator = removeFrom.iterator(); iterator.hasNext(); ) {
++      T next = iterator.next();
++      if (predicate.apply(next)) {
++        iterator.remove();
++        return next;
++      }
++    }
++    return null;
++  }
+ }
