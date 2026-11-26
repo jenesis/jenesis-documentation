@@ -1,0 +1,7 @@
+jenesis	1795705099.935	29.042	0	52529	-Djenesis.test.filter=.*(ResourceLinkTest|ResourceAuthorizationTest|ImageTest.*|ImageButtonTest|ExportToolbarTest) build/jenesis/Make.java +wicket-core-tests
+jenesis	1795705135.571	4.023	0	48451	-Djenesis.test.filter=.*ResourceLinkTest -Djenesis.print.tests=true build/jenesis/Make.java +wicket-core-tests
+jenesis	1795705139.634	6.308	1	49008	-Djenesis.test.filter=.*(AjaxDownload|ExportToolbar).* build/jenesis/Make.java +wicket-extensions
+jenesis	1795705148.505	2.228	1	48208	-Djenesis.test.filter=.*(AjaxDownload|ExportToolbar).* build/jenesis/Make.java +wicket-extensions
+jenesis	1795705153.341	2.146	1	48208	-Djenesis.test.filter=.*(AjaxDownload|ExportToolbar).* build/jenesis/Make.java +wicket-extensions
+jenesis	1795705159.450	9.038	0	54788	build/jenesis/Make.java +wicket-extensions +wicket-auth-roles
+jenesis	1795705172.200	146.347	0	46157	build/jenesis/Make.java +wicket-core-tests

@@ -1,0 +1,2 @@
+jenesis	1795704469.076	36.391	0	52529	-Djenesis.test.filter=.*(ResourceLinkTest|ImageResourceAuthorizationTest|ImageTest|ResponsiveImageTest|ImageButtonTest|.*Authoriz.*) build/jenesis/Make.java +wicket-core-tests
+jenesis	1795704512.824	158.395	0	63076	build/jenesis/Make.java +wicket-core-tests +wicket-extensions +wicket-auth-roles

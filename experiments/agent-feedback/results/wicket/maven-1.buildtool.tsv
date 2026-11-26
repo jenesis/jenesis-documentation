@@ -1,0 +1,2 @@
+maven	1795704781.639	31.001	0	2485	-o -q -pl wicket-core-tests,wicket-extensions -am test -Dtest=ComponentResourceAuthorizationTest,ResourceAuthorizationTest,ResourceLinkTest,Image*Test,AjaxDownload*Test,ExportToolbar*Test -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795704819.053	154.370	0	20756	-o -q -pl wicket-core-tests,wicket-extensions,wicket-auth-roles -am test

@@ -1,0 +1,357 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/form/ImageButton.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven-1/project/wicket-core/src/main/java/org/apache/wicket/markup/html/form/ImageButton.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/form/ImageButton.java	2026-11-26 12:41:22.614513239 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven-1/project/wicket-core/src/main/java/org/apache/wicket/markup/html/form/ImageButton.java	2026-11-26 14:52:34.536398939 +0000
+@@ -135,6 +135,10 @@
+ 	@Override
+ 	public void onRequest()
+ 	{
++		if (localizedImageResource.authorizeResource(null) == false)
++		{
++			return;
++		}
+ 		localizedImageResource.onResourceRequested(null);
+ 	}
+ 
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/image/Image.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven-1/project/wicket-core/src/main/java/org/apache/wicket/markup/html/image/Image.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/image/Image.java	2026-11-26 12:41:22.627694505 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven-1/project/wicket-core/src/main/java/org/apache/wicket/markup/html/image/Image.java	2026-11-26 14:52:34.535717644 +0000
+@@ -182,6 +182,19 @@
+ 	@Override
+ 	public void onRequest()
+ 	{
++		// authorize every resource before anything is written to the response
++		if (localizedImageResource.authorizeResource(null) == false)
++		{
++			return;
++		}
++		for (LocalizedImageResource localizedImageResource : localizedImageResources)
++		{
++			if (localizedImageResource.authorizeResource(null) == false)
++			{
++				return;
++			}
++		}
++
+ 		localizedImageResource.onResourceRequested(null);
+ 		for (LocalizedImageResource localizedImageResource : localizedImageResources)
+ 		{
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven-1/project/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java	2026-11-26 12:41:23.148839089 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven-1/project/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java	2026-11-26 14:52:34.535091465 +0000
+@@ -27,6 +27,7 @@
+ import org.apache.wicket.markup.html.border.Border;
+ import org.apache.wicket.request.cycle.RequestCycle;
+ import org.apache.wicket.request.mapper.parameter.PageParameters;
++import org.apache.wicket.request.handler.resource.ResourceRequestHandler;
+ import org.apache.wicket.request.resource.IResource;
+ import org.apache.wicket.request.resource.IResource.Attributes;
+ import org.apache.wicket.request.resource.PackageResourceReference;
+@@ -188,6 +189,27 @@
+ 	}
+ 
+ 	/**
++	 * Asks the authorization strategy whether the resource of this image may be served. A refusal
++	 * is handled by the application's
++	 * {@link org.apache.wicket.authorization.IUnauthorizedResourceRequestListener}.
++	 * 
++	 * @param parameters
++	 *            the resource parameters, {@code null} is treated as empty parameters
++	 * @return {@code true} if the resource may be served
++	 */
++	public final boolean authorizeResource(PageParameters parameters)
++	{
++		if (resource == null)
++		{
++			return true;
++		}
++		return ResourceRequestHandler.authorize(resource, parameters);
++	}
++
++	/**
++	 * Serves the resource of this image. The caller is responsible for authorizing it first, see
++	 * {@link #authorizeResource(PageParameters)}.
++	 * 
+ 	 * @param parameters
+ 	 *            page parameters
+ 	 */
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven-1/project/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java	2026-11-26 12:41:23.148839089 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven-1/project/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java	2026-11-26 14:52:34.534329777 +0000
+@@ -19,6 +19,7 @@
+ import org.apache.wicket.IRequestListener;
+ import org.apache.wicket.request.cycle.RequestCycle;
+ import org.apache.wicket.request.handler.resource.ResourceReferenceRequestHandler;
++import org.apache.wicket.request.handler.resource.ResourceRequestHandler;
+ import org.apache.wicket.request.mapper.parameter.PageParameters;
+ import org.apache.wicket.request.resource.IResource;
+ import org.apache.wicket.request.resource.IResource.Attributes;
+@@ -149,6 +150,11 @@
+ 	@Override
+ 	public final void onRequest()
+ 	{
++		if (ResourceRequestHandler.authorize(resource, new PageParameters()) == false)
++		{
++			return;
++		}
++
+ 		Attributes a = new Attributes(RequestCycle.get().getRequest(), RequestCycle.get()
+ 			.getResponse(), null);
+ 		resource.respond(a);
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/request/handler/resource/ResourceRequestHandler.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven-1/project/wicket-core/src/main/java/org/apache/wicket/request/handler/resource/ResourceRequestHandler.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/request/handler/resource/ResourceRequestHandler.java	2026-11-26 12:41:22.678194931 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven-1/project/wicket-core/src/main/java/org/apache/wicket/request/handler/resource/ResourceRequestHandler.java	2026-11-26 14:52:34.533612359 +0000
+@@ -50,11 +50,31 @@
+ 
+ 		this.parameters = parameters != null ? parameters : new PageParameters();
+ 
+-		authorize();
++		authorize(resource, this.parameters);
+ 	}
+ 
+-	private void authorize()
++	/**
++	 * Checks whether the given resource may be served with the given parameters by asking the
++	 * authorization strategy. When it is refused, the application's
++	 * {@link org.apache.wicket.authorization.IUnauthorizedResourceRequestListener} is notified.
++	 * <p>
++	 * Components and behaviors that serve a resource from their own listener URL have to call this
++	 * before letting the resource respond.
++	 *
++	 * @param resource
++	 *            the resource about to be served
++	 * @param parameters
++	 *            the resource parameters, {@code null} is treated as empty parameters
++	 * @return {@code true} if the resource may be served, {@code false} if it was refused
++	 */
++	public static boolean authorize(IResource resource, PageParameters parameters)
+ 	{
++		Args.notNull(resource, "resource");
++		if (parameters == null)
++		{
++			parameters = new PageParameters();
++		}
++
+ 		IAuthorizationStrategy authorizationStrategy = null;
+ 		if (Session.exists())
+ 		{
+@@ -75,7 +95,9 @@
+ 			{
+ 				new DefaultUnauthorizedResourceRequestListener().onUnauthorizedRequest(resource, parameters);
+ 			}
++			return false;
+ 		}
++		return true;
+ 	}
+ 
+ 	/**
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core-tests/src/test/java/org/apache/wicket/core/request/handler/resource/ComponentResourceAuthorizationTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven-1/project/wicket-core-tests/src/test/java/org/apache/wicket/core/request/handler/resource/ComponentResourceAuthorizationTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core-tests/src/test/java/org/apache/wicket/core/request/handler/resource/ComponentResourceAuthorizationTest.java	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven-1/project/wicket-core-tests/src/test/java/org/apache/wicket/core/request/handler/resource/ComponentResourceAuthorizationTest.java	2026-11-26 14:53:01.610459190 +0000
+@@ -0,0 +1,184 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.wicket.core.request.handler.resource;
++
++import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertFalse;
++import static org.junit.jupiter.api.Assertions.assertNotNull;
++import static org.junit.jupiter.api.Assertions.assertTrue;
++
++import java.util.ArrayList;
++import java.util.List;
++import java.util.function.Predicate;
++
++import jakarta.servlet.http.HttpServletResponse;
++
++import org.apache.wicket.MarkupContainer;
++import org.apache.wicket.authorization.IAuthorizationStrategy;
++import org.apache.wicket.markup.IMarkupResourceStreamProvider;
++import org.apache.wicket.markup.html.WebPage;
++import org.apache.wicket.markup.html.image.Image;
++import org.apache.wicket.markup.html.link.ResourceLink;
++import org.apache.wicket.request.mapper.parameter.PageParameters;
++import org.apache.wicket.request.resource.ByteArrayResource;
++import org.apache.wicket.request.resource.IResource;
++import org.apache.wicket.util.resource.IResourceStream;
++import org.apache.wicket.util.resource.StringResourceStream;
++import org.apache.wicket.util.tester.WicketTestCase;
++import org.junit.jupiter.api.Test;
++
++/**
++ * Resources served by components from their own listener URL have to be authorized like resources
++ * served by a resource URL.
++ */
++class ComponentResourceAuthorizationTest extends WicketTestCase
++{
++	private static class TrackingResource extends ByteArrayResource
++	{
++		private final String name;
++		boolean responded;
++
++		TrackingResource(String name)
++		{
++			super("text/plain", name.getBytes());
++			this.name = name;
++		}
++
++		@Override
++		public void respond(Attributes attributes)
++		{
++			responded = true;
++			super.respond(attributes);
++		}
++
++		@Override
++		public String toString()
++		{
++			return name;
++		}
++	}
++
++	private static class Strategy extends IAuthorizationStrategy.AllowAllAuthorizationStrategy
++	{
++		final List<IResource> asked = new ArrayList<>();
++		final Predicate<IResource> allowed;
++
++		Strategy(Predicate<IResource> allowed)
++		{
++			this.allowed = allowed;
++		}
++
++		@Override
++		public boolean isResourceAuthorized(IResource resource, PageParameters parameters)
++		{
++			assertNotNull(parameters);
++			asked.add(resource);
++			return allowed.test(resource);
++		}
++	}
++
++	public static class TestPage extends WebPage implements IMarkupResourceStreamProvider
++	{
++		final TrackingResource linkResource = new TrackingResource("secret");
++		final TrackingResource src = new TrackingResource("src");
++		final TrackingResource srcset = new TrackingResource("srcset");
++		boolean clicked;
++
++		public TestPage()
++		{
++			add(new ResourceLink<Void>("link", linkResource)
++			{
++				@Override
++				public void onClick()
++				{
++					clicked = true;
++				}
++			});
++			add(new Image("image", src, srcset));
++		}
++
++		@Override
++		public IResourceStream getMarkupResourceStream(MarkupContainer container,
++			Class<?> containerClass)
++		{
++			return new StringResourceStream(
++				"<html><body><a wicket:id='link'>link</a><img wicket:id='image'/></body></html>");
++		}
++	}
++
++	@Test
++	void refusedResourceLink()
++	{
++		Strategy strategy = new Strategy(r -> false);
++		tester.getApplication().getSecuritySettings().setAuthorizationStrategy(strategy);
++
++		TestPage page = tester.startPage(TestPage.class);
++		tester.clickLink("link", false);
++
++		assertEquals(HttpServletResponse.SC_FORBIDDEN, tester.getLastResponse().getStatus());
++		assertEquals("The request to resource 'secret' with parameters '' cannot be authorized.",
++			tester.getLastResponse().getErrorMessage());
++		assertEquals(List.of(page.linkResource), strategy.asked);
++		assertFalse(page.linkResource.responded);
++		assertFalse(page.clicked);
++	}
++
++	@Test
++	void allowedResourceLink()
++	{
++		Strategy strategy = new Strategy(r -> true);
++		tester.getApplication().getSecuritySettings().setAuthorizationStrategy(strategy);
++
++		TestPage page = tester.startPage(TestPage.class);
++		tester.clickLink("link", false);
++
++		assertEquals(HttpServletResponse.SC_OK, tester.getLastResponse().getStatus());
++		assertEquals("secret", tester.getLastResponse().getDocument());
++		assertEquals(List.of(page.linkResource), strategy.asked);
++		assertTrue(page.clicked);
++	}
++
++	@Test
++	void refusedSrcsetEntry()
++	{
++		TestPage page = tester.startPage(TestPage.class);
++		Strategy strategy = new Strategy(r -> r != page.srcset);
++		tester.getApplication().getSecuritySettings().setAuthorizationStrategy(strategy);
++
++		tester.executeListener(page.get("image"));
++
++		assertEquals(HttpServletResponse.SC_FORBIDDEN, tester.getLastResponse().getStatus());
++		assertEquals(List.of(page.src, page.srcset), strategy.asked);
++		assertFalse(page.src.responded);
++		assertFalse(page.srcset.responded);
++	}
++
++	@Test
++	void refusedImageWithCustomListener()
++	{
++		List<IResource> refused = new ArrayList<>();
++		TestPage page = tester.startPage(TestPage.class);
++		tester.getApplication().getSecuritySettings().setAuthorizationStrategy(new Strategy(r -> false));
++		tester.getApplication().getSecuritySettings().setUnauthorizedResourceRequestListener(
++			(resource, parameters) -> refused.add(resource));
++
++		tester.executeListener(page.get("image"));
++
++		assertEquals(List.of(page.src), refused);
++		assertFalse(page.src.responded);
++	}
++}
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven-1/project/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java	2026-11-26 12:41:23.180839091 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven-1/project/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java	2026-11-26 14:52:39.133003528 +0000
+@@ -31,6 +31,7 @@
+ import org.apache.wicket.request.Response;
+ import org.apache.wicket.request.cycle.RequestCycle;
+ import org.apache.wicket.request.handler.resource.ResourceReferenceRequestHandler;
++import org.apache.wicket.request.handler.resource.ResourceRequestHandler;
+ import org.apache.wicket.request.http.WebResponse;
+ import org.apache.wicket.request.mapper.parameter.PageParameters;
+ import org.apache.wicket.request.resource.ContentDisposition;
+@@ -374,6 +375,11 @@
+ 		@Override
+ 		public void onRequest()
+ 		{
++			if (ResourceRequestHandler.authorize(resource, new PageParameters()) == false)
++			{
++				return;
++			}
++
+ 			final RequestCycle requestCycle = RequestCycle.get();
+ 			final Response response = requestCycle.getResponse();
+ 			((WebResponse) response).addCookie(cookie(getName(), sameSite));

@@ -1,0 +1,9 @@
+jenesis	1795706373.872	27.393	1	66509	-Djenesis.test.filter=.*HttpMethodInterceptorTest build/jenesis/Make.java +core
+jenesis	1795706410.332	10.317	1	63258	-Djenesis.test.filter=.*HttpMethodInterceptorTest build/jenesis/Make.java +core
+jenesis	1795706427.038	10.565	0	21147	-Djenesis.test.filter=.*HttpMethodInterceptorTest build/jenesis/Make.java +core
+jenesis	1795706440.152	6.285	1	54646	-Djenesis.test.filter=.*HttpMethod.* -Djenesis.test.force=true build/jenesis/Make.java +core
+jenesis	1795706449.119	6.586	1	54646	-Djenesis.test.filter=.*HttpMethod.* -Djenesis.test.force=true build/jenesis/Make.java +core
+jenesis	1795706464.501	11.151	1	54930	-Djenesis.test.filter=.*HttpMethod.* -Djenesis.test.force=true build/jenesis/Make.java +core
+jenesis	1795706480.811	1.404	0	72876	build/jenesis/Make.java configuration
+jenesis	1795706482.258	6.039	0	20897	-Djenesis.test.filter=.*(HttpMethodInterceptorTest|HttpMethodTest) -Djenesis.test.force=true build/jenesis/Make.java +core
+jenesis	1795706500.155	113.789	0	37882	-Djenesis.test.force=true build/jenesis/Make.java +core +plugins+rest +plugins+bean-validation

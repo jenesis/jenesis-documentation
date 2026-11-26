@@ -1,0 +1,357 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/build.jenesis/process-test.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-jenesis-1/project/build.jenesis/process-test.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/build.jenesis/process-test.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-jenesis-1/project/build.jenesis/process-test.properties	2026-11-26 08:09:31.992624548 +0000
+@@ -0,0 +1,4 @@
++--add-opens=java.base/java.lang=ALL-UNNAMED\njava.base/java.util=ALL-UNNAMED
++-Duser.language=en
++-Duser.country=US
++-Duser.region=US
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/core/src/main/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptor.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-jenesis-1/project/core/src/main/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptor.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/core/src/main/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptor.java	2026-11-26 12:49:54.488869484 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-jenesis-1/project/core/src/main/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptor.java	2026-11-26 15:08:19.846789634 +0000
+@@ -32,6 +32,10 @@
+ import java.lang.annotation.Annotation;
+ import java.lang.reflect.AnnotatedElement;
+ import java.lang.reflect.Method;
++import java.lang.reflect.Modifier;
++import java.util.ArrayDeque;
++import java.util.Deque;
++import java.util.HashSet;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Collection;
+@@ -97,18 +101,20 @@
+             ((HttpMethodAware) (action)).setMethod(HttpMethod.parse(request.getMethod()));
+         }
+ 
+-        if (invocation.getProxy().isMethodSpecified()) {
+-            Method method = action.getClass().getMethod(invocation.getProxy().getMethod());
+-            if (AnnotationUtils.isAnnotatedBy(method, HTTP_METHOD_ANNOTATIONS)) {
++        Method method = findInvokedMethod(invocation, action.getClass());
++        if (method != null) {
++            AnnotatedElement annotatedMethod = findAnnotatedMethod(action.getClass(), method);
++            if (annotatedMethod != null) {
+                 LOG.debug("Action's method: {} annotated with: {}, checking if request: {} meets allowed methods!",
+-                    invocation.getProxy().getMethod(), AllowedHttpMethod.class.getSimpleName(), request.getMethod());
+-                return doIntercept(invocation, method);
++                    method.getName(), AllowedHttpMethod.class.getSimpleName(), request.getMethod());
++                return doIntercept(invocation, annotatedMethod);
+             }
+         }
+-        if (AnnotationUtils.isAnnotatedBy(action.getClass(), HTTP_METHOD_ANNOTATIONS)) {
++        AnnotatedElement annotatedClass = findAnnotatedType(action.getClass());
++        if (annotatedClass != null) {
+             LOG.debug("Action: {} annotated with: {}, checking if request: {} meets allowed methods!",
+                 action, AllowedHttpMethod.class.getSimpleName(), request.getMethod());
+-            return doIntercept(invocation, action.getClass());
++            return doIntercept(invocation, annotatedClass);
+         }
+ 
+         Set<HttpMethod> configuredMethods = invocation.getProxy().getConfig().getHttpMethods();
+@@ -121,6 +127,110 @@
+         return invocation.invoke();
+     }
+ 
++    /**
++     * @return the public method the invocation is going to call, or {@code null} when the method was not named
++     * explicitly and the action does not declare it (e.g. no {@code execute()})
++     * @throws NoSuchMethodException when the explicitly named method does not exist
++     */
++    private Method findInvokedMethod(ActionInvocation invocation, Class<?> actionClass) throws NoSuchMethodException {
++        String methodName = invocation.getProxy().getMethod();
++        if (invocation.getProxy().isMethodSpecified()) {
++            return actionClass.getMethod(methodName);
++        }
++        if (methodName == null) {
++            return null;
++        }
++        try {
++            return actionClass.getMethod(methodName);
++        } catch (NoSuchMethodException e) {
++            LOG.trace("Action: {} has no method: {}, skipping method level annotations", actionClass, methodName);
++            return null;
++        }
++    }
++
++    /**
++     * Looks up the nearest declaration of the invoked method annotated with one of the http method annotations:
++     * the invoked method itself, then each class up the hierarchy followed by its interfaces (and their
++     * super-interfaces), before its superclass.
++     */
++    private Method findAnnotatedMethod(Class<?> actionClass, Method invoked) {
++        if (AnnotationUtils.isAnnotatedBy(invoked, HTTP_METHOD_ANNOTATIONS)) {
++            return invoked;
++        }
++        Set<Class<?>> visitedInterfaces = new HashSet<>();
++        for (Class<?> current = actionClass; current != null; current = current.getSuperclass()) {
++            Method declared = findOverridableDeclaration(current, invoked);
++            if (declared != null && AnnotationUtils.isAnnotatedBy(declared, HTTP_METHOD_ANNOTATIONS)) {
++                return declared;
++            }
++            for (Class<?> iface : interfacesOf(current, visitedInterfaces)) {
++                declared = findOverridableDeclaration(iface, invoked);
++                if (declared != null && AnnotationUtils.isAnnotatedBy(declared, HTTP_METHOD_ANNOTATIONS)) {
++                    return declared;
++                }
++            }
++        }
++        return null;
++    }
++
++    /**
++     * Looks up the class level annotation: the class, then its interfaces (and their super-interfaces),
++     * then its superclass.
++     */
++    private Class<?> findAnnotatedType(Class<?> actionClass) {
++        Set<Class<?>> visitedInterfaces = new HashSet<>();
++        for (Class<?> current = actionClass; current != null; current = current.getSuperclass()) {
++            if (AnnotationUtils.isAnnotatedBy(current, HTTP_METHOD_ANNOTATIONS)) {
++                return current;
++            }
++            for (Class<?> iface : interfacesOf(current, visitedInterfaces)) {
++                if (AnnotationUtils.isAnnotatedBy(iface, HTTP_METHOD_ANNOTATIONS)) {
++                    return iface;
++                }
++            }
++        }
++        return null;
++    }
++
++    private static Method findOverridableDeclaration(Class<?> type, Method invoked) {
++        Method declared;
++        try {
++            declared = type.getDeclaredMethod(invoked.getName(), invoked.getParameterTypes());
++        } catch (NoSuchMethodException e) {
++            return null;
++        }
++        int modifiers = declared.getModifiers();
++        if (Modifier.isStatic(modifiers) || !(Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers))) {
++            return null;
++        }
++        return declared;
++    }
++
++    /**
++     * @return the interfaces directly implemented by the type, each followed by its super-interfaces,
++     * skipping those already visited
++     */
++    private static List<Class<?>> interfacesOf(Class<?> type, Set<Class<?>> visited) {
++        List<Class<?>> result = new ArrayList<>();
++        Deque<Class<?>> stack = new ArrayDeque<>();
++        Class<?>[] direct = type.getInterfaces();
++        for (int i = direct.length - 1; i >= 0; i--) {
++            stack.push(direct[i]);
++        }
++        while (!stack.isEmpty()) {
++            Class<?> iface = stack.pop();
++            if (!visited.add(iface)) {
++                continue;
++            }
++            result.add(iface);
++            Class<?>[] supers = iface.getInterfaces();
++            for (int i = supers.length - 1; i >= 0; i--) {
++                stack.push(supers[i]);
++            }
++        }
++        return result;
++    }
++
+     protected String doIntercept(ActionInvocation invocation, AnnotatedElement element) throws Exception {
+         Set<HttpMethod> allowedMethods = EnumSet.noneOf(HttpMethod.class);
+         allowedMethods.addAll(readAllowedMethods(element));
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/core/src/test/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptorTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-jenesis-1/project/core/src/test/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptorTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/core/src/test/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptorTest.java	2026-11-26 12:49:54.488869484 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-jenesis-1/project/core/src/test/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptorTest.java	2026-11-26 15:09:53.087523526 +0000
+@@ -560,4 +560,164 @@
+         return response;
+     }
+ 
++
++    private String interceptImplicitExecute(Object action, String httpMethod) throws Exception {
++        prepareActionInvocation(action);
++        actionProxy.setMethod("execute");
++        actionProxy.setMethodSpecified(false);
++        invocation.setResultCode("success");
++        prepareRequest(httpMethod);
++        return interceptor.intercept(invocation);
++    }
++
++    private String interceptMethod(Object action, String methodName, String httpMethod) throws Exception {
++        prepareActionInvocation(action);
++        actionProxy.setMethod(methodName);
++        invocation.setResultCode("success");
++        prepareRequest(httpMethod);
++        return interceptor.intercept(invocation);
++    }
++
++    public void testImplicitExecuteAnnotationIsEnforced() throws Exception {
++        assertEquals("bad-request", interceptImplicitExecute(new ExecutePost(), "get"));
++        assertEquals("success", interceptImplicitExecute(new ExecutePost(), "post"));
++    }
++
++    public void testImplicitExecuteMissingDoesNotFail() throws Exception {
++        assertEquals("success", interceptImplicitExecute(new Object(), "get"));
++        assertEquals("bad-request", interceptImplicitExecute(new ClassPostWithoutExecute(), "get"));
++    }
++
++    public void testExplicitMissingMethodStillFails() throws Exception {
++        try {
++            interceptMethod(new ExecutePost(), "missing", "post");
++            fail("expected NoSuchMethodException");
++        } catch (NoSuchMethodException e) {
++            assertTrue(e.getMessage().contains("missing"));
++        }
++    }
++
++    public void testInheritedClassAnnotationIsEnforced() throws Exception {
++        assertEquals("bad-request", interceptImplicitExecute(new SubOfClassPost(), "get"));
++        assertEquals("success", interceptImplicitExecute(new SubOfClassPost(), "post"));
++    }
++
++    public void testOverriddenMethodKeepsAnnotation() throws Exception {
++        assertEquals("bad-request", interceptMethod(new SubOfSavePost(), "save", "get"));
++        assertEquals("success", interceptMethod(new SubOfSavePost(), "save", "post"));
++    }
++
++    public void testInterfaceAnnotationsThroughSuperclassAndSuperInterface() throws Exception {
++        assertEquals("bad-request", interceptImplicitExecute(new SubOfImplementsMarker(), "get"));
++        assertEquals("bad-request", interceptImplicitExecute(new ImplementsDerived(), "get"));
++        assertEquals("success", interceptImplicitExecute(new ImplementsDerived(), "post"));
++        assertEquals("bad-request", interceptMethod(new SubOfImplementsSavePost(), "save", "get"));
++        assertEquals("bad-request", interceptMethod(new ImplementsDerivedDefault(), "save", "get"));
++    }
++
++    public void testSuperclassMethodAnnotationWinsOverInterface() throws Exception {
++        assertEquals("success", interceptMethod(new SuperclassGetInterfacePost(), "save", "get"));
++        assertEquals("bad-request", interceptMethod(new SuperclassGetInterfacePost(), "save", "post"));
++    }
++
++    public void testNonOverridableDeclarationsAreIgnored() throws Exception {
++        assertEquals("success", interceptMethod(new HidesPrivateSave(), "save", "get"));
++        assertEquals("success", interceptMethod(new HidesStaticSave(), "save", "get"));
++    }
++
++    static class ExecutePost {
++        @HttpPost
++        public String execute() { return "success"; }
++    }
++
++    @HttpPost
++    static class ClassPostWithoutExecute {
++    }
++
++    @HttpPost
++    static class ClassPost {
++        public String execute() { return "success"; }
++    }
++
++    static class SubOfClassPost extends ClassPost {
++    }
++
++    static class SavePost {
++        @HttpPost
++        public String save() { return "success"; }
++    }
++
++    static class SubOfSavePost extends SavePost {
++        @Override
++        public String save() { return "success"; }
++    }
++
++    @HttpPost
++    interface PostOnly {
++    }
++
++    interface Derived extends PostOnly {
++    }
++
++    static class ImplementsMarker implements PostOnly {
++        public String execute() { return "success"; }
++    }
++
++    static class SubOfImplementsMarker extends ImplementsMarker {
++    }
++
++    static class ImplementsDerived implements Derived {
++        public String execute() { return "success"; }
++    }
++
++    interface SaveIsPost {
++        @HttpPost
++        String save();
++    }
++
++    static class ImplementsSavePost implements SaveIsPost {
++        public String save() { return "success"; }
++    }
++
++    static class SubOfImplementsSavePost extends ImplementsSavePost {
++        @Override
++        public String save() { return "success"; }
++    }
++
++    interface DefaultSaveIsPost {
++        @HttpPost
++        default String save() { return "success"; }
++    }
++
++    interface DerivedDefault extends DefaultSaveIsPost {
++    }
++
++    static class ImplementsDerivedDefault implements DerivedDefault {
++    }
++
++    static class SaveGet {
++        @HttpGet
++        public String save() { return "success"; }
++    }
++
++    static class SuperclassGetInterfacePost extends SaveGet implements SaveIsPost {
++    }
++
++    static class PrivateSavePost {
++        @HttpPost
++        private String save() { return "success"; }
++    }
++
++    static class HidesPrivateSave extends PrivateSavePost {
++        public String save() { return "success"; }
++    }
++
++    static class StaticSavePost {
++        @HttpPost
++        public static String save() { return "success"; }
++    }
++
++    static class HidesStaticSave {
++        public String save() { return "success"; }
++    }
+ }
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/jenesis.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-jenesis-1/project/jenesis.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/jenesis.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-jenesis-1/project/jenesis.properties	2026-11-26 08:05:18.255495323 +0000
+@@ -0,0 +1,2 @@
++jenesis.test.jars=false
++jenesis.test.exclude=.*\\.XWorkTestCase,.*\\.TestBean,.*\\.TestBean2,.*\\.TestInterceptor,.*\\.AnnotatedTestBean,.*\\.DefaultFileManagerTest
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/plugins/bean-validation/src/main/resources/struts-plugin.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-jenesis-1/project/plugins/bean-validation/src/main/resources/struts-plugin.xml
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/plugins/bean-validation/src/main/resources/struts-plugin.xml	2026-11-26 12:49:54.492869485 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-jenesis-1/project/plugins/bean-validation/src/main/resources/struts-plugin.xml	2026-11-26 15:08:19.848424862 +0000
+@@ -42,6 +42,7 @@
+                 <interceptor-ref name="exception"/>
+                 <interceptor-ref name="alias"/>
+                 <interceptor-ref name="servletConfig"/>
++                <interceptor-ref name="httpMethod"/>
+                 <interceptor-ref name="i18n"/>
+                 <interceptor-ref name="prepare"/>
+                 <interceptor-ref name="chain"/>
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/plugins/rest/src/main/resources/struts-plugin.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-jenesis-1/project/plugins/rest/src/main/resources/struts-plugin.xml
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/plugins/rest/src/main/resources/struts-plugin.xml	2026-11-26 12:49:54.492869485 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-jenesis-1/project/plugins/rest/src/main/resources/struts-plugin.xml	2026-11-26 15:08:19.847609756 +0000
+@@ -76,6 +76,7 @@
+                 <interceptor-ref name="exception"/>
+                 <interceptor-ref name="alias"/>
+                 <interceptor-ref name="servletConfig"/>
++                <interceptor-ref name="httpMethod"/>
+                 <interceptor-ref name="messages">
+                     <param name="operationMode">AUTOMATIC</param>
+                 </interceptor-ref>
