@@ -1,0 +1,243 @@
+diff --git a/wicket-auth-roles/src/main/java/org/apache/wicket/authroles/authorization/strategies/role/annotations/AuthorizeResource.java b/wicket-auth-roles/src/main/java/org/apache/wicket/authroles/authorization/strategies/role/annotations/AuthorizeResource.java
+index dd7b631..fe09229 100644
+--- a/wicket-auth-roles/src/main/java/org/apache/wicket/authroles/authorization/strategies/role/annotations/AuthorizeResource.java
++++ b/wicket-auth-roles/src/main/java/org/apache/wicket/authroles/authorization/strategies/role/annotations/AuthorizeResource.java
+@@ -30,6 +30,10 @@ import java.lang.annotation.Target;
+  * {@link AuthorizeInstantiation}: an annotation on a resource class replaces the annotation of its
+  * package rather than adding to it. See {@link AnnotationsRoleAuthorizationStrategy} for the complete
+  * resolution rules and for the pitfalls of annotating packages.
++ * <p>
++ * It applies to every request that serves the annotated resource: one requested by the URL of a
++ * mounted or shared {@link org.apache.wicket.request.resource.ResourceReference}, and one served
++ * through a component that was handed the resource itself.
+  *
+  * @author Carl-Eric Menzel
+  * @see org.apache.wicket.authorization.IAuthorizationStrategy
+diff --git a/wicket-core/src/main/java/org/apache/wicket/authorization/IAuthorizationStrategy.java b/wicket-core/src/main/java/org/apache/wicket/authorization/IAuthorizationStrategy.java
+index 6e37f0f..11159fe 100644
+--- a/wicket-core/src/main/java/org/apache/wicket/authorization/IAuthorizationStrategy.java
++++ b/wicket-core/src/main/java/org/apache/wicket/authorization/IAuthorizationStrategy.java
+@@ -106,11 +106,25 @@ public interface IAuthorizationStrategy
+ 
+ 	/**
+ 	 * Checks whether a request with some parameters is allowed to a resource.
++	 * <p>
++	 * This is asked for every request that serves an {@link IResource}: one requested by the URL of
++	 * a mounted or shared {@link org.apache.wicket.request.resource.ResourceReference}, and one
++	 * held by a component or a behavior and served from the listener URL of that component - a
++	 * {@link org.apache.wicket.markup.html.link.ResourceLink}, an
++	 * {@link org.apache.wicket.markup.html.image.Image}, an
++	 * {@link org.apache.wicket.markup.html.form.ImageButton}, or the AjaxDownloadBehavior of
++	 * wicket-extensions.
++	 * <p>
++	 * Returning {@code false} hands the request to the
++	 * {@link IUnauthorizedResourceRequestListener} of the security settings, which decides how it
++	 * is refused; the default one answers 403.
+ 	 *
+ 	 * @param resource
+ 	 *            The resource that should be processed
+ 	 * @param parameters
+-	 *            The request parameters
++	 *            The request parameters, never {@code null}; they are empty for a resource served
++	 *            through the component that holds it, because a listener URL carries no resource
++	 *            parameters
+ 	 * @return {@code true} if the request to this resource is allowed.
+ 	 */
+ 	boolean isResourceAuthorized(IResource resource, PageParameters parameters);
+diff --git a/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java b/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java
+index a76a22e..e3a14a4 100644
+--- a/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java
++++ b/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java
+@@ -26,9 +26,9 @@ import org.apache.wicket.WicketRuntimeException;
+ import org.apache.wicket.markup.ComponentTag;
+ import org.apache.wicket.markup.html.border.Border;
+ import org.apache.wicket.request.cycle.RequestCycle;
++import org.apache.wicket.request.handler.resource.ResourceRequestHandler;
+ import org.apache.wicket.request.mapper.parameter.PageParameters;
+ import org.apache.wicket.request.resource.IResource;
+-import org.apache.wicket.request.resource.IResource.Attributes;
+ import org.apache.wicket.request.resource.PackageResourceReference;
+ import org.apache.wicket.request.resource.ResourceReference;
+ import org.apache.wicket.util.io.IClusterable;
+@@ -188,16 +188,32 @@ public final class LocalizedImageResource implements IClusterable
+ 	}
+ 
+ 	/**
++	 * Responds with the {@link IResource} this instance holds, once the
++	 * {@link org.apache.wicket.authorization.IAuthorizationStrategy} has authorized it.
++	 * <p>
++	 * This is the only place where a resource served through the component that owns this instance
++	 * is authorized. {@link #setSrcAttribute(ComponentTag)} renders the listener URL of that
++	 * component whenever a resource - rather than a {@link ResourceReference} - is set, so the
++	 * request is not carried by a
++	 * {@link org.apache.wicket.request.handler.resource.ResourceReferenceRequestHandler} and is
++	 * authorized here instead. Every caller arrives here: the src of an
++	 * {@link org.apache.wicket.markup.html.image.Image}, each entry of its srcset, and the image of
++	 * an {@link org.apache.wicket.markup.html.form.ImageButton}.
++	 * <p>
++	 * A resource the strategy refuses aborts the request through the
++	 * {@link org.apache.wicket.authorization.IUnauthorizedResourceRequestListener} of the security
++	 * settings, so a component that responds with several resources writes none of the ones that
++	 * follow the refused one.
++	 * 
+ 	 * @param parameters
+-	 *            page parameters
++	 *            page parameters; the callers within Wicket pass {@code null}, because a listener
++	 *            URL carries no resource parameters, and the strategy and the resource then see the
++	 *            empty parameters that {@link ResourceRequestHandler} substitutes
+ 	 */
+ 	public final void onResourceRequested(PageParameters parameters)
+ 	{
+ 		bind();
+-		RequestCycle requestCycle = RequestCycle.get();
+-		Attributes attributes = new Attributes(requestCycle.getRequest(),
+-			requestCycle.getResponse(), parameters);
+-		resource.respond(attributes);
++		new ResourceRequestHandler(resource, parameters).respond(RequestCycle.get());
+ 	}
+ 
+ 	/**
+diff --git a/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java b/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java
+index 303c067..1308bb1 100644
+--- a/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java
++++ b/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java
+@@ -17,11 +17,10 @@
+ package org.apache.wicket.markup.html.link;
+ 
+ import org.apache.wicket.IRequestListener;
+-import org.apache.wicket.request.cycle.RequestCycle;
+ import org.apache.wicket.request.handler.resource.ResourceReferenceRequestHandler;
++import org.apache.wicket.request.handler.resource.ResourceRequestHandler;
+ import org.apache.wicket.request.mapper.parameter.PageParameters;
+ import org.apache.wicket.request.resource.IResource;
+-import org.apache.wicket.request.resource.IResource.Attributes;
+ import org.apache.wicket.request.resource.ResourceReference;
+ 
+ /**
+@@ -81,6 +80,10 @@ public class ResourceLink<T> extends Link<T> implements IRequestListener
+ 
+ 	/**
+ 	 * Constructs a link directly to the provided resource.
++	 * <p>
++	 * Such a resource is served from the listener URL of this link rather than from a resource URL
++	 * of its own, and it is the {@link #onRequest()} of this link that has the
++	 * {@link org.apache.wicket.authorization.IAuthorizationStrategy} authorize it on every request.
+ 	 * 
+ 	 * @param id
+ 	 *            See Component
+@@ -146,13 +149,26 @@ public class ResourceLink<T> extends Link<T> implements IRequestListener
+ 		return urlForListener(resourceParameters);
+ 	}
+ 	
++	/**
++	 * Responds with the {@link IResource} this link was constructed with.
++	 * <p>
++	 * The resource is served through a {@link ResourceRequestHandler}, which asks the
++	 * {@link org.apache.wicket.authorization.IAuthorizationStrategy} to authorize it, exactly as it
++	 * is asked for a resource that is requested by its own URL. This is the only place where a
++	 * resource held by this link is authorized, because {@link #getURL()} renders the listener URL
++	 * of this link for such a resource rather than a resource URL, so the request never reaches a
++	 * {@link ResourceReferenceRequestHandler}.
++	 * <p>
++	 * A resource the strategy refuses aborts the request - the
++	 * {@link org.apache.wicket.authorization.IUnauthorizedResourceRequestListener} of the security
++	 * settings decides how, the default one answers 403 - so {@link #onClick()} is not reached
++	 * either. This method is final, so a subclass cannot serve the resource without that decision.
++	 */
+ 	@Override
+ 	public final void onRequest()
+ 	{
+-		Attributes a = new Attributes(RequestCycle.get().getRequest(), RequestCycle.get()
+-			.getResponse(), null);
+-		resource.respond(a);
+-		
++		new ResourceRequestHandler(resource, resourceParameters).respond(getRequestCycle());
++
+ 		super.onRequest();
+-	}	
++	}
+ }
+diff --git a/wicket-core/src/main/java/org/apache/wicket/request/resource/IResource.java b/wicket-core/src/main/java/org/apache/wicket/request/resource/IResource.java
+index 82078d1..32d4030 100644
+--- a/wicket-core/src/main/java/org/apache/wicket/request/resource/IResource.java
++++ b/wicket-core/src/main/java/org/apache/wicket/request/resource/IResource.java
+@@ -33,7 +33,9 @@ public interface IResource extends IClusterable
+ {
+ 	/**
+ 	 * Attributes that are provided to resource in the {@link IResource#respond(Attributes)} method.
+-	 * Attributes are set by the {@link ResourceRequestHandler}.
++	 * Attributes are set by the {@link ResourceRequestHandler}. Constructing them in application
++	 * code in order to call {@link IResource#respond(Attributes)} serves the resource without asking
++	 * whether it may be served - see that method.
+ 	 * 
+ 	 * @author Matej Knopp
+ 	 */
+@@ -109,6 +111,12 @@ public interface IResource extends IClusterable
+ 
+ 	/**
+ 	 * Renders this resource to response using the provided attributes.
++	 * <p>
++	 * <b>The resource is written to the response as is, without asking whether it may be served.</b>
++	 * The {@link org.apache.wicket.authorization.IAuthorizationStrategy} is asked in the constructor
++	 * of {@link ResourceRequestHandler} and nowhere else, so application code that serves a resource
++	 * must construct that handler for it and respond or schedule it, rather than call this method.
++	 * </p>
+ 	 * 
+ 	 * @param attributes
+ 	 */
+diff --git a/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java b/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java
+index 22f89b2..8a49c1b 100644
+--- a/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java
++++ b/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java
+@@ -31,6 +31,7 @@ import org.apache.wicket.markup.head.JavaScriptHeaderItem;
+ import org.apache.wicket.request.Response;
+ import org.apache.wicket.request.cycle.RequestCycle;
+ import org.apache.wicket.request.handler.resource.ResourceReferenceRequestHandler;
++import org.apache.wicket.request.handler.resource.ResourceRequestHandler;
+ import org.apache.wicket.request.http.WebResponse;
+ import org.apache.wicket.request.mapper.parameter.PageParameters;
+ import org.apache.wicket.request.resource.ContentDisposition;
+@@ -132,6 +133,11 @@ public class AjaxDownloadBehavior extends AbstractDefaultAjaxBehavior
+ 
+ 	/**
+ 	 * Download of a {@link IResource}.
++	 * <p>
++	 * The resource is served from the listener URL of the component this behavior is bound to
++	 * rather than from a resource URL of its own, and the
++	 * {@link org.apache.wicket.authorization.IAuthorizationStrategy} authorizes it on every
++	 * request, exactly as it does for a {@link ResourceReference}.
+ 	 *
+ 	 * @param resource
+ 	 *            resource to download
+@@ -371,16 +377,28 @@ public class AjaxDownloadBehavior extends AbstractDefaultAjaxBehavior
+ 			return false;
+ 		}
+ 
++		/**
++		 * Responds with the resource, once the
++		 * {@link org.apache.wicket.authorization.IAuthorizationStrategy} has authorized it.
++		 * <p>
++		 * The handler is created before the cookie is added, because it is its constructor that
++		 * asks the strategy. That cookie is what tells wicket-ajaxdownload.js that the download
++		 * finished, it is looked at there before the response body is, and a buffered response
++		 * replays a cookie ahead of the error the strategy causes - so a refused download must not
++		 * leave one behind, or it would be reported as
++		 * {@link AjaxDownloadBehavior#onDownloadSuccess(AjaxRequestTarget)}.
++		 */
+ 		@Override
+ 		public void onRequest()
+ 		{
+ 			final RequestCycle requestCycle = RequestCycle.get();
+ 			final Response response = requestCycle.getResponse();
+-			((WebResponse) response).addCookie(cookie(getName(), sameSite));
+ 
+-			Attributes a = new Attributes(requestCycle.getRequest(), response, null);
++			ResourceRequestHandler handler = new ResourceRequestHandler(resource, null);
++
++			((WebResponse) response).addCookie(cookie(getName(), sameSite));
+ 
+-			resource.respond(a);
++			handler.respond(requestCycle);
+ 		}
+ 
+ 		public CharSequence getUrl()

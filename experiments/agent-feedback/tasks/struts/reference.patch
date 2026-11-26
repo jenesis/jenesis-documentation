@@ -1,0 +1,191 @@
+diff --git a/core/src/main/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptor.java b/core/src/main/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptor.java
+index c602678..54b2988 100644
+--- a/core/src/main/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptor.java
++++ b/core/src/main/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptor.java
+@@ -18,6 +18,7 @@
+  */
+ package org.apache.struts2.interceptor.httpmethod;
+ 
++import org.apache.commons.lang3.ClassUtils;
+ import org.apache.struts2.ActionInvocation;
+ import org.apache.struts2.action.Action;
+ import org.apache.struts2.interceptor.AbstractInterceptor;
+@@ -32,11 +33,13 @@ import java.io.IOException;
+ import java.lang.annotation.Annotation;
+ import java.lang.reflect.AnnotatedElement;
+ import java.lang.reflect.Method;
++import java.lang.reflect.Modifier;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Collection;
+ import java.util.Collections;
+ import java.util.EnumSet;
++import java.util.LinkedHashSet;
+ import java.util.List;
+ import java.util.Set;
+ import java.util.stream.Collectors;
+@@ -54,6 +57,11 @@ import java.util.stream.Collectors;
+  * <p>
+  * You can combine any of these annotations to achieve required allowed methods' filtering.
+  * <p>
++ * Method annotations apply to the invoked method, including the implicit {@code execute()} method.
++ * Its annotation takes precedence; otherwise annotated declarations are looked up through the class
++ * and interface hierarchy. Class annotations are looked up only when no method annotation is found.
++ * Restrictions apply to {@link HttpServletRequest#getMethod()}, not a {@code _method} parameter.
++ * <p>
+  * The allowed methods can also be declared on the action in XML with the {@code http-method} attribute.
+  * When both the attribute and annotations are present, the request method must satisfy both.
+  * <p>
+@@ -97,18 +105,20 @@ public class HttpMethodInterceptor extends AbstractInterceptor {
+             ((HttpMethodAware) (action)).setMethod(HttpMethod.parse(request.getMethod()));
+         }
+ 
+-        if (invocation.getProxy().isMethodSpecified()) {
+-            Method method = action.getClass().getMethod(invocation.getProxy().getMethod());
+-            if (AnnotationUtils.isAnnotatedBy(method, HTTP_METHOD_ANNOTATIONS)) {
++        Method method = resolveInvokedMethod(invocation);
++        if (method != null) {
++            AnnotatedElement methodElement = findNearestAnnotatedOverride(action.getClass(), method);
++            if (methodElement != null) {
+                 LOG.debug("Action's method: {} annotated with: {}, checking if request: {} meets allowed methods!",
+                     invocation.getProxy().getMethod(), AllowedHttpMethod.class.getSimpleName(), request.getMethod());
+-                return doIntercept(invocation, method);
++                return doIntercept(invocation, methodElement);
+             }
+         }
+-        if (AnnotationUtils.isAnnotatedBy(action.getClass(), HTTP_METHOD_ANNOTATIONS)) {
++        AnnotatedElement classElement = findNearestAnnotatedType(action.getClass());
++        if (classElement != null) {
+             LOG.debug("Action: {} annotated with: {}, checking if request: {} meets allowed methods!",
+                 action, AllowedHttpMethod.class.getSimpleName(), request.getMethod());
+-            return doIntercept(invocation, action.getClass());
++            return doIntercept(invocation, classElement);
+         }
+ 
+         Set<HttpMethod> configuredMethods = invocation.getProxy().getConfig().getHttpMethods();
+@@ -133,6 +143,83 @@ public class HttpMethodInterceptor extends AbstractInterceptor {
+         return checkAllowedMethods(invocation, allowedMethods);
+     }
+ 
++    private Method resolveInvokedMethod(ActionInvocation invocation) throws NoSuchMethodException {
++        String methodName = invocation.getProxy().getMethod();
++        if (methodName == null || methodName.isEmpty()) {
++            return null;
++        }
++        try {
++            return invocation.getAction().getClass().getMethod(methodName);
++        } catch (NoSuchMethodException e) {
++            if (invocation.getProxy().isMethodSpecified()) {
++                throw e;
++            }
++            // An absent implicit execute() can be handled by an UnknownHandler during invocation.
++            return null;
++        }
++    }
++
++    /** Resolves the invoked method first, then annotated declarations at each class and its interfaces. */
++    private AnnotatedElement findNearestAnnotatedOverride(Class<?> actionClass, Method method) {
++        if (!isPublicInstanceMethod(method)) {
++            return null;
++        }
++        if (AnnotationUtils.isAnnotatedBy(method, HTTP_METHOD_ANNOTATIONS)) {
++            return method;
++        }
++        for (Class<?> type = actionClass; type != null; type = type.getSuperclass()) {
++            AnnotatedElement found = declaredOverrideAnnotatedIn(type, method);
++            if (found != null) {
++                return found;
++            }
++            for (Class<?> iface : interfacesAtLevel(type)) {
++                found = declaredOverrideAnnotatedIn(iface, method);
++                if (found != null) {
++                    return found;
++                }
++            }
++        }
++        return null;
++    }
++
++    private AnnotatedElement declaredOverrideAnnotatedIn(Class<?> type, Method method) {
++        try {
++            Method candidate = type.getDeclaredMethod(method.getName(), method.getParameterTypes());
++            return isPublicInstanceMethod(candidate) && AnnotationUtils.isAnnotatedBy(candidate, HTTP_METHOD_ANNOTATIONS)
++                ? candidate : null;
++        } catch (NoSuchMethodException e) {
++            return null;
++        }
++    }
++
++    private boolean isPublicInstanceMethod(Method method) {
++        return Modifier.isPublic(method.getModifiers()) && !Modifier.isStatic(method.getModifiers());
++    }
++
++    /** Checks each class before its interfaces, including their superinterfaces, then its superclass. */
++    private AnnotatedElement findNearestAnnotatedType(Class<?> actionClass) {
++        for (Class<?> type = actionClass; type != null; type = type.getSuperclass()) {
++            if (AnnotationUtils.isAnnotatedBy(type, HTTP_METHOD_ANNOTATIONS)) {
++                return type;
++            }
++            for (Class<?> iface : interfacesAtLevel(type)) {
++                if (AnnotationUtils.isAnnotatedBy(iface, HTTP_METHOD_ANNOTATIONS)) {
++                    return iface;
++                }
++            }
++        }
++        return null;
++    }
++
++    private Set<Class<?>> interfacesAtLevel(Class<?> type) {
++        Set<Class<?>> interfaces = new LinkedHashSet<>();
++        for (Class<?> iface : type.getInterfaces()) {
++            interfaces.add(iface);
++            interfaces.addAll(ClassUtils.getAllInterfaces(iface));
++        }
++        return interfaces;
++    }
++
+     private String checkAllowedMethods(ActionInvocation invocation, Set<HttpMethod> allowedMethods) throws Exception {
+         HttpServletRequest request = invocation.getInvocationContext().getServletRequest();
+         String requestedMethod = request.getMethod();
+diff --git a/plugins/bean-validation/src/main/resources/struts-plugin.xml b/plugins/bean-validation/src/main/resources/struts-plugin.xml
+index 80b3111..d4ee121 100644
+--- a/plugins/bean-validation/src/main/resources/struts-plugin.xml
++++ b/plugins/bean-validation/src/main/resources/struts-plugin.xml
+@@ -42,6 +42,7 @@
+                 <interceptor-ref name="exception"/>
+                 <interceptor-ref name="alias"/>
+                 <interceptor-ref name="servletConfig"/>
++                <interceptor-ref name="httpMethod"/>
+                 <interceptor-ref name="i18n"/>
+                 <interceptor-ref name="prepare"/>
+                 <interceptor-ref name="chain"/>
+diff --git a/plugins/rest/src/main/java/org/apache/struts2/rest/RestActionMapper.java b/plugins/rest/src/main/java/org/apache/struts2/rest/RestActionMapper.java
+index 202caeb..9aef224 100644
+--- a/plugins/rest/src/main/java/org/apache/struts2/rest/RestActionMapper.java
++++ b/plugins/rest/src/main/java/org/apache/struts2/rest/RestActionMapper.java
+@@ -86,6 +86,13 @@ import java.util.HashMap;
+  * To simulate the HTTP methods PUT and DELETE, since they aren't supported by HTML,
+  * the HTTP parameter "_method" will be used.
+  * </p>
++ * <p>
++ * The {@code httpMethod} interceptor checks the actual request method, not {@code _method}.
++ * A handler used by a POST form must allow POST, even when {@code _method} routes it to
++ * {@code update} or {@code destroy}. {@code @HttpPut} and {@code @HttpDelete} alone require
++ * actual PUT and DELETE requests; add {@code @HttpPost} to also accept tunneled POST forms.
++ * XML {@code http-method} restrictions must likewise allow the actual request method.
++ * </p>
+  * <!-- END SNIPPET: description -->
+  */
+ public class RestActionMapper extends DefaultActionMapper {
+diff --git a/plugins/rest/src/main/resources/struts-plugin.xml b/plugins/rest/src/main/resources/struts-plugin.xml
+index c211685..37a9173 100644
+--- a/plugins/rest/src/main/resources/struts-plugin.xml
++++ b/plugins/rest/src/main/resources/struts-plugin.xml
+@@ -76,6 +76,7 @@
+                 <interceptor-ref name="exception"/>
+                 <interceptor-ref name="alias"/>
+                 <interceptor-ref name="servletConfig"/>
++                <interceptor-ref name="httpMethod"/>
+                 <interceptor-ref name="messages">
+                     <param name="operationMode">AUTOMATIC</param>
+                 </interceptor-ref>

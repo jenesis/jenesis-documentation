@@ -20,9 +20,10 @@ if [ ! -f "$CACHE/checked" ]; then
   home "$CACHE/home"
   export MAVEN_ARGS="$MAVEN_ARGS_EXTRA"
 
-  # Maven: the modules' own tests once, which resolves every plugin and dependency the verifier and an agent need.
+  # Maven: the whole project's tests once, as the Jenesis arm's warm-up builds the whole project, which resolves
+  # every plugin and dependency the verifier and an agent need.
   cp -a "$BASE" "$CACHE/maven"
-  (cd "$CACHE/maven" && "$MAVEN" -B -pl "$MODULES" -am test > "$CACHE/maven.log" 2>&1) || true
+  (cd "$CACHE/maven" && "$MAVEN" -B test > "$CACHE/maven.log" 2>&1) || true
 
   # The hidden tests fail on the commit before the fix and pass with the reference fix.
   cp -r "$HERE/tasks/$TASK/hidden/." "$CACHE/maven/"
