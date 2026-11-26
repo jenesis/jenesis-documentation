@@ -1,0 +1,21 @@
+{
+  "task": "jgrapht",
+  "arm": "jenesis",
+  "attempt": 4,
+  "model": "claude-opus-5-5",
+  "effort": "medium",
+  "passed": true,
+  "agent_ended": "success",
+  "wall_seconds": 197.4,
+  "build_seconds": 21.2,
+  "build_invocations": 1,
+  "build_failures": 0,
+  "build_output_bytes": 23010,
+  "turns": 9,
+  "cost_usd": 0.3998118,
+  "input_tokens": 20,
+  "cache_write_tokens": 24666,
+  "cache_read_tokens": 401019,
+  "output_tokens": 6110,
+  "prompt_bytes": 8002
+}

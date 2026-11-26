@@ -72,3 +72,28 @@ them with Maven - in both arms, so the verdict never depends on the tool the age
   attempts beside a median, and the verdict beside the cost: a cheap run that fixed nothing is not cheap.
 - **One bug is one bug.** A task shows how the tools compare on that change in that project. The share of a
   project a change invalidates decides how much an incremental build saves, and three tasks sample it thinly.
+
+## The runs so far
+
+Three tasks, five attempts per tool, `claude-opus-5-5` at medium effort, one run at a time on a four-core Linux
+machine without a container. The Jenesis arm vendored the engine of jenesis/jenesis at commit `0339407`. Each cell
+is the median over the five attempts; `results/` holds every record.
+
+| Task | Tool | Passed | Wall s | Build s | Builds | Build output kB | Turns | Cost $ | Output tokens |
+|---|---|---|---|---|---|---|---|---|---|
+| httpcore | jenesis | 5/5 | 97 | 28 | 2 | 27 | 12 | 0.53 | 7813 |
+| httpcore | maven | 5/5 | 93 | 26 | 2 | 12 | 13 | 0.50 | 7165 |
+| jgrapht | jenesis | 5/5 | 62 | 19 | 1 | 23 | 7 | 0.34 | 4771 |
+| jgrapht | maven | 5/5 | 66 | 14 | 1 | 2 | 7 | 0.36 | 4989 |
+| maven-resolver | jenesis | 5/5 | 128 | 53 | 3 | 156 | 18 | 0.67 | 7935 |
+| maven-resolver | maven | 4/5 | 130 | 60 | 5 | 184 | 15 | 0.64 | 8592 |
+
+- The tools are level on all three tasks: no median differs by more than the attempts of one arm differ among
+  themselves.
+- One Maven attempt on maven-resolver did not pass the hidden tests; every other attempt did.
+- The three bugs each have their cause and their tests in one module, and an agent fixed each in one to four
+  minutes with one to five builds. A build of one module with a test filter takes either tool ten to thirty
+  seconds here, so there is little for an incremental build to save.
+- `pilot/httpcore` holds ten earlier runs of one task, made before the briefing of the Jenesis arm showed how to
+  build one module and run one test class. There the Jenesis arm took a median of 142 seconds, 60 of them in the
+  build tool, against 97 and 28 afterwards.

@@ -1,0 +1,173 @@
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/jgrapht/jgrapht-core/src/main/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycle.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/jgrapht-maven-1/project/jgrapht-core/src/main/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycle.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/jgrapht/jgrapht-core/src/main/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycle.java	2026-11-25 23:18:19.488149694 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/jgrapht-maven-1/project/jgrapht-core/src/main/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycle.java	2026-11-26 01:27:41.458337729 +0000
+@@ -94,6 +94,11 @@
+      * Vertex which is used to reconstruct the cycle found on current iteration.
+      */
+     private V currentCycleVertex;
++    /**
++     * Edges of the cycle found on current iteration, starting at {@code currentCycleVertex}. The
++     * edges are copied because the policy graph changes after the cycle has been found.
++     */
++    private List<E> currentCycleEdges;
+ 
+     /**
+      * For each vertex contains an edge, which together for the policy graph on current iteration.
+@@ -187,6 +192,7 @@
+         double bestCycleWeight = 0.0;
+         int bestCycleLength = 1;
+         V bestCycleVertex = null;
++        List<E> bestCycleEdges = null;
+ 
+         // search for best cycle over strongly connected components separately
+         int numberOfIterations = 0;
+@@ -220,6 +226,7 @@
+                 bestCycleWeight = currentCycleWeight;
+                 bestCycleLength = currentCycleLength;
+                 bestCycleVertex = currentCycleVertex;
++                bestCycleEdges = currentCycleEdges;
+             }
+ 
+             // iterations limit reached
+@@ -229,7 +236,7 @@
+         }
+ 
+         if (isBestCycleFound) {
+-            return buildPath(bestCycleVertex, bestCycleLength, bestCycleWeight);
++            return buildPath(bestCycleVertex, bestCycleEdges, bestCycleWeight);
+         }
+         // no cycle found in the graph
+         return null;
+@@ -318,6 +325,13 @@
+                     currentCycleWeight = currentWeight;
+                     currentCycleLength = currentSize;
+                     currentCycleVertex = u;
++                    currentCycleEdges = new ArrayList<>(currentSize);
++                    V w = u;
++                    do {
++                        E e = policyGraph.get(w);
++                        currentCycleEdges.add(e);
++                        w = Graphs.getOppositeVertex(component, e, w);
++                    } while (!w.equals(u));
+                 }
+             }
+             ++currentCycleLevel;
+@@ -387,29 +401,25 @@
+     }
+ 
+     /**
+-     * Constructs cycle with minimum mean using information in {@code policyGraph}.
++     * Constructs cycle with minimum mean from the recorded cycle edges.
+      *
+      * @param bestCycleVertex cycle vertex
+-     * @param bestCycleLength cycle length
++     * @param bestCycleEdges cycle edges starting at {@code bestCycleVertex}
+      * @param bestCycleWeight cycle weight
+      * @return constructed minimum mean cycle
+      */
+     private GraphPath<V, E> buildPath(
+-        V bestCycleVertex, int bestCycleLength, double bestCycleWeight)
++        V bestCycleVertex, List<E> bestCycleEdges, double bestCycleWeight)
+     {
+-        List<E> pathEdges = new ArrayList<>(bestCycleLength);
+-        List<V> pathVertices = new ArrayList<>(bestCycleLength + 1);
++        List<E> pathEdges = new ArrayList<>(bestCycleEdges);
++        List<V> pathVertices = new ArrayList<>(pathEdges.size() + 1);
+ 
+         V v = bestCycleVertex;
+-        pathVertices.add(bestCycleVertex);
+-        do {
+-            E e = policyGraph.get(v);
++        pathVertices.add(v);
++        for (E e : pathEdges) {
+             v = Graphs.getOppositeVertex(graph, e, v);
+-
+-            pathEdges.add(e);
+             pathVertices.add(v);
+-
+-        } while (!v.equals(bestCycleVertex));
++        }
+ 
+         return new GraphWalk<>(
+             graph, bestCycleVertex, bestCycleVertex, pathVertices, pathEdges, bestCycleWeight);
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/jgrapht/jgrapht-core/src/test/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycleTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/jgrapht-maven-1/project/jgrapht-core/src/test/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycleTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/jgrapht/jgrapht-core/src/test/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycleTest.java	2026-11-25 23:18:19.488149694 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/jgrapht-maven-1/project/jgrapht-core/src/test/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycleTest.java	2026-11-26 01:27:52.392730172 +0000
+@@ -23,12 +23,16 @@
+ import org.jgrapht.graph.DefaultEdge;
+ import org.jgrapht.graph.DirectedWeightedPseudograph;
+ import org.jgrapht.graph.GraphWalk;
++import org.jgrapht.Graphs;
++import org.jgrapht.graph.DefaultWeightedEdge;
+ import org.junit.jupiter.api.Test;
++import org.junit.jupiter.api.Timeout;
+ 
+ import java.util.ArrayList;
+ import java.util.List;
+ 
+ import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertNotNull;
+ 
+ /**
+  * Test for {@link HowardMinimumMeanCycle}.
+@@ -94,6 +98,60 @@
+     private int[][] expectedCycle7 =
+         { { 0, 14 }, { 14, 13 }, { 13, 3 }, { 3, 9 }, { 9, 5 }, { 5, 11 }, { 11, 0 } };
+ 
++    private static Graph<Integer, DefaultWeightedEdge> weighted(int n, int[][] edges)
++    {
++        Graph<Integer, DefaultWeightedEdge> g =
++            new DirectedWeightedPseudograph<>(DefaultWeightedEdge.class);
++        for (int v = 0; v < n; v++) {
++            g.addVertex(v);
++        }
++        for (int[] e : edges) {
++            Graphs.addEdge(g, e[0], e[1], e[2]);
++        }
++        return g;
++    }
++
++    private static void assertCycle(
++        Graph<Integer, DefaultWeightedEdge> g, GraphPath<Integer, DefaultWeightedEdge> cycle,
++        List<Integer> expectedVertices, double expectedMean)
++    {
++        assertNotNull(cycle);
++        assertEquals(expectedVertices, cycle.getVertexList());
++        double sum = 0;
++        Integer v = cycle.getStartVertex();
++        for (DefaultWeightedEdge e : cycle.getEdgeList()) {
++            assertEquals(v, g.getEdgeSource(e));
++            v = g.getEdgeTarget(e);
++            sum += g.getEdgeWeight(e);
++        }
++        assertEquals(cycle.getEndVertex(), v);
++        assertEquals(cycle.getStartVertex(), v);
++        assertEquals(sum, cycle.getWeight(), 1e-9);
++        assertEquals(expectedMean, cycle.getWeight() / cycle.getLength(), 1e-9);
++    }
++
++    @Test
++    @Timeout(10)
++    public void testPolicyChangedAfterCycleFound1()
++    {
++        Graph<Integer, DefaultWeightedEdge> g =
++            weighted(4, new int[][] { { 0, 2, 2 }, { 1, 2, 1 }, { 2, 3, 2 }, { 3, 0, 1 }, { 3, 1, 2 } });
++        HowardMinimumMeanCycle<Integer, DefaultWeightedEdge> mmc = new HowardMinimumMeanCycle<>(g);
++        assertCycle(g, mmc.getCycle(), List.of(0, 2, 3, 0), 5.0 / 3);
++        assertEquals(5.0 / 3, mmc.getCycleMean(), 1e-9);
++    }
++
++    @Test
++    @Timeout(10)
++    public void testPolicyChangedAfterCycleFound2()
++    {
++        int[][] edges = { { 0, 1, 4 }, { 1, 2, 2 }, { 2, 0, 5 }, { 2, 1, 5 } };
++        Graph<Integer, DefaultWeightedEdge> g = weighted(3, edges);
++        assertCycle(g, new HowardMinimumMeanCycle<>(g).getCycle(), List.of(1, 2, 1), 3.5);
++        assertCycle(
++            g, new HowardMinimumMeanCycle<>(g, 1).getCycle(), List.of(0, 1, 2, 0), 11.0 / 3);
++    }
++
+     @Test
+     public void testGraph1()
+     {

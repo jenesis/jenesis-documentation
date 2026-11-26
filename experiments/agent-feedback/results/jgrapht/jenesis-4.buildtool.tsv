@@ -1,0 +1,1 @@
+jenesis	1795656992.330	21.163	0	23010	-Djenesis.test.filter=.*HowardMinimumMeanCycleTest -Djenesis.print.tests=true build/jenesis/Make.java +jgrapht-core

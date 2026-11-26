@@ -1,0 +1,21 @@
+{
+  "task": "maven-resolver",
+  "arm": "jenesis",
+  "attempt": 4,
+  "model": "claude-opus-5-5",
+  "effort": "medium",
+  "passed": true,
+  "agent_ended": "success",
+  "wall_seconds": 120.8,
+  "build_seconds": 51.3,
+  "build_invocations": 3,
+  "build_failures": 1,
+  "build_output_bytes": 152534,
+  "turns": 13,
+  "cost_usd": 0.5622999999999999,
+  "input_tokens": 24,
+  "cache_write_tokens": 36684,
+  "cache_read_tokens": 605560,
+  "output_tokens": 7381,
+  "prompt_bytes": 8135
+}

@@ -1,0 +1,10 @@
+maven	1795655164.722	5.464	0	1344	-o -q spotless:apply -pl maven-resolver-impl
+maven	1795655170.221	1.664	1	4225	-o test -pl maven-resolver-impl -Dtest=Bf*,DependencyResolutionSkipperTest,DfDependencyCollectorTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795655174.320	22.764	1	92013	-o test -pl maven-resolver-impl -am -Dtest=Bf*,DependencyResolutionSkipperTest,DfDependencyCollectorTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795655201.590	16.503	0	59142	-o test -pl maven-resolver-impl -am -Dtest=Bf*,DependencyResolutionSkipperTest,DfDependencyCollectorTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795655222.128	1.714	1	4225	-o test -pl maven-resolver-impl -Dtest=BfWithSkipperDependencyCollectorTest,DependencyResolutionSkipperTest
+maven	1795655223.874	1.663	1	4225	-o test -pl maven-resolver-impl
+maven	1795655229.771	10.929	1	21050	-o test -pl maven-resolver-impl -am -Dsurefire.failIfNoSpecifiedTests=false -Dtest=BfWithSkipperDependencyCollectorTest,DependencyResolutionSkipperTest
+maven	1795655240.734	71.224	0	103367	-o test -pl maven-resolver-impl -am
+maven	1795655316.315	11.524	1	21051	-o test -pl maven-resolver-impl -am -Dsurefire.failIfNoSpecifiedTests=false -Dtest=BfWithSkipperDependencyCollectorTest,DependencyResolutionSkipperTest
+maven	1795655331.626	17.585	1	65859	-o test -pl maven-resolver-impl -am -Dsurefire.failIfNoSpecifiedTests=false -Dtest=BfWithSkipperDependencyCollectorTest,DependencyResolutionSkipperTest

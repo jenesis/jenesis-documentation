@@ -1,0 +1,4 @@
+maven	1795655616.925	1.667	1	2075	-o -q install -DskipTests -pl maven-resolver-impl -am
+maven	1795655618.625	1.816	1	4225	-o -pl maven-resolver-impl test -Dtest=BfWith*,DependencyResolutionSkipperTest,*CollectorTest* -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795655622.603	25.634	1	92331	-o -pl maven-resolver-impl -am test -Dtest=Bf*,DependencyResolutionSkipperTest,Df* -Dsurefire.failIfNoSpecifiedTests=false -Dspotless.check.skip=true
+maven	1795655651.974	16.024	0	58890	-o -pl maven-resolver-impl -am test -Dtest=Bf*,DependencyResolutionSkipperTest,Df* -Dsurefire.failIfNoSpecifiedTests=false

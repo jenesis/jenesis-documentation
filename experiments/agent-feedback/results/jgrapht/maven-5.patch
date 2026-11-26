@@ -1,0 +1,162 @@
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/jgrapht/jgrapht-core/src/main/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycle.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/jgrapht-maven-5/project/jgrapht-core/src/main/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycle.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/jgrapht/jgrapht-core/src/main/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycle.java	2026-11-25 23:18:19.488149694 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/jgrapht-maven-5/project/jgrapht-core/src/main/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycle.java	2026-11-26 01:41:12.567161029 +0000
+@@ -186,7 +186,7 @@
+         boolean isBestCycleFound = false;
+         double bestCycleWeight = 0.0;
+         int bestCycleLength = 1;
+-        V bestCycleVertex = null;
++        List<E> bestCycleEdges = null;
+ 
+         // search for best cycle over strongly connected components separately
+         int numberOfIterations = 0;
+@@ -202,10 +202,26 @@
+ 
+             constructPolicyGraph(component);
+ 
+-            // try to improve currently best cycle
++            // try to improve currently best cycle; within the component the cycle found by the
++            // latest iteration is preferred on ties
++            boolean isComponentCycleFound = false;
++            double componentCycleWeight = 0.0;
++            int componentCycleLength = 1;
++            List<E> componentCycleEdges = null;
+             boolean improved = true;
+             while (numberOfIterations < maximumIterations && improved) {
+                 constructCycle(component);
++                if (isCurrentCycleFound && (!isComponentCycleFound
++                    || currentCycleWeight * componentCycleLength <= componentCycleWeight
++                        * currentCycleLength))
++                {
++                    // the policy graph is modified by the improvement step below, so the edges
++                    // of the found cycle have to be recorded now
++                    isComponentCycleFound = true;
++                    componentCycleWeight = currentCycleWeight;
++                    componentCycleLength = currentCycleLength;
++                    componentCycleEdges = extractCycleEdges(component);
++                }
+ 
+                 improved = computeVertexDistance(component);
+ 
+@@ -213,13 +229,13 @@
+             }
+ 
+             // update best cycle information if necessary
+-            if (isCurrentCycleFound && (!isBestCycleFound
+-                || currentCycleWeight * bestCycleLength < bestCycleWeight * currentCycleLength))
++            if (isComponentCycleFound && (!isBestCycleFound
++                || componentCycleWeight * bestCycleLength < bestCycleWeight * componentCycleLength))
+             {
+                 isBestCycleFound = true;
+-                bestCycleWeight = currentCycleWeight;
+-                bestCycleLength = currentCycleLength;
+-                bestCycleVertex = currentCycleVertex;
++                bestCycleWeight = componentCycleWeight;
++                bestCycleLength = componentCycleLength;
++                bestCycleEdges = componentCycleEdges;
+             }
+ 
+             // iterations limit reached
+@@ -229,7 +245,7 @@
+         }
+ 
+         if (isBestCycleFound) {
+-            return buildPath(bestCycleVertex, bestCycleLength, bestCycleWeight);
++            return buildPath(bestCycleEdges, bestCycleWeight);
+         }
+         // no cycle found in the graph
+         return null;
+@@ -387,31 +403,41 @@
+     }
+ 
+     /**
+-     * Constructs cycle with minimum mean using information in {@code policyGraph}.
++     * Extracts the edges of the cycle in the {@code policyGraph} identified by
++     * {@code currentCycleVertex}, starting at that vertex.
+      *
+-     * @param bestCycleVertex cycle vertex
+-     * @param bestCycleLength cycle length
+-     * @param bestCycleWeight cycle weight
+-     * @return constructed minimum mean cycle
++     * @param component connected component
++     * @return edges of the current cycle
+      */
+-    private GraphPath<V, E> buildPath(
+-        V bestCycleVertex, int bestCycleLength, double bestCycleWeight)
++    private List<E> extractCycleEdges(Graph<V, E> component)
+     {
+-        List<E> pathEdges = new ArrayList<>(bestCycleLength);
+-        List<V> pathVertices = new ArrayList<>(bestCycleLength + 1);
+-
+-        V v = bestCycleVertex;
+-        pathVertices.add(bestCycleVertex);
++        List<E> edges = new ArrayList<>(currentCycleLength);
++        V v = currentCycleVertex;
+         do {
+             E e = policyGraph.get(v);
+-            v = Graphs.getOppositeVertex(graph, e, v);
++            edges.add(e);
++            v = Graphs.getOppositeVertex(component, e, v);
++        } while (!v.equals(currentCycleVertex));
++        return edges;
++    }
+ 
+-            pathEdges.add(e);
++    /**
++     * Constructs the cycle with minimum mean from its edges.
++     *
++     * @param cycleEdges edges of the cycle in traversal order
++     * @param cycleWeight cycle weight
++     * @return constructed minimum mean cycle
++     */
++    private GraphPath<V, E> buildPath(List<E> cycleEdges, double cycleWeight)
++    {
++        V start = graph.getEdgeSource(cycleEdges.get(0));
++        List<V> pathVertices = new ArrayList<>(cycleEdges.size() + 1);
++        V v = start;
++        pathVertices.add(v);
++        for (E e : cycleEdges) {
++            v = Graphs.getOppositeVertex(graph, e, v);
+             pathVertices.add(v);
+-
+-        } while (!v.equals(bestCycleVertex));
+-
+-        return new GraphWalk<>(
+-            graph, bestCycleVertex, bestCycleVertex, pathVertices, pathEdges, bestCycleWeight);
++        }
++        return new GraphWalk<>(graph, start, start, pathVertices, cycleEdges, cycleWeight);
+     }
+ }
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/jgrapht/jgrapht-core/src/test/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycleTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/jgrapht-maven-5/project/jgrapht-core/src/test/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycleTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/jgrapht/jgrapht-core/src/test/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycleTest.java	2026-11-25 23:18:19.488149694 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/jgrapht-maven-5/project/jgrapht-core/src/test/java/org/jgrapht/alg/cycle/HowardMinimumMeanCycleTest.java	2026-11-26 01:40:44.665070610 +0000
+@@ -136,6 +136,29 @@
+         testOnGraph(graph7, expectedMean7, expectedCycle7);
+     }
+ 
++    @Test
++    public void testPolicyChangeAfterCycleFound()
++    {
++        testOnGraph(
++            new int[][] { { 0, 2, 2 }, { 1, 2, 1 }, { 2, 3, 2 }, { 3, 0, 1 }, { 3, 1, 2 } },
++            5.0 / 3, new int[][] { { 0, 2 }, { 2, 3 }, { 3, 0 } });
++        testOnGraph(
++            new int[][] { { 0, 1, 4 }, { 1, 2, 2 }, { 2, 0, 5 }, { 2, 1, 5 } }, 3.5,
++            new int[][] { { 1, 2 }, { 2, 1 } });
++    }
++
++    @Test
++    public void testMaximumIterations()
++    {
++        Graph<Integer, DefaultEdge> graph = new DirectedWeightedPseudograph<>(DefaultEdge.class);
++        TestUtil.constructGraph(
++            graph, new int[][] { { 0, 1, 4 }, { 1, 2, 2 }, { 2, 0, 5 }, { 2, 1, 5 } });
++        HowardMinimumMeanCycle<Integer, DefaultEdge> mmc = new HowardMinimumMeanCycle<>(graph, 1);
++        GraphPath<Integer, DefaultEdge> cycle = mmc.getCycle();
++        assertEquals(readPath(new int[][] { { 0, 1 }, { 1, 2 }, { 2, 0 } }, graph), cycle);
++        assertEquals(11.0 / 3, mmc.getCycleMean(), 1e-9);
++    }
++
+     /**
+      * Tests the algorithm on the graph instance {@code graphArray} using {@code expectedMean} and
+      * {@code expectedCycleArray} to check correctness.

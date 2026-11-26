@@ -1,0 +1,21 @@
+{
+  "task": "jgrapht",
+  "arm": "maven",
+  "attempt": 4,
+  "model": "claude-opus-5-5",
+  "effort": "medium",
+  "passed": true,
+  "agent_ended": "success",
+  "wall_seconds": 77.8,
+  "build_seconds": 30.5,
+  "build_invocations": 2,
+  "build_failures": 0,
+  "build_output_bytes": 4492,
+  "turns": 9,
+  "cost_usd": 0.3636304000000001,
+  "input_tokens": 18,
+  "cache_write_tokens": 22767,
+  "cache_read_tokens": 408212,
+  "output_tokens": 4989,
+  "prompt_bytes": 2567
+}

@@ -1,0 +1,21 @@
+{
+  "task": "maven-resolver",
+  "arm": "maven",
+  "attempt": 5,
+  "model": "claude-opus-5-5",
+  "effort": "medium",
+  "passed": false,
+  "agent_ended": "success",
+  "wall_seconds": 163.3,
+  "build_seconds": 74.9,
+  "build_invocations": 6,
+  "build_failures": 4,
+  "build_output_bytes": 252993,
+  "turns": 15,
+  "cost_usd": 0.642204,
+  "input_tokens": 28,
+  "cache_write_tokens": 37889,
+  "cache_read_tokens": 745000,
+  "output_tokens": 9499,
+  "prompt_bytes": 2679
+}

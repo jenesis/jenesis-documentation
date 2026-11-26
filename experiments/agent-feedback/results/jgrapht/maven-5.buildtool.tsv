@@ -1,0 +1,2 @@
+maven	1795657244.696	14.645	1	4102	-q -o test -Dtest=HowardMinimumMeanCycleTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795657272.597	15.103	0	2246	-q -o test -Dtest=HowardMinimumMeanCycleTest -Dsurefire.failIfNoSpecifiedTests=false

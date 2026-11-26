@@ -1,0 +1,5 @@
+maven	1795655908.907	5.401	0	1344	-q -o spotless:apply -pl maven-resolver-impl
+maven	1795655914.338	1.656	1	4225	-o -pl maven-resolver-impl test -Dtest=*DependencyCollector*Test,DependencyResolutionSkipperTest
+maven	1795655918.445	24.200	0	91628	-o -pl maven-resolver-impl -am test -Dtest=*DependencyCollector*Test,DependencyResolutionSkipperTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795655946.751	11.283	1	21051	-o -pl maven-resolver-impl -am test -Dtest=BfWithSkipperDependencyCollectorTest,DependencyResolutionSkipperTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795655961.083	17.475	1	65524	-o -pl maven-resolver-impl -am test -Dtest=BfWithSkipperDependencyCollectorTest,DependencyResolutionSkipperTest -Dsurefire.failIfNoSpecifiedTests=false
