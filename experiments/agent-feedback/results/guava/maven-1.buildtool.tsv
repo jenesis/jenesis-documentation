@@ -1,0 +1,2 @@
+maven	1795707938.251	81.813	0	2242	-o -q -pl guava-tests -am test -Dtest=MapsTest,ForwardingNavigableMapTest,FilteredSortedMapTest,MapsCollectionTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795708023.529	719.597	0	3691	-o -q -pl guava-testlib,guava-tests -am test
