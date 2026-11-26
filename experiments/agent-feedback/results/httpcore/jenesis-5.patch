@@ -1,0 +1,199 @@
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/build.jenesis/process-javac.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-jenesis-5/project/build.jenesis/process-javac.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/build.jenesis/process-javac.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-jenesis-5/project/build.jenesis/process-javac.properties	2026-11-25 22:50:33.292174370 +0000
+@@ -0,0 +1 @@
++--source=8
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-jenesis-5/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java	2026-11-25 23:13:45.068133382 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-jenesis-5/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java	2026-11-25 23:48:10.563259826 +0000
+@@ -61,6 +61,7 @@
+ import org.apache.hc.core5.http.io.HttpMessageWriterFactory;
+ import org.apache.hc.core5.http.io.ResponseOutOfOrderStrategy;
+ import org.apache.hc.core5.http.message.MessageSupport;
++import org.apache.hc.core5.io.CloseMode;
+ import org.apache.hc.core5.util.Args;
+ 
+ /**
+@@ -209,7 +210,7 @@
+         if (len == ContentLengthStrategy.UNDEFINED) {
+             throw new LengthRequiredException();
+         }
+-        try (final OutputStream outStream = createContentOutputStream(
++        final OutputStream outStream = createContentOutputStream(
+                 len, this.outbuffer, new OutputStream() {
+ 
+                     final OutputStream socketOutputStream = socketHolder.getOutputStream();
+@@ -281,12 +282,30 @@
+                         socketOutputStream.close();
+                     }
+ 
+-                }, entity.getTrailers())) {
++                }, entity.getTrailers());
++        try {
+             entity.writeTo(outStream);
+         } catch (final ResponseOutOfOrderException ex) {
+-            if (len > 0) {
++            // The request body has been abandoned mid-message. The content stream
++            // must not be closed as that would terminate a chunked message as if
++            // it were complete. Keep the connection open so the early response
++            // can be read but make sure it does not get re-used.
++            if (len != 0) {
+                 this.consistent = false;
+             }
++            return;
++        } catch (final IOException | RuntimeException | Error ex) {
++            // The message is incomplete: do not finish it, close the connection
++            this.consistent = false;
++            close(CloseMode.IMMEDIATE);
++            throw ex;
++        }
++        try {
++            outStream.close();
++        } catch (final IOException | RuntimeException | Error ex) {
++            this.consistent = false;
++            close(CloseMode.IMMEDIATE);
++            throw ex;
+         }
+     }
+ 
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-jenesis-5/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java	2026-11-25 23:13:45.068133382 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-jenesis-5/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java	2026-11-25 23:48:10.563412541 +0000
+@@ -52,6 +52,7 @@
+ import org.apache.hc.core5.http.io.HttpMessageWriter;
+ import org.apache.hc.core5.http.io.HttpMessageWriterFactory;
+ import org.apache.hc.core5.http.io.HttpServerConnection;
++import org.apache.hc.core5.io.CloseMode;
+ import org.apache.hc.core5.util.Args;
+ 
+ /**
+@@ -193,8 +194,15 @@
+             return;
+         }
+         final long len = this.outgoingContentStrategy.determineLength(response);
+-        try (final OutputStream outStream = createContentOutputStream(len, this.outbuffer, socketHolder.getOutputStream(), entity.getTrailers())) {
++        final OutputStream outStream = createContentOutputStream(len, this.outbuffer, socketHolder.getOutputStream(), entity.getTrailers());
++        try {
+             entity.writeTo(outStream);
++            outStream.close();
++        } catch (final IOException | RuntimeException | Error ex) {
++            // The message is incomplete: it must not be finished as if it were
++            // complete (e.g. with the last chunk), so the connection is closed.
++            close(CloseMode.IMMEDIATE);
++            throw ex;
+         }
+     }
+ }
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpClientConnection.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-jenesis-5/project/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpClientConnection.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpClientConnection.java	2026-11-25 23:13:45.072133382 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-jenesis-5/project/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpClientConnection.java	2026-11-25 23:48:36.652271184 +0000
+@@ -28,6 +28,8 @@
+ 
+ import java.io.ByteArrayInputStream;
+ import java.io.ByteArrayOutputStream;
++import java.io.EOFException;
++import java.io.OutputStream;
+ import java.io.InputStream;
+ import java.net.Socket;
+ import java.nio.charset.StandardCharsets;
+@@ -41,6 +43,7 @@
+ import org.apache.hc.core5.http.NotImplementedException;
+ import org.apache.hc.core5.http.config.Http1Config;
+ import org.apache.hc.core5.http.impl.DefaultContentLengthStrategy;
++import org.apache.hc.core5.http.io.entity.AbstractHttpEntity;
+ import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
+ import org.apache.hc.core5.http.io.entity.StringEntity;
+ import org.apache.hc.core5.http.message.BasicClassicHttpRequest;
+@@ -415,4 +418,87 @@
+         Assertions.assertFalse(conn.isConsistent());
+     }
+ 
++    @Test
++    void testWriteRequestEntityChunkCodedFailure() throws Exception {
++        final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
++        Mockito.when(socket.getOutputStream()).thenReturn(outStream);
++
++        conn.bind(socket);
++
++        final ClassicHttpRequest request = new BasicClassicHttpRequest(Method.POST, "/stuff");
++        request.addHeader("Transfer-Encoding", "chunked");
++        request.setEntity(new AbstractHttpEntity(ContentType.TEXT_PLAIN, null, true) {
++
++            @Override
++            public InputStream getContent() {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public void writeTo(final OutputStream out) throws java.io.IOException {
++                out.write(new byte[] {'1', '2', '3'});
++                out.flush();
++                throw new EOFException("Premature end");
++            }
++
++            @Override
++            public boolean isStreaming() {
++                return false;
++            }
++
++            @Override
++            public long getContentLength() {
++                return -1;
++            }
++
++            @Override
++            public void close() {
++            }
++
++        });
++
++        conn.sendRequestHeader(request);
++        Assertions.assertThrows(EOFException.class, () -> conn.sendRequestEntity(request));
++
++        final String s = new String(outStream.toByteArray(), StandardCharsets.US_ASCII);
++        Assertions.assertTrue(s.endsWith("3\r\n123\r\n"), s);
++        Assertions.assertFalse(s.endsWith("0\r\n\r\n"), s);
++        Assertions.assertFalse(conn.isOpen());
++        Assertions.assertFalse(conn.isConsistent());
++    }
++
++    @Test
++    void testWriteRequestEntityChunkCodedEarlyResponse() throws Exception {
++        conn = new DefaultBHttpClientConnection(Http1Config.DEFAULT,
++                null, null,
++                DefaultContentLengthStrategy.INSTANCE,
++                DefaultContentLengthStrategy.INSTANCE,
++                (request, connection, inputStream, totalBytesSent, nextWriteSize) -> totalBytesSent > 0,
++                DefaultHttpRequestWriterFactory.INSTANCE,
++                DefaultHttpResponseParserFactory.INSTANCE);
++        final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
++        Mockito.when(socket.getOutputStream()).thenReturn(outStream);
++        final String s = "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n";
++        Mockito.when(socket.getInputStream()).thenReturn(
++                new ByteArrayInputStream(s.getBytes(StandardCharsets.US_ASCII)));
++
++        conn.bind(socket);
++
++        final ClassicHttpRequest request = new BasicClassicHttpRequest(Method.POST, "/stuff");
++        request.addHeader("Transfer-Encoding", "chunked");
++        request.setEntity(new ByteArrayEntity(new byte[100000], ContentType.APPLICATION_OCTET_STREAM, true));
++
++        conn.sendRequestHeader(request);
++        conn.flush();
++        conn.sendRequestEntity(request);
++        conn.flush();
++
++        final String out = new String(outStream.toByteArray(), StandardCharsets.US_ASCII);
++        Assertions.assertFalse(out.endsWith("0\r\n\r\n"));
++        Assertions.assertTrue(conn.isOpen());
++        Assertions.assertFalse(conn.isConsistent());
++        final ClassicHttpResponse response = conn.receiveResponseHeader();
++        Assertions.assertEquals(400, response.getCode());
++    }
++
+ }
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/jenesis.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-jenesis-5/project/jenesis.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/jenesis.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-jenesis-5/project/jenesis.properties	2026-11-25 22:00:48.362017439 +0000
+@@ -0,0 +1 @@
++jenesis.process.directory=httpcore5

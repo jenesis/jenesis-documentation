@@ -1,0 +1,182 @@
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/main/java/org/eclipse/aether/internal/impl/collect/bf/DependencyResolutionSkipper.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/main/java/org/eclipse/aether/internal/impl/collect/bf/DependencyResolutionSkipper.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/main/java/org/eclipse/aether/internal/impl/collect/bf/DependencyResolutionSkipper.java	2026-11-25 23:15:42.684140373 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/main/java/org/eclipse/aether/internal/impl/collect/bf/DependencyResolutionSkipper.java	2026-11-25 23:55:31.264350005 +0000
+@@ -132,9 +132,12 @@
+             int depth = parents.size() + 1;
+             coordinateManager.createCoordinate(node, depth);
+ 
+-            if (cacheManager.isVersionConflict(node)) {
++            if (!isRangeResolved(node) && cacheManager.isVersionConflict(node)) {
+                 /*
+                  * Skip resolving version conflict losers (omitted for conflict)
++                 * Note: nodes whose version was selected from a version range are never skipped as
++                 * conflict losers, as conflict resolution may well select them (range constraints
++                 * are honored by version selectors), so their children must be collected.
+                  */
+                 result.skippedAsVersionConflict = true;
+                 if (LOGGER.isTraceEnabled()) {
+@@ -192,10 +195,15 @@
+                             ArtifactIdUtils.toId(node.getArtifact()));
+                 }
+             } else {
+-                cacheManager.cacheWinner(node);
++                cacheManager.cacheWinner(node, !isRangeResolved(node));
+             }
+         }
+ 
++        private static boolean isRangeResolved(DependencyNode node) {
++            return node.getVersionConstraint() != null
++                    && node.getVersionConstraint().getRange() != null;
++        }
++
+         @Override
+         public void close() {
+             if (LOGGER.isTraceEnabled()) {
+@@ -259,9 +267,13 @@
+                 return false;
+             }
+ 
+-            void cacheWinner(DependencyNode node) {
++            void cacheWinner(DependencyNode node, boolean versionWinner) {
+                 winners.put(node.getArtifact(), node);
+-                winnerGAs.put(keyFunction.apply(node.getArtifact()), node.getArtifact());
++                if (versionWinner) {
++                    // range-resolved nodes do not take part in "nearest wins" version conflict
++                    // detection, so they must not replace the GA winner either
++                    winnerGAs.putIfAbsent(keyFunction.apply(node.getArtifact()), node.getArtifact());
++                }
+             }
+ 
+             boolean isDuplicate(DependencyNode node) {
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/java/org/eclipse/aether/internal/impl/collect/bf/BfWithSkipperDependencyCollectorTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/java/org/eclipse/aether/internal/impl/collect/bf/BfWithSkipperDependencyCollectorTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/java/org/eclipse/aether/internal/impl/collect/bf/BfWithSkipperDependencyCollectorTest.java	2026-11-25 23:15:42.688140374 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/java/org/eclipse/aether/internal/impl/collect/bf/BfWithSkipperDependencyCollectorTest.java	2026-11-25 23:54:36.404279097 +0000
+@@ -170,4 +170,37 @@
+         // skipped
+         assertEquals(0, path(result.getRoot(), 1).getChildren().size());
+     }
++
++    /**
++     * A dependency whose version is selected from a version range must have its own dependencies collected,
++     * even if another version of the same artifact was collected before at a shallower depth.
++     * <pre>
++     *   root
++     *   ├── parent:1 → library:[2,4) → library:3 → range-asset:1
++     *   ├── library:1
++     *   └── other:1  → library:1 (duplicate)
++     * </pre>
++     */
++    @Test
++    void testRangeResolvedDependencyChildrenAreCollected() throws DependencyCollectionException {
++        collector = setupCollector(newReader("range-transitive/"));
++
++        CollectRequest request =
++                new CollectRequest(newDep("gid:root:ext:1", "compile"), Collections.singletonList(repository));
++        CollectResult result = collector.collectDependencies(session, request);
++
++        assertEquals(0, result.getExceptions().size());
++        DependencyNode rootNode = result.getRoot();
++        assertEquals(3, rootNode.getChildren().size());
++
++        DependencyNode parent = rootNode.getChildren().get(0);
++        assertEquals("parent", parent.getArtifact().getArtifactId());
++        DependencyNode library3 = parent.getChildren().stream()
++                .filter(n -> "3".equals(n.getArtifact().getVersion()))
++                .findFirst()
++                .orElseThrow(AssertionError::new);
++        assertEquals("library", library3.getArtifact().getArtifactId());
++        assertEquals(1, library3.getChildren().size(), "range-resolved library:3 must have its children");
++        assertEquals("range-asset", library3.getChildren().get(0).getArtifact().getArtifactId());
++    }
+ }
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/java/org/eclipse/aether/internal/impl/collect/bf/DependencyResolutionSkipperTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/java/org/eclipse/aether/internal/impl/collect/bf/DependencyResolutionSkipperTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/java/org/eclipse/aether/internal/impl/collect/bf/DependencyResolutionSkipperTest.java	2026-11-25 23:15:42.688140374 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/java/org/eclipse/aether/internal/impl/collect/bf/DependencyResolutionSkipperTest.java	2026-11-25 23:54:33.325943907 +0000
+@@ -30,6 +30,7 @@
+ import org.eclipse.aether.graph.DependencyNode;
+ import org.eclipse.aether.internal.test.util.TestVersion;
+ import org.eclipse.aether.internal.test.util.TestVersionConstraint;
++import org.eclipse.aether.util.version.GenericVersionScheme;
+ import org.junit.jupiter.api.Test;
+ 
+ import static org.junit.jupiter.api.Assertions.*;
+@@ -202,4 +203,38 @@
+             assertSame(forceResolved.get(2).current, d2Node);
+         }
+     }
++
++    @Test
++    void testRangeResolvedNodeIsNotSkippedAsVersionConflict() throws Exception {
++        // A -> P -> L 3 (from range [2,4)) -> R   => L3 MUST be resolved
++        // | -> L 1  => L1 is resolved first (nearest)
++        // | -> X -> L 1  => L1 here is a duplicate (not a version conflict)
++        DependencyNode aNode = makeDependencyNode("some-group", "A", "1.0");
++        DependencyNode pNode = makeDependencyNode("some-group", "P", "1.0");
++        DependencyNode l1Node = makeDependencyNode("some-group", "L", "1");
++        DependencyNode xNode = makeDependencyNode("some-group", "X", "1.0");
++        DefaultDependencyNode l3Node = (DefaultDependencyNode) makeDependencyNode("some-group", "L", "3");
++        l3Node.setVersionConstraint(new GenericVersionScheme().parseVersionConstraint("[2,4)"));
++        DependencyNode l1DupNode = new DefaultDependencyNode(l1Node);
++
++        try (DependencyResolutionSkipper.DefaultDependencyResolutionSkipper skipper =
++                DependencyResolutionSkipper.defaultGACESkipper()) {
++            assertFalse(skipper.skipResolution(aNode, new ArrayList<>()));
++            skipper.cache(aNode, new ArrayList<>());
++            assertFalse(skipper.skipResolution(pNode, mutableList(aNode)));
++            skipper.cache(pNode, mutableList(aNode));
++            assertFalse(skipper.skipResolution(l1Node, mutableList(aNode)));
++            skipper.cache(l1Node, mutableList(aNode));
++            assertFalse(skipper.skipResolution(xNode, mutableList(aNode)));
++            skipper.cache(xNode, mutableList(aNode));
++            assertFalse(skipper.skipResolution(l3Node, mutableList(aNode, pNode)));
++            skipper.cache(l3Node, mutableList(aNode, pNode, l3Node));
++            assertTrue(skipper.skipResolution(l1DupNode, mutableList(aNode, xNode)));
++
++            Map<DependencyNode, DependencyResolutionSkipper.DependencyResolutionResult> results = skipper.getResults();
++            assertTrue(results.get(l3Node).resolve);
++            assertTrue(results.get(l1DupNode).skippedAsDuplicate);
++            assertFalse(results.get(l1DupNode).skippedAsVersionConflict);
++        }
++    }
+ }
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_library_1.ini /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_library_1.ini
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_library_1.ini	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_library_1.ini	2026-11-25 23:54:19.156278071 +0000
+@@ -0,0 +1 @@
++[dependencies]
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_library_2.ini /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_library_2.ini
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_library_2.ini	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_library_2.ini	2026-11-25 23:54:19.156278071 +0000
+@@ -0,0 +1 @@
++[dependencies]
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_library_3.ini /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_library_3.ini
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_library_3.ini	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_library_3.ini	2026-11-25 23:54:19.156278071 +0000
+@@ -0,0 +1,2 @@
++[dependencies]
++gid:range-asset:ext:1
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_other_1.ini /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_other_1.ini
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_other_1.ini	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_other_1.ini	2026-11-25 23:54:19.156278071 +0000
+@@ -0,0 +1,2 @@
++[dependencies]
++gid:library:ext:1
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_parent_1.ini /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_parent_1.ini
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_parent_1.ini	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_parent_1.ini	2026-11-25 23:54:19.156278071 +0000
+@@ -0,0 +1,2 @@
++[dependencies]
++gid:library:ext:[2,4)
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_range-asset_1.ini /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_range-asset_1.ini
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_range-asset_1.ini	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_range-asset_1.ini	2026-11-25 23:54:19.156278071 +0000
+@@ -0,0 +1 @@
++[dependencies]
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_root_1.ini /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_root_1.ini
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/maven-resolver/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_root_1.ini	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/maven-resolver-maven-1/project/maven-resolver-impl/src/test/resources/artifact-descriptions/range-transitive/gid_root_1.ini	2026-11-25 23:54:19.156278071 +0000
+@@ -0,0 +1,4 @@
++[dependencies]
++gid:parent:ext:1
++gid:library:ext:1
++gid:other:ext:1

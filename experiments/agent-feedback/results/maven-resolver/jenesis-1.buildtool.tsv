@@ -1,0 +1,4 @@
+jenesis	1795650732.755	15.341	0	55484	-Djenesis.test.filter=.*(DependencyResolutionSkipperTest|BfWith.*DependencyCollectorTest) build/jenesis/Make.java +maven-resolver-impl
+jenesis	1795650756.171	5.046	1	63083	-Djenesis.test.filter=.*(DependencyResolutionSkipperTest|BfWith.*DependencyCollectorTest) build/jenesis/Make.java +maven-resolver-impl
+jenesis	1795650761.251	35.183	0	49511	build/jenesis/Make.java +maven-resolver-impl
+jenesis	1795650799.912	1.739	0	48934	build/jenesis/Make.java +maven-resolver-impl

@@ -1,0 +1,191 @@
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-3/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java	2026-11-25 23:13:45.068133382 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-3/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpClientConnection.java	2026-11-25 23:43:11.896051294 +0000
+@@ -61,6 +61,7 @@
+ import org.apache.hc.core5.http.io.HttpMessageWriterFactory;
+ import org.apache.hc.core5.http.io.ResponseOutOfOrderStrategy;
+ import org.apache.hc.core5.http.message.MessageSupport;
++import org.apache.hc.core5.io.CloseMode;
+ import org.apache.hc.core5.util.Args;
+ 
+ /**
+@@ -209,7 +210,7 @@
+         if (len == ContentLengthStrategy.UNDEFINED) {
+             throw new LengthRequiredException();
+         }
+-        try (final OutputStream outStream = createContentOutputStream(
++        final OutputStream outStream = createContentOutputStream(
+                 len, this.outbuffer, new OutputStream() {
+ 
+                     final OutputStream socketOutputStream = socketHolder.getOutputStream();
+@@ -281,12 +282,32 @@
+                         socketOutputStream.close();
+                     }
+ 
+-                }, entity.getTrailers())) {
++                }, entity.getTrailers());
++        try {
+             entity.writeTo(outStream);
+         } catch (final ResponseOutOfOrderException ex) {
+-            if (len > 0) {
++            if (len != 0) {
++                // The request body has been abandoned mid-message. Do not close the content
++                // stream: for chunked coding that would terminate the truncated message.
+                 this.consistent = false;
+             }
++            return;
++        } catch (final IOException | RuntimeException ex) {
++            // Do not finish the message: the peer must be able to tell it is incomplete
++            this.consistent = false;
++            close(CloseMode.IMMEDIATE);
++            throw ex;
++        }
++        try {
++            outStream.close();
++        } catch (final ResponseOutOfOrderException ex) {
++            if (len != 0) {
++                this.consistent = false;
++            }
++        } catch (final IOException | RuntimeException ex) {
++            this.consistent = false;
++            close(CloseMode.IMMEDIATE);
++            throw ex;
+         }
+     }
+ 
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-3/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java	2026-11-25 23:13:45.068133382 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-3/project/httpcore5/src/main/java/org/apache/hc/core5/http/impl/io/DefaultBHttpServerConnection.java	2026-11-25 23:43:11.898704871 +0000
+@@ -52,6 +52,7 @@
+ import org.apache.hc.core5.http.io.HttpMessageWriter;
+ import org.apache.hc.core5.http.io.HttpMessageWriterFactory;
+ import org.apache.hc.core5.http.io.HttpServerConnection;
++import org.apache.hc.core5.io.CloseMode;
+ import org.apache.hc.core5.util.Args;
+ 
+ /**
+@@ -193,8 +194,14 @@
+             return;
+         }
+         final long len = this.outgoingContentStrategy.determineLength(response);
+-        try (final OutputStream outStream = createContentOutputStream(len, this.outbuffer, socketHolder.getOutputStream(), entity.getTrailers())) {
++        final OutputStream outStream = createContentOutputStream(len, this.outbuffer, socketHolder.getOutputStream(), entity.getTrailers());
++        try {
+             entity.writeTo(outStream);
++            outStream.close();
++        } catch (final IOException | RuntimeException ex) {
++            // Do not finish the message: the peer must be able to tell it is incomplete
++            close(CloseMode.IMMEDIATE);
++            throw ex;
+         }
+     }
+ }
+diff -ruN -x target -x jenesis -x .jenesis /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpClientConnection.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-3/project/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpClientConnection.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/httpcore/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpClientConnection.java	2026-11-25 23:13:45.072133382 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/httpcore-maven-3/project/httpcore5/src/test/java/org/apache/hc/core5/http/impl/io/TestDefaultBHttpClientConnection.java	2026-11-25 23:43:32.652517879 +0000
+@@ -28,7 +28,10 @@
+ 
+ import java.io.ByteArrayInputStream;
+ import java.io.ByteArrayOutputStream;
++import java.io.EOFException;
++import java.io.IOException;
+ import java.io.InputStream;
++import java.io.OutputStream;
+ import java.net.Socket;
+ import java.nio.charset.StandardCharsets;
+ 
+@@ -41,6 +44,7 @@
+ import org.apache.hc.core5.http.NotImplementedException;
+ import org.apache.hc.core5.http.config.Http1Config;
+ import org.apache.hc.core5.http.impl.DefaultContentLengthStrategy;
++import org.apache.hc.core5.http.io.entity.AbstractHttpEntity;
+ import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
+ import org.apache.hc.core5.http.io.entity.StringEntity;
+ import org.apache.hc.core5.http.message.BasicClassicHttpRequest;
+@@ -298,6 +302,86 @@
+     }
+ 
+     @Test
++    void testWriteRequestEntityChunkCodedFailure() throws Exception {
++        final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
++        Mockito.when(socket.getOutputStream()).thenReturn(outStream);
++
++        conn.bind(socket);
++
++        final ClassicHttpRequest request = new BasicClassicHttpRequest(Method.POST, "/stuff");
++        request.addHeader("Transfer-Encoding", "chunked");
++        request.setEntity(new AbstractHttpEntity(ContentType.TEXT_PLAIN, null, true) {
++
++            @Override
++            public void writeTo(final OutputStream out) throws IOException {
++                out.write("123".getBytes(StandardCharsets.US_ASCII));
++                out.flush();
++                throw new EOFException("boom");
++            }
++
++            @Override
++            public InputStream getContent() {
++                return null;
++            }
++
++            @Override
++            public long getContentLength() {
++                return -1;
++            }
++
++            @Override
++            public boolean isStreaming() {
++                return true;
++            }
++
++            @Override
++            public void close() {
++            }
++
++        });
++
++        conn.sendRequestHeader(request);
++        Assertions.assertThrows(EOFException.class, () -> conn.sendRequestEntity(request));
++
++        Assertions.assertFalse(conn.isOpen());
++        Assertions.assertFalse(conn.isConsistent());
++        final String s = new String(outStream.toByteArray(), StandardCharsets.US_ASCII);
++        Assertions.assertFalse(s.endsWith("0\r\n\r\n"), s);
++    }
++
++    @Test
++    void testWriteRequestEntityChunkCodedEarlyResponse() throws Exception {
++        conn = new DefaultBHttpClientConnection(Http1Config.DEFAULT,
++                null, null,
++                DefaultContentLengthStrategy.INSTANCE,
++                DefaultContentLengthStrategy.INSTANCE,
++                (req, connection, in, totalBytesSent, nextWriteSize) -> true,
++                DefaultHttpRequestWriterFactory.INSTANCE,
++                DefaultHttpResponseParserFactory.INSTANCE);
++        final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
++        Mockito.when(socket.getOutputStream()).thenReturn(outStream);
++        Mockito.when(socket.getInputStream()).thenReturn(new ByteArrayInputStream(
++                "HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n".getBytes(StandardCharsets.US_ASCII)));
++
++        conn.bind(socket);
++
++        final ClassicHttpRequest request = new BasicClassicHttpRequest(Method.POST, "/stuff");
++        request.addHeader("Transfer-Encoding", "chunked");
++        request.setEntity(new ByteArrayEntity(new byte[100000], ContentType.TEXT_PLAIN));
++
++        conn.sendRequestHeader(request);
++        conn.sendRequestEntity(request);
++        conn.flush();
++
++        Assertions.assertTrue(conn.isOpen());
++        Assertions.assertFalse(conn.isConsistent());
++        final String s = new String(outStream.toByteArray(), StandardCharsets.US_ASCII);
++        Assertions.assertFalse(s.endsWith("0\r\n\r\n"), s);
++        final ClassicHttpResponse response = conn.receiveResponseHeader();
++        Assertions.assertEquals(400, response.getCode());
++    }
++
++    @Test
+     void testWriteRequestEntityNoContentLength() throws Exception {
+         final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+         Mockito.when(socket.getOutputStream()).thenReturn(outStream);

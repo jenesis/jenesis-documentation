@@ -57,10 +57,29 @@ home "$RUN/home"
 ENDED="$(date +%s.%N)"
 pkill -f "$RUN/home" 2> /dev/null || true
 
+# An agent that was refused, as by a usage limit, did no work: the run leaves no record and can be started again.
+if ! python3 - "$RUN/agent.json" <<'PY'
+import json, sys
+try:
+    agent = json.load(open(sys.argv[1]))
+except (OSError, ValueError):
+    sys.exit(1)
+refused = agent.get("is_error") or "usage limit" in str(agent.get("result", "")).lower() or "hit your" in str(agent.get("result", "")).lower()
+sys.exit(1 if refused or not agent.get("num_turns") else 0)
+PY
+then
+  echo "The agent of $TASK $ARM $ATTEMPT did not run: see $RUN/agent.json and $RUN/agent.err" >&2
+  exit 3
+fi
+
 # The assertion: the agent's tree without its build output, the hidden tests over it, Maven as the judge in both arms.
 mkdir "$RUN/verify"
 (cd "$RUN/project" && tar cf - --exclude=target --exclude=build/jenesis --exclude=.jenesis .) | (cd "$RUN/verify" && tar xf -)
 diff -ruN -x target -x jenesis -x .jenesis "$BASE" "$RUN/project" > "$RUN/agent.patch" || true
+# What the Jenesis arm was handed beside the project is no part of the project that is judged.
+if [ -d "$HERE/tasks/$TASK/overlay-jenesis" ]; then
+  (cd "$HERE/tasks/$TASK/overlay-jenesis" && find . -type f) | (cd "$RUN/verify" && xargs rm -f)
+fi
 cp -r "$HERE/tasks/$TASK/hidden/." "$RUN/verify/"
 PASSED=false
 (cd "$RUN/verify" && MAVEN_ARGS="" verifier > "$RUN/verify.log" 2>&1) && PASSED=true

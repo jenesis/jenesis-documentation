@@ -1,0 +1,2 @@
+maven	1795650420.583	10.842	0	2248	-q -o test -pl httpcore5 -Dtest=TestDefaultBHttp*,TestChunk*,TestHttp* -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795650434.437	15.475	0	2248	-q -o test -pl httpcore5

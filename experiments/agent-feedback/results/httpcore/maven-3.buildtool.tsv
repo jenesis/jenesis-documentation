@@ -1,0 +1,3 @@
+maven	1795650212.678	10.028	0	2248	-q -o -pl httpcore5 test -Dtest=TestDefaultBHttp*,TestHttpRequestExecutor,TestHttpService -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795650226.113	1.443	1	2073	-q -o -pl httpcore5 verify
+maven	1795650229.455	15.232	0	41720	-o -pl httpcore5 test

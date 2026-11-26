@@ -1,0 +1,4 @@
+maven	1795650873.354	5.344	0	1344	-q -o spotless:apply -Drat.skip
+maven	1795650878.728	1.430	1	4225	-o test -Dtest=Bf*Test,DependencyResolutionSkipperTest,Df*Test -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795650883.515	24.219	0	91628	-o -pl maven-resolver-impl -am test -Dtest=Bf*Test,DependencyResolutionSkipperTest,Df*Test -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795650914.173	17.084	1	65584	-o -pl maven-resolver-impl -am test -Dtest=BfWithSkipper*Test,DependencyResolutionSkipperTest -Dsurefire.failIfNoSpecifiedTests=false
