@@ -1,0 +1,7 @@
+maven	1795715002.925	2.286	1	2039	-o -q install -pl core -am -DskipTests -Dmaven.javadoc.skip
+maven	1795715005.247	19.682	1	84519	-o test -pl core -Dtest=HttpMethod*Test -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795715030.706	14.569	0	60099	-o test -pl core -Dtest=HttpMethod*Test -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795715045.305	2.033	1	2039	-o -q install -pl core -am -DskipTests -Drat.skip -Dmaven.javadoc.skip
+maven	1795715051.483	17.226	0	59915	-o test -pl core,plugins/rest,plugins/bean-validation -Dtest=HttpMethod*Test,Rest*Test,*Validation*Test,*Plugin*Test -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795715079.603	12.897	0	36278	-o test -pl core,plugins/rest,plugins/bean-validation -Dtest=HttpMethod*Test,RestDefaultStackTest,BeanValidationDefaultStackTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795715096.062	106.662	0	1484346	-o test -pl core,plugins/rest,plugins/bean-validation

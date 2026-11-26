@@ -1,0 +1,7 @@
+maven	1795714779.265	19.829	1	33197	-q -o test -pl core -Dtest=HttpMethodInterceptorTest,XmlConfigurationProviderHttpMethodTest,HttpMethodTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795714804.441	17.796	1	27497	-q -o test -pl core -Dtest=HttpMethodInterceptorTest,XmlConfigurationProviderHttpMethodTest,HttpMethodTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795714833.148	14.666	0	23555	-q -o test -pl core -Dtest=HttpMethodInterceptorTest,XmlConfigurationProviderHttpMethodTest,HttpMethodTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795714857.515	2.238	1	2039	-q -o install -pl core -DskipTests
+maven	1795714859.788	2.768	1	2211	-q -o test -pl plugins/rest,plugins/bean-validation
+maven	1795714866.264	15.920	0	53371	-o test -pl core,plugins/rest,plugins/bean-validation -Dtest=HttpMethod*Test,XmlConfigurationProviderHttpMethodTest,Rest*Test,BeanValidation*Test,*Rest*Test -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795714885.296	14.745	0	48699	-o test -pl core,plugins/rest,plugins/bean-validation -Dtest=HttpMethodInterceptorTest,org.apache.struts2.rest.**.*Test,org.apache.struts.beanvalidation.**.*Test -Dsurefire.failIfNoSpecifiedTests=false

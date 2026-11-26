@@ -1,0 +1,4 @@
+maven	1795714225.415	2.324	1	2071	-q -o install -DskipTests -pl wicket-core,wicket-extensions -am
+maven	1795714227.770	2.416	1	2788	-o test -pl wicket-core-tests -Dtest=ListenerResourceAuthorizationTest,ResourceLinkTest,Image*Test,ResourceAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795714233.374	25.922	0	44438	-o test -pl wicket-core-tests,wicket-extensions -am -Dtest=ListenerResourceAuthorizationTest,ResourceLinkTest,Image*Test,ResourceAuthorizationTest,AjaxDownload*Test,ExportToolbar*Test -Dsurefire.failIfNoSpecifiedTests=false -Djapicmp.skip -Drat.skip
+maven	1795714262.984	148.958	0	161899	-o test -pl wicket-core-tests,wicket-extensions -am -Djapicmp.skip -Drat.skip

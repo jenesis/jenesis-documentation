@@ -1,0 +1,5 @@
+maven	1795715582.599	2.087	1	2066	-q -o install -DskipTests -pl guava,guava-testlib
+maven	1795715584.721	2.104	1	3203	-o test -pl guava-tests -Dtest=MapsTest,ForwardingNavigableMapTest,FilteredSortedMapTest,MapsCollectionTest,*NavigableMap*Test,TreeRangeSetTest,SynchronizedNavigableMapTest,ImmutableSortedMapTest,TreeMultimap*Test,MapsSortedTransformValuesTest,Collections2Test,SafeTreeMapTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795715589.849	86.815	0	24800	-o test -pl guava-tests -am -Dtest=MapsTest,ForwardingNavigableMapTest,FilteredSortedMapTest,MapsCollectionTest,*NavigableMap*Test,TreeRangeSetTest,ImmutableSortedMapTest,TreeMultimap*Test,SynchronizedMapTest,SynchronizedNavigableMapTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795715683.593	20.733	0	7918	-o test -pl guava-testlib -am -Dtest=SafeTreeMapTest,OpenJdk6MapTests,TestsForMapsInJavaUtil* -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795715707.132	50.255	0	7918	-o test -pl guava-testlib -am -Dtest=OpenJdk6MapTest -Dsurefire.failIfNoSpecifiedTests=false

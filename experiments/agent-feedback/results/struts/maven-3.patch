@@ -1,0 +1,390 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/core/src/main/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptor.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-maven-3/project/core/src/main/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptor.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/core/src/main/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptor.java	2026-11-26 12:49:54.488869484 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-maven-3/project/core/src/main/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptor.java	2026-11-26 17:40:04.401361323 +0000
+@@ -20,6 +20,7 @@
+ 
+ import org.apache.struts2.ActionInvocation;
+ import org.apache.struts2.action.Action;
++import org.apache.struts2.config.entities.ActionConfig;
+ import org.apache.struts2.interceptor.AbstractInterceptor;
+ import org.apache.struts2.interceptor.ResultResolution;
+ import org.apache.struts2.util.AnnotationUtils;
+@@ -32,11 +33,13 @@
+ import java.lang.annotation.Annotation;
+ import java.lang.reflect.AnnotatedElement;
+ import java.lang.reflect.Method;
++import java.lang.reflect.Modifier;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Collection;
+ import java.util.Collections;
+ import java.util.EnumSet;
++import java.util.HashSet;
+ import java.util.List;
+ import java.util.Set;
+ import java.util.stream.Collectors;
+@@ -97,18 +100,20 @@
+             ((HttpMethodAware) (action)).setMethod(HttpMethod.parse(request.getMethod()));
+         }
+ 
+-        if (invocation.getProxy().isMethodSpecified()) {
+-            Method method = action.getClass().getMethod(invocation.getProxy().getMethod());
+-            if (AnnotationUtils.isAnnotatedBy(method, HTTP_METHOD_ANNOTATIONS)) {
++        Method method = resolveInvokedMethod(invocation, action);
++        if (method != null) {
++            AnnotatedElement annotatedMethod = findAnnotatedMethod(action.getClass(), method);
++            if (annotatedMethod != null) {
+                 LOG.debug("Action's method: {} annotated with: {}, checking if request: {} meets allowed methods!",
+                     invocation.getProxy().getMethod(), AllowedHttpMethod.class.getSimpleName(), request.getMethod());
+-                return doIntercept(invocation, method);
++                return doIntercept(invocation, annotatedMethod);
+             }
+         }
+-        if (AnnotationUtils.isAnnotatedBy(action.getClass(), HTTP_METHOD_ANNOTATIONS)) {
++        AnnotatedElement annotatedType = findAnnotatedType(action.getClass());
++        if (annotatedType != null) {
+             LOG.debug("Action: {} annotated with: {}, checking if request: {} meets allowed methods!",
+                 action, AllowedHttpMethod.class.getSimpleName(), request.getMethod());
+-            return doIntercept(invocation, action.getClass());
++            return doIntercept(invocation, annotatedType);
+         }
+ 
+         Set<HttpMethod> configuredMethods = invocation.getProxy().getConfig().getHttpMethods();
+@@ -121,6 +126,123 @@
+         return invocation.invoke();
+     }
+ 
++    /**
++     * Resolves the action method that is going to be invoked. A method named explicitly in the mapping must exist,
++     * the implicit {@code execute()} may be missing (an unknown handler may serve it), then {@code null} is returned.
++     */
++    private Method resolveInvokedMethod(ActionInvocation invocation, Object action) throws NoSuchMethodException {
++        String methodName = invocation.getProxy().getMethod();
++        if (invocation.getProxy().isMethodSpecified()) {
++            return action.getClass().getMethod(methodName);
++        }
++        if (methodName == null || methodName.isEmpty()) {
++            methodName = ActionConfig.DEFAULT_METHOD;
++        }
++        try {
++            return action.getClass().getMethod(methodName);
++        } catch (NoSuchMethodException e) {
++            LOG.debug("Action: {} has no method: {}, skipping method level check", action, methodName);
++            return null;
++        }
++    }
++
++    /**
++     * Finds the nearest declaration of the invoked method annotated with an http method annotation, walking up
++     * the classes and checking each class before its interfaces (and their super-interfaces).
++     */
++    private Method findAnnotatedMethod(Class<?> actionClass, Method invoked) {
++        if (AnnotationUtils.isAnnotatedBy(invoked, HTTP_METHOD_ANNOTATIONS)) {
++            return invoked;
++        }
++        Set<Class<?>> visited = new HashSet<>();
++        for (Class<?> current = actionClass; current != null; current = current.getSuperclass()) {
++            Method found = findAnnotatedDeclaredMethod(current, invoked);
++            if (found != null) {
++                return found;
++            }
++            for (Class<?> iface : current.getInterfaces()) {
++                found = findAnnotatedMethodInInterface(iface, invoked, visited);
++                if (found != null) {
++                    return found;
++                }
++            }
++        }
++        return null;
++    }
++
++    private Method findAnnotatedMethodInInterface(Class<?> iface, Method invoked, Set<Class<?>> visited) {
++        if (!visited.add(iface)) {
++            return null;
++        }
++        Method found = findAnnotatedDeclaredMethod(iface, invoked);
++        if (found != null) {
++            return found;
++        }
++        for (Class<?> superIface : iface.getInterfaces()) {
++            found = findAnnotatedMethodInInterface(superIface, invoked, visited);
++            if (found != null) {
++                return found;
++            }
++        }
++        return null;
++    }
++
++    private Method findAnnotatedDeclaredMethod(Class<?> type, Method invoked) {
++        Method declared;
++        try {
++            declared = type.getDeclaredMethod(invoked.getName(), invoked.getParameterTypes());
++        } catch (NoSuchMethodException e) {
++            return null;
++        }
++        if (!canBeOverriddenBy(declared) || !AnnotationUtils.isAnnotatedBy(declared, HTTP_METHOD_ANNOTATIONS)) {
++            return null;
++        }
++        return declared;
++    }
++
++    private boolean canBeOverriddenBy(Method declared) {
++        int modifiers = declared.getModifiers();
++        return !Modifier.isStatic(modifiers)
++            && !declared.isBridge()
++            && (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers));
++    }
++
++    /**
++     * Finds the nearest type in the hierarchy of the action class annotated with an http method annotation:
++     * the class, then its interfaces and their super-interfaces, then the superclass.
++     */
++    private Class<?> findAnnotatedType(Class<?> actionClass) {
++        Set<Class<?>> visited = new HashSet<>();
++        for (Class<?> current = actionClass; current != null; current = current.getSuperclass()) {
++            if (AnnotationUtils.isAnnotatedBy(current, HTTP_METHOD_ANNOTATIONS)) {
++                return current;
++            }
++            for (Class<?> iface : current.getInterfaces()) {
++                Class<?> found = findAnnotatedInterface(iface, visited);
++                if (found != null) {
++                    return found;
++                }
++            }
++        }
++        return null;
++    }
++
++    private Class<?> findAnnotatedInterface(Class<?> iface, Set<Class<?>> visited) {
++        if (!visited.add(iface)) {
++            return null;
++        }
++        if (AnnotationUtils.isAnnotatedBy(iface, HTTP_METHOD_ANNOTATIONS)) {
++            return iface;
++        }
++        for (Class<?> superIface : iface.getInterfaces()) {
++            Class<?> found = findAnnotatedInterface(superIface, visited);
++            if (found != null) {
++                return found;
++            }
++        }
++        return null;
++    }
++
+     protected String doIntercept(ActionInvocation invocation, AnnotatedElement element) throws Exception {
+         Set<HttpMethod> allowedMethods = EnumSet.noneOf(HttpMethod.class);
+         allowedMethods.addAll(readAllowedMethods(element));
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/core/src/test/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptorTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-maven-3/project/core/src/test/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptorTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/core/src/test/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptorTest.java	2026-11-26 12:49:54.488869484 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-maven-3/project/core/src/test/java/org/apache/struts2/interceptor/httpmethod/HttpMethodInterceptorTest.java	2026-11-26 17:40:33.115468392 +0000
+@@ -552,6 +552,164 @@
+         return actionProxyFactory.createActionProxy(namespace, actionName, null, extraContext, false, true);
+     }
+ 
++    public static class ExecutePost {
++        @HttpPost
++        public String execute() { return "success"; }
++    }
++
++    @HttpPost
++    public static class ClassPost {
++        public String execute() { return "success"; }
++    }
++
++    public static class SubOfClassPost extends ClassPost {
++    }
++
++    public static class BasePostSave {
++        @HttpPost
++        public String save() { return "success"; }
++    }
++
++    public static class OverridingSave extends BasePostSave {
++        @Override
++        public String save() { return "success"; }
++    }
++
++    @HttpPost
++    public interface PostOnly {
++    }
++
++    public interface DerivedPostOnly extends PostOnly {
++    }
++
++    public static class ImplementsDerived implements DerivedPostOnly {
++        public String execute() { return "success"; }
++    }
++
++    public static class ImplementsPostOnly implements PostOnly {
++        public String execute() { return "success"; }
++    }
++
++    public static class SubOfImplementsPostOnly extends ImplementsPostOnly {
++    }
++
++    public interface DefaultPostExecute {
++        @HttpPost
++        default String execute() { return "success"; }
++    }
++
++    public interface DerivedDefaultPostExecute extends DefaultPostExecute {
++    }
++
++    public static class ImplementsDefault implements DerivedDefaultPostExecute {
++    }
++
++    public static class SubOfImplementsDefault extends ImplementsDefault {
++    }
++
++    public interface PutExecute {
++        @HttpPut
++        String execute();
++    }
++
++    public static class BaseGetExecute implements PutExecute {
++        @HttpGet
++        public String execute() { return "success"; }
++    }
++
++    public static class SuperclassWinsOverInterface extends BaseGetExecute {
++        @Override
++        public String execute() { return "success"; }
++    }
++
++    public static class PrivatePostExecute {
++        @HttpPost
++        private String execute(int ignored) { return "x"; }
++
++        @HttpPost
++        static String other() { return "x"; }
++    }
++
++    public static class PackagePrivatePost {
++        @HttpPost
++        String execute() { return "success"; }
++    }
++
++    public static class SubOfPackagePrivatePost extends PackagePrivatePost {
++        @Override
++        public String execute() { return "success"; }
++    }
++
++    public static class NoExecute {
++    }
++
++    private String interceptImplicitExecute(Object action, String httpMethod) throws Exception {
++        prepareActionInvocation(action);
++        invocation.setResultCode("success");
++        prepareRequest(httpMethod);
++        return interceptor.intercept(invocation);
++    }
++
++    private String interceptMethod(Object action, String method, String httpMethod) throws Exception {
++        prepareActionInvocation(action);
++        actionProxy.setMethod(method);
++        invocation.setResultCode("success");
++        prepareRequest(httpMethod);
++        return interceptor.intercept(invocation);
++    }
++
++    public void testImplicitExecuteAnnotationIsEnforced() throws Exception {
++        assertEquals("bad-request", interceptImplicitExecute(new ExecutePost(), "get"));
++        assertEquals("success", interceptImplicitExecute(new ExecutePost(), "post"));
++    }
++
++    public void testInheritedClassAnnotationIsEnforced() throws Exception {
++        assertEquals("bad-request", interceptImplicitExecute(new SubOfClassPost(), "get"));
++        assertEquals("success", interceptImplicitExecute(new SubOfClassPost(), "post"));
++    }
++
++    public void testOverriddenMethodKeepsAnnotation() throws Exception {
++        assertEquals("bad-request", interceptMethod(new OverridingSave(), "save", "get"));
++        assertEquals("success", interceptMethod(new OverridingSave(), "save", "post"));
++    }
++
++    public void testInterfaceAnnotationThroughSuperInterface() throws Exception {
++        assertEquals("bad-request", interceptImplicitExecute(new ImplementsDerived(), "get"));
++        assertEquals("success", interceptImplicitExecute(new ImplementsDerived(), "post"));
++    }
++
++    public void testInterfaceAnnotationThroughSuperclass() throws Exception {
++        assertEquals("bad-request", interceptImplicitExecute(new SubOfImplementsPostOnly(), "get"));
++        assertEquals("success", interceptImplicitExecute(new SubOfImplementsPostOnly(), "post"));
++    }
++
++    public void testDefaultMethodAnnotationThroughHierarchy() throws Exception {
++        assertEquals("bad-request", interceptImplicitExecute(new SubOfImplementsDefault(), "get"));
++        assertEquals("success", interceptImplicitExecute(new SubOfImplementsDefault(), "post"));
++    }
++
++    public void testSuperclassMethodAnnotationWinsOverInterface() throws Exception {
++        assertEquals("success", interceptImplicitExecute(new SuperclassWinsOverInterface(), "get"));
++        assertEquals("bad-request", interceptImplicitExecute(new SuperclassWinsOverInterface(), "put"));
++    }
++
++    public void testPackagePrivateAncestorMethodDoesNotRestrict() throws Exception {
++        assertEquals("success", interceptImplicitExecute(new SubOfPackagePrivatePost(), "get"));
++    }
++
++    public void testMissingImplicitExecuteDoesNotFail() throws Exception {
++        assertEquals("success", interceptImplicitExecute(new NoExecute(), "get"));
++    }
++
++    public void testMissingSpecifiedMethodFails() throws Exception {
++        try {
++            interceptMethod(new NoExecute(), "missing", "get");
++            fail();
++        } catch (NoSuchMethodException e) {
++            assertTrue(e.getMessage().contains("missing"));
++        }
++    }
++
+     private MockHttpServletResponse prepareRequest(String httpMethod) {
+         MockHttpServletRequest request = new MockHttpServletRequest(httpMethod, "/action");
+         MockHttpServletResponse response = new MockHttpServletResponse();
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/plugins/bean-validation/src/main/resources/struts-plugin.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-maven-3/project/plugins/bean-validation/src/main/resources/struts-plugin.xml
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/plugins/bean-validation/src/main/resources/struts-plugin.xml	2026-11-26 12:49:54.492869485 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-maven-3/project/plugins/bean-validation/src/main/resources/struts-plugin.xml	2026-11-26 17:39:12.389900317 +0000
+@@ -42,6 +42,7 @@
+                 <interceptor-ref name="exception"/>
+                 <interceptor-ref name="alias"/>
+                 <interceptor-ref name="servletConfig"/>
++                <interceptor-ref name="httpMethod"/>
+                 <interceptor-ref name="i18n"/>
+                 <interceptor-ref name="prepare"/>
+                 <interceptor-ref name="chain"/>
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/plugins/bean-validation/src/test/java/org/apache/struts/beanvalidation/BeanValidationDefaultStackTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-maven-3/project/plugins/bean-validation/src/test/java/org/apache/struts/beanvalidation/BeanValidationDefaultStackTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/plugins/bean-validation/src/test/java/org/apache/struts/beanvalidation/BeanValidationDefaultStackTest.java	2026-11-26 12:49:54.131908164 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-maven-3/project/plugins/bean-validation/src/test/java/org/apache/struts/beanvalidation/BeanValidationDefaultStackTest.java	2026-11-26 17:40:57.487366822 +0000
+@@ -57,4 +57,8 @@
+     public void testResourceIsolationInterceptorsSitBetweenConversionErrorAndValidation() {
+         assertThat(stack).containsSubsequence("conversionError", "coep", "coop", "fetchMetadata", "beanValidation");
+     }
++
++    public void testHttpMethodRestrictionsAreCheckedBeforeParametersAreBound() {
++        assertThat(stack).containsSubsequence("servletConfig", "httpMethod", "params");
++    }
+ }
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/plugins/rest/src/main/resources/struts-plugin.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-maven-3/project/plugins/rest/src/main/resources/struts-plugin.xml
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/plugins/rest/src/main/resources/struts-plugin.xml	2026-11-26 12:49:54.492869485 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-maven-3/project/plugins/rest/src/main/resources/struts-plugin.xml	2026-11-26 17:39:12.389454540 +0000
+@@ -76,6 +76,7 @@
+                 <interceptor-ref name="exception"/>
+                 <interceptor-ref name="alias"/>
+                 <interceptor-ref name="servletConfig"/>
++                <interceptor-ref name="httpMethod"/>
+                 <interceptor-ref name="messages">
+                     <param name="operationMode">AUTOMATIC</param>
+                 </interceptor-ref>
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/plugins/rest/src/test/java/org/apache/struts2/rest/RestDefaultStackTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-maven-3/project/plugins/rest/src/test/java/org/apache/struts2/rest/RestDefaultStackTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/struts/plugins/rest/src/test/java/org/apache/struts2/rest/RestDefaultStackTest.java	2026-11-26 12:49:54.169871803 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/struts-maven-3/project/plugins/rest/src/test/java/org/apache/struts2/rest/RestDefaultStackTest.java	2026-11-26 17:40:57.486928610 +0000
+@@ -57,4 +57,8 @@
+     public void testResourceIsolationInterceptorsSitBetweenConversionErrorAndValidation() {
+         assertThat(stack).containsSubsequence("conversionError", "coep", "coop", "fetchMetadata", "validation");
+     }
++
++    public void testHttpMethodRestrictionsAreCheckedBeforeParametersAreBound() {
++        assertThat(stack).containsSubsequence("servletConfig", "httpMethod", "params");
++    }
+ }
