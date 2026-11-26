@@ -118,10 +118,32 @@ forked before it exits, and the processes those started. On Linux and macOS it f
 JVM runs its own shutdown hooks, and it kills what is still running ten seconds later. On Windows it ends them
 at once. A build killed with `SIGKILL` cannot end anything.
 
-For a failed test run, the output the build prints ends with what the runner printed about each failed
-test - for the JUnit Platform, a `Failures` section naming the test with its stack trace, then the run's
-counts. A test run writes no report unless `-Djenesis.test.reporting=true` asks for one in the module's
-`reports/tests/`, and a failed run then also names that folder, above the runner's output:
+A test run ends with one line that names the module and counts its tests, whether they passed or not:
+
+```text
+[TESTS]     greeter: 12 tests found, 12 successful, 0 failed, 0 skipped, 0 aborted in 1.48 seconds
+```
+
+The counts are those the test framework reports: the JUnit Platform all five, TestNG all but the aborted
+tests, and the runner of JUnit 4 the tests it ran and those that failed. A build in which no test ran, as
+nothing the tests read had changed, prints no such line.
+
+A failed test run prints what the runner reported about each failed test in place of the last lines of its
+output - for the JUnit Platform, the `Failures` section naming each test with its stack trace - and names the
+file that holds all the run printed:
+
+```text
+Failed tests - target/build/.../test/executed~/supplement/output holds all that the run printed, error beside it its errors:
+Failures (1):
+  JUnit Jupiter:GreeterTest:prefix_is_a_greeting()
+    MethodSource [className = 'sample.greeter.GreeterTest', methodName = 'prefix_is_a_greeting', methodParameterTypes = '']
+    => org.opentest4j.AssertionFailedError: expected: <true> but was: <false>
+       ...
+       sample.greeter.GreeterTest.prefix_is_a_greeting(GreeterTest.java:14)
+```
+
+A test run writes no report unless `-Djenesis.test.reporting=true` asks for one in the module's
+`reports/tests/`, and a failed run then also names that folder, above the failed tests:
 
 ```text
 The reports of the test run are in target/build/.../test/executed~/output/reports/tests
@@ -129,6 +151,36 @@ The reports of the test run are in target/build/.../test/executed~/output/report
 
 The progress lines, the dependency tree and every other line the build prints are coloured with ANSI escape
 sequences. To read them as plain text, from a file or a pipe, pass `-Djenesis.palette.colors=none`.
+
+### Reading only the result
+
+A build prints a progress line for every step and module, which is what a person watches. A script or a
+coding agent that wants the result alone drops them with `-Djenesis.print.progress=false` and asks for the
+test counts with `-Djenesis.test.summary`:
+
+```bash
+java -Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java +greeter
+```
+
+A build that passes then exits with 0 and prints one `[TESTS]` line for each test run, and nothing where no
+test ran. A build that fails exits with 1 and prints its error: the compiler's messages, or the failed tests
+as shown above. Nothing has to be filtered out of either.
+
+| Setting | A build that passes prints | A build that fails prints |
+| --- | --- | --- |
+| *(none)* | a line for every step and module, the warnings and the `[TESTS]` lines | the same, and the error |
+| `jenesis.print.progress=false` | what its selector prints, as `dependencies` its tree | the error |
+| `jenesis.print.progress=false` and `jenesis.test.summary` | the `[TESTS]` lines as well | the `[TESTS]` lines and the error |
+
+Without `jenesis.test.summary`, a build that prints no progress prints no `[TESTS]` line either, so a selector
+whose output is redirected into a file writes that output alone. Setting `jenesis.test.summary=false` drops
+the line from a build that prints its progress.
+
+Repeating a build is cheap, as a step whose inputs did not change is skipped. Working on one module, run
+`+<module>` with a `jenesis.test.filter` until it passes, then one build without a selector: it runs the tests
+of every module the change reaches, and of no other that passed before.
+
+{% demos 3 %}
 
 ### Writing tests
 
@@ -275,8 +327,8 @@ module demo.app {
 }
 ```
 
-A module that declares no release compiles for the JDK running the build, and every build says so in a line,
-which the tag silences:
+A module that declares no release compiles for the JDK running the build. The build says so in a line, which
+the tag silences:
 
 ```text
 [RELEASE]   demo.app compiles for release 25, the JDK the build runs on, as sources/module-info.java declares no @jenesis.release - @jenesis.release sets it
@@ -291,6 +343,9 @@ the JDK running the build, and a line says so as well:
 ```text
 [RELEASE]   com.example:mig compiles for release 25, the JDK the build runs on, as pom.xml sets neither maven.compiler.release nor its target or source - maven.compiler.release sets it
 ```
+
+Such a warning about what a `pom.xml` or `module-info.java` declares is printed by the first build that prints
+its progress, and again once the warning changes. A build that finds it unchanged does not repeat it.
 
 Without either, the module compiles for the release of the JDK running the build: `--release 25` on any JDK
 25, and Kotlin and Scala sources target the same release, a release of 8 or lower reaching `kotlinc` in the
