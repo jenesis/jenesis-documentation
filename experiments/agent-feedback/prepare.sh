@@ -29,6 +29,11 @@ if [ ! -f "$CACHE/checked" ]; then
   # every plugin and dependency the verifier and an agent need.
   cp -a "$BASE" "$CACHE/maven"
   (cd "$CACHE/maven" && "$MAVEN" -B test > "$CACHE/maven.log" 2>&1) || true
+  # An agent often installs the modules first. That needs plugins a test run never fetches, so they are fetched
+  # here, and what the installation put into the repository is removed again: a run starts without a built copy
+  # of the project, in either arm.
+  (cd "$CACHE/maven" && "$MAVEN" -B install -DskipTests > "$CACHE/maven-install.log" 2>&1) || true
+  find "$CACHE/home/.m2/repository" -name maven-metadata-local.xml -printf '%h\n' | xargs -r rm -rf
 
   # The hidden tests fail on the commit before the fix and pass with the reference fix.
   cp -r "$HERE/tasks/$TASK/hidden/." "$CACHE/maven/"

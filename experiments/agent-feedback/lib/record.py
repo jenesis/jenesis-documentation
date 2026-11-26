@@ -22,7 +22,7 @@ json.dump({
     "attempt": int(attempt),
     "model": model,
     "effort": effort,
-    "instructions": os.environ.get("INSTRUCTIONS", "2"),
+    "instructions": os.environ.get("INSTRUCTIONS", "3"),
     "engine": os.environ.get("ENGINE", ""),
     "passed": passed == "true",
     "agent_ended": agent.get("subtype", "no result"),

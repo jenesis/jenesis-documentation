@@ -34,7 +34,8 @@ commit and pass once `reference.patch` is applied.
 `run.sh <task> <maven|jenesis> <attempt>` copies the prepared project and the warm caches into a folder of its
 own, with a home directory of its own, and starts the agent there (`claude -p`, the model and effort of `MODEL`
 and `EFFORT`, the tools Bash, Read, Edit, Write, Grep and Glob, no settings of the user's). The prompt is the
-bug report and the instruction to fix it and to prove the fix with a test; it is the same in both arms.
+bug report, the instruction to fix it and to prove the fix with a test, and the rule for stopping: every test of
+every module the change reaches has run once and passed. It is the same in both arms, so both verify alike.
 
 What differs is the tool, and the `AGENTS.md` the harness writes into the project root to name it. A project's
 own instructions for agents are removed in preparation, as they would advise one arm only.

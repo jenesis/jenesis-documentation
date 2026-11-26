@@ -54,7 +54,7 @@ $ISSUE
 
 Find the cause and fix it in the main sources, and add or adjust a test that shows the fix. AGENTS.md in the project root names the tool this project is built and tested with; build and test with that tool alone.
 $BRIEFING
-Stop when the fix is in place and the tests of what you changed pass, and say in two sentences what you changed.
+Before you stop, run once every test of every module your change reaches - the modules you changed and the modules that depend on them - and see them pass. Then say in two sentences what you changed.
 PROMPT
 
 # The agent sees no settings or instructions of the user: what it knows of the task is the prompt.
