@@ -1,0 +1,5 @@
+maven	1795706714.993	24.302	1	23525	-o -q -pl core test -Dtest=HttpMethodInterceptorTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795706747.489	17.239	1	23525	-o -q -pl core test -Dtest=HttpMethodInterceptorTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795706780.610	20.731	0	19591	-o -q -pl core test -Dtest=HttpMethodInterceptorTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795706812.914	35.932	0	174278	-o -q -pl core,plugins/rest,plugins/bean-validation test -Dtest=HttpMethodInterceptorTest,RestDefaultStackTest,BeanValidationDefaultStackTest,Rest*Test,*Interceptor*Test -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795706852.401	114.642	0	1482162	-o -pl core,plugins/rest,plugins/bean-validation test
