@@ -33,7 +33,7 @@ if [ ! -f "$CACHE/checked" ]; then
   # here, and what the installation put into the repository is removed again: a run starts without a built copy
   # of the project, in either arm.
   (cd "$CACHE/maven" && "$MAVEN" -B install -DskipTests > "$CACHE/maven-install.log" 2>&1) || true
-  find "$CACHE/home/.m2/repository" -name maven-metadata-local.xml -printf '%h\n' | xargs -r rm -rf
+  python3 "$HERE/lib/uninstall.py" "$CACHE/home/.m2/repository"
 
   # The hidden tests fail on the commit before the fix and pass with the reference fix.
   cp -r "$HERE/tasks/$TASK/hidden/." "$CACHE/maven/"
