@@ -588,6 +588,16 @@ entry is written `/<classRegex>`, with nothing before the slash.
 A test module that no entry reaches runs no tests rather than failing, while one an entry does reach still
 fails when nothing there matches.
 
+A `+<module>` selector narrows the build as well, so one test class of one module runs without the rest of the
+project, here in a `pom.xml` project:
+
+```bash
+java -Djenesis.test.filter='.*GreeterTest' -Djenesis.print.tests=true build/jenesis/Make.java +greeter
+```
+
+`-Djenesis.print.tests=true` streams the runner's output while it runs. A failed test run names these two
+settings beside the end of its output, for running one failed class alone.
+
 `jenesis.test.exclude` leaves classes out instead. It takes the same entries without a `#<method>`, and the
 default naming or the filter stays in force for everything else:
 

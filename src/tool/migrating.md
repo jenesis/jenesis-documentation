@@ -106,8 +106,11 @@ A `pom.xml` is read for what it declares, not for how Maven builds it:
   system, a file or `-P`, `<repositories>` and `settings.xml`, a resource's includes, excludes, `targetPath`
   and filtering, and every packaging but `jar` and `bundle`. A `bundle` builds a jar whose OSGi headers a
   `META-INF/MANIFEST.MF` among the resources or a plugin supplies. A `jar` module without sources or resources
-  is built only where its configuration folder names a plugin, which may generate them; otherwise a
-  `[SKIPPED]` line names it. A `pom` aggregator is followed for its modules,
+  is a module of the build all the same: its jar holds no class, and a module that depends on it resolves it
+  inside the build and receives the dependencies its `pom.xml` declares. An `[EMPTY]` line names it, unless its
+  configuration folder names a plugin, which may generate its content. A jar that a Maven plugin fills, as
+  `dependency:unpack-dependencies` does, stays empty, so a module compiling against that content fails; an
+  empty `.jenesis.skip` in a module's folder leaves that module out. A `pom` aggregator is followed for its modules,
   and a `pom` module with a `<dependencyManagement>` and no modules is published as a
   [bill of materials](/tool/publishing/#a-maven-bom-from-a-pom-xml). Any other packaging, a `war` among them,
   is not built, and a `[SKIPPED]` line names its module.
