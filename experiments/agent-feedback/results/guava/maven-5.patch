@@ -1,0 +1,479 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava/src/com/google/common/collect/AbstractNavigableMap.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-maven-5/project/guava/src/com/google/common/collect/AbstractNavigableMap.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava/src/com/google/common/collect/AbstractNavigableMap.java	2026-11-26 12:58:00.741088801 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-maven-5/project/guava/src/com/google/common/collect/AbstractNavigableMap.java	2026-11-26 22:51:45.128717488 +0000
+@@ -16,7 +16,6 @@
+ 
+ package com.google.common.collect;
+ 
+-import static com.google.common.collect.Iterators.pollNext;
+ import static com.google.common.collect.Maps.keyOrNull;
+ 
+ import com.google.common.annotations.GwtIncompatible;
+@@ -43,22 +42,41 @@
+ 
+   @Override
+   public final @Nullable Entry<K, V> firstEntry() {
+-    return Iterators.<@Nullable Entry<K, V>>getNext(entryIterator(), null);
++    return snapshotNext(entryIterator(), false);
+   }
+ 
+   @Override
+   public final @Nullable Entry<K, V> lastEntry() {
+-    return Iterators.<@Nullable Entry<K, V>>getNext(descendingEntryIterator(), null);
++    return snapshotNext(descendingEntryIterator(), false);
+   }
+ 
+   @Override
+   public @Nullable Entry<K, V> pollFirstEntry() {
+-    return pollNext(entryIterator());
++    return snapshotNext(entryIterator(), true);
+   }
+ 
+   @Override
+   public @Nullable Entry<K, V> pollLastEntry() {
+-    return pollNext(descendingEntryIterator());
++    return snapshotNext(descendingEntryIterator(), true);
++  }
++
++  /**
++   * Returns an immutable snapshot of the next entry of {@code iterator}, or {@code null} if there is
++   * none, removing the entry afterwards if {@code remove} is set. The snapshot is taken before the
++   * removal, since some maps (like {@code TreeMap}) reuse entry objects for other mappings when an
++   * entry is removed.
++   */
++  static <K extends @Nullable Object, V extends @Nullable Object>
++      @Nullable Entry<K, V> snapshotNext(Iterator<Entry<K, V>> iterator, boolean remove) {
++    if (!iterator.hasNext()) {
++      return null;
++    }
++    Entry<K, V> entry = iterator.next();
++    Entry<K, V> snapshot = Maps.immutableEntry(entry.getKey(), entry.getValue());
++    if (remove) {
++      iterator.remove();
++    }
++    return snapshot;
+   }
+ 
+   @Override
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava/src/com/google/common/collect/ForwardingNavigableMap.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-maven-5/project/guava/src/com/google/common/collect/ForwardingNavigableMap.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava/src/com/google/common/collect/ForwardingNavigableMap.java	2026-11-26 12:58:00.741088801 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-maven-5/project/guava/src/com/google/common/collect/ForwardingNavigableMap.java	2026-11-26 22:51:45.128249722 +0000
+@@ -16,7 +16,6 @@
+ 
+ package com.google.common.collect;
+ 
+-import static com.google.common.collect.Iterators.pollNext;
+ import static com.google.common.collect.Maps.keyOrNull;
+ 
+ import com.google.common.annotations.GwtIncompatible;
+@@ -187,7 +186,7 @@
+    * forward to this implementation.
+    */
+   protected @Nullable Entry<K, V> standardFirstEntry() {
+-    return Iterables.<@Nullable Entry<K, V>>getFirst(entrySet(), null);
++    return AbstractNavigableMap.snapshotNext(entrySet().iterator(), false);
+   }
+ 
+   /**
+@@ -215,7 +214,7 @@
+    * override {@code lastEntry} to forward to this implementation.
+    */
+   protected @Nullable Entry<K, V> standardLastEntry() {
+-    return Iterables.<@Nullable Entry<K, V>>getFirst(descendingMap().entrySet(), null);
++    return AbstractNavigableMap.snapshotNext(descendingMap().entrySet().iterator(), false);
+   }
+ 
+   /**
+@@ -242,7 +241,7 @@
+    * forward to this implementation.
+    */
+   protected @Nullable Entry<K, V> standardPollFirstEntry() {
+-    return pollNext(entrySet().iterator());
++    return AbstractNavigableMap.snapshotNext(entrySet().iterator(), true);
+   }
+ 
+   @Override
+@@ -256,7 +255,7 @@
+    * override {@code pollFirstEntry} to forward to this implementation.
+    */
+   protected @Nullable Entry<K, V> standardPollLastEntry() {
+-    return pollNext(descendingMap().entrySet().iterator());
++    return AbstractNavigableMap.snapshotNext(descendingMap().entrySet().iterator(), true);
+   }
+ 
+   @Override
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava/src/com/google/common/collect/Maps.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-maven-5/project/guava/src/com/google/common/collect/Maps.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava/src/com/google/common/collect/Maps.java	2026-11-26 12:58:00.741088801 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-maven-5/project/guava/src/com/google/common/collect/Maps.java	2026-11-26 22:51:45.124904082 +0000
+@@ -26,7 +26,6 @@
+ import static com.google.common.collect.Collections2.safeContains;
+ import static com.google.common.collect.Collections2.transform;
+ import static com.google.common.collect.Iterables.any;
+-import static com.google.common.collect.Iterables.removeFirstMatching;
+ import static com.google.common.collect.Iterators.contains;
+ import static com.google.common.collect.Iterators.filter;
+ import static com.google.common.collect.Iterators.transform;
+@@ -3294,12 +3293,28 @@
+ 
+     @Override
+     public @Nullable Entry<K, V> pollFirstEntry() {
+-      return removeFirstMatching(unfiltered.entrySet(), entryPredicate);
++      return pollFirstMatching(unfiltered.entrySet().iterator());
+     }
+ 
+     @Override
+     public @Nullable Entry<K, V> pollLastEntry() {
+-      return removeFirstMatching(unfiltered.descendingMap().entrySet(), entryPredicate);
++      return pollFirstMatching(unfiltered.descendingMap().entrySet().iterator());
++    }
++
++    /*
++     * Returns an immutable snapshot of the first matching entry, taken before the entry is removed:
++     * some maps (like TreeMap) reuse the removed entry object for another mapping.
++     */
++    private @Nullable Entry<K, V> pollFirstMatching(Iterator<Entry<K, V>> iterator) {
++      while (iterator.hasNext()) {
++        Entry<K, V> entry = iterator.next();
++        if (entryPredicate.apply(entry)) {
++          Entry<K, V> snapshot = immutableEntry(entry.getKey(), entry.getValue());
++          iterator.remove();
++          return snapshot;
++        }
++      }
++      return null;
+     }
+ 
+     @Override
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava-testlib/src/com/google/common/collect/testing/testers/NavigableMapNavigationTester.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-maven-5/project/guava-testlib/src/com/google/common/collect/testing/testers/NavigableMapNavigationTester.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava-testlib/src/com/google/common/collect/testing/testers/NavigableMapNavigationTester.java	2026-11-26 12:58:00.716898387 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-maven-5/project/guava-testlib/src/com/google/common/collect/testing/testers/NavigableMapNavigationTester.java	2026-11-26 23:13:19.887534521 +0000
+@@ -115,13 +115,13 @@
+ 
+   @CollectionSize.Require(ONE)
+   public void testSingletonMapFirst() {
+-    assertEquals(a, navigableMap.firstEntry());
++    assertEquals(a, checkImmutable(navigableMap.firstEntry()));
+   }
+ 
+   @MapFeature.Require(SUPPORTS_REMOVE)
+   @CollectionSize.Require(ONE)
+   public void testSingletonMapPollFirst() {
+-    assertEquals(a, navigableMap.pollFirstEntry());
++    assertEquals(a, checkImmutable(navigableMap.pollFirstEntry()));
+     assertTrue(navigableMap.isEmpty());
+   }
+ 
+@@ -129,9 +129,9 @@
+   public void testSingletonMapNearby() {
+     assertNull(navigableMap.lowerEntry(k0()));
+     assertNull(navigableMap.lowerKey(k0()));
+-    assertEquals(a, navigableMap.floorEntry(k0()));
++    assertEquals(a, checkImmutable(navigableMap.floorEntry(k0())));
+     assertEquals(a.getKey(), navigableMap.floorKey(k0()));
+-    assertEquals(a, navigableMap.ceilingEntry(k0()));
++    assertEquals(a, checkImmutable(navigableMap.ceilingEntry(k0())));
+     assertEquals(a.getKey(), navigableMap.ceilingKey(k0()));
+     assertNull(navigableMap.higherEntry(k0()));
+     assertNull(navigableMap.higherKey(k0()));
+@@ -139,25 +139,25 @@
+ 
+   @CollectionSize.Require(ONE)
+   public void testSingletonMapLast() {
+-    assertEquals(a, navigableMap.lastEntry());
++    assertEquals(a, checkImmutable(navigableMap.lastEntry()));
+   }
+ 
+   @MapFeature.Require(SUPPORTS_REMOVE)
+   @CollectionSize.Require(ONE)
+   public void testSingletonMapPollLast() {
+-    assertEquals(a, navigableMap.pollLastEntry());
++    assertEquals(a, checkImmutable(navigableMap.pollLastEntry()));
+     assertTrue(navigableMap.isEmpty());
+   }
+ 
+   @CollectionSize.Require(SEVERAL)
+   public void testFirst() {
+-    assertEquals(a, navigableMap.firstEntry());
++    assertEquals(a, checkImmutable(navigableMap.firstEntry()));
+   }
+ 
+   @MapFeature.Require(SUPPORTS_REMOVE)
+   @CollectionSize.Require(SEVERAL)
+   public void testPollFirst() {
+-    assertEquals(a, navigableMap.pollFirstEntry());
++    assertEquals(a, checkImmutable(navigableMap.pollFirstEntry()));
+     assertEquals(entries.subList(1, entries.size()), copyToList(navigableMap.entrySet()));
+   }
+ 
+@@ -169,56 +169,56 @@
+   @CollectionSize.Require(SEVERAL)
+   public void testLower() {
+     resetWithHole();
+-    assertEquals(null, navigableMap.lowerEntry(a.getKey()));
++    assertEquals(null, checkImmutable(navigableMap.lowerEntry(a.getKey())));
+     assertEquals(null, navigableMap.lowerKey(a.getKey()));
+-    assertEquals(a, navigableMap.lowerEntry(b.getKey()));
++    assertEquals(a, checkImmutable(navigableMap.lowerEntry(b.getKey())));
+     assertEquals(a.getKey(), navigableMap.lowerKey(b.getKey()));
+-    assertEquals(a, navigableMap.lowerEntry(c.getKey()));
++    assertEquals(a, checkImmutable(navigableMap.lowerEntry(c.getKey())));
+     assertEquals(a.getKey(), navigableMap.lowerKey(c.getKey()));
+   }
+ 
+   @CollectionSize.Require(SEVERAL)
+   public void testFloor() {
+     resetWithHole();
+-    assertEquals(a, navigableMap.floorEntry(a.getKey()));
++    assertEquals(a, checkImmutable(navigableMap.floorEntry(a.getKey())));
+     assertEquals(a.getKey(), navigableMap.floorKey(a.getKey()));
+-    assertEquals(a, navigableMap.floorEntry(b.getKey()));
++    assertEquals(a, checkImmutable(navigableMap.floorEntry(b.getKey())));
+     assertEquals(a.getKey(), navigableMap.floorKey(b.getKey()));
+-    assertEquals(c, navigableMap.floorEntry(c.getKey()));
++    assertEquals(c, checkImmutable(navigableMap.floorEntry(c.getKey())));
+     assertEquals(c.getKey(), navigableMap.floorKey(c.getKey()));
+   }
+ 
+   @CollectionSize.Require(SEVERAL)
+   public void testCeiling() {
+     resetWithHole();
+-    assertEquals(a, navigableMap.ceilingEntry(a.getKey()));
++    assertEquals(a, checkImmutable(navigableMap.ceilingEntry(a.getKey())));
+     assertEquals(a.getKey(), navigableMap.ceilingKey(a.getKey()));
+-    assertEquals(c, navigableMap.ceilingEntry(b.getKey()));
++    assertEquals(c, checkImmutable(navigableMap.ceilingEntry(b.getKey())));
+     assertEquals(c.getKey(), navigableMap.ceilingKey(b.getKey()));
+-    assertEquals(c, navigableMap.ceilingEntry(c.getKey()));
++    assertEquals(c, checkImmutable(navigableMap.ceilingEntry(c.getKey())));
+     assertEquals(c.getKey(), navigableMap.ceilingKey(c.getKey()));
+   }
+ 
+   @CollectionSize.Require(SEVERAL)
+   public void testHigher() {
+     resetWithHole();
+-    assertEquals(c, navigableMap.higherEntry(a.getKey()));
++    assertEquals(c, checkImmutable(navigableMap.higherEntry(a.getKey())));
+     assertEquals(c.getKey(), navigableMap.higherKey(a.getKey()));
+-    assertEquals(c, navigableMap.higherEntry(b.getKey()));
++    assertEquals(c, checkImmutable(navigableMap.higherEntry(b.getKey())));
+     assertEquals(c.getKey(), navigableMap.higherKey(b.getKey()));
+-    assertEquals(null, navigableMap.higherEntry(c.getKey()));
++    assertEquals(null, checkImmutable(navigableMap.higherEntry(c.getKey())));
+     assertEquals(null, navigableMap.higherKey(c.getKey()));
+   }
+ 
+   @CollectionSize.Require(SEVERAL)
+   public void testLast() {
+-    assertEquals(c, navigableMap.lastEntry());
++    assertEquals(c, checkImmutable(navigableMap.lastEntry()));
+   }
+ 
+   @MapFeature.Require(SUPPORTS_REMOVE)
+   @CollectionSize.Require(SEVERAL)
+   public void testPollLast() {
+-    assertEquals(c, navigableMap.pollLastEntry());
++    assertEquals(c, checkImmutable(navigableMap.pollLastEntry()));
+     assertEquals(entries.subList(0, entries.size() - 1), copyToList(navigableMap.entrySet()));
+   }
+ 
+@@ -229,6 +229,68 @@
+   }
+ 
+   @CollectionSize.Require(SEVERAL)
++  public void testDescendingMapNavigationEntriesImmutable() {
++    NavigableMap<K, V> descending = navigableMap.descendingMap();
++    assertEquals(c, checkImmutable(descending.firstEntry()));
++    assertEquals(a, checkImmutable(descending.lastEntry()));
++    assertEquals(b, checkImmutable(descending.ceilingEntry(b.getKey())));
++    assertEquals(b, checkImmutable(descending.floorEntry(b.getKey())));
++    assertEquals(a, checkImmutable(descending.higherEntry(b.getKey())));
++    assertEquals(c, checkImmutable(descending.lowerEntry(b.getKey())));
++  }
++
++  @CollectionSize.Require(SEVERAL)
++  public void testHeadMapNavigationEntriesImmutable() {
++    NavigableMap<K, V> head = navigableMap.headMap(c.getKey(), false);
++    assertEquals(a, checkImmutable(head.firstEntry()));
++    assertEquals(b, checkImmutable(head.lastEntry()));
++    assertEquals(b, checkImmutable(head.ceilingEntry(b.getKey())));
++    assertEquals(b, checkImmutable(head.floorEntry(b.getKey())));
++    assertEquals(b, checkImmutable(head.higherEntry(a.getKey())));
++    assertEquals(a, checkImmutable(head.lowerEntry(b.getKey())));
++  }
++
++  @MapFeature.Require(SUPPORTS_REMOVE)
++  @CollectionSize.Require(SEVERAL)
++  public void testPollFirstRepeatedly() {
++    for (Entry<K, V> expected : entries) {
++      Entry<K, V> polled = checkImmutable(navigableMap.pollFirstEntry());
++      assertEquals(expected, polled);
++    }
++    assertTrue(navigableMap.isEmpty());
++  }
++
++  @MapFeature.Require(SUPPORTS_REMOVE)
++  @CollectionSize.Require(SEVERAL)
++  public void testPollLastRepeatedly() {
++    for (int i = entries.size() - 1; i >= 0; i--) {
++      Entry<K, V> polled = checkImmutable(navigableMap.pollLastEntry());
++      assertEquals(entries.get(i), polled);
++    }
++    assertTrue(navigableMap.isEmpty());
++  }
++
++  /**
++   * Checks that an entry returned by a navigation method is a snapshot that does not support {@link
++   * Entry#setValue}, as {@link NavigableMap} specifies, and returns it.
++   */
++  private Entry<K, V> checkImmutable(Entry<K, V> entry) {
++    if (entry == null) {
++      return null;
++    }
++    K key = entry.getKey();
++    V value = entry.getValue();
++    try {
++      entry.setValue(value);
++      fail("setValue on an entry returned by a NavigableMap navigation method should throw");
++    } catch (UnsupportedOperationException expected) {
++    }
++    assertEquals(key, entry.getKey());
++    assertEquals(value, entry.getValue());
++    return entry;
++  }
++
++  @CollectionSize.Require(SEVERAL)
+   public void testDescendingNavigation() {
+     List<Entry<K, V>> descending = new ArrayList<>(navigableMap.descendingMap().entrySet());
+     Collections.reverse(descending);
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava-tests/test/com/google/common/collect/ForwardingNavigableMapTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-maven-5/project/guava-tests/test/com/google/common/collect/ForwardingNavigableMapTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava-tests/test/com/google/common/collect/ForwardingNavigableMapTest.java	2026-11-26 12:58:00.724898388 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-maven-5/project/guava-tests/test/com/google/common/collect/ForwardingNavigableMapTest.java	2026-11-26 22:52:37.339974951 +0000
+@@ -18,6 +18,7 @@
+ 
+ import static com.google.common.collect.Maps.immutableEntry;
+ import static com.google.common.truth.Truth.assertThat;
++import static org.junit.Assert.assertThrows;
+ 
+ import com.google.common.base.Function;
+ import com.google.common.collect.testing.NavigableMapTestSuiteBuilder;
+@@ -338,4 +339,35 @@
+       }
+     };
+   }
++
++  public void testStandardPollEntriesAreSnapshots() {
++    NavigableMap<Integer, String> tree = new java.util.TreeMap<>();
++    tree.put(1, "one");
++    tree.put(2, "two");
++    tree.put(3, "three");
++    NavigableMap<Integer, String> forwarding =
++        new StandardImplForwardingNavigableMap<>(tree.tailMap(2, true));
++    Entry<Integer, String> polled = forwarding.pollFirstEntry();
++    assertEquals(immutableEntry(2, "two"), polled);
++    assertThrows(UnsupportedOperationException.class, () -> polled.setValue("x"));
++
++    tree.put(2, "two");
++    tree.put(4, "four");
++    tree.put(5, "five");
++    forwarding = new StandardImplForwardingNavigableMap<>(tree.headMap(4, true));
++    Entry<Integer, String> polledLast = forwarding.pollLastEntry();
++    assertEquals(immutableEntry(4, "four"), polledLast);
++    assertThrows(UnsupportedOperationException.class, () -> polledLast.setValue("x"));
++  }
++
++  public void testStandardFirstAndLastEntryAreSnapshots() {
++    NavigableMap<String, Integer> backing = new SafeTreeMap<>();
++    backing.put("a", 1);
++    backing.put("b", 2);
++    Entry<String, Integer> first = new StandardImplForwardingNavigableMap<>(backing).firstEntry();
++    assertThrows(UnsupportedOperationException.class, () -> first.setValue(10));
++    Entry<String, Integer> last = new StandardLastEntryForwardingNavigableMap<>(backing).lastEntry();
++    assertThrows(UnsupportedOperationException.class, () -> last.setValue(20));
++    assertEquals(ImmutableMap.of("a", 1, "b", 2), backing);
++  }
+ }
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava-tests/test/com/google/common/collect/MapsTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-maven-5/project/guava-tests/test/com/google/common/collect/MapsTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava-tests/test/com/google/common/collect/MapsTest.java	2026-11-26 12:58:00.724898388 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-maven-5/project/guava-tests/test/com/google/common/collect/MapsTest.java	2026-11-26 23:13:27.274245844 +0000
+@@ -1569,4 +1569,81 @@
+     assertEquals(
+         ImmutableSortedMap.of(2, 0, 4, 0, 6, 0, 8, 0, 10, 0), Maps.subMap(map, Range.all()));
+   }
++
++  @GwtIncompatible // NavigableMap
++  public void testFilteredNavigableMapPollReturnsRemovedMapping() {
++    NavigableMap<Integer, String> unfiltered = new TreeMap<>();
++    unfiltered.put(1, "one");
++    unfiltered.put(2, "two");
++    unfiltered.put(3, "three");
++    NavigableMap<Integer, String> filtered = Maps.filterKeys(unfiltered, k -> k != 1);
++    assertEquals(immutableEntry(2, "two"), filtered.pollFirstEntry());
++    assertEquals(ImmutableMap.of(1, "one", 3, "three"), unfiltered);
++
++    NavigableMap<Integer, Integer> tree = new TreeMap<>();
++    for (int i = 0; i < 10; i++) {
++      tree.put(i, i);
++    }
++    NavigableMap<Integer, Integer> odd = Maps.filterKeys(tree, k -> k % 2 == 1);
++    List<Integer> polled = new java.util.ArrayList<>();
++    for (Entry<Integer, Integer> e = odd.pollFirstEntry(); e != null; e = odd.pollFirstEntry()) {
++      assertEquals(e.getKey(), e.getValue());
++      polled.add(e.getKey());
++    }
++    assertEquals(asList(1, 3, 5, 7, 9), polled);
++
++    for (int i = 0; i < 10; i++) {
++      tree.put(i, i);
++    }
++    polled.clear();
++    for (Entry<Integer, Integer> e = odd.pollLastEntry(); e != null; e = odd.pollLastEntry()) {
++      assertEquals(e.getKey(), e.getValue());
++      polled.add(e.getKey());
++    }
++    assertEquals(asList(9, 7, 5, 3, 1), polled);
++  }
++
++  @GwtIncompatible // NavigableMap
++  public void testFilteredNavigableMapNavigationEntriesAreSnapshots() {
++    NavigableMap<Integer, String> unfiltered = new TreeMap<>();
++    unfiltered.put(1, "one");
++    unfiltered.put(2, "two");
++    unfiltered.put(3, "three");
++    unfiltered.put(4, "four");
++    NavigableMap<Integer, String> filtered = Maps.filterValues(unfiltered, v -> v.length() <= 4);
++    List<NavigableMap<Integer, String>> views =
++        asList(filtered, filtered.descendingMap(), filtered.headMap(4, true));
++    for (NavigableMap<Integer, String> view : views) {
++      List<Entry<Integer, String>> entries =
++          asList(
++              view.firstEntry(),
++              view.lastEntry(),
++              view.ceilingEntry(2),
++              view.floorEntry(2),
++              view.higherEntry(2),
++              view.lowerEntry(2));
++      for (Entry<Integer, String> entry : entries) {
++        assertThat(entry).isNotNull();
++        Entry<Integer, String> copy = immutableEntry(entry.getKey(), entry.getValue());
++        assertThrows(UnsupportedOperationException.class, () -> entry.setValue("rejected"));
++        assertEquals(copy, entry);
++      }
++    }
++    assertEquals(ImmutableMap.of(1, "one", 2, "two", 3, "three", 4, "four"), unfiltered);
++    Entry<Integer, String> polled = filtered.pollFirstEntry();
++    assertThrows(UnsupportedOperationException.class, () -> polled.setValue("uno"));
++
++    // Iteration still hands out live entries that validate the new value.
++    // (the poll above removed 1, leaving {2=two, 4=four} in the filtered view)
++    Entry<Integer, String> live = filtered.entrySet().iterator().next();
++    assertEquals(Integer.valueOf(2), live.getKey());
++    assertEquals("two", live.setValue("TWO"));
++    assertEquals("TWO", unfiltered.get(2));
++    assertThrows(IllegalArgumentException.class, () -> live.setValue("rejected"));
++    Entry<Integer, String> liveDescending = filtered.descendingMap().entrySet().iterator().next();
++    assertEquals(Integer.valueOf(4), liveDescending.getKey());
++    assertEquals("four", liveDescending.setValue("FOUR"));
++    assertEquals("FOUR", unfiltered.get(4));
++    assertThrows(IllegalArgumentException.class, () -> liveDescending.setValue("rejected"));
++  }
+ }

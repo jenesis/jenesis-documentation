@@ -1,0 +1,4 @@
+maven	1795731482.914	17.816	1	26011	-q -o test -Dtest=HttpMethodInterceptorTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795731508.598	12.924	0	22083	-q -o test -Dtest=HttpMethodInterceptorTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795731530.721	9.155	0	1336	-q -o install -DskipTests -pl core
+maven	1795731545.085	125.401	0	1662869	-o install -Dmaven.javadoc.skip

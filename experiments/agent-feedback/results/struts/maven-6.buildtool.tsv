@@ -1,0 +1,3 @@
+maven	1795732551.720	17.913	1	26189	-q -o test -pl core -Dtest=HttpMethodInterceptorTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795732578.003	12.861	0	22083	-q -o test -pl core -Dtest=HttpMethodInterceptorTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795732618.747	128.038	0	1645701	-o verify -pl core -amd

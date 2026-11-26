@@ -1,0 +1,2 @@
+jenesis	1795730499.772	24.250	0	1035	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*(ResourceListenerAuthorizationTest|ResourceLinkTest) build/jenesis/Make.java +wicket-core-tests
+jenesis	1795730528.049	147.690	0	3527	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java

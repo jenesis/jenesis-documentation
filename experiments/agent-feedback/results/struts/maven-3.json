@@ -20,5 +20,6 @@
   "cache_read_tokens": 1018995,
   "output_tokens": 11677,
   "prompt_bytes": 5127,
-  "agents_bytes": 198
+  "agents_bytes": 198,
+  "agent_results": 1
 }

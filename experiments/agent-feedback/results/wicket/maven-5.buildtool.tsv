@@ -1,0 +1,8 @@
+maven	1795730019.848	2.082	1	2220	-q -o install -DskipTests -pl wicket-core,wicket-extensions
+maven	1795730025.970	20.865	1	6802	-o -q -pl wicket-core-tests -am test -Dtest=ComponentResourceAuthorizationTest,ResourceAuthorizationTest,ResourceLinkTest,Image*Test -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795730055.047	18.263	0	2485	-o -q -pl wicket-core-tests -am test -Dtest=ComponentResourceAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795730110.404	9.036	1	5014	-o -q -pl wicket-extensions -am test -Dtest=AjaxDownloadBehaviorAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795730126.160	7.718	1	5014	-o -q -pl wicket-extensions -am test -Dtest=AjaxDownloadBehaviorAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795730142.860	7.301	1	5108	-o -q -pl wicket-extensions -am test -Dtest=AjaxDownloadBehaviorAuthorizationTest#ajaxDownloadOfRefusedResource -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795730155.911	7.143	0	2485	-o -q -pl wicket-extensions -am test -Dtest=AjaxDownloadBehaviorAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795730170.373	210.452	0	365337	-o install -fae

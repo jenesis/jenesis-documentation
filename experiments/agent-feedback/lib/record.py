@@ -10,7 +10,14 @@ try:
         agent = json.load(file)
 except (OSError, ValueError):
     agent = {}
-usage = agent.get("usage", {})
+# An agent that runs a build in the background ends several times, and "usage" and "num_turns" then cover the last
+# stretch alone; "modelUsage" and the cost cover the run.
+models = agent.get("modelUsage", {}).values()
+usage = {key: sum(model.get(key, 0) for model in models) for key in (
+    "inputTokens",
+    "cacheCreationInputTokens",
+    "cacheReadInputTokens",
+    "outputTokens")} if models else {}
 invocations = []
 with open(os.path.join(run, "buildtool.tsv")) as file:
     for line in file:
@@ -31,12 +38,13 @@ json.dump({
     "build_invocations": len(invocations),
     "build_failures": sum(1 for i in invocations if i["exit"] != 0),
     "build_output_bytes": sum(i["bytes"] for i in invocations),
-    "turns": agent.get("num_turns"),
+    "turns": agent.get("num_turns") if agent.get("result_index", 0) == 0 else None,
+    "agent_results": agent.get("result_index", 0) + 1,
     "cost_usd": agent.get("total_cost_usd"),
-    "input_tokens": usage.get("input_tokens"),
-    "cache_write_tokens": usage.get("cache_creation_input_tokens"),
-    "cache_read_tokens": usage.get("cache_read_input_tokens"),
-    "output_tokens": usage.get("output_tokens"),
+    "input_tokens": usage.get("inputTokens"),
+    "cache_write_tokens": usage.get("cacheCreationInputTokens"),
+    "cache_read_tokens": usage.get("cacheReadInputTokens"),
+    "output_tokens": usage.get("outputTokens"),
     "prompt_bytes": os.path.getsize(os.path.join(run, "prompt.md")),
     "agents_bytes": os.path.getsize(os.path.join(run, "project", "AGENTS.md")),
 }, sys.stdout, indent=2)

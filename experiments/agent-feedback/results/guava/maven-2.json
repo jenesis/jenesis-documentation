@@ -11,12 +11,13 @@
   "build_invocations": 2,
   "build_failures": 0,
   "build_output_bytes": 117168,
-  "turns": 1,
+  "turns": null,
   "cost_usd": 0.8267116,
-  "input_tokens": 4,
-  "cache_write_tokens": 2385,
-  "cache_read_tokens": 69781,
-  "output_tokens": 102,
+  "input_tokens": 56,
+  "cache_write_tokens": 40806,
+  "cache_read_tokens": 1355498,
+  "output_tokens": 11447,
   "prompt_bytes": 3179,
-  "agents_bytes": 1104
+  "agents_bytes": 1104,
+  "agent_results": 3
 }
