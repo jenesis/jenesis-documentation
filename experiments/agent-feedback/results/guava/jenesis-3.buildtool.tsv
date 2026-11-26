@@ -1,0 +1,2 @@
+jenesis	1795712580.849	74.126	0	1017	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*(MapsTest|MapsCollectionTest|ForwardingNavigableMapTest|SynchronizedNavigableMapTest|ImmutableSortedMapTest|TreeMultimapNaturalTest) build/jenesis/Make.java +guava-tests
+jenesis	1795712658.253	562.362	0	1129	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java
