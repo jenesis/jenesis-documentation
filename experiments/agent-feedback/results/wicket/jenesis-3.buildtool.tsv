@@ -1,0 +1,2 @@
+jenesis	1795711341.412	29.028	0	1037	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*(ResourceLinkTest|ResourceAuthorizationTest|ImageTest|ImageButtonTest|LocalizedImageResourceTest) build/jenesis/Make.java +wicket-core-tests
+jenesis	1795711372.709	173.293	0	3533	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java

@@ -101,3 +101,26 @@ is the median over the five attempts; `results/` holds every record.
 - `pilot/httpcore` holds ten earlier runs of one task, made before the briefing of the Jenesis arm showed how to
   build one module and run one test class. There the Jenesis arm took a median of 142 seconds, 60 of them in the
   build tool, against 97 and 28 afterwards.
+
+## What the agents ask Maven for
+
+`calls.py maven` and `calls.py jenesis` summarise every recorded call of an arm's build tool. Over the 26 Maven
+runs recorded so far, 86 calls, two per run at the median:
+
+| Asked for | Share of calls |
+|---|---|
+| `test` as the goal | 91% |
+| `-pl <modules>`, with `-am` in a third of all calls | 78% |
+| `-Dtest=<classes>`, mostly with `-Dsurefire.failIfNoSpecifiedTests=false` | 72% |
+| `-q` | 55% |
+| a check switched off (`-Drat.skip`, `-Dcheckstyle.skip`) | about one call in eight |
+
+- A run is usually one call that names a few test classes of one or a few modules, repeated until it passes, and
+  then one call without `-Dtest` over the modules the change touched. Two calls in 86 ran the whole project.
+- A call with `-q` printed 2 kB at the median, one without it 42 kB. The agents whose transcripts were read then
+  cut the output further with `grep -E "Tests run:|FAIL|ERROR"` and `tail`, down to some thirty characters where
+  the build passed.
+- Every call carried `-o`. The prompts and the `AGENTS.md` of these runs said that the dependencies were already
+  downloaded, and those of the second round named the flag, so this share is no evidence of what an agent does
+  unprompted. The Maven arm's `AGENTS.md` names the tool and nothing else, so that the arm relies on what the
+  model knows from its training.
