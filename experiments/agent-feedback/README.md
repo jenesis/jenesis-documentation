@@ -34,13 +34,17 @@ commit and pass once `reference.patch` is applied.
 `run.sh <task> <maven|jenesis> <attempt>` copies the prepared project and the warm caches into a folder of its
 own, with a home directory of its own, and starts the agent there (`claude -p`, the model and effort of `MODEL`
 and `EFFORT`, the tools Bash, Read, Edit, Write, Grep and Glob, no settings of the user's). The prompt is the
-bug report, the instruction to fix it and to prove the fix with a test, and one paragraph naming the build tool.
+bug report and the instruction to fix it and to prove the fix with a test; it is the same in both arms.
 
-- **Maven arm:** `mvn` is on the path. The project holds no Jenesis.
+What differs is the `AGENTS.md` the harness writes into the project root, which says how the project is built with
+the arm's tool: every module, one module, one test class, and where a test's output is. A project's own
+instructions for agents are removed in preparation, as they would advise one arm only.
+
+- **Maven arm:** `mvn` is on the path, `lib/agents-maven.md` is the project's `AGENTS.md`, and the project holds
+  no Jenesis.
 - **Jenesis arm:** the project holds the engine as `build/jenesis`, and `mvn` answers that it is not installed.
-  The agent knows Maven from its training and Jenesis from nowhere, so this arm's prompt ends with the briefing
-  Jenesis prints for an agent (`skill/start`). The briefing costs tokens, which this arm pays in every run;
-  `prompt_bytes` in a record shows the size of both prompts.
+  The agent knows Maven from its training and Jenesis from nowhere, so this arm's `AGENTS.md` is
+  `lib/agents-jenesis.md` followed by the briefing Jenesis prints for an agent (`skill/start`).
 
 When the agent stops, the harness copies its tree without build output, lays the hidden tests over it and runs
 them with Maven - in both arms, so the verdict never depends on the tool the agent had.

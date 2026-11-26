@@ -36,5 +36,6 @@ json.dump({
     "cache_read_tokens": usage.get("cache_read_input_tokens"),
     "output_tokens": usage.get("output_tokens"),
     "prompt_bytes": os.path.getsize(os.path.join(run, "prompt.md")),
+    "agents_bytes": os.path.getsize(os.path.join(run, "project", "AGENTS.md")),
 }, sys.stdout, indent=2)
 print()
