@@ -16,11 +16,10 @@ export FEEDBACK_LOG="$RUN/buildtool.tsv"
 : > "$FEEDBACK_LOG"
 
 ISSUE="$(cat "$HERE/tasks/$TASK/issue.md")"
-# The arms differ in the tool on the path and in the AGENTS.md that says how the project is built with it, and in
-# nothing else: the project's own instructions for agents are removed, as they would advise one arm only. Each tool
-# is reached through a wrapper that times its calls. The Jenesis arm's file ends with the briefing Jenesis prints
-# for an agent, as the model knows Maven from its training and Jenesis from nowhere, and its mvn refuses, so that
-# a run measures one tool.
+BRIEFING=""
+# The arms differ in the tool on the path and in the AGENTS.md that names it, and in nothing else: the project's
+# own instructions for agents are removed, as they would advise one arm only. Each tool is reached through a
+# wrapper that times its calls, and the Jenesis arm's mvn refuses, so that a run measures one tool.
 if [ "$ARM" = maven ]; then
   printf '#!/bin/sh\nexec python3 %q maven %q "$@"\n' "$HERE/lib/wrap.py" "$MAVEN" > "$RUN/bin/mvn"
   cp "$HERE/lib/agents-maven.md" "$RUN/project/AGENTS.md"
@@ -35,7 +34,14 @@ case " \$* " in
   *) exec "$JAVA" "\$@" ;;
 esac
 SH
-  { cat "$HERE/lib/agents-jenesis.md"; sed "s|$CACHE/jenesis|$RUN/project|g" "$CACHE/briefing.md"; } > "$RUN/project/AGENTS.md"
+  cp "$HERE/lib/agents-jenesis.md" "$RUN/project/AGENTS.md"
+  # The model knows Maven from its training and Jenesis from nowhere. The briefing Jenesis prints for an agent is
+  # therefore part of what this arm is told before the clock starts, as the training is for the other arm.
+  BRIEFING="
+This is what \`java build/jenesis/Make.java skill/start\` prints, the tool's briefing for a coding agent:
+
+$(sed "s|$CACHE/jenesis|$RUN/project|g" "$CACHE/briefing.md")
+"
 fi
 chmod +x "$RUN/bin/"*
 # Claude Code reads CLAUDE.md, which hands on to the file any agent reads.
@@ -46,8 +52,8 @@ You are working in a copy of an open-source Java project, without its git histor
 
 $ISSUE
 
-Find the cause and fix it in the main sources, and add or adjust a test that shows the fix. AGENTS.md in the project root says how this project is built and tested; build and test with that tool alone.
-
+Find the cause and fix it in the main sources, and add or adjust a test that shows the fix. AGENTS.md in the project root names the tool this project is built and tested with; build and test with that tool alone.
+$BRIEFING
 Stop when the fix is in place and the tests of what you changed pass, and say in two sentences what you changed.
 PROMPT
 
