@@ -1,0 +1,9 @@
+maven	1795815867.062	1.835	1	754	-o -q -pl transport -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false -Dcheckstyle.skip test
+maven	1795815871.020	24.594	1	2719	-o -q -pl transport -am -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false test
+maven	1795815907.985	2.713	1	2680	-o -q -pl transport -am -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false test
+maven	1795815913.697	2.652	1	31025	-o -pl transport -am -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false test
+maven	1795815922.122	7.278	0	59574	-o -Dmaven.build.cache.enabled=false -pl transport -am -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false test
+maven	1795815934.125	19.968	1	84559	-o -Dmaven.build.cache.enabled=false -pl transport -am -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false test
+maven	1795815961.449	160.978	1	300951	-o -Dmaven.build.cache.enabled=false -fae -pl transport -am -amd verify
+maven	1795816134.321	152.280	1	299171	-o -Dmaven.build.cache.enabled=false -fae -pl transport -am -amd verify
+maven	1795816295.302	248.953	0	554774	-o -Dmaven.build.cache.enabled=false -fae -Dmaven.test.failure.ignore=true -pl transport -am -amd verify

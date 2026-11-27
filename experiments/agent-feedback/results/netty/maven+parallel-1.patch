@@ -1,0 +1,128 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+parallel-1/project/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java	2026-11-27 10:01:17.213499501 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+parallel-1/project/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java	2026-11-27 21:41:21.863696866 +0000
+@@ -51,7 +51,10 @@
+         @Override
+         public boolean canBlock() {
+             assert inEventLoop();
+-            return !hasTasks() && !hasScheduledTasks();
++            // If a suspend was requested and the loop can be suspended we must not block: the wakeup() issued by
++            // trySuspend() might have been missed by the IoHandler (e.g. if it was not blocked yet), in which case
++            // we would block forever while the loop is already considered suspended.
++            return !hasTasks() && !hasScheduledTasks() && !canSuspend();
+         }
+ 
+         @Override
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+parallel-1/project/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java	2026-11-27 10:01:17.213499501 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+parallel-1/project/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java	2026-11-27 21:41:02.312301943 +0000
+@@ -183,6 +183,109 @@
+         }
+     }
+ 
++    @Test
++    void testSuspendWhileAboutToBlockDoesNotLeaveThreadAlive() throws Exception {
++        TestThreadFactory threadFactory = new TestThreadFactory();
++        CountDownLatch aboutToBlock = new CountDownLatch(1);
++        CountDownLatch suspendRequested = new CountDownLatch(1);
++        IoEventLoop loop = new SingleThreadIoEventLoop(null, threadFactory, new IoHandlerFactory() {
++            @Override
++            public IoHandler newHandler(ThreadAwareExecutor ioExecutor) {
++                return new WakeupOnlyWhileBlockedIoHandler(aboutToBlock, suspendRequested);
++            }
++
++            @Override
++            public boolean isChangingThreadSupported() {
++                return true;
++            }
++        });
++        loop.execute(() -> { });
++        Thread thread = threadFactory.threads.take();
++        assertTrue(aboutToBlock.await(10, TimeUnit.SECONDS));
++        // The IoHandler is not blocked yet, so the wakeup() triggered by trySuspend() is ignored by it.
++        assertTrue(loop.trySuspend());
++        suspendRequested.countDown();
++
++        thread.join(TimeUnit.SECONDS.toMillis(10));
++        assertFalse(thread.isAlive());
++        assertTrue(loop.isSuspended());
++        assertTrue(loop.shutdownGracefully(0, 0, TimeUnit.SECONDS).await(10, TimeUnit.SECONDS));
++    }
++
++    /**
++     * {@link IoHandler} that, like the epoll one, only reacts to {@link #wakeup()} while it is actually blocked.
++     */
++    private static final class WakeupOnlyWhileBlockedIoHandler implements IoHandler {
++        private final CountDownLatch aboutToBlock;
++        private final CountDownLatch suspendRequested;
++        private boolean blocked;
++        private boolean woken;
++
++        WakeupOnlyWhileBlockedIoHandler(CountDownLatch aboutToBlock, CountDownLatch suspendRequested) {
++            this.aboutToBlock = aboutToBlock;
++            this.suspendRequested = suspendRequested;
++        }
++
++        @Override
++        public int run(IoHandlerContext context) {
++            // Wait for the suspend request once the loop is idle and the handler is just about to block.
++            if (aboutToBlock.getCount() > 0 && context.canBlock()) {
++                aboutToBlock.countDown();
++                try {
++                    suspendRequested.await();
++                } catch (InterruptedException e) {
++                    Thread.currentThread().interrupt();
++                    return 0;
++                }
++            }
++            synchronized (this) {
++                if (!context.canBlock()) {
++                    return 0;
++                }
++                blocked = true;
++                woken = false;
++                try {
++                    while (!woken) {
++                        wait();
++                    }
++                } catch (InterruptedException e) {
++                    Thread.currentThread().interrupt();
++                } finally {
++                    blocked = false;
++                }
++            }
++            return 0;
++        }
++
++        @Override
++        public synchronized void wakeup() {
++            if (blocked) {
++                woken = true;
++                notifyAll();
++            }
++        }
++
++        @Override
++        public void prepareToDestroy() {
++            // NOOP
++        }
++
++        @Override
++        public void destroy() {
++            // NOOP
++        }
++
++        @Override
++        public IoRegistration register(IoHandle handle) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public boolean isCompatible(Class<? extends IoHandle> handleType) {
++            return false;
++        }
++    }
++
+     @Disabled("This test is flaky and will often stall the build")
+     @Test
+     void testSuspendingWhileRegistrationActive() throws Exception {
