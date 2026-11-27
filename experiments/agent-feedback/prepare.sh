@@ -33,6 +33,10 @@ if [ ! -f "$CACHE/checked" ]; then
   # here, and what the installation put into the repository is removed again: a run starts without a built copy
   # of the project, in either arm.
   (cd "$CACHE/maven" && "$MAVEN" -B install -DskipTests > "$CACHE/maven-install.log" 2>&1) || true
+  # A developer's machine holds the sources of the libraries a project uses, as an IDE fetches them, and the plugin
+  # that prints the dependency tree. Both arms read the same repository, so both get them; where a library
+  # publishes no sources, the run goes on without.
+  (cd "$CACHE/maven" && "$MAVEN" -B dependency:sources dependency:tree > "$CACHE/maven-sources.log" 2>&1) || true
   python3 "$HERE/lib/uninstall.py" "$CACHE/home/.m2/repository"
 
   # The hidden tests fail on the commit before the fix and pass with the reference fix.
