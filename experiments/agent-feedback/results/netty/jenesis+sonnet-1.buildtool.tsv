@@ -1,0 +1,4 @@
+jenesis	1795812706.685	104.006	1	2592	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java +transport
+jenesis	1795812822.052	92.402	0	123	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java +transport
+jenesis	1795812917.131	99.548	1	3294	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java
+jenesis	1795813021.988	1.254	0	2218	build/jenesis/Make.java skill/selectors

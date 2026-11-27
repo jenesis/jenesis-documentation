@@ -1,0 +1,120 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven-5/project/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java	2026-11-27 10:01:17.213499501 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven-5/project/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java	2026-11-27 20:06:50.475146042 +0000
+@@ -51,7 +51,11 @@
+         @Override
+         public boolean canBlock() {
+             assert inEventLoop();
+-            return !hasTasks() && !hasScheduledTasks();
++            // If a suspension was requested (and can be completed) we must not block, as the wakeup() that
++            // trySuspend() issued may have been missed by the IoHandler if it was not blocking at that moment.
++            // In that case the thread would stay parked in the IoHandler even though the loop reports itself as
++            // suspended.
++            return !hasTasks() && !hasScheduledTasks() && !canSuspend();
+         }
+ 
+         @Override
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven-5/project/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java	2026-11-27 10:01:17.213499501 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven-5/project/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java	2026-11-27 20:06:18.730099350 +0000
+@@ -213,6 +213,100 @@
+         loop.shutdownGracefully();
+     }
+ 
++    @Test
++    void testSuspendWhileAboutToBlockStopsThread() throws Exception {
++        final CountDownLatch aboutToBlock = new CountDownLatch(1);
++        final CountDownLatch proceed = new CountDownLatch(1);
++        final AtomicBoolean armed = new AtomicBoolean();
++        TestThreadFactory threadFactory = new TestThreadFactory();
++        IoEventLoop loop = new SingleThreadIoEventLoop(null, threadFactory, new IoHandlerFactory() {
++            @Override
++            public IoHandler newHandler(ThreadAwareExecutor eventLoop) {
++                return new OnlyWhenBlockedWakeupIoHandler(eventLoop, armed, aboutToBlock, proceed);
++            }
++
++            @Override
++            public boolean isChangingThreadSupported() {
++                return true;
++            }
++        });
++        try {
++            loop.execute(() -> armed.set(true));
++            Thread thread = threadFactory.threads.take();
++            assertTrue(aboutToBlock.await(10, TimeUnit.SECONDS));
++
++            // The loop is in its IoHandler but not blocked yet, so the wakeup() done by trySuspend() is not seen.
++            assertTrue(loop.trySuspend());
++            assertTrue(loop.isSuspended());
++            proceed.countDown();
++
++            thread.join(TimeUnit.SECONDS.toMillis(10));
++            assertFalse(thread.isAlive(), "Thread of suspended loop is still alive");
++            assertTrue(loop.isSuspended());
++        } finally {
++            proceed.countDown();
++            loop.shutdownGracefully(0, 0, TimeUnit.SECONDS);
++        }
++    }
++
++    /**
++     * {@link IoHandler} that, like the epoll one, only reacts to a {@link #wakeup()} while it is actually blocked.
++     */
++    private static final class OnlyWhenBlockedWakeupIoHandler extends TestIoHandler {
++        private final AtomicBoolean armed;
++        private final CountDownLatch aboutToBlock;
++        private final CountDownLatch proceed;
++        private boolean blocked;
++
++        OnlyWhenBlockedWakeupIoHandler(ThreadAwareExecutor executor, AtomicBoolean armed,
++                                       CountDownLatch aboutToBlock, CountDownLatch proceed) {
++            super(executor);
++            this.armed = armed;
++            this.aboutToBlock = aboutToBlock;
++            this.proceed = proceed;
++        }
++
++        @Override
++        public synchronized void wakeup() {
++            if (blocked) {
++                blocked = false;
++                notifyAll();
++            }
++        }
++
++        @Override
++        public int run(IoHandlerContext context) {
++            if (armed.compareAndSet(true, false)) {
++                aboutToBlock.countDown();
++                try {
++                    proceed.await();
++                } catch (InterruptedException e) {
++                    Thread.currentThread().interrupt();
++                    return 0;
++                }
++            }
++            synchronized (this) {
++                blocked = true;
++            }
++            if (!context.canBlock()) {
++                synchronized (this) {
++                    blocked = false;
++                }
++                return 0;
++            }
++            synchronized (this) {
++                try {
++                    while (blocked) {
++                        wait();
++                    }
++                } catch (InterruptedException e) {
++                    Thread.currentThread().interrupt();
++                }
++            }
++            return 0;
++        }
++    }
++
+     private static class TestIoHandler implements IoHandler {
+         private final Semaphore semaphore = new Semaphore(0);
+         private final ThreadAwareExecutor executor;

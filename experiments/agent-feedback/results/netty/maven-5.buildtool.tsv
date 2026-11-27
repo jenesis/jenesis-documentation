@@ -1,0 +1,5 @@
+maven	1795809938.692	25.139	0	428	-o -q install -DskipTests -pl common,transport -am
+maven	1795809963.860	4.442	1	6873	-o -pl transport test -Dtest=SingleThreadIoEventLoopTest
+maven	1795809978.755	7.130	0	33205	-o -pl transport test -Dtest=SingleThreadIoEventLoopTest
+maven	1795809990.625	19.842	1	57625	-o -pl transport test -Dtest=SingleThreadIoEventLoopTest
+maven	1795810013.231	98.350	0	257848	-o install -pl transport -amd

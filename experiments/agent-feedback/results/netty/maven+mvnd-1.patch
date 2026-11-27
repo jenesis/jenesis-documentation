@@ -1,0 +1,131 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+mvnd-1/project/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java	2026-11-27 10:01:17.213499501 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+mvnd-1/project/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java	2026-11-27 21:31:12.159443693 +0000
+@@ -51,7 +51,11 @@
+         @Override
+         public boolean canBlock() {
+             assert inEventLoop();
+-            return !hasTasks() && !hasScheduledTasks();
++            // We must not block if a suspension was requested and the loop could suspend now. Otherwise, when the
++            // suspend request (and its wakeup()) races with the IoHandler preparing to block, an IoHandler that only
++            // reacts to wakeup() while it is actually blocked (like epoll) could miss it and block forever, keeping
++            // the thread of an already "suspended" loop alive.
++            return !hasTasks() && !hasScheduledTasks() && !canSuspend();
+         }
+ 
+         @Override
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+mvnd-1/project/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java	2026-11-27 10:01:17.213499501 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+mvnd-1/project/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java	2026-11-27 21:30:21.113116134 +0000
+@@ -183,6 +183,111 @@
+         }
+     }
+ 
++    @Test
++    void testSuspendRequestedWhileAboutToBlockStopsThread() throws Exception {
++        TestThreadFactory threadFactory = new TestThreadFactory();
++        CountDownLatch aboutToBlock = new CountDownLatch(1);
++        CountDownLatch suspendRequested = new CountDownLatch(1);
++        AtomicBoolean armed = new AtomicBoolean();
++        IoHandlerFactory factory = new IoHandlerFactory() {
++            @Override
++            public IoHandler newHandler(ThreadAwareExecutor ioExecutor) {
++                return new WakeupOnlyWhenBlockedIoHandler() {
++                    @Override
++                    void beforeBlock() {
++                        if (armed.compareAndSet(true, false)) {
++                            aboutToBlock.countDown();
++                            try {
++                                suspendRequested.await();
++                            } catch (InterruptedException e) {
++                                Thread.currentThread().interrupt();
++                            }
++                        }
++                    }
++                };
++            }
++
++            @Override
++            public boolean isChangingThreadSupported() {
++                return true;
++            }
++        };
++        SingleThreadIoEventLoop loop = new SingleThreadIoEventLoop(null, threadFactory, factory);
++        try {
++            // Start the thread; arm the hook only after the task ran so the next run() hits it.
++            loop.submit(() -> armed.set(true)).sync();
++            Thread thread = threadFactory.threads.take();
++            assertTrue(aboutToBlock.await(10, TimeUnit.SECONDS));
++
++            // The loop decided not to suspend yet and the handler is about to block, but has not announced it, so the
++            // wakeup() done by trySuspend() is ignored by the handler.
++            assertTrue(loop.trySuspend());
++            suspendRequested.countDown();
++            assertTrue(loop.isSuspended());
++
++            thread.join(TimeUnit.SECONDS.toMillis(10));
++            assertFalse(thread.isAlive(), "Thread of suspended loop is still alive");
++        } finally {
++            loop.shutdownGracefully(0, 0, TimeUnit.SECONDS);
++        }
++    }
++
++    /**
++     * Models the epoll handler: wakeup() only does something once the handler announced it is about to block, and the
++     * handler checks {@link IoHandlerContext#canBlock()} after announcing it. A wakeup() before that is lost.
++     */
++    private static class WakeupOnlyWhenBlockedIoHandler implements IoHandler {
++        private final AtomicBoolean blocking = new AtomicBoolean();
++        private final Semaphore semaphore = new Semaphore(0);
++
++        void beforeBlock() {
++        }
++
++        @Override
++        public int run(IoHandlerContext context) {
++            beforeBlock();
++            blocking.set(true);
++            try {
++                if (context.canBlock()) {
++                    try {
++                        semaphore.acquire();
++                    } catch (InterruptedException e) {
++                        Thread.currentThread().interrupt();
++                    }
++                }
++            } finally {
++                blocking.set(false);
++            }
++            semaphore.drainPermits();
++            return 0;
++        }
++
++        @Override
++        public void wakeup() {
++            if (blocking.getAndSet(false)) {
++                semaphore.release();
++            }
++        }
++
++        @Override
++        public void prepareToDestroy() {
++        }
++
++        @Override
++        public void destroy() {
++        }
++
++        @Override
++        public IoRegistration register(IoHandle handle) {
++            throw new UnsupportedOperationException();
++        }
++
++        @Override
++        public boolean isCompatible(Class<? extends IoHandle> handleType) {
++            return false;
++        }
++    }
++
+     @Disabled("This test is flaky and will often stall the build")
+     @Test
+     void testSuspendingWhileRegistrationActive() throws Exception {

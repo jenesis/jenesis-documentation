@@ -1,0 +1,4 @@
+jenesis	1795811005.228	6.662	0	4439	build/jenesis/Make.java skill/start
+jenesis	1795812218.265	14.854	1	2650	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795812238.268	5.467	0	117	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795812248.084	101.627	1	3425	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java
