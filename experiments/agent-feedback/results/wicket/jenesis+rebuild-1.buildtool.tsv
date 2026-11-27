@@ -1,0 +1,2 @@
+jenesis	1795818269.068	25.820	0	127	-Djenesis.executor.rebuild=true -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*(ResourceListenerAuthorizationTest|ResourceLinkTest|ImageTest) build/jenesis/Make.java +wicket-core-tests
+jenesis	1795818298.539	164.399	0	2004	-Djenesis.executor.rebuild=true -Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java

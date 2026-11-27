@@ -1,0 +1,10 @@
+maven	1795821986.952	2.106	1	1312	-o -q install -pl wicket-core,wicket-extensions -DskipTests
+maven	1795821989.086	1.977	1	1880	-o test -pl wicket-core-tests -Dtest=ListenerResourceAuthorizationTest,ResourceLinkTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795821994.556	20.795	0	39209	-o test -pl wicket-core-tests -am -Dtest=ListenerResourceAuthorizationTest,ResourceLinkTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795822062.023	8.579	1	19437	-o test -pl wicket-extensions -am -Dtest=ListenerResourceAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795822080.592	7.464	1	18580	-o test -pl wicket-extensions -am -Dtest=ListenerResourceAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795822099.058	7.198	1	18580	-o test -pl wicket-extensions -am -Dtest=ListenerResourceAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795822114.977	7.678	1	18119	-o test -pl wicket-extensions -am -Dtest=ListenerResourceAuthorizationTest#allowedAjaxDownload -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795822135.403	7.096	1	18145	-o test -pl wicket-extensions -am -Dtest=ListenerResourceAuthorizationTest#allowedAjaxDownload -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795822157.786	7.310	0	15051	-o test -pl wicket-extensions -am -Dtest=ListenerResourceAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795822172.810	161.703	0	273199	-o test -fae

@@ -1,0 +1,7 @@
+maven	1795816626.118	25.456	1	2756	-o -q -pl transport -am test -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795816659.966	7.165	0	428	-o -q -pl transport -am test -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795816672.693	19.125	1	2805	-o -q -pl transport -am test -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795816695.602	1.533	1	4394	-o -pl transport -amd install
+maven	1795816699.458	58.341	0	345257	-o -pl transport -am verify -Dsurefire.failIfNoSpecifiedTests=false -Dtest=io.netty.channel.**.*
+maven	1795816761.710	145.901	1	299970	-o -pl transport -am verify
+maven	1795816916.118	242.814	0	552424	-o -pl transport -am verify -Dmaven.test.failure.ignore=true

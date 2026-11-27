@@ -1,0 +1,6 @@
+maven	1795817220.070	1.502	1	2548	-o -q test -pl transport -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795817225.374	24.286	1	2720	-o -q test -pl transport -am -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795817254.513	7.073	0	428	-o -q test -pl transport -am -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795817263.756	39.412	1	2585	-o -q test -pl transport -am -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795817305.940	78.826	0	272811	-o test -pl transport -am -Dtest=io.netty.channel.**.*Test -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795817388.151	84.636	0	239277	-o test -pl transport -am -Dtest=io.netty.bootstrap.**.*Test,io.netty.channel.**.*Test -Dsurefire.failIfNoSpecifiedTests=false

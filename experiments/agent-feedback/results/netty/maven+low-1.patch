@@ -1,0 +1,90 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+low-1/project/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java	2026-11-27 10:01:17.213499501 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+low-1/project/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java	2026-11-27 22:13:42.266959281 +0000
+@@ -51,7 +51,10 @@
+         @Override
+         public boolean canBlock() {
+             assert inEventLoop();
+-            return !hasTasks() && !hasScheduledTasks();
++            // Never block if a suspend was requested and can be completed: the wakeup() issued by trySuspend() may
++            // have been delivered before we started blocking, in which case some IoHandler implementations
++            // (e.g. epoll) would not notice it and we would block forever while the loop reports being suspended.
++            return !hasTasks() && !hasScheduledTasks() && !canSuspend();
+         }
+ 
+         @Override
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+low-1/project/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java	2026-11-27 10:01:17.213499501 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+low-1/project/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java	2026-11-27 22:13:27.687139362 +0000
+@@ -213,6 +213,71 @@
+         loop.shutdownGracefully();
+     }
+ 
++    @Test
++    void testSuspendRequestedRightBeforeBlockingTerminatesThread() throws Exception {
++        TestThreadFactory threadFactory = new TestThreadFactory();
++        final AtomicBoolean suspendRequested = new AtomicBoolean();
++        final AtomicBoolean suspendResult = new AtomicBoolean();
++        final AtomicBoolean taskRan = new AtomicBoolean();
++        final IoEventLoop[] loopRef = new IoEventLoop[1];
++        IoHandlerFactory factory = new IoHandlerFactory() {
++            @Override
++            public boolean isChangingThreadSupported() {
++                return true;
++            }
++
++            @Override
++            public IoHandler newHandler(ThreadAwareExecutor eventLoop) {
++                return new TestIoHandler(eventLoop) {
++            private final Semaphore blocked = new Semaphore(0);
++            private volatile boolean blocking;
++
++            @Override
++            public void wakeup() {
++                // Like epoll: a wakeup only has an effect while actually blocked.
++                if (blocking) {
++                    blocked.release();
++                }
++            }
++
++            @Override
++            public int run(IoHandlerContext context) {
++                if (taskRan.get() && suspendRequested.compareAndSet(false, true)) {
++                    // Suspend request arrives (and its wakeup is lost) right before we decide to block.
++                    Thread t = new Thread(() -> suspendResult.set(loopRef[0].trySuspend()));
++                    t.start();
++                    try {
++                        t.join();
++                    } catch (InterruptedException e) {
++                        Thread.currentThread().interrupt();
++                    }
++                }
++                if (context.canBlock()) {
++                    blocking = true;
++                    try {
++                        blocked.tryAcquire(10, TimeUnit.SECONDS);
++                    } catch (InterruptedException e) {
++                        Thread.currentThread().interrupt();
++                    } finally {
++                        blocking = false;
++                    }
++                }
++                return 0;
++            }
++                };
++            }
++        };
++        IoEventLoop loop = new SingleThreadIoEventLoop(null, threadFactory, factory);
++        loopRef[0] = loop;
++        loop.execute(() -> taskRan.set(true));
++        Thread thread = threadFactory.threads.take();
++        thread.join(5000);
++        assertTrue(suspendResult.get());
++        assertTrue(loop.isSuspended());
++        assertFalse(thread.isAlive());
++        loop.shutdownGracefully();
++    }
++
+     private static class TestIoHandler implements IoHandler {
+         private final Semaphore semaphore = new Semaphore(0);
+         private final ThreadAwareExecutor executor;

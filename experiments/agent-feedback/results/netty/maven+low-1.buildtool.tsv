@@ -1,0 +1,8 @@
+maven	1795817534.920	1.441	1	2548	-q -o test -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795817540.142	23.149	0	428	-q -o install -pl transport -am -DskipTests -Dcheckstyle.skip
+maven	1795817563.321	9.157	1	6929	-o test -Dtest=SingleThreadIoEventLoopTest
+maven	1795817583.770	7.007	0	33589	-o test -Dtest=SingleThreadIoEventLoopTest
+maven	1795817590.814	9.584	0	56305	-o test -Dtest=SingleThreadIoEventLoopTest
+maven	1795817607.717	14.543	1	58340	-o test -Dtest=SingleThreadIoEventLoopTest
+maven	1795817622.288	8.840	0	56305	-o test -Dtest=SingleThreadIoEventLoopTest
+maven	1795817633.388	93.757	0	207255	-o install

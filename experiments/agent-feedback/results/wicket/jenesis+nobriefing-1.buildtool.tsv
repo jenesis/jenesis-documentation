@@ -1,0 +1,4 @@
+jenesis	1795818842.985	6.887	0	4441	build/jenesis/Make.java skill/start
+jenesis	1795818936.676	18.420	0	125	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*ResourceAuthorizationTest build/jenesis/Make.java +wicket-core-tests
+jenesis	1795818972.683	6.807	0	125	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*AjaxDownloadBehaviorAuthorizationTest build/jenesis/Make.java +wicket-extensions
+jenesis	1795818982.269	154.746	0	2003	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java

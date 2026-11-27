@@ -1,0 +1,5 @@
+maven	1795820108.564	19.737	0	669	-o -q -pl wicket-core-tests -am test -Dtest=ListenerResourceAuthorizationTest,ResourceAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795820168.507	7.923	1	5825	-o -q -pl wicket-extensions -am test -Dtest=AjaxDownloadAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795820185.434	7.015	1	5825	-o -q -pl wicket-extensions -am test -Dtest=AjaxDownloadAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795820199.535	7.181	0	669	-o -q -pl wicket-extensions -am test -Dtest=AjaxDownloadAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795820212.121	153.060	0	273036	-o test

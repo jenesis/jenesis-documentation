@@ -1,0 +1,4 @@
+maven	1795822402.929	2.254	1	1312	-o -q install -pl wicket-core -DskipTests
+maven	1795822405.219	2.118	1	1880	-o test -pl wicket-core-tests -Dtest=ResourceAuthorizationTest
+maven	1795822408.957	21.934	0	38807	-o test -pl wicket-core-tests -am -Dtest=ResourceAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false -DfailIfNoTests=false
+maven	1795822433.163	158.969	0	273411	-o test -fae
