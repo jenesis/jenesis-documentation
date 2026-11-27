@@ -1,0 +1,224 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/build.jenesis/process-test.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-1/project/build.jenesis/process-test.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/build.jenesis/process-test.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-1/project/build.jenesis/process-test.properties	2026-11-27 08:15:41.613122894 +0000
+@@ -0,0 +1,3 @@
++-XX\:+EnableDynamicAgentLoading=
++-Dnet.bytebuddy.experimental=true
++-Dnet.bytebuddy.test.integration=false
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/byte-buddy-agent/build.jenesis/process-test.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-1/project/byte-buddy-agent/build.jenesis/process-test.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/byte-buddy-agent/build.jenesis/process-test.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-1/project/byte-buddy-agent/build.jenesis/process-test.properties	2026-11-27 08:20:24.257139695 +0000
+@@ -0,0 +1,4 @@
++-Djna.library.path=
++-XX\:+EnableDynamicAgentLoading=
++-Dnet.bytebuddy.experimental=true
++-Dnet.bytebuddy.test.integration=false
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/byte-buddy-dep/src/main/java/net/bytebuddy/asm/Advice.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-1/project/byte-buddy-dep/src/main/java/net/bytebuddy/asm/Advice.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/byte-buddy-dep/src/main/java/net/bytebuddy/asm/Advice.java	2026-11-27 08:52:56.001255712 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-1/project/byte-buddy-dep/src/main/java/net/bytebuddy/asm/Advice.java	2026-11-27 10:11:26.256646411 +0000
+@@ -7745,6 +7745,19 @@
+                 protected static class WithArgumentCopy extends WithPreservedArguments {
+ 
+                     /**
++                     * The number of local variables of the instrumented method's own frame, counted in frame entries, where
++                     * {@code long} and {@code double} values count as a single entry.
++                     */
++                    private int retainedLocalVariables;
++
++                    /**
++                     * The minimal number of local variables of the instrumented method's own frame, counted in frame entries,
++                     * that must be retained to not drop the uninitialized {@code this} reference, or {@code 0} if the implicit
++                     * {@code this} reference is not uninitialized within the current frame.
++                     */
++                    private int requiredLocalVariables;
++
++                    /**
+                      * Creates a new stack map frame handler that expects an argument copy.
+                      *
+                      * @param instrumentedType   The instrumented type.
+@@ -7814,6 +7827,8 @@
+                             }
+                         }
+                         currentFrameDivergence = (instrumentedMethod.isStatic() ? 0 : 1) + instrumentedMethod.getParameters().size();
++                        retainedLocalVariables = currentFrameDivergence;
++                        requiredLocalVariables = instrumentedMethod.isConstructor() ? currentFrameDivergence : 0;
+                     }
+ 
+                     /**
+@@ -7832,12 +7847,16 @@
+                                 break;
+                             case Opcodes.F_APPEND:
+                                 currentFrameDivergence += localVariableLength;
++                                retainedLocalVariables += localVariableLength;
+                                 break;
+                             case Opcodes.F_CHOP:
+                                 currentFrameDivergence -= localVariableLength;
++                                retainedLocalVariables -= localVariableLength;
+                                 break;
+                             case Opcodes.F_FULL:
+                             case Opcodes.F_NEW:
++                                retainedLocalVariables = localVariableLength;
++                                requiredLocalVariables = 0;
+                                 Object[] translated = new Object[localVariableLength
+                                         + (instrumentedMethod.isStatic() ? 0 : 1)
+                                         + instrumentedMethod.getParameters().size()
+@@ -7849,6 +7868,7 @@
+                                     for (int variableIndex = 0; variableIndex < localVariableLength; variableIndex++) {
+                                         if (localVariable[variableIndex] == Opcodes.UNINITIALIZED_THIS) {
+                                             initialization = Initialization.UNITIALIZED;
++                                            requiredLocalVariables = variableIndex + 1;
+                                             break;
+                                         }
+                                     }
+@@ -7875,7 +7895,7 @@
+                             default:
+                                 throw new IllegalArgumentException("Unexpected frame type: " + type);
+                         }
+-                        if (instrumentedMethod.isConstructor() && currentFrameDivergence < instrumentedMethod.getStackSize()) {
++                        if (instrumentedMethod.isConstructor() && retainedLocalVariables < requiredLocalVariables) {
+                             throw new IllegalStateException(instrumentedMethod + " dropped implicit 'this' frame");
+                         }
+                         methodVisitor.visitFrame(type, localVariableLength, localVariable, stackSize, stack);
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/byte-buddy-dep/src/test/java/net/bytebuddy/asm/AdviceConstructorFrameTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-1/project/byte-buddy-dep/src/test/java/net/bytebuddy/asm/AdviceConstructorFrameTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/byte-buddy-dep/src/test/java/net/bytebuddy/asm/AdviceConstructorFrameTest.java	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-1/project/byte-buddy-dep/src/test/java/net/bytebuddy/asm/AdviceConstructorFrameTest.java	2026-11-27 10:12:08.134035178 +0000
+@@ -0,0 +1,139 @@
++package net.bytebuddy.asm;
++
++import net.bytebuddy.ByteBuddy;
++import net.bytebuddy.description.type.TypeDescription;
++import net.bytebuddy.dynamic.ClassFileLocator;
++import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
++import net.bytebuddy.pool.TypePool;
++import org.junit.Test;
++import org.objectweb.asm.ClassWriter;
++import org.objectweb.asm.Label;
++import org.objectweb.asm.MethodVisitor;
++import org.objectweb.asm.Opcodes;
++
++import static net.bytebuddy.matcher.ElementMatchers.isConstructor;
++import static org.hamcrest.CoreMatchers.is;
++import static org.hamcrest.CoreMatchers.notNullValue;
++import static org.hamcrest.MatcherAssert.assertThat;
++
++public class AdviceConstructorFrameTest {
++
++    private static final String SAMPLE = "net.bytebuddy.asm.AdviceConstructorFrameTestSample";
++
++    @Test
++    public void testCompactFrameWithLongParameter() throws Exception {
++        Class<?> type = new ByteBuddy()
++                .redefine(LongChild.class)
++                .visit(Advice.to(EmptyExit.class).on(isConstructor()))
++                .make()
++                .load(Parent.class.getClassLoader(), ClassLoadingStrategy.Default.CHILD_FIRST)
++                .getLoaded();
++        assertThat(type.getField("value").getInt(type.getDeclaredConstructor(long.class).newInstance(0L)), is(1));
++        assertThat(type.getField("value").getInt(type.getDeclaredConstructor(long.class).newInstance(5L)), is(2));
++    }
++
++    @Test
++    public void testCompactFrameWithDoubleParameter() throws Exception {
++        Class<?> type = new ByteBuddy()
++                .redefine(DoubleChild.class)
++                .visit(Advice.to(EmptyExit.class).on(isConstructor()))
++                .make()
++                .load(Parent.class.getClassLoader(), ClassLoadingStrategy.Default.CHILD_FIRST)
++                .getLoaded();
++        assertThat(type.getField("value").getInt(type.getDeclaredConstructor(double.class).newInstance(0d)), is(1));
++        assertThat(type.getField("value").getInt(type.getDeclaredConstructor(double.class).newInstance(5d)), is(2));
++    }
++
++    @Test(expected = IllegalStateException.class)
++    public void testFullFrameDropsUninitializedThis() throws Exception {
++        transform(true);
++    }
++
++    @Test
++    public void testFullFrameDropsInitializedThis() throws Exception {
++        Class<?> type = transform(false)
++                .load(ClassLoadingStrategy.BOOTSTRAP_LOADER, ClassLoadingStrategy.Default.WRAPPER)
++                .getLoaded();
++        assertThat(type.getDeclaredConstructor().newInstance(), notNullValue(Object.class));
++    }
++
++    private static net.bytebuddy.dynamic.DynamicType.Unloaded<?> transform(boolean beforeSuperConstructor) {
++        byte[] binaryRepresentation = sample(beforeSuperConstructor);
++        ClassFileLocator classFileLocator = new ClassFileLocator.Compound(ClassFileLocator.Simple.of(SAMPLE, binaryRepresentation),
++                ClassFileLocator.ForClassLoader.ofSystemLoader());
++        TypeDescription typeDescription = TypePool.Default.of(classFileLocator).describe(SAMPLE).resolve();
++        return new ByteBuddy()
++                .redefine(typeDescription, classFileLocator)
++                .visit(Advice.to(EmptyExit.class).on(isConstructor()))
++                .make();
++    }
++
++    /**
++     * Creates a class with a constructor that declares a full frame followed by a frame that chops the implicit {@code this}
++     * reference, either before the super constructor is invoked, where {@code this} is still uninitialized, or after.
++     */
++    private static byte[] sample(boolean beforeSuperConstructor) {
++        String internalName = SAMPLE.replace('.', '/');
++        ClassWriter classWriter = new ClassWriter(0);
++        classWriter.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC | Opcodes.ACC_SUPER, internalName, null, "java/lang/Object", null);
++        MethodVisitor methodVisitor = classWriter.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
++        methodVisitor.visitCode();
++        if (!beforeSuperConstructor) {
++            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
++            methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
++        }
++        Label first = new Label(), second = new Label();
++        methodVisitor.visitInsn(Opcodes.ICONST_0);
++        methodVisitor.visitJumpInsn(Opcodes.IFEQ, first);
++        methodVisitor.visitLabel(first);
++        methodVisitor.visitFrame(Opcodes.F_FULL,
++                1,
++                new Object[]{beforeSuperConstructor ? Opcodes.UNINITIALIZED_THIS : internalName},
++                0,
++                new Object[0]);
++        methodVisitor.visitInsn(Opcodes.ICONST_0);
++        methodVisitor.visitJumpInsn(Opcodes.IFEQ, second);
++        methodVisitor.visitLabel(second);
++        methodVisitor.visitFrame(Opcodes.F_CHOP, 1, null, 0, null);
++        if (beforeSuperConstructor) {
++            methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
++            methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
++        }
++        methodVisitor.visitInsn(Opcodes.RETURN);
++        methodVisitor.visitMaxs(1, 1);
++        methodVisitor.visitEnd();
++        classWriter.visitEnd();
++        return classWriter.toByteArray();
++    }
++
++    public static class Parent {
++
++        public final int value;
++
++        public Parent(int value) {
++            this.value = value;
++        }
++    }
++
++    public static class LongChild extends Parent {
++
++        public LongChild(long value) {
++            super(value == 0 ? 1 : 2);
++        }
++    }
++
++    public static class DoubleChild extends Parent {
++
++        public DoubleChild(double value) {
++            super(value == 0 ? 1 : 2);
++        }
++    }
++
++    public static class EmptyExit {
++
++        @Advice.OnMethodExit(suppress = Throwable.class)
++        public static void exit() {
++            /* empty */
++        }
++    }
++}

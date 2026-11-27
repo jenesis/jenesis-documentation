@@ -1,0 +1,113 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird/src/main/java/tools/jackson/module/blackbird/internal/ReaderSupport.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-maven-1/project/blackbird/src/main/java/tools/jackson/module/blackbird/internal/ReaderSupport.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird/src/main/java/tools/jackson/module/blackbird/internal/ReaderSupport.java	2026-11-27 08:48:57.638198415 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-maven-1/project/blackbird/src/main/java/tools/jackson/module/blackbird/internal/ReaderSupport.java	2026-11-27 10:28:09.562825339 +0000
+@@ -19,16 +19,19 @@
+     /**
+      * The exception that the stock MethodProperty throws when its setter or
+      * field store throws t: SettableBeanProperty._throwAsJacksonE itself,
+-     * called through a probe. A scalar arm no longer has its value, but the
+-     * message needs only the value's class (ClassUtil.classNameOf takes a
+-     * Class as is), which the property type fixes; a child arm passes its
++     * called through a probe. A scalar arm no longer has its value, but
++     * _throwAsJacksonE only checks whether the value is an instance of the
++     * property type (and names its class when it is not). A scalar arm
++     * stores exactly the property's type, so a stand-in instance of that
++     * type gives the same result (a Class object would not: it is not an
++     * instance, and would claim a type mismatch); a child arm passes its
+      * value.
+      */
+     static Throwable storeException(Throwable t, Object childValue, SettableBeanProperty prop,
+             JsonParser p) {
+         Class<?> raw = prop.getType().getRawClass();
+-        Object value = raw.isPrimitive() ? ClassUtil.wrapperType(raw)
+-                : (raw == String.class) ? String.class : childValue;
++        Object value = raw.isPrimitive() ? ClassUtil.defaultValue(raw)
++                : (raw == String.class) ? "" : childValue;
+         return PropertyProbe.storeException(prop, p, t, value);
+     }
+ 
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird/src/test/java/tools/jackson/module/blackbird/deser/TestBuilders.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-maven-1/project/blackbird/src/test/java/tools/jackson/module/blackbird/deser/TestBuilders.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird/src/test/java/tools/jackson/module/blackbird/deser/TestBuilders.java	2026-11-27 08:48:57.229283459 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-maven-1/project/blackbird/src/test/java/tools/jackson/module/blackbird/deser/TestBuilders.java	2026-11-27 10:28:39.374115528 +0000
+@@ -906,6 +906,7 @@
+         List<Supplier<Throwable>> failures = Arrays.asList(
+                 () -> new IllegalStateException("unchecked"),
+                 () -> new IllegalStateException("outer", new IllegalArgumentException("root")),
++                () -> new IllegalArgumentException("rejected"),
+                 () -> new IOException("bad value"),
+                 () -> new Exception("checked"),
+                 () -> new AssertionError("error"),
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird/src/test/java/tools/jackson/module/blackbird/deser/TestSetterFailures.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-maven-1/project/blackbird/src/test/java/tools/jackson/module/blackbird/deser/TestSetterFailures.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird/src/test/java/tools/jackson/module/blackbird/deser/TestSetterFailures.java	2026-11-27 08:48:57.229283459 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-maven-1/project/blackbird/src/test/java/tools/jackson/module/blackbird/deser/TestSetterFailures.java	2026-11-27 10:28:32.523212047 +0000
+@@ -65,6 +65,23 @@
+         public void setI(int value) { alwaysFail(); }
+     }
+ 
++    public static class Guarded {
++        private int age;
++        private String code;
++
++        public int getAge() { return age; }
++        public void setAge(int age) {
++            if (age < 0) throw new IllegalArgumentException("age must be >= 0");
++            this.age = age;
++        }
++
++        public String getCode() { return code; }
++        public void setCode(String code) {
++            if (code.isEmpty()) throw new IllegalStateException("empty code");
++            this.code = code;
++        }
++    }
++
+     private static void alwaysFail() {
+         calls++;
+         if (alwaysThrow instanceof Error) {
+@@ -216,6 +233,26 @@
+         }
+     }
+ 
++    // A setter rejecting a value of its own type is not reported as a type mismatch
++    @Test
++    public void testRejectingSetterMessageMatchesVanilla() throws Exception {
++        ObjectMapper vanilla = newVanillaJSONMapper();
++        ObjectMapper blackbird = newObjectMapper();
++        String[][] cases = {
++            { a2q("{'age':-1}"), "Problem setting property 'age': age must be >= 0" },
++            { a2q("{'code':''}"), "empty code" },
++        };
++        for (String[] c : cases) {
++            DatabindException expected = assertThrows(DatabindException.class,
++                    () -> vanilla.readValue(c[0], Guarded.class));
++            DatabindException actual = assertThrows(DatabindException.class,
++                    () -> blackbird.readValue(c[0], Guarded.class));
++            assertEquals(c[1], expected.getOriginalMessage(), c[0]);
++            assertEquals(c[1], actual.getOriginalMessage(), c[0]);
++            assertEquals(expected.getMessage(), actual.getMessage(), c[0]);
++        }
++    }
++
+     // Not retried, and reported as `MethodProperty` reports them (which in 3.x
+     // rethrows the setter's `Error`s and, unless wrapped, runtime exceptions as is)
+     @Test
+@@ -224,6 +261,7 @@
+             ObjectMapper vanilla = JsonMapper.builder().configure(DeserializationFeature.WRAP_EXCEPTIONS, wrap).build();
+             ObjectMapper blackbird = mapperBuilder().configure(DeserializationFeature.WRAP_EXCEPTIONS, wrap).build();
+             for (Throwable t : new Throwable[] { new SecurityException("se"), new IllegalAccessError("iae"),
++                    new IllegalArgumentException("arg"), new IllegalArgumentException(),
+                     new IllegalStateException("ise"), new NoClassDefFoundError("ncdfe"), new AssertionError("ae") }) {
+                 for (String json : new String[] { a2q("{'str':'foo'}"), a2q("{'i':42}") }) {
+                     String desc = "wrap=" + wrap + ", " + t + ", " + json;
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird-tests/src/test/java/tools/jackson/module/blackbird/diff/ReaderErrorsDiffTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-maven-1/project/blackbird-tests/src/test/java/tools/jackson/module/blackbird/diff/ReaderErrorsDiffTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird-tests/src/test/java/tools/jackson/module/blackbird/diff/ReaderErrorsDiffTest.java	2026-11-27 08:48:57.633241543 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-maven-1/project/blackbird-tests/src/test/java/tools/jackson/module/blackbird/diff/ReaderErrorsDiffTest.java	2026-11-27 10:29:11.020696184 +0000
+@@ -168,7 +168,7 @@
+         Mappers m = mappers();
+         DatabindException e = assertSameRead(m, "{\"other\":\"o\",\"age\":-1}", Guarded.class)
+                 .error(DatabindException.class);
+-        assertTrue(e.getMessage().startsWith("Problem deserializing property 'age'"),
++        assertTrue(e.getMessage().startsWith("Problem setting property 'age': age must be >= 0"),
+                 e.getMessage());
+         // Stock turns the IllegalArgumentException into a DatabindException
+         // even without wrapping.

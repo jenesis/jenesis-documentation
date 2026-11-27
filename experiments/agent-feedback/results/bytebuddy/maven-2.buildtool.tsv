@@ -1,0 +1,4 @@
+maven	1795774955.322	1.568	1	1147	-q -o test -Dtest=AdviceTest
+maven	1795774959.091	18.400	1	10201	-q -o test -pl byte-buddy-dep -am -Dtest=AdviceTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795774982.323	15.270	0	428	-q -o test -pl byte-buddy-dep -am -Dtest=AdviceTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795775002.945	25.976	0	213507	-o test -pl byte-buddy-dep -am

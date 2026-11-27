@@ -1,0 +1,199 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/build.jenesis/process-test.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-2/project/build.jenesis/process-test.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/build.jenesis/process-test.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-2/project/build.jenesis/process-test.properties	2026-11-27 08:15:41.613122894 +0000
+@@ -0,0 +1,3 @@
++-XX\:+EnableDynamicAgentLoading=
++-Dnet.bytebuddy.experimental=true
++-Dnet.bytebuddy.test.integration=false
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/byte-buddy-agent/build.jenesis/process-test.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-2/project/byte-buddy-agent/build.jenesis/process-test.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/byte-buddy-agent/build.jenesis/process-test.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-2/project/byte-buddy-agent/build.jenesis/process-test.properties	2026-11-27 08:20:24.257139695 +0000
+@@ -0,0 +1,4 @@
++-Djna.library.path=
++-XX\:+EnableDynamicAgentLoading=
++-Dnet.bytebuddy.experimental=true
++-Dnet.bytebuddy.test.integration=false
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/byte-buddy-dep/src/main/java/net/bytebuddy/asm/Advice.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-2/project/byte-buddy-dep/src/main/java/net/bytebuddy/asm/Advice.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/byte-buddy-dep/src/main/java/net/bytebuddy/asm/Advice.java	2026-11-27 08:52:56.001255712 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-2/project/byte-buddy-dep/src/main/java/net/bytebuddy/asm/Advice.java	2026-11-27 10:18:45.117561791 +0000
+@@ -7745,6 +7745,18 @@
+                 protected static class WithArgumentCopy extends WithPreservedArguments {
+ 
+                     /**
++                     * The number of local variable entries, counting a {@code long} or {@code double} as a single entry,
++                     * that are currently declared by the instrumented method's own frames, excluding the argument copy.
++                     */
++                    private int originalFrameLength;
++
++                    /**
++                     * The minimal number of local variable entries of the instrumented method's own frames that must be
++                     * retained for an uninitialized {@code this} reference to not be dropped.
++                     */
++                    private int requiredFrameLength;
++
++                    /**
+                      * Creates a new stack map frame handler that expects an argument copy.
+                      *
+                      * @param instrumentedType   The instrumented type.
+@@ -7814,6 +7826,8 @@
+                             }
+                         }
+                         currentFrameDivergence = (instrumentedMethod.isStatic() ? 0 : 1) + instrumentedMethod.getParameters().size();
++                        originalFrameLength = currentFrameDivergence;
++                        requiredFrameLength = instrumentedMethod.isStatic() ? 0 : 1;
+                     }
+ 
+                     /**
+@@ -7832,12 +7846,21 @@
+                                 break;
+                             case Opcodes.F_APPEND:
+                                 currentFrameDivergence += localVariableLength;
++                                originalFrameLength += localVariableLength;
+                                 break;
+                             case Opcodes.F_CHOP:
+                                 currentFrameDivergence -= localVariableLength;
++                                originalFrameLength -= localVariableLength;
+                                 break;
+                             case Opcodes.F_FULL:
+                             case Opcodes.F_NEW:
++                                originalFrameLength = localVariableLength;
++                                requiredFrameLength = 0;
++                                for (int variableIndex = 0; variableIndex < localVariableLength; variableIndex++) {
++                                    if (localVariable[variableIndex] == Opcodes.UNINITIALIZED_THIS) {
++                                        requiredFrameLength = variableIndex + 1;
++                                    }
++                                }
+                                 Object[] translated = new Object[localVariableLength
+                                         + (instrumentedMethod.isStatic() ? 0 : 1)
+                                         + instrumentedMethod.getParameters().size()
+@@ -7875,7 +7898,7 @@
+                             default:
+                                 throw new IllegalArgumentException("Unexpected frame type: " + type);
+                         }
+-                        if (instrumentedMethod.isConstructor() && currentFrameDivergence < instrumentedMethod.getStackSize()) {
++                        if (instrumentedMethod.isConstructor() && originalFrameLength < requiredFrameLength) {
+                             throw new IllegalStateException(instrumentedMethod + " dropped implicit 'this' frame");
+                         }
+                         methodVisitor.visitFrame(type, localVariableLength, localVariable, stackSize, stack);
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/byte-buddy-dep/src/test/java/net/bytebuddy/asm/AdviceTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-2/project/byte-buddy-dep/src/test/java/net/bytebuddy/asm/AdviceTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/bytebuddy/byte-buddy-dep/src/test/java/net/bytebuddy/asm/AdviceTest.java	2026-11-27 08:52:56.005255713 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/bytebuddy-jenesis-2/project/byte-buddy-dep/src/test/java/net/bytebuddy/asm/AdviceTest.java	2026-11-27 10:19:20.417563889 +0000
+@@ -1914,6 +1914,88 @@
+                 .make();
+     }
+ 
++    @Test
++    public void testCompactFrameBeforeSuperCallWithLongParameter() throws Exception {
++        Class<?> type = new ByteBuddy()
++                .redefine(ConstructorFrameLongSample.class)
++                .visit(Advice.to(EmptyExitAdvice.class).on(isConstructor()))
++                .make()
++                .load(ConstructorFrameLongSample.class.getClassLoader(), ClassLoadingStrategy.Default.CHILD_FIRST)
++                .getLoaded();
++        assertThat(type.getField(FOO).get(type.getConstructor(long.class).newInstance(0L)), is((Object) 1));
++        assertThat(type.getField(FOO).get(type.getConstructor(long.class).newInstance(5L)), is((Object) 2));
++    }
++
++    @Test
++    public void testCompactFrameBeforeSuperCallWithDoubleParameter() throws Exception {
++        Class<?> type = new ByteBuddy()
++                .redefine(ConstructorFrameDoubleSample.class)
++                .visit(Advice.to(EmptyExitAdvice.class).on(isConstructor()))
++                .make()
++                .load(ConstructorFrameDoubleSample.class.getClassLoader(), ClassLoadingStrategy.Default.CHILD_FIRST)
++                .getLoaded();
++        assertThat(type.getField(FOO).get(type.getConstructor(double.class).newInstance(0d)), is((Object) 1));
++        assertThat(type.getField(FOO).get(type.getConstructor(double.class).newInstance(5d)), is((Object) 2));
++    }
++
++    @Test(expected = IllegalStateException.class)
++    public void testDroppingOfUninitializedThisFrameAfterFullFrameInConstructor() throws Exception {
++        new ByteBuddy()
++                .subclass(Object.class, ConstructorStrategy.Default.NO_CONSTRUCTORS)
++                .defineConstructor(Visibility.PUBLIC)
++                .intercept(new Implementation.Simple(
++                        new StackManipulation.AbstractBase() {
++                            @Override
++                            public Size apply(MethodVisitor methodVisitor, Implementation.Context implementationContext) {
++                                methodVisitor.visitInsn(Opcodes.NOP);
++                                methodVisitor.visitFrame(Opcodes.F_FULL, 1, new Object[]{Opcodes.UNINITIALIZED_THIS}, 0, new Object[0]);
++                                methodVisitor.visitInsn(Opcodes.NOP);
++                                methodVisitor.visitFrame(Opcodes.F_CHOP, 1, null, 0, null);
++                                methodVisitor.visitInsn(Opcodes.NOP);
++                                return Size.ZERO;
++                            }
++                        },
++                        MethodVariableAccess.loadThis(),
++                        MethodInvocation.invoke(new MethodDescription.ForLoadedConstructor(Object.class.getConstructor()))
++                                .special(TypeDescription.ForLoadedType.of(Object.class)),
++                        MethodReturn.VOID
++                ))
++                .visit(Advice.to(EmptyExitAdvice.class).on(isConstructor()))
++                .make();
++    }
++
++    @Test
++    public void testDroppingOfInitializedThisFrameAfterFullFrameInConstructor() throws Exception {
++        Class<?> type = new ByteBuddy()
++                .subclass(Object.class, ConstructorStrategy.Default.NO_CONSTRUCTORS)
++                .defineConstructor(Visibility.PUBLIC)
++                .intercept(new Implementation.Simple(
++                        MethodVariableAccess.loadThis(),
++                        MethodInvocation.invoke(new MethodDescription.ForLoadedConstructor(Object.class.getConstructor()))
++                                .special(TypeDescription.ForLoadedType.of(Object.class)),
++                        new StackManipulation.AbstractBase() {
++                            @Override
++                            public Size apply(MethodVisitor methodVisitor, Implementation.Context implementationContext) {
++                                methodVisitor.visitFrame(Opcodes.F_FULL,
++                                        1,
++                                        new Object[]{implementationContext.getInstrumentedType().getInternalName()},
++                                        0,
++                                        new Object[0]);
++                                methodVisitor.visitInsn(Opcodes.NOP);
++                                methodVisitor.visitFrame(Opcodes.F_CHOP, 1, null, 0, null);
++                                methodVisitor.visitInsn(Opcodes.NOP);
++                                return Size.ZERO;
++                            }
++                        },
++                        MethodReturn.VOID
++                ))
++                .visit(Advice.to(EmptyExitAdvice.class).on(isConstructor()))
++                .make()
++                .load(ClassLoadingStrategy.BOOTSTRAP_LOADER, ClassLoadingStrategy.Default.WRAPPER)
++                .getLoaded();
++        assertThat(type.getConstructor().newInstance(), notNullValue(Object.class));
++    }
++
+ 
+     @Test(expected = IllegalArgumentException.class)
+     public void testUserSerializableTypeValueNonAssignable() throws Exception {
+@@ -4356,6 +4438,29 @@
+         }
+     }
+ 
++    public static class ConstructorFrameParentSample {
++
++        public final int foo;
++
++        public ConstructorFrameParentSample(int foo) {
++            this.foo = foo;
++        }
++    }
++
++    public static class ConstructorFrameLongSample extends ConstructorFrameParentSample {
++
++        public ConstructorFrameLongSample(long value) {
++            super(value == 0 ? 1 : 2);
++        }
++    }
++
++    public static class ConstructorFrameDoubleSample extends ConstructorFrameParentSample {
++
++        public ConstructorFrameDoubleSample(double value) {
++            super(value == 0 ? 1 : 2);
++        }
++    }
++
+     public static class EmptyExitAdvice {
+ 
+         @Advice.OnMethodExit

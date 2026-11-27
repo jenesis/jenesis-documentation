@@ -1,0 +1,4 @@
+jenesis	1795775464.635	14.147	0	117	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*TestSetterFailures build/jenesis/Make.java +blackbird
+jenesis	1795775486.262	5.497	1	1743	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*TestSetterFailures build/jenesis/Make.java +blackbird
+jenesis	1795775494.710	9.379	1	2869	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java
+jenesis	1795775514.724	4.391	0	125	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java

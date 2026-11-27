@@ -1,0 +1,164 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird/build.jenesis/process-test.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-jenesis-1/project/blackbird/build.jenesis/process-test.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird/build.jenesis/process-test.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-jenesis-1/project/blackbird/build.jenesis/process-test.properties	2026-11-27 08:25:13.437439815 +0000
+@@ -0,0 +1 @@
++-Dtools.jackson.module.blackbird.failOnCodegenError=true
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird/src/main/java/tools/jackson/module/blackbird/internal/ReaderSupport.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-jenesis-1/project/blackbird/src/main/java/tools/jackson/module/blackbird/internal/ReaderSupport.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird/src/main/java/tools/jackson/module/blackbird/internal/ReaderSupport.java	2026-11-27 08:48:57.638198415 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-jenesis-1/project/blackbird/src/main/java/tools/jackson/module/blackbird/internal/ReaderSupport.java	2026-11-27 10:26:12.494275972 +0000
+@@ -19,16 +19,19 @@
+     /**
+      * The exception that the stock MethodProperty throws when its setter or
+      * field store throws t: SettableBeanProperty._throwAsJacksonE itself,
+-     * called through a probe. A scalar arm no longer has its value, but the
+-     * message needs only the value's class (ClassUtil.classNameOf takes a
+-     * Class as is), which the property type fixes; a child arm passes its
++     * called through a probe. A scalar arm no longer has its value; it had
++     * the property's type, so a stand-in instance of that type is passed.
++     * Stock Jackson checks the value against the property type (to tell a
++     * type mismatch from a failure of the setter itself) and names its
++     * class, so the stand-in must be an instance, not a Class, or every
++     * failure would be reported as a type mismatch. A child arm passes its
+      * value.
+      */
+     static Throwable storeException(Throwable t, Object childValue, SettableBeanProperty prop,
+             JsonParser p) {
+         Class<?> raw = prop.getType().getRawClass();
+-        Object value = raw.isPrimitive() ? ClassUtil.wrapperType(raw)
+-                : (raw == String.class) ? String.class : childValue;
++        Object value = raw.isPrimitive() ? ClassUtil.defaultValue(raw)
++                : (raw == String.class) ? "" : childValue;
+         return PropertyProbe.storeException(prop, p, t, value);
+     }
+ 
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird/src/test/java/tools/jackson/module/blackbird/deser/TestSetterFailures.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-jenesis-1/project/blackbird/src/test/java/tools/jackson/module/blackbird/deser/TestSetterFailures.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird/src/test/java/tools/jackson/module/blackbird/deser/TestSetterFailures.java	2026-11-27 08:48:57.229283459 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-jenesis-1/project/blackbird/src/test/java/tools/jackson/module/blackbird/deser/TestSetterFailures.java	2026-11-27 10:26:27.854275859 +0000
+@@ -22,6 +22,8 @@
+ import tools.jackson.databind.DeserializationFeature;
+ import tools.jackson.databind.ObjectMapper;
+ import tools.jackson.databind.PropertyName;
++import tools.jackson.databind.annotation.JsonDeserialize;
++import tools.jackson.databind.annotation.JsonPOJOBuilder;
+ import tools.jackson.databind.deser.SettableBeanProperty;
+ import tools.jackson.databind.deser.bean.BeanDeserializerBase;
+ import tools.jackson.databind.json.JsonMapper;
+@@ -223,7 +225,7 @@
+         for (boolean wrap : new boolean[] { true, false }) {
+             ObjectMapper vanilla = JsonMapper.builder().configure(DeserializationFeature.WRAP_EXCEPTIONS, wrap).build();
+             ObjectMapper blackbird = mapperBuilder().configure(DeserializationFeature.WRAP_EXCEPTIONS, wrap).build();
+-            for (Throwable t : new Throwable[] { new SecurityException("se"), new IllegalAccessError("iae"),
++            for (Throwable t : new Throwable[] { new SecurityException("se"), new IllegalAccessError("iae"), new IllegalArgumentException("arg"),
+                     new IllegalStateException("ise"), new NoClassDefFoundError("ncdfe"), new AssertionError("ae") }) {
+                 for (String json : new String[] { a2q("{'str':'foo'}"), a2q("{'i':42}") }) {
+                     String desc = "wrap=" + wrap + ", " + t + ", " + json;
+@@ -247,6 +249,76 @@
+             }
+         }
+     }
++
++    // A setter rejecting a value of its own type is not a type mismatch
++    public static class Guarded {
++        private int age;
++        private String code;
++
++        public int getAge() { return age; }
++        public void setAge(int age) {
++            if (age < 0) throw new IllegalArgumentException("age must be >= 0");
++            this.age = age;
++        }
++
++        public String getCode() { return code; }
++        public void setCode(String code) {
++            if (code.isEmpty()) throw new IllegalArgumentException("empty code");
++            this.code = code;
++        }
++    }
++
++    @JsonDeserialize(builder = GuardedValue.Builder.class)
++    public static class GuardedValue {
++        final int age;
++        final String code;
++
++        GuardedValue(int age, String code) { this.age = age; this.code = code; }
++
++        @JsonPOJOBuilder
++        public static class Builder {
++            private int age;
++            private String code;
++
++            public Builder withAge(int age) {
++                if (age < 0) throw new IllegalArgumentException("age must be >= 0");
++                this.age = age;
++                return this;
++            }
++
++            public Builder withCode(String code) {
++                if (code.isEmpty()) throw new IllegalArgumentException("empty code");
++                this.code = code;
++                return this;
++            }
++
++            public GuardedValue build() { return new GuardedValue(age, code); }
++        }
++    }
++
++    @Test
++    public void testRejectingSetterMessageMatchesVanilla() throws Exception {
++        ObjectMapper vanilla = newVanillaJSONMapper();
++        ObjectMapper blackbird = newObjectMapper();
++        assertGeneratedReader(blackbird, Guarded.class);
++        String[][] cases = {
++                { a2q("{'age':-1}"), "Problem setting property 'age': age must be >= 0" },
++                { a2q("{'code':''}"), "Problem setting property 'code': empty code" },
++        };
++        for (Class<?> type : new Class<?>[] { Guarded.class, GuardedValue.class }) {
++            for (String[] c : cases) {
++                String desc = type.getSimpleName() + ", " + c[0];
++                DatabindException expected = assertThrows(DatabindException.class,
++                        () -> vanilla.readValue(c[0], type), desc);
++                DatabindException actual = assertThrows(DatabindException.class,
++                        () -> blackbird.readValue(c[0], type), desc);
++                assertEquals(c[1], expected.getOriginalMessage(), desc);
++                assertEquals(expected.getOriginalMessage(), actual.getOriginalMessage(), desc);
++                assertEquals(expected.getMessage(), actual.getMessage(), desc);
++                assertEquals(expected.getPathReference(), actual.getPathReference(), desc);
++            }
++        }
++    }
+ 
+     @Test
+     public void testSetSkipsNulls() throws Exception {
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird-jpms-tests/build.jenesis/process-test.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-jenesis-1/project/blackbird-jpms-tests/build.jenesis/process-test.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird-jpms-tests/build.jenesis/process-test.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-jenesis-1/project/blackbird-jpms-tests/build.jenesis/process-test.properties	2026-11-27 08:25:13.437439815 +0000
+@@ -0,0 +1,2 @@
++-Dblackbird.debug.codegen=true
++-Dtools.jackson.module.blackbird.failOnCodegenError=true
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird-tests/build.jenesis/process-test.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-jenesis-1/project/blackbird-tests/build.jenesis/process-test.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird-tests/build.jenesis/process-test.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-jenesis-1/project/blackbird-tests/build.jenesis/process-test.properties	2026-11-27 08:25:13.437439815 +0000
+@@ -0,0 +1,2 @@
++-Dtools.jackson.module.blackbird.failOnCodegenError=true
++-Dblackbird.test.oldJdks=
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird-tests/src/test/java/tools/jackson/module/blackbird/diff/ReaderErrorsDiffTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-jenesis-1/project/blackbird-tests/src/test/java/tools/jackson/module/blackbird/diff/ReaderErrorsDiffTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/blackbird-tests/src/test/java/tools/jackson/module/blackbird/diff/ReaderErrorsDiffTest.java	2026-11-27 08:48:57.633241543 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-jenesis-1/project/blackbird-tests/src/test/java/tools/jackson/module/blackbird/diff/ReaderErrorsDiffTest.java	2026-11-27 10:27:01.836846597 +0000
+@@ -168,8 +168,10 @@
+         Mappers m = mappers();
+         DatabindException e = assertSameRead(m, "{\"other\":\"o\",\"age\":-1}", Guarded.class)
+                 .error(DatabindException.class);
+-        assertTrue(e.getMessage().startsWith("Problem deserializing property 'age'"),
+-                e.getMessage());
++        // The setter's own message, not a type mismatch: the value had the
++        // setter's type.
++        assertEquals("Problem setting property 'age': age must be >= 0",
++                e.getOriginalMessage());
+         // Stock turns the IllegalArgumentException into a DatabindException
+         // even without wrapping.
+         assertSameRead(mappers(b -> b.disable(DeserializationFeature.WRAP_EXCEPTIONS)),
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/jenesis.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-jenesis-1/project/jenesis.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/blackbird/jenesis.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/blackbird-jenesis-1/project/jenesis.properties	2026-11-27 08:33:57.749188051 +0000
+@@ -0,0 +1 @@
++jenesis.maven.uri=https://central.sonatype.com/repository/maven-snapshots/|tools.jackson|com.fasterxml.jackson,@

@@ -1,0 +1,2 @@
+jenesis	1795774762.839	27.187	0	104	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*AdviceTest build/jenesis/Make.java +byte-buddy-dep
+jenesis	1795774793.255	24.934	0	213	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java

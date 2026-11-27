@@ -1,0 +1,5 @@
+maven	1795774506.091	1.472	1	1147	-q -o -pl byte-buddy-dep test -Dtest=AdviceTest,AdviceInconsistentFrameTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795774510.628	18.719	0	428	-q -o -pl byte-buddy-dep -am test -Dtest=AdviceTest,AdviceInconsistentFrameTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795774534.322	18.825	1	15534	-o -pl byte-buddy-dep -am test -Dtest=AdviceTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795774560.093	27.008	1	223674	-o -pl byte-buddy-dep -am test
+maven	1795774595.430	40.605	0	213675	-o -pl byte-buddy-dep -am test
