@@ -1,13 +1,42 @@
 #!/usr/bin/env bash
 # run.sh <task> <maven|jenesis> <attempt>: one agent, one bug, one build tool. Writes results/<task>/<arm>-<attempt>.json.
+# VARIANT changes one property of a run and leaves the rest as it is; its record is <arm>+<variant>-<attempt>.json:
+#   nodaemon    Jenesis without its daemon, each call a JVM of its own running the compiled engine
+#   rebuild     Jenesis without its incremental build, every call building everything again
+#   verbose     Jenesis printing a line per step and per test class, whatever the agent asks for
+#   nobriefing  Jenesis without its briefing in the prompt: AGENTS.md names the command that prints it
+#   briefed     Maven with a paragraph in AGENTS.md on building one module and running one test class
+#   mvnd        Maven through its daemon
+#   parallel    Maven building the modules of a reactor side by side (-T 1C)
+#   cache       Maven with its build cache extension, which restores a module whose inputs did not change
+#   longshell   either tool, with a shell call allowed to run for half an hour in the foreground
+#   sonnet      either tool, with claude-sonnet-5-5 as the agent
+#   low         either tool, with the agent at low effort
 source "$(dirname "$0")/lib/common.sh"
 load "$1"
 ARM="$2" ATTEMPT="$3"
 case "$ARM" in maven|jenesis) ;; *) echo "The arm is maven or jenesis, not $ARM" >&2; exit 2 ;; esac
+VARIANT="${VARIANT:-}"
+LABEL="$ARM${VARIANT:++$VARIANT}"
+FILTER=""
+case "$ARM+$VARIANT" in
+  *+) ;;
+  jenesis+nodaemon) JENESIS_ARGS_EXTRA="$JENESIS_ARGS_EXTRA -Djenesis.make.mode=compiled" ;;
+  jenesis+rebuild) JENESIS_ARGS_EXTRA="$JENESIS_ARGS_EXTRA -Djenesis.executor.rebuild=true" ;;
+  jenesis+verbose) FILTER='for a do shift; case "$a" in -Djenesis.print.progress=*|-Djenesis.test.summary*) ;; *) set -- "$@" "$a" ;; esac; done' ;;
+  jenesis+nobriefing|maven+briefed|maven+cache) ;;
+  maven+mvnd) MAVEN="${MVND:?The variant mvnd needs MVND, the path of the mvnd to run}" ;;
+  maven+parallel) MAVEN_ARGS_EXTRA="$MAVEN_ARGS_EXTRA -T 1C" ;;
+  *+longshell) export BASH_DEFAULT_TIMEOUT_MS=1800000 BASH_MAX_TIMEOUT_MS=1800000 ;;
+  *+sonnet) MODEL=claude-sonnet-5-5 ;;
+  *+low) EFFORT=low ;;
+  *) echo "The $ARM arm has no variant $VARIANT" >&2; exit 2 ;;
+esac
+JUDGE="$(command -v mvn)"
 [ -f "$CACHE/checked" ] || "$HERE/prepare.sh" "$TASK"
 
 # A folder and a home of its own per run, so that no run reads what another one built or cached.
-RUN="$WORK/runs/$TASK-$ARM-$ATTEMPT"
+RUN="$WORK/runs/$TASK-$LABEL-$ATTEMPT"
 rm -rf "$RUN" && mkdir -p "$RUN/bin" "$RESULTS/$TASK"
 cp -a "$BASE" "$RUN/project"
 cp -a "$CACHE/home" "$RUN/home"
@@ -23,12 +52,15 @@ BRIEFING=""
 if [ "$ARM" = maven ]; then
   printf '#!/bin/sh\nexec python3 %q maven %q "$@"\n' "$HERE/lib/wrap.py" "$MAVEN" > "$RUN/bin/mvn"
   cp "$HERE/lib/agents-maven.md" "$RUN/project/AGENTS.md"
+  [ "$VARIANT" = briefed ] && cat "$HERE/lib/agents-maven-briefed.md" >> "$RUN/project/AGENTS.md"
+  [ "$VARIANT" = cache ] && mkdir -p "$RUN/project/.mvn" && cp "$HERE/lib/extensions.xml" "$RUN/project/.mvn/extensions.xml"
 else
   mkdir -p "$RUN/project/build" && cp -a "$(engine)" "$RUN/project/build/jenesis"
   [ -d "$HERE/tasks/$TASK/overlay-jenesis" ] && cp -a "$HERE/tasks/$TASK/overlay-jenesis/." "$RUN/project/"
   printf '#!/bin/sh\necho "Maven is not installed here: AGENTS.md says how this project is built" >&2\nexit 127\n' > "$RUN/bin/mvn"
   cat > "$RUN/bin/java" <<SH
 #!/bin/sh
+$FILTER
 case " \$* " in
   *" build/jenesis/Make.java "*|*" build/jenesis/Execute.java "*) exec python3 "$HERE/lib/wrap.py" jenesis "$JAVA" $JENESIS_ARGS_EXTRA "\$@" ;;
   *) exec "$JAVA" "\$@" ;;
@@ -37,7 +69,7 @@ SH
   cp "$HERE/lib/agents-jenesis.md" "$RUN/project/AGENTS.md"
   # The model knows Maven from its training and Jenesis from nowhere. The briefing Jenesis prints for an agent is
   # therefore part of what this arm is told before the clock starts, as the training is for the other arm.
-  BRIEFING="
+  [ "$VARIANT" = nobriefing ] || BRIEFING="
 This is what \`java build/jenesis/Make.java skill/start\` prints, the tool's briefing for a coding agent:
 
 $(sed "s|$CACHE/jenesis|$RUN/project|g" "$CACHE/briefing.md")
@@ -79,24 +111,25 @@ refused = agent.get("is_error") or "usage limit" in str(agent.get("result", ""))
 sys.exit(1 if refused or not agent.get("num_turns") else 0)
 PY
 then
-  echo "The agent of $TASK $ARM $ATTEMPT did not run: see $RUN/agent.json and $RUN/agent.err" >&2
+  echo "The agent of $TASK $LABEL $ATTEMPT did not run: see $RUN/agent.json and $RUN/agent.err" >&2
   exit 3
 fi
 
 # The assertion: the agent's tree without its build output, the hidden tests over it, Maven as the judge in both arms.
 mkdir "$RUN/verify"
 (cd "$RUN/project" && tar cf - --exclude=target --exclude=build/jenesis --exclude=.jenesis --exclude=./AGENTS.md --exclude=./CLAUDE.md .) | (cd "$RUN/verify" && tar xf -)
-diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md "$BASE" "$RUN/project" > "$RUN/agent.patch" || true
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml "$BASE" "$RUN/project" > "$RUN/agent.patch" || true
 # What the Jenesis arm was handed beside the project is no part of the project that is judged.
 if [ -d "$HERE/tasks/$TASK/overlay-jenesis" ]; then
   (cd "$HERE/tasks/$TASK/overlay-jenesis" && find . -type f) | (cd "$RUN/verify" && xargs rm -f)
 fi
+rm -f "$RUN/verify/.mvn/extensions.xml"
 cp -r "$HERE/tasks/$TASK/hidden/." "$RUN/verify/"
 PASSED=false
-(cd "$RUN/verify" && MAVEN_ARGS="" verifier > "$RUN/verify.log" 2>&1) && PASSED=true
+(cd "$RUN/verify" && MAVEN="$JUDGE" MAVEN_ARGS="" verifier > "$RUN/verify.log" 2>&1) && PASSED=true
 
-python3 "$HERE/lib/record.py" "$TASK" "$ARM" "$ATTEMPT" "$PASSED" "$STARTED" "$ENDED" "$RUN" "$MODEL" "$EFFORT" \
-  > "$RESULTS/$TASK/$ARM-$ATTEMPT.json"
-cp "$RUN/agent.patch" "$RESULTS/$TASK/$ARM-$ATTEMPT.patch"
-cp "$FEEDBACK_LOG" "$RESULTS/$TASK/$ARM-$ATTEMPT.buildtool.tsv"
-cat "$RESULTS/$TASK/$ARM-$ATTEMPT.json"
+python3 "$HERE/lib/record.py" "$TASK" "$LABEL" "$ATTEMPT" "$PASSED" "$STARTED" "$ENDED" "$RUN" "$MODEL" "$EFFORT" \
+  > "$RESULTS/$TASK/$LABEL-$ATTEMPT.json"
+cp "$RUN/agent.patch" "$RESULTS/$TASK/$LABEL-$ATTEMPT.patch"
+cp "$FEEDBACK_LOG" "$RESULTS/$TASK/$LABEL-$ATTEMPT.buildtool.tsv"
+cat "$RESULTS/$TASK/$LABEL-$ATTEMPT.json"
