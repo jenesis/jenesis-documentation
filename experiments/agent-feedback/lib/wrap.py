@@ -10,10 +10,14 @@ kind, real, arguments = sys.argv[1], sys.argv[2], sys.argv[3:]
 written = [0]
 
 
+# The harness gives each run a home of its own through JAVA_TOOL_OPTIONS, which every JVM announces with a line
+# that no project of the agent's own would print. It is left out in both arms.
 def forward(source, target):
-    for chunk in iter(lambda: source.read1(65536), b""):
-        written[0] += len(chunk)
-        target.write(chunk)
+    for line in iter(source.readline, b""):
+        if line.startswith(b"Picked up JAVA_TOOL_OPTIONS:"):
+            continue
+        written[0] += len(line)
+        target.write(line)
         target.flush()
 
 

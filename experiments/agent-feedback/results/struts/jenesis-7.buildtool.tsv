@@ -1,0 +1,4 @@
+jenesis	1795762801.946	19.676	1	1883	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*HttpMethodInterceptorTest build/jenesis/Make.java +core
+jenesis	1795762827.970	9.666	1	2231	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*HttpMethodInterceptorTest build/jenesis/Make.java +core
+jenesis	1795762844.787	9.136	0	92	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*HttpMethodInterceptorTest build/jenesis/Make.java +core
+jenesis	1795762856.769	124.922	0	1441	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java
