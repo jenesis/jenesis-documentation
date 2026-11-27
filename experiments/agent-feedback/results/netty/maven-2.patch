@@ -1,0 +1,126 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven-2/project/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java	2026-11-27 10:01:17.213499501 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven-2/project/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java	2026-11-27 10:52:02.497514925 +0000
+@@ -51,7 +51,10 @@
+         @Override
+         public boolean canBlock() {
+             assert inEventLoop();
+-            return !hasTasks() && !hasScheduledTasks();
++            // We must not block if a suspension was requested and could be completed now. Some IoHandler
++            // implementations (e.g. epoll) only react to wakeup() while they are actually blocked, so a wakeup()
++            // issued by trySuspend() while the loop was busy would be lost and the thread could block forever.
++            return !hasTasks() && !hasScheduledTasks() && !canSuspend();
+         }
+ 
+         @Override
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven-2/project/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java	2026-11-27 10:01:17.213499501 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven-2/project/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java	2026-11-27 10:51:45.753679526 +0000
+@@ -27,6 +27,7 @@
+ import java.util.concurrent.TimeUnit;
+ import java.util.concurrent.atomic.AtomicBoolean;
+ import java.util.concurrent.atomic.AtomicInteger;
++import java.util.concurrent.atomic.AtomicReference;
+ 
+ import static org.assertj.core.api.Assertions.assertThat;
+ import static org.junit.jupiter.api.Assertions.assertEquals;
+@@ -213,6 +214,99 @@
+         loop.shutdownGracefully();
+     }
+ 
++    @Test
++    void testSuspendRequestedWhileNotBlockedTerminatesThread() throws Exception {
++        TestThreadFactory threadFactory = new TestThreadFactory();
++        AtomicReference<WakeupOnlyWhileBlockedIoHandler> handlerRef = new AtomicReference<>();
++        IoEventLoop loop = new SingleThreadIoEventLoop(null, threadFactory, new IoHandlerFactory() {
++            @Override
++            public IoHandler newHandler(ThreadAwareExecutor ioExecutor) {
++                WakeupOnlyWhileBlockedIoHandler handler = new WakeupOnlyWhileBlockedIoHandler();
++                handlerRef.set(handler);
++                return handler;
++            }
++
++            @Override
++            public boolean isChangingThreadSupported() {
++                return true;
++            }
++        });
++        WakeupOnlyWhileBlockedIoHandler handler = handlerRef.get();
++        try {
++            // Run a task so the thread starts, and make the next run(...) pause before it prepares to block.
++            loop.execute(() -> handler.pauseNext = true);
++            Thread thread = threadFactory.threads.take();
++            assertTrue(handler.paused.await(10, TimeUnit.SECONDS));
++
++            // The loop is not blocked, so the wakeup() issued by trySuspend() has no effect on the handler.
++            assertTrue(loop.trySuspend());
++            assertTrue(loop.isSuspended());
++            handler.resume.countDown();
++
++            thread.join(TimeUnit.SECONDS.toMillis(5));
++            assertFalse(thread.isAlive(), "Suspended event loop thread is still alive");
++            assertTrue(loop.isSuspended());
++        } finally {
++            handler.resume.countDown();
++            loop.shutdownGracefully(0, 0, TimeUnit.SECONDS).syncUninterruptibly();
++        }
++    }
++
++    /**
++     * Mimics the epoll IoHandler: wakeup() only has an effect while run(...) is (about to be) blocked.
++     */
++    private static final class WakeupOnlyWhileBlockedIoHandler extends TestIoHandler {
++        private final Object lock = new Object();
++        private boolean awake = true;
++        volatile boolean pauseNext;
++        final CountDownLatch paused = new CountDownLatch(1);
++        final CountDownLatch resume = new CountDownLatch(1);
++
++        WakeupOnlyWhileBlockedIoHandler() {
++            super(null);
++        }
++
++        @Override
++        public void wakeup() {
++            synchronized (lock) {
++                if (!awake) {
++                    awake = true;
++                    lock.notifyAll();
++                }
++            }
++        }
++
++        @Override
++        public int run(IoHandlerContext context) {
++            if (pauseNext) {
++                pauseNext = false;
++                paused.countDown();
++                try {
++                    resume.await();
++                } catch (InterruptedException e) {
++                    Thread.currentThread().interrupt();
++                }
++            }
++            synchronized (lock) {
++                awake = false;
++                try {
++                    if (context.canBlock()) {
++                        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
++                        long remaining;
++                        while (!awake && (remaining = deadline - System.nanoTime()) > 0) {
++                            TimeUnit.NANOSECONDS.timedWait(lock, remaining);
++                        }
++                    }
++                } catch (InterruptedException e) {
++                    Thread.currentThread().interrupt();
++                } finally {
++                    awake = true;
++                }
++            }
++            return 0;
++        }
++    }
++
+     private static class TestIoHandler implements IoHandler {
+         private final Semaphore semaphore = new Semaphore(0);
+         private final ThreadAwareExecutor executor;
