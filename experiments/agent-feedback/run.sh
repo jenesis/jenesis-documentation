@@ -11,6 +11,7 @@
 #   cache       Maven with its build cache extension, which restores a module whose inputs did not change
 #   longshell   either tool, with a shell call allowed to run for half an hour in the foreground
 #   sonnet      either tool, with claude-sonnet-5-5 as the agent
+#   fable       either tool, with claude-fable-5-2 as the agent
 #   low         either tool, with the agent at low effort
 source "$(dirname "$0")/lib/common.sh"
 load "$1"
@@ -29,6 +30,7 @@ case "$ARM+$VARIANT" in
   maven+parallel) MAVEN_ARGS_EXTRA="$MAVEN_ARGS_EXTRA -T 1C" ;;
   *+longshell) export BASH_DEFAULT_TIMEOUT_MS=1800000 BASH_MAX_TIMEOUT_MS=1800000 ;;
   *+sonnet) MODEL=claude-sonnet-5-5 ;;
+  *+fable) MODEL=claude-fable-5-2 ;;
   *+low) EFFORT=low ;;
   *) echo "The $ARM arm has no variant $VARIANT" >&2; exit 2 ;;
 esac
