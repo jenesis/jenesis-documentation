@@ -1,0 +1,235 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/build.jenesis/process-test.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/build.jenesis/process-test.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/build.jenesis/process-test.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/build.jenesis/process-test.properties	2026-11-26 08:25:49.992878565 +0000
+@@ -0,0 +1,4 @@
++--add-opens=java.base/java.lang=ALL-UNNAMED\njava.base/java.util=ALL-UNNAMED\njava.base/sun.security.jca=ALL-UNNAMED
++-Xmx1536M=
++-Duser.language=hi
++-Duser.country=IN
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava/src/com/google/common/collect/AbstractNavigableMap.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/guava/src/com/google/common/collect/AbstractNavigableMap.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava/src/com/google/common/collect/AbstractNavigableMap.java	2026-11-26 12:58:00.741088801 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/guava/src/com/google/common/collect/AbstractNavigableMap.java	2026-11-28 09:18:29.670023751 +0000
+@@ -16,7 +16,6 @@
+ 
+ package com.google.common.collect;
+ 
+-import static com.google.common.collect.Iterators.pollNext;
+ import static com.google.common.collect.Maps.keyOrNull;
+ 
+ import com.google.common.annotations.GwtIncompatible;
+@@ -41,24 +40,39 @@
+   @Override
+   public abstract @Nullable V get(@Nullable Object key);
+ 
++  static <K extends @Nullable Object, V extends @Nullable Object> @Nullable Entry<K, V> snapshot(
++      @Nullable Entry<K, V> entry) {
++    return entry == null ? null : Maps.immutableEntry(entry.getKey(), entry.getValue());
++  }
++
++  static <K extends @Nullable Object, V extends @Nullable Object> @Nullable Entry<K, V> pollSnapshot(
++      Iterator<Entry<K, V>> iterator) {
++    if (!iterator.hasNext()) {
++      return null;
++    }
++    Entry<K, V> result = snapshot(iterator.next());
++    iterator.remove();
++    return result;
++  }
++
+   @Override
+   public final @Nullable Entry<K, V> firstEntry() {
+-    return Iterators.<@Nullable Entry<K, V>>getNext(entryIterator(), null);
++    return snapshot(Iterators.<@Nullable Entry<K, V>>getNext(entryIterator(), null));
+   }
+ 
+   @Override
+   public final @Nullable Entry<K, V> lastEntry() {
+-    return Iterators.<@Nullable Entry<K, V>>getNext(descendingEntryIterator(), null);
++    return snapshot(Iterators.<@Nullable Entry<K, V>>getNext(descendingEntryIterator(), null));
+   }
+ 
+   @Override
+   public @Nullable Entry<K, V> pollFirstEntry() {
+-    return pollNext(entryIterator());
++    return pollSnapshot(entryIterator());
+   }
+ 
+   @Override
+   public @Nullable Entry<K, V> pollLastEntry() {
+-    return pollNext(descendingEntryIterator());
++    return pollSnapshot(descendingEntryIterator());
+   }
+ 
+   @Override
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava/src/com/google/common/collect/ForwardingNavigableMap.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/guava/src/com/google/common/collect/ForwardingNavigableMap.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava/src/com/google/common/collect/ForwardingNavigableMap.java	2026-11-26 12:58:00.741088801 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/guava/src/com/google/common/collect/ForwardingNavigableMap.java	2026-11-28 09:18:29.670464471 +0000
+@@ -16,7 +16,6 @@
+ 
+ package com.google.common.collect;
+ 
+-import static com.google.common.collect.Iterators.pollNext;
+ import static com.google.common.collect.Maps.keyOrNull;
+ 
+ import com.google.common.annotations.GwtIncompatible;
+@@ -187,7 +186,7 @@
+    * forward to this implementation.
+    */
+   protected @Nullable Entry<K, V> standardFirstEntry() {
+-    return Iterables.<@Nullable Entry<K, V>>getFirst(entrySet(), null);
++    return AbstractNavigableMap.snapshot(Iterables.<@Nullable Entry<K, V>>getFirst(entrySet(), null));
+   }
+ 
+   /**
+@@ -215,7 +214,8 @@
+    * override {@code lastEntry} to forward to this implementation.
+    */
+   protected @Nullable Entry<K, V> standardLastEntry() {
+-    return Iterables.<@Nullable Entry<K, V>>getFirst(descendingMap().entrySet(), null);
++    return AbstractNavigableMap.snapshot(
++        Iterables.<@Nullable Entry<K, V>>getFirst(descendingMap().entrySet(), null));
+   }
+ 
+   /**
+@@ -242,7 +242,7 @@
+    * forward to this implementation.
+    */
+   protected @Nullable Entry<K, V> standardPollFirstEntry() {
+-    return pollNext(entrySet().iterator());
++    return AbstractNavigableMap.pollSnapshot(entrySet().iterator());
+   }
+ 
+   @Override
+@@ -256,7 +256,7 @@
+    * override {@code pollFirstEntry} to forward to this implementation.
+    */
+   protected @Nullable Entry<K, V> standardPollLastEntry() {
+-    return pollNext(descendingMap().entrySet().iterator());
++    return AbstractNavigableMap.pollSnapshot(descendingMap().entrySet().iterator());
+   }
+ 
+   @Override
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava/src/com/google/common/collect/Maps.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/guava/src/com/google/common/collect/Maps.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava/src/com/google/common/collect/Maps.java	2026-11-26 12:58:00.741088801 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/guava/src/com/google/common/collect/Maps.java	2026-11-28 09:18:21.686415404 +0000
+@@ -26,7 +26,6 @@
+ import static com.google.common.collect.Collections2.safeContains;
+ import static com.google.common.collect.Collections2.transform;
+ import static com.google.common.collect.Iterables.any;
+-import static com.google.common.collect.Iterables.removeFirstMatching;
+ import static com.google.common.collect.Iterators.contains;
+ import static com.google.common.collect.Iterators.filter;
+ import static com.google.common.collect.Iterators.transform;
+@@ -3294,12 +3293,26 @@
+ 
+     @Override
+     public @Nullable Entry<K, V> pollFirstEntry() {
+-      return removeFirstMatching(unfiltered.entrySet(), entryPredicate);
++      return pollFirstMatching(unfiltered.entrySet().iterator(), entryPredicate);
+     }
+ 
+     @Override
+     public @Nullable Entry<K, V> pollLastEntry() {
+-      return removeFirstMatching(unfiltered.descendingMap().entrySet(), entryPredicate);
++      return pollFirstMatching(unfiltered.descendingMap().entrySet().iterator(), entryPredicate);
++    }
++
++    private static <K extends @Nullable Object, V extends @Nullable Object>
++        @Nullable Entry<K, V> pollFirstMatching(
++            Iterator<Entry<K, V>> iterator, Predicate<? super Entry<K, V>> predicate) {
++      while (iterator.hasNext()) {
++        Entry<K, V> next = iterator.next();
++        if (predicate.apply(next)) {
++          Entry<K, V> result = immutableEntry(next.getKey(), next.getValue());
++          iterator.remove();
++          return result;
++        }
++      }
++      return null;
+     }
+ 
+     @Override
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava-testlib/src/com/google/common/collect/testing/testers/NavigableMapNavigationTester.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/guava-testlib/src/com/google/common/collect/testing/testers/NavigableMapNavigationTester.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava-testlib/src/com/google/common/collect/testing/testers/NavigableMapNavigationTester.java	2026-11-26 12:58:00.716898387 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/guava-testlib/src/com/google/common/collect/testing/testers/NavigableMapNavigationTester.java	2026-11-28 09:18:43.133061409 +0000
+@@ -254,4 +254,37 @@
+   public void testTailMapInclusive() {
+     assertTrue(navigableMap.tailMap(a.getKey(), true).containsKey(a.getKey()));
+   }
++
++  private static <K, V> void assertEntryImmutable(Entry<K, V> entry) {
++    K key = entry.getKey();
++    V value = entry.getValue();
++    try {
++      entry.setValue(value);
++      fail("setValue on a navigation entry should throw UnsupportedOperationException");
++    } catch (UnsupportedOperationException expected) {
++    }
++    assertEquals(key, entry.getKey());
++    assertEquals(value, entry.getValue());
++  }
++
++  @CollectionSize.Require(SEVERAL)
++  public void testNavigationEntriesImmutable() {
++    assertEntryImmutable(navigableMap.firstEntry());
++    assertEntryImmutable(navigableMap.lastEntry());
++    assertEntryImmutable(navigableMap.ceilingEntry(a.getKey()));
++    assertEntryImmutable(navigableMap.floorEntry(c.getKey()));
++    assertEntryImmutable(navigableMap.higherEntry(a.getKey()));
++    assertEntryImmutable(navigableMap.lowerEntry(c.getKey()));
++  }
++
++  @MapFeature.Require(SUPPORTS_REMOVE)
++  @CollectionSize.Require(SEVERAL)
++  public void testPolledEntriesImmutable() {
++    Entry<K, V> first = navigableMap.pollFirstEntry();
++    assertEquals(a, first);
++    assertEntryImmutable(first);
++    Entry<K, V> last = navigableMap.pollLastEntry();
++    assertEquals(c, last);
++    assertEntryImmutable(last);
++  }
+ }
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava-tests/build.jenesis/process-javac.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/guava-tests/build.jenesis/process-javac.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava-tests/build.jenesis/process-javac.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/guava-tests/build.jenesis/process-javac.properties	2026-11-26 08:25:49.994129019 +0000
+@@ -0,0 +1 @@
++--add-exports=java.base/sun.security.jca=ALL-UNNAMED
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava-tests/test/com/google/common/collect/MapsTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/guava-tests/test/com/google/common/collect/MapsTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/guava-tests/test/com/google/common/collect/MapsTest.java	2026-11-26 12:58:00.724898388 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/guava-tests/test/com/google/common/collect/MapsTest.java	2026-11-28 09:18:52.897335191 +0000
+@@ -1569,4 +1569,27 @@
+     assertEquals(
+         ImmutableSortedMap.of(2, 0, 4, 0, 6, 0, 8, 0, 10, 0), Maps.subMap(map, Range.all()));
+   }
++
++  @GwtIncompatible // NavigableMap
++  public void testFilteredNavigableMapPollReturnsSnapshot() {
++    NavigableMap<Integer, String> unfiltered = new TreeMap<>();
++    for (int i = 0; i < 10; i++) {
++      unfiltered.put(i, "v" + i);
++    }
++    NavigableMap<Integer, String> filtered = Maps.filterKeys(unfiltered, k -> k % 2 == 1);
++    Entry<Integer, String> first = filtered.pollFirstEntry();
++    assertEquals(immutableEntry(1, "v1"), first);
++    assertThrows(UnsupportedOperationException.class, () -> first.setValue("x"));
++    assertEquals(immutableEntry(9, "v9"), filtered.pollLastEntry());
++    assertEquals(immutableEntry(3, "v3"), filtered.pollFirstEntry());
++
++    NavigableMap<Integer, String> byValue = Maps.filterValues(unfiltered, v -> !v.equals("v4"));
++    Entry<Integer, String> ceiling = byValue.ceilingEntry(4);
++    assertEquals(immutableEntry(5, "v5"), ceiling);
++    assertThrows(UnsupportedOperationException.class, () -> ceiling.setValue("v4"));
++    assertThrows(
++        UnsupportedOperationException.class,
++        () -> byValue.descendingMap().firstEntry().setValue("v4"));
++    assertEquals("v5", unfiltered.get(5));
++  }
+ }
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/jenesis.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/jenesis.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/guava/jenesis.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/guava-jenesis+low-2/project/jenesis.properties	2026-11-26 08:25:49.991633979 +0000
+@@ -0,0 +1,3 @@
++# What the root pom configures on maven-surefire-plugin and Jenesis does not read from a plugin block:
++# <exclude>%regex[.*PackageSanityTest.class]</exclude>.
++jenesis.test.exclude=.*PackageSanityTest
