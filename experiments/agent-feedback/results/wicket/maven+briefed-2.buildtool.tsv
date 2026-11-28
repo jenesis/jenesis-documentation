@@ -1,0 +1,3 @@
+maven	1795845583.205	19.228	1	2537	-o -q -pl wicket-core-tests -am test -Dtest=ResourceAuthorizationTest,ResourceLinkTest,Image*Test -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795845627.691	16.518	0	669	-o -q -pl wicket-core-tests -am test -Dtest=ResourceAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795845649.604	156.813	0	270857	-o -pl wicket-core,wicket-extensions,wicket-core-tests -am -amd test

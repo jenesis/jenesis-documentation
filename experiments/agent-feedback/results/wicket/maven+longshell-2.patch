@@ -1,0 +1,538 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+longshell-2/project/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java	2026-11-26 12:41:23.148839089 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+longshell-2/project/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java	2026-11-28 06:31:30.751249851 +0000
+@@ -27,6 +27,7 @@
+ import org.apache.wicket.markup.html.border.Border;
+ import org.apache.wicket.request.cycle.RequestCycle;
+ import org.apache.wicket.request.mapper.parameter.PageParameters;
++import org.apache.wicket.request.handler.resource.ResourceRequestHandler;
+ import org.apache.wicket.request.resource.IResource;
+ import org.apache.wicket.request.resource.IResource.Attributes;
+ import org.apache.wicket.request.resource.PackageResourceReference;
+@@ -194,6 +195,14 @@
+ 	public final void onResourceRequested(PageParameters parameters)
+ 	{
+ 		bind();
++		if (parameters == null)
++		{
++			parameters = new PageParameters();
++		}
++		if (!ResourceRequestHandler.authorize(resource, parameters))
++		{
++			return;
++		}
+ 		RequestCycle requestCycle = RequestCycle.get();
+ 		Attributes attributes = new Attributes(requestCycle.getRequest(),
+ 			requestCycle.getResponse(), parameters);
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+longshell-2/project/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java	2026-11-26 12:41:23.148839089 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+longshell-2/project/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java	2026-11-28 06:31:30.751021544 +0000
+@@ -19,6 +19,7 @@
+ import org.apache.wicket.IRequestListener;
+ import org.apache.wicket.request.cycle.RequestCycle;
+ import org.apache.wicket.request.handler.resource.ResourceReferenceRequestHandler;
++import org.apache.wicket.request.handler.resource.ResourceRequestHandler;
+ import org.apache.wicket.request.mapper.parameter.PageParameters;
+ import org.apache.wicket.request.resource.IResource;
+ import org.apache.wicket.request.resource.IResource.Attributes;
+@@ -149,8 +150,13 @@
+ 	@Override
+ 	public final void onRequest()
+ 	{
++		PageParameters parameters = new PageParameters();
++		if (!ResourceRequestHandler.authorize(resource, parameters))
++		{
++			return;
++		}
+ 		Attributes a = new Attributes(RequestCycle.get().getRequest(), RequestCycle.get()
+-			.getResponse(), null);
++			.getResponse(), parameters);
+ 		resource.respond(a);
+ 		
+ 		super.onRequest();
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/request/handler/resource/ResourceRequestHandler.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+longshell-2/project/wicket-core/src/main/java/org/apache/wicket/request/handler/resource/ResourceRequestHandler.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/request/handler/resource/ResourceRequestHandler.java	2026-11-26 12:41:22.678194931 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+longshell-2/project/wicket-core/src/main/java/org/apache/wicket/request/handler/resource/ResourceRequestHandler.java	2026-11-28 06:31:30.750440777 +0000
+@@ -55,6 +55,33 @@
+ 
+ 	private void authorize()
+ 	{
++		authorize(resource, parameters);
++	}
++
++	/**
++	 * Asks the authorization strategy whether the given resource may be served and, if not, lets
++	 * the application's {@link org.apache.wicket.authorization.IUnauthorizedResourceRequestListener}
++	 * handle the refusal.
++	 * <p>
++	 * This is the check done for every resource requested by a resource URL; components and
++	 * behaviors that serve a resource from their own listener URL have to call it before they let
++	 * the resource respond.
++	 * 
++	 * @param resource
++	 *            the resource about to be served
++	 * @param parameters
++	 *            the resource parameters, {@code null} is treated as empty parameters
++	 * @return {@code true} if the resource may be served, {@code false} if it was refused (in which
++	 *         case the resource must not respond)
++	 */
++	public static boolean authorize(IResource resource, PageParameters parameters)
++	{
++		Args.notNull(resource, "resource");
++		if (parameters == null)
++		{
++			parameters = new PageParameters();
++		}
++
+ 		IAuthorizationStrategy authorizationStrategy = null;
+ 		if (Session.exists())
+ 		{
+@@ -75,7 +102,9 @@
+ 			{
+ 				new DefaultUnauthorizedResourceRequestListener().onUnauthorizedRequest(resource, parameters);
+ 			}
++			return false;
+ 		}
++		return true;
+ 	}
+ 
+ 	/**
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core-tests/src/test/java/org/apache/wicket/core/request/handler/resource/ListenerResourceAuthorizationTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+longshell-2/project/wicket-core-tests/src/test/java/org/apache/wicket/core/request/handler/resource/ListenerResourceAuthorizationTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core-tests/src/test/java/org/apache/wicket/core/request/handler/resource/ListenerResourceAuthorizationTest.java	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+longshell-2/project/wicket-core-tests/src/test/java/org/apache/wicket/core/request/handler/resource/ListenerResourceAuthorizationTest.java	2026-11-28 06:32:08.196358853 +0000
+@@ -0,0 +1,262 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.wicket.core.request.handler.resource;
++
++import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertFalse;
++import static org.junit.jupiter.api.Assertions.assertNotNull;
++import static org.junit.jupiter.api.Assertions.assertSame;
++import static org.junit.jupiter.api.Assertions.assertTrue;
++
++import java.util.ArrayList;
++import java.util.List;
++
++import jakarta.servlet.http.HttpServletResponse;
++
++import org.apache.wicket.MarkupContainer;
++import org.apache.wicket.authorization.IAuthorizationStrategy;
++import org.apache.wicket.markup.IMarkupResourceStreamProvider;
++import org.apache.wicket.markup.html.WebPage;
++import org.apache.wicket.markup.html.form.Form;
++import org.apache.wicket.markup.html.form.ImageButton;
++import org.apache.wicket.markup.html.image.Image;
++import org.apache.wicket.markup.html.link.ResourceLink;
++import org.apache.wicket.request.mapper.parameter.PageParameters;
++import org.apache.wicket.request.resource.ByteArrayResource;
++import org.apache.wicket.request.resource.IResource;
++import org.apache.wicket.util.resource.IResourceStream;
++import org.apache.wicket.util.resource.StringResourceStream;
++import org.apache.wicket.util.tester.WicketTestCase;
++import org.junit.jupiter.api.BeforeEach;
++import org.junit.jupiter.api.Test;
++
++/**
++ * Resources served from a component's listener URL must be authorized like resources requested by
++ * a resource URL.
++ */
++class ListenerResourceAuthorizationTest extends WicketTestCase
++{
++	private final List<IResource> asked = new ArrayList<>();
++	private final List<PageParameters> askedParameters = new ArrayList<>();
++	private final List<IResource> refused = new ArrayList<>();
++	private final List<IResource> responded = new ArrayList<>();
++	private boolean onClickCalled;
++
++	private class RecordingStrategy extends IAuthorizationStrategy.AllowAllAuthorizationStrategy
++	{
++		@Override
++		public boolean isResourceAuthorized(IResource resource, PageParameters parameters)
++		{
++			asked.add(resource);
++			askedParameters.add(parameters);
++			return !refused.contains(resource);
++		}
++	}
++
++	private class RecordingResource extends ByteArrayResource
++	{
++		private final String name;
++
++		RecordingResource(String name)
++		{
++			super("text/plain", name.getBytes());
++			this.name = name;
++		}
++
++		@Override
++		public void respond(Attributes attributes)
++		{
++			responded.add(this);
++			super.respond(attributes);
++		}
++
++		@Override
++		public String toString()
++		{
++			return name;
++		}
++	}
++
++	/** */
++	public static class TestPage extends WebPage implements IMarkupResourceStreamProvider
++	{
++		private static final long serialVersionUID = 1L;
++
++		@Override
++		public IResourceStream getMarkupResourceStream(MarkupContainer container,
++			Class<?> containerClass)
++		{
++			return new StringResourceStream("<html><body><a wicket:id='link'>link</a>" +
++				"<img wicket:id='image'/><form wicket:id='form'><input type='image' wicket:id='button'/></form>" +
++				"</body></html>");
++		}
++	}
++
++	private RecordingResource linkResource;
++	private RecordingResource src;
++	private RecordingResource srcset;
++	private RecordingResource buttonResource;
++
++	@BeforeEach
++	void setUp()
++	{
++		tester.getApplication().getSecuritySettings().setAuthorizationStrategy(new RecordingStrategy());
++		linkResource = new RecordingResource("link");
++		src = new RecordingResource("src");
++		srcset = new RecordingResource("srcset");
++		buttonResource = new RecordingResource("button");
++	}
++
++	private TestPage startPage()
++	{
++		TestPage page = new TestPage();
++		page.add(new ResourceLink<Void>("link", linkResource)
++		{
++			private static final long serialVersionUID = 1L;
++
++			@Override
++			public void onClick()
++			{
++				onClickCalled = true;
++			}
++		});
++		page.add(new Image("image", src, srcset));
++		Form<Void> form = new Form<>("form");
++		page.add(form);
++		form.add(new ImageButton("button", buttonResource));
++		tester.startPage(page);
++		tester.assertRenderedPage(TestPage.class);
++		asked.clear();
++		askedParameters.clear();
++		return page;
++	}
++
++	private void assertAskedWithEmptyParameters()
++	{
++		for (PageParameters parameters : askedParameters)
++		{
++			assertNotNull(parameters);
++			assertTrue(parameters.isEmpty());
++		}
++	}
++
++	@Test
++	void resourceLinkRefused()
++	{
++		refused.add(linkResource);
++		startPage();
++
++		tester.clickLink("link", false);
++
++		assertEquals(1, asked.size());
++		assertSame(linkResource, asked.get(0));
++		assertAskedWithEmptyParameters();
++		assertFalse(responded.contains(linkResource));
++		assertFalse(onClickCalled);
++		assertEquals(HttpServletResponse.SC_FORBIDDEN, tester.getLastResponse().getStatus());
++		assertEquals("The request to resource 'link' with parameters '' cannot be authorized.",
++			tester.getLastResponse().getErrorMessage());
++	}
++
++	@Test
++	void resourceLinkAllowed()
++	{
++		startPage();
++
++		tester.clickLink("link", false);
++
++		assertEquals(1, asked.size());
++		assertSame(linkResource, asked.get(0));
++		assertAskedWithEmptyParameters();
++		assertTrue(responded.contains(linkResource));
++		assertTrue(onClickCalled);
++		assertEquals(HttpServletResponse.SC_OK, tester.getLastResponse().getStatus());
++		assertEquals("link", tester.getLastResponse().getDocument());
++	}
++
++	@Test
++	void customListenerIsCalled()
++	{
++		List<IResource> notified = new ArrayList<>();
++		tester.getApplication().getSecuritySettings().setUnauthorizedResourceRequestListener(
++			(resource, parameters) -> notified.add(resource));
++		refused.add(linkResource);
++		startPage();
++
++		tester.clickLink("link", false);
++
++		assertEquals(List.of(linkResource), notified);
++		assertFalse(responded.contains(linkResource));
++		assertFalse(onClickCalled);
++	}
++
++	@Test
++	void imageSrcRefused()
++	{
++		refused.add(src);
++		TestPage page = startPage();
++
++		tester.executeListener(page.get("image"));
++
++		assertSame(src, asked.get(0));
++		assertAskedWithEmptyParameters();
++		assertTrue(responded.isEmpty());
++		assertEquals(HttpServletResponse.SC_FORBIDDEN, tester.getLastResponse().getStatus());
++	}
++
++	@Test
++	void imageSrcsetRefused()
++	{
++		List<IResource> notified = new ArrayList<>();
++		tester.getApplication().getSecuritySettings().setUnauthorizedResourceRequestListener(
++			(resource, parameters) -> notified.add(resource));
++		refused.add(srcset);
++		TestPage page = startPage();
++
++		tester.executeListener(page.get("image"));
++
++		assertEquals(List.of(src, srcset), asked);
++		assertAskedWithEmptyParameters();
++		assertEquals(List.of(srcset), notified);
++		assertEquals(List.of(src), responded);
++	}
++
++	@Test
++	void imageAllowed()
++	{
++		TestPage page = startPage();
++
++		tester.executeListener(page.get("image"));
++
++		assertEquals(List.of(src, srcset), asked);
++		assertEquals(List.of(src, srcset), responded);
++	}
++
++	@Test
++	void imageButtonRefused()
++	{
++		refused.add(buttonResource);
++		TestPage page = startPage();
++
++		tester.executeListener(page.get("form:button"));
++
++		assertEquals(List.of(buttonResource), asked);
++		assertAskedWithEmptyParameters();
++		assertTrue(responded.isEmpty());
++		assertEquals(HttpServletResponse.SC_FORBIDDEN, tester.getLastResponse().getStatus());
++	}
++}
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+longshell-2/project/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java	2026-11-26 12:41:23.180839091 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+longshell-2/project/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java	2026-11-28 06:31:30.752286577 +0000
+@@ -34,6 +34,7 @@
+ import org.apache.wicket.request.http.WebResponse;
+ import org.apache.wicket.request.mapper.parameter.PageParameters;
+ import org.apache.wicket.request.resource.ContentDisposition;
++import org.apache.wicket.request.handler.resource.ResourceRequestHandler;
+ import org.apache.wicket.request.resource.IResource;
+ import org.apache.wicket.request.resource.IResource.Attributes;
+ import org.apache.wicket.request.resource.JavaScriptResourceReference;
+@@ -374,11 +375,17 @@
+ 		@Override
+ 		public void onRequest()
+ 		{
++			final PageParameters parameters = new PageParameters();
++			if (!ResourceRequestHandler.authorize(resource, parameters))
++			{
++				return;
++			}
++
+ 			final RequestCycle requestCycle = RequestCycle.get();
+ 			final Response response = requestCycle.getResponse();
+ 			((WebResponse) response).addCookie(cookie(getName(), sameSite));
+ 
+-			Attributes a = new Attributes(requestCycle.getRequest(), response, null);
++			Attributes a = new Attributes(requestCycle.getRequest(), response, parameters);
+ 
+ 			resource.respond(a);
+ 		}
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-extensions/src/test/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehaviorAuthorizationTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+longshell-2/project/wicket-extensions/src/test/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehaviorAuthorizationTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-extensions/src/test/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehaviorAuthorizationTest.java	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+longshell-2/project/wicket-extensions/src/test/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehaviorAuthorizationTest.java	2026-11-28 06:32:47.764361205 +0000
+@@ -0,0 +1,139 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one or more
++ * contributor license agreements.  See the NOTICE file distributed with
++ * this work for additional information regarding copyright ownership.
++ * The ASF licenses this file to You under the Apache License, Version 2.0
++ * (the "License"); you may not use this file except in compliance with
++ * the License.  You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package org.apache.wicket.extensions.ajax;
++
++import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertFalse;
++import static org.junit.jupiter.api.Assertions.assertNotNull;
++import static org.junit.jupiter.api.Assertions.assertSame;
++import static org.junit.jupiter.api.Assertions.assertTrue;
++
++import java.util.ArrayList;
++import java.util.List;
++
++import jakarta.servlet.http.HttpServletResponse;
++
++import org.apache.wicket.MarkupContainer;
++import org.apache.wicket.authorization.IAuthorizationStrategy;
++import org.apache.wicket.behavior.Behavior;
++import org.apache.wicket.markup.IMarkupResourceStreamProvider;
++import org.apache.wicket.markup.html.WebMarkupContainer;
++import org.apache.wicket.markup.html.WebPage;
++import org.apache.wicket.request.mapper.parameter.PageParameters;
++import org.apache.wicket.request.resource.ByteArrayResource;
++import org.apache.wicket.request.resource.IResource;
++import org.apache.wicket.util.resource.IResourceStream;
++import org.apache.wicket.util.resource.StringResourceStream;
++import org.apache.wicket.util.tester.WicketTestCase;
++import org.junit.jupiter.api.Test;
++
++/**
++ * An {@link AjaxDownloadBehavior} constructed with an {@link IResource} has to authorize it.
++ */
++class AjaxDownloadBehaviorAuthorizationTest extends WicketTestCase
++{
++	private final List<IResource> asked = new ArrayList<>();
++	private final List<PageParameters> askedParameters = new ArrayList<>();
++	private boolean allow;
++	private boolean responded;
++
++	/** */
++	public static class TestPage extends WebPage implements IMarkupResourceStreamProvider
++	{
++		private static final long serialVersionUID = 1L;
++
++		@Override
++		public IResourceStream getMarkupResourceStream(MarkupContainer container,
++			Class<?> containerClass)
++		{
++			return new StringResourceStream("<html><body><div wicket:id='c'></div></body></html>");
++		}
++	}
++
++	private void download()
++	{
++		tester.getApplication().getSecuritySettings().setAuthorizationStrategy(
++			new IAuthorizationStrategy.AllowAllAuthorizationStrategy()
++			{
++				@Override
++				public boolean isResourceAuthorized(IResource resource, PageParameters parameters)
++				{
++					asked.add(resource);
++					askedParameters.add(parameters);
++					return allow;
++				}
++			});
++
++		IResource resource = new ByteArrayResource("text/plain", "secret".getBytes())
++		{
++			private static final long serialVersionUID = 1L;
++
++			@Override
++			public void respond(Attributes attributes)
++			{
++				responded = true;
++				super.respond(attributes);
++			}
++		};
++
++		TestPage page = new TestPage();
++		WebMarkupContainer c = new WebMarkupContainer("c");
++		page.add(c);
++		c.add(new AjaxDownloadBehavior(resource));
++		tester.startPage(page);
++		asked.clear();
++		askedParameters.clear();
++
++		Behavior resourceBehavior = null;
++		for (Behavior behavior : c.getBehaviors())
++		{
++			if (behavior.getClass().getEnclosingClass() == AjaxDownloadBehavior.class)
++			{
++				resourceBehavior = behavior;
++			}
++		}
++		assertNotNull(resourceBehavior);
++
++		tester.invokeListener(c, resourceBehavior);
++
++		assertEquals(1, asked.size());
++		assertSame(resource, asked.get(0));
++		assertNotNull(askedParameters.get(0));
++		assertTrue(askedParameters.get(0).isEmpty());
++	}
++
++	@Test
++	void refused()
++	{
++		allow = false;
++		download();
++
++		assertFalse(responded);
++		assertEquals(HttpServletResponse.SC_FORBIDDEN, tester.getLastResponse().getStatus());
++	}
++
++	@Test
++	void allowed()
++	{
++		allow = true;
++		download();
++
++		assertTrue(responded);
++		assertEquals(HttpServletResponse.SC_OK, tester.getLastResponse().getStatus());
++		assertEquals("secret", tester.getLastResponse().getDocument());
++	}
++}

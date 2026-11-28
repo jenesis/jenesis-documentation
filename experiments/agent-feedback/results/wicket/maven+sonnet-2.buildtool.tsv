@@ -1,0 +1,4 @@
+maven	1795847908.202	2.094	1	1312	-q -o install -DskipTests -pl wicket-core
+maven	1795847910.325	2.073	1	1880	-o test -pl wicket-core-tests
+maven	1795847915.204	2.023	1	5419	-o test -pl wicket-core -amd
+maven	1795847925.005	168.932	0	293999	-o test -pl wicket-core -am -amd

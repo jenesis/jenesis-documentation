@@ -1,0 +1,4 @@
+maven	1795845936.442	2.341	1	875	-q -o install -DskipTests -pl wicket-core,wicket-extensions
+maven	1795845938.816	0.260	1	1617	-o test -pl wicket-core-tests -Dtest=ResourceLinkTest,ImageResourceAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795845943.056	17.140	0	40229	-o test -pl wicket-core-tests -am -Dtest=ResourceLinkTest,ImageResourceAuthorizationTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795845971.628	138.051	0	353694	-o test

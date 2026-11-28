@@ -1,0 +1,197 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+low-2/project/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java	2026-11-26 12:41:23.148839089 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+low-2/project/wicket-core/src/main/java/org/apache/wicket/markup/html/image/resource/LocalizedImageResource.java	2026-11-28 06:49:59.017069651 +0000
+@@ -195,9 +195,8 @@
+ 	{
+ 		bind();
+ 		RequestCycle requestCycle = RequestCycle.get();
+-		Attributes attributes = new Attributes(requestCycle.getRequest(),
+-			requestCycle.getResponse(), parameters);
+-		resource.respond(attributes);
++		new org.apache.wicket.request.handler.resource.ResourceRequestHandler(resource, parameters)
++			.respond(requestCycle);
+ 	}
+ 
+ 	/**
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+low-2/project/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java	2026-11-26 12:41:23.148839089 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+low-2/project/wicket-core/src/main/java/org/apache/wicket/markup/html/link/ResourceLink.java	2026-11-28 06:49:59.016966838 +0000
+@@ -149,9 +149,13 @@
+ 	@Override
+ 	public final void onRequest()
+ 	{
+-		Attributes a = new Attributes(RequestCycle.get().getRequest(), RequestCycle.get()
+-			.getResponse(), null);
+-		resource.respond(a);
++		org.apache.wicket.request.handler.resource.ResourceRequestHandler handler =
++			new org.apache.wicket.request.handler.resource.ResourceRequestHandler(resource, null);
++		if (!handler.isAuthorized())
++		{
++			return;
++		}
++		handler.respond(RequestCycle.get());
+ 		
+ 		super.onRequest();
+ 	}	
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/request/handler/resource/ResourceRequestHandler.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+low-2/project/wicket-core/src/main/java/org/apache/wicket/request/handler/resource/ResourceRequestHandler.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core/src/main/java/org/apache/wicket/request/handler/resource/ResourceRequestHandler.java	2026-11-26 12:41:22.678194931 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+low-2/project/wicket-core/src/main/java/org/apache/wicket/request/handler/resource/ResourceRequestHandler.java	2026-11-28 06:49:59.016850762 +0000
+@@ -35,6 +35,7 @@
+ {
+ 	private final IResource resource;
+ 	private final PageParameters parameters;
++	private final boolean authorized;
+ 
+ 	/**
+ 	 * Construct.
+@@ -50,10 +51,18 @@
+ 
+ 		this.parameters = parameters != null ? parameters : new PageParameters();
+ 
+-		authorize();
++		authorized = authorize();
+ 	}
+ 
+-	private void authorize()
++	/**
++	 * @return whether the resource was authorized by the authorization strategy
++	 */
++	public boolean isAuthorized()
++	{
++		return authorized;
++	}
++
++	private boolean authorize()
+ 	{
+ 		IAuthorizationStrategy authorizationStrategy = null;
+ 		if (Session.exists())
+@@ -75,7 +84,9 @@
+ 			{
+ 				new DefaultUnauthorizedResourceRequestListener().onUnauthorizedRequest(resource, parameters);
+ 			}
++			return false;
+ 		}
++		return true;
+ 	}
+ 
+ 	/**
+@@ -100,6 +111,10 @@
+ 	@Override
+ 	public void respond(final IRequestCycle requestCycle)
+ 	{
++		if (!authorized)
++		{
++			return;
++		}
+ 		IResource.Attributes a = new IResource.Attributes(requestCycle.getRequest(),
+ 			requestCycle.getResponse(), parameters);
+ 		resource.respond(a);
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core-tests/src/test/java/org/apache/wicket/markup/html/link/ResourceLinkAuthorizationTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+low-2/project/wicket-core-tests/src/test/java/org/apache/wicket/markup/html/link/ResourceLinkAuthorizationTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-core-tests/src/test/java/org/apache/wicket/markup/html/link/ResourceLinkAuthorizationTest.java	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+low-2/project/wicket-core-tests/src/test/java/org/apache/wicket/markup/html/link/ResourceLinkAuthorizationTest.java	2026-11-28 06:53:58.168436721 +0000
+@@ -0,0 +1,83 @@
++package org.apache.wicket.markup.html.link;
++
++import static org.junit.jupiter.api.Assertions.*;
++
++import java.util.concurrent.atomic.AtomicInteger;
++
++import org.apache.wicket.MarkupContainer;
++import org.apache.wicket.authorization.IAuthorizationStrategy;
++import org.apache.wicket.markup.IMarkupResourceStreamProvider;
++import org.apache.wicket.markup.html.WebPage;
++import org.apache.wicket.request.mapper.parameter.PageParameters;
++import org.apache.wicket.request.resource.ByteArrayResource;
++import org.apache.wicket.request.resource.IResource;
++import org.apache.wicket.util.resource.IResourceStream;
++import org.apache.wicket.util.resource.StringResourceStream;
++import org.apache.wicket.util.tester.WicketTestCase;
++import org.junit.jupiter.api.Test;
++
++/**
++ * A resource served from a component's listener URL must be authorized.
++ */
++class ResourceLinkAuthorizationTest extends WicketTestCase
++{
++	static boolean allow;
++	static final AtomicInteger asked = new AtomicInteger();
++
++	/** */
++	public static class DownloadPage extends WebPage implements IMarkupResourceStreamProvider
++	{
++		/** */
++		public DownloadPage()
++		{
++			IResource report = new ByteArrayResource("text/plain", "secret".getBytes());
++			add(new ResourceLink<Void>("report", report));
++		}
++
++		@Override
++		public IResourceStream getMarkupResourceStream(MarkupContainer c, Class<?> cl)
++		{
++			return new StringResourceStream("<html><body><a wicket:id='report'>r</a></body></html>");
++		}
++	}
++
++	private void install()
++	{
++		asked.set(0);
++		tester.getApplication().getSecuritySettings().setAuthorizationStrategy(
++			new IAuthorizationStrategy.AllowAllAuthorizationStrategy()
++			{
++				@Override
++				public boolean isResourceAuthorized(IResource resource, PageParameters parameters)
++				{
++					assertNotNull(parameters);
++					asked.incrementAndGet();
++					return allow;
++				}
++			});
++	}
++
++	@Test
++	void refused()
++	{
++		allow = false;
++		install();
++		tester.startPage(DownloadPage.class);
++		tester.clickLink("report", false);
++		assertEquals(403, tester.getLastResponse().getStatus());
++		assertFalse(tester.getLastResponseAsString().contains("secret"));
++		assertEquals(1, asked.get());
++	}
++
++	@Test
++	void allowed()
++	{
++		allow = true;
++		install();
++		tester.startPage(DownloadPage.class);
++		tester.clickLink("report", false);
++		assertEquals(200, tester.getLastResponse().getStatus());
++		assertEquals("secret", tester.getLastResponseAsString());
++		assertEquals(1, asked.get());
++	}
++}
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+low-2/project/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/wicket/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java	2026-11-26 12:41:23.180839091 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/wicket-maven+low-2/project/wicket-extensions/src/main/java/org/apache/wicket/extensions/ajax/AjaxDownloadBehavior.java	2026-11-28 06:49:59.017164896 +0000
+@@ -376,11 +376,14 @@
+ 		{
+ 			final RequestCycle requestCycle = RequestCycle.get();
+ 			final Response response = requestCycle.getResponse();
++			org.apache.wicket.request.handler.resource.ResourceRequestHandler handler =
++				new org.apache.wicket.request.handler.resource.ResourceRequestHandler(resource, null);
++			if (!handler.isAuthorized())
++			{
++				return;
++			}
+ 			((WebResponse) response).addCookie(cookie(getName(), sameSite));
+-
+-			Attributes a = new Attributes(requestCycle.getRequest(), response, null);
+-
+-			resource.respond(a);
++			handler.respond(requestCycle);
+ 		}
+ 
+ 		public CharSequence getUrl()
