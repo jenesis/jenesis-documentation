@@ -1,0 +1,4 @@
+jenesis	1795849161.762	38.903	0	108	-Djenesis.make.mode=compiled -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*(MapsTest|ForwardingNavigableMapTest|MapsCollectionTest) build/jenesis/Make.java +guava-tests
+jenesis	1795849203.515	526.541	0	219	-Djenesis.make.mode=compiled -Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java
+jenesis	1795849733.616	2.479	1	1484	-Djenesis.make.mode=compiled -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.force=true -Djenesis.test.filter=.*MapsTest#testFilteredNavigableMap_pollReturnsRemovedMapping build/jenesis/Make.java +guava-tests
+jenesis	1795849738.532	2.355	1	1484	-Djenesis.make.mode=compiled -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.force=true -Djenesis.test.filter=.*MapsTest#testFilteredNavigableMap_pollReturnsRemovedMapping build/jenesis/Make.java +guava-tests
