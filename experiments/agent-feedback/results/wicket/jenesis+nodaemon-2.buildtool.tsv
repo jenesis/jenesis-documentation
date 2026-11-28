@@ -1,0 +1,4 @@
+jenesis	1795843205.743	19.383	0	125	-Djenesis.make.mode=compiled -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*ResourceAuthorizationTest build/jenesis/Make.java +wicket-core-tests
+jenesis	1795843250.266	9.143	1	2261	-Djenesis.make.mode=compiled -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*AjaxDownloadBehaviorAuthorizationTest build/jenesis/Make.java +wicket-extensions
+jenesis	1795843264.439	7.731	0	125	-Djenesis.make.mode=compiled -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*AjaxDownloadBehaviorAuthorizationTest build/jenesis/Make.java +wicket-extensions
+jenesis	1795843274.787	149.918	0	2001	-Djenesis.make.mode=compiled -Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java

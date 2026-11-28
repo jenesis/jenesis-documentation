@@ -1,0 +1,12 @@
+maven	1795840255.808	1.966	1	731	-q -o install -DskipTests -pl common,buffer,resolver -am
+maven	1795840257.804	0.234	1	4131	-o test -pl transport -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795840262.836	26.567	1	173985	-o test -pl transport -am -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795840296.991	0.089	1	7456	-o install -DskipTests -pl transport -am
+maven	1795840297.110	0.125	1	4131	-o test -pl transport
+maven	1795840302.223	135.170	1	280421	-o test -pl transport -am
+maven	1795840448.120	130.457	1	280422	-o test -pl transport -am
+maven	1795840584.778	238.140	1	617559	-o test -pl transport -am -Dtest=!HostsFileParserTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795840845.755	12.475	1	95317	-o test -pl transport -am -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795840858.268	6.744	0	93692	-o test -pl transport -am -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795840869.499	126.736	1	280426	-o test -pl transport -am
+maven	1795841001.528	219.294	0	561033	-o test -pl transport -am -Dtest=!HostsFileParserTest -Dsurefire.failIfNoSpecifiedTests=false

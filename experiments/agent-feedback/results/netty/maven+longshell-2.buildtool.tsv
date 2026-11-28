@@ -1,0 +1,6 @@
+maven	1795842187.125	22.038	0	428	-q -o install -pl transport -am -DskipTests -Dcheckstyle.skip -Danimal.sniffer.skip
+maven	1795842209.191	14.006	1	6934	-o test -pl transport -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795842228.110	107.080	1	258314	-o test -pl transport
+maven	1795842350.204	19.568	1	59407	-o test -pl transport -Dtest=SingleThreadIoEventLoopTest
+maven	1795842369.802	9.009	0	57326	-o test -pl transport -Dtest=SingleThreadIoEventLoopTest
+maven	1795842382.300	93.254	0	207340	-o install -pl transport

@@ -1,0 +1,125 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+longshell-2/project/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java	2026-11-27 10:01:17.213499501 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+longshell-2/project/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java	2026-11-28 05:06:09.780173432 +0000
+@@ -51,7 +51,10 @@
+         @Override
+         public boolean canBlock() {
+             assert inEventLoop();
+-            return !hasTasks() && !hasScheduledTasks();
++            // If a suspension was requested and the loop can suspend right now we must not block, as an IoHandler
++            // might only react to wakeup() while it is actually blocked. The wakeup() triggered by trySuspend() might
++            // have been missed if it happened just before we started to block, which would keep the thread alive.
++            return !hasTasks() && !hasScheduledTasks() && !(isSuspended() && canSuspend());
+         }
+ 
+         @Override
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+longshell-2/project/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java	2026-11-27 10:01:17.213499501 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-maven+longshell-2/project/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java	2026-11-28 05:05:50.175141311 +0000
+@@ -27,6 +27,7 @@
+ import java.util.concurrent.TimeUnit;
+ import java.util.concurrent.atomic.AtomicBoolean;
+ import java.util.concurrent.atomic.AtomicInteger;
++import java.util.concurrent.atomic.AtomicReference;
+ 
+ import static org.assertj.core.api.Assertions.assertThat;
+ import static org.junit.jupiter.api.Assertions.assertEquals;
+@@ -159,6 +160,98 @@
+         assertThat(prepareToDestroyCalls).hasValue(1);
+     }
+ 
++    @Test
++    void testSuspendRequestedJustBeforeBlockingFinishesThread() throws Exception {
++        TestThreadFactory threadFactory = new TestThreadFactory();
++        AtomicBoolean requestSuspend = new AtomicBoolean();
++        AtomicBoolean suspendAccepted = new AtomicBoolean();
++        AtomicReference<SingleThreadIoEventLoop> loopRef = new AtomicReference<>();
++        IoHandlerFactory factory = new IoHandlerFactory() {
++            @Override
++            public IoHandler newHandler(ThreadAwareExecutor executor) {
++                return new OnlyWakeupWhileBlockedIoHandler(executor) {
++                    @Override
++                    protected void beforeBlocking() {
++                        if (requestSuspend.compareAndSet(true, false)) {
++                            // Request suspension from another thread while this loop is about to block for IO.
++                            Thread t = new Thread(() -> suspendAccepted.set(loopRef.get().trySuspend()));
++                            t.start();
++                            try {
++                                t.join();
++                            } catch (InterruptedException e) {
++                                Thread.currentThread().interrupt();
++                            }
++                        }
++                    }
++                };
++            }
++
++            @Override
++            public boolean isChangingThreadSupported() {
++                return true;
++            }
++        };
++        SingleThreadIoEventLoop loop = new SingleThreadIoEventLoop(null, threadFactory, factory);
++        loopRef.set(loop);
++        try {
++            loop.submit(() -> requestSuspend.set(true)).sync();
++            Thread thread = threadFactory.threads.take();
++
++            thread.join(TimeUnit.SECONDS.toMillis(10));
++            assertTrue(suspendAccepted.get());
++            assertTrue(loop.isSuspended());
++            assertFalse(thread.isAlive(), "Event loop thread should have finished after suspension");
++        } finally {
++            loop.shutdownGracefully(0, 15, TimeUnit.SECONDS).sync();
++        }
++    }
++
++    /**
++     * {@link IoHandler} that, like the epoll one, only reacts to {@link #wakeup()} while it is actually blocked.
++     */
++    private static class OnlyWakeupWhileBlockedIoHandler extends TestIoHandler {
++        private boolean blocked;
++        private boolean woken;
++
++        OnlyWakeupWhileBlockedIoHandler(ThreadAwareExecutor executor) {
++            super(executor);
++        }
++
++        protected void beforeBlocking() {
++            // NOOP
++        }
++
++        @Override
++        public synchronized void wakeup() {
++            if (blocked) {
++                woken = true;
++                notifyAll();
++            }
++        }
++
++        @Override
++        public int run(IoHandlerContext context) {
++            beforeBlocking();
++            synchronized (this) {
++                if (!context.canBlock()) {
++                    return 0;
++                }
++                blocked = true;
++                try {
++                    while (!woken) {
++                        wait();
++                    }
++                } catch (InterruptedException e) {
++                    Thread.currentThread().interrupt();
++                } finally {
++                    blocked = false;
++                    woken = false;
++                }
++            }
++            return 0;
++        }
++    }
++
+     private static class CountingTestIoHandler extends TestIoHandler {
+         private final AtomicInteger prepareToDestroyCalls;
+ 

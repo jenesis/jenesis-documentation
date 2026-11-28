@@ -1,0 +1,4 @@
+jenesis	1795843876.918	19.529	1	56610	-Djenesis.test.filter=.*(ResourceLinkTest|ImageResourceAuthorizationTest) build/jenesis/Make.java +wicket-core-tests
+jenesis	1795843900.288	10.297	0	43353	-Djenesis.test.filter=.*(ResourceLinkTest|ImageResourceAuthorizationTest) build/jenesis/Make.java +wicket-core-tests
+jenesis	1795843945.977	5.845	0	44004	-Djenesis.test.filter=.*AjaxDownloadBehaviorAuthorizationTest build/jenesis/Make.java +wicket-extensions
+jenesis	1795843956.931	145.270	0	216612	build/jenesis/Make.java

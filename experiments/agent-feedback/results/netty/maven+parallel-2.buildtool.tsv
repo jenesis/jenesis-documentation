@@ -1,0 +1,6 @@
+maven	1795841307.300	22.165	0	428	-q -o install -DskipTests -pl common,transport -am
+maven	1795841329.493	4.122	1	7012	-o test -pl transport -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795841348.676	16.826	1	36205	-o test -pl transport -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795841371.735	9.456	0	57255	-o test -pl transport -Dtest=SingleThreadIoEventLoopTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795841388.701	1.776	0	428	-o -q validate -pl transport -amd
+maven	1795841390.500	92.736	0	207434	-o install -pl transport -amd -DskipTests=false
