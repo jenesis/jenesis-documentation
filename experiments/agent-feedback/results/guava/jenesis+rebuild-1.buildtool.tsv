@@ -1,0 +1,2 @@
+jenesis	1795823956.297	43.199	0	108	-Djenesis.executor.rebuild=true -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*(MapsTest|ForwardingNavigableMapTest|MapsCollectionTest) build/jenesis/Make.java +guava-tests
+jenesis	1795824002.816	533.996	0	219	-Djenesis.executor.rebuild=true -Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java

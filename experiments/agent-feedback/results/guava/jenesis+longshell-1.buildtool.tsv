@@ -1,0 +1,3 @@
+jenesis	1795826171.131	39.465	1	2280	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*(MapsTest|ForwardingNavigableMapTest|MapsCollectionTest) build/jenesis/Make.java +guava-tests
+jenesis	1795826215.646	26.636	0	108	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*(MapsTest|ForwardingNavigableMapTest|MapsCollectionTest) build/jenesis/Make.java +guava-tests
+jenesis	1795826247.101	516.745	0	219	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java

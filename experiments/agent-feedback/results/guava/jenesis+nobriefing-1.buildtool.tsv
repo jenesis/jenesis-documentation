@@ -1,0 +1,5 @@
+jenesis	1795825349.170	6.885	0	4439	build/jenesis/Make.java skill/start
+jenesis	1795825422.147	22.690	1	2287	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*(MapsTest|ForwardingNavigableMapTest) build/jenesis/Make.java +guava-tests
+jenesis	1795825451.263	31.383	0	106	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*(MapsTest|ForwardingNavigableMapTest|FilteredMapTest|FilteredSortedMapTest|SetsTest|TreeRangeSetTest) build/jenesis/Make.java +guava-tests
+jenesis	1795825486.101	517.962	0	219	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java
+jenesis	1795826006.977	1.559	0	0	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java
