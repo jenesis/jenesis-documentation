@@ -1,0 +1,107 @@
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/build.jenesis/process-test.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-jenesis+low-2/project/build.jenesis/process-test.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/build.jenesis/process-test.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-jenesis+low-2/project/build.jenesis/process-test.properties	2026-11-27 10:00:56.663061949 +0000
+@@ -0,0 +1,10 @@
++-server
++-dsa
++-da
++-ea\:io.netty...
++-XX\:+HeapDumpOnOutOfMemoryError
++-Djunit.jupiter.extensions.autodetection.enabled=true
++-Dio.netty.bootstrap.extensions=serviceload
++-Dio.netty.eventLoopThreads=2
++-Dlogback.configurationFile=src/test/resources/logback-test.xml
++-DlogLevel=warn
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/jenesis.properties /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-jenesis+low-2/project/jenesis.properties
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/jenesis.properties	1970-01-01 00:00:00.000000000 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-jenesis+low-2/project/jenesis.properties	2026-11-27 10:00:56.663017599 +0000
+@@ -0,0 +1,4 @@
++jenesis.process.directory=common
++jenesis.test.jars=false
++jenesis.test.filter=.*\\.[^.]*Test[^.]*,.*\\.[^.]*Benchmark[^.]*
++jenesis.test.exclude=.*\\.Abstract[^.]*,.*TestUtil.*
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-jenesis+low-2/project/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java	2026-11-27 10:01:17.213499501 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-jenesis+low-2/project/transport/src/main/java/io/netty/channel/SingleThreadIoEventLoop.java	2026-11-28 04:11:13.681758136 +0000
+@@ -51,7 +51,9 @@
+         @Override
+         public boolean canBlock() {
+             assert inEventLoop();
+-            return !hasTasks() && !hasScheduledTasks();
++            // Must not block if a suspension was requested and can be completed: the wakeup issued by trySuspend()
++            // may have happened before the IoHandler started blocking and some IoHandlers drop such wakeups.
++            return !hasTasks() && !hasScheduledTasks() && !canSuspend();
+         }
+ 
+         @Override
+diff -ruN -x target -x jenesis -x .jenesis -x AGENTS.md -x CLAUDE.md -x extensions.xml /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-jenesis+low-2/project/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java
+--- /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/base/netty/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java	2026-11-27 10:01:17.213499501 +0000
++++ /tmp/claude-0/-home-user/463be81d-9333-59cd-8c49-e694a8cf7aba/scratchpad/exp/work/runs/netty-jenesis+low-2/project/transport/src/test/java/io/netty/channel/SingleThreadIoEventLoopTest.java	2026-11-28 04:10:53.993938676 +0000
+@@ -183,6 +183,67 @@
+         }
+     }
+ 
++    @Test
++    void testSuspendRequestedJustBeforeBlocking() throws Exception {
++        TestThreadFactory threadFactory = new TestThreadFactory();
++        AtomicBoolean suspendOnNextRun = new AtomicBoolean();
++        IoEventLoop[] loopRef = new IoEventLoop[1];
++        IoEventLoop loop = new SingleThreadIoEventLoop(null, threadFactory, new IoHandlerFactory() {
++          @Override
++          public boolean isChangingThreadSupported() {
++            return true;
++          }
++
++          @Override
++          public IoHandler newHandler(ThreadAwareExecutor executor) {
++            return new TestIoHandler(executor) {
++            private final Semaphore sem = new Semaphore(0);
++            private volatile boolean blocking;
++
++            @Override
++            public void wakeup() {
++                // Like epoll: only react to a wakeup while actually blocked.
++                if (blocking) {
++                    sem.release();
++                }
++            }
++
++            @Override
++            public int run(IoHandlerContext context) {
++                if (suspendOnNextRun.compareAndSet(true, false)) {
++                    Thread t = new Thread(() -> assertTrue(loopRef[0].trySuspend()));
++                    t.start();
++                    try {
++                        t.join();
++                    } catch (InterruptedException e) {
++                        Thread.currentThread().interrupt();
++                    }
++                }
++                if (context.canBlock()) {
++                    blocking = true;
++                    try {
++                        sem.acquire();
++                    } catch (InterruptedException e) {
++                        Thread.currentThread().interrupt();
++                    } finally {
++                        blocking = false;
++                    }
++                }
++                return 0;
++            }
++            };
++          }
++        });
++        loopRef[0] = loop;
++        loop.submit(() -> suspendOnNextRun.set(true)).sync();
++        Thread thread = threadFactory.threads.take();
++        thread.join(5000);
++        assertTrue(loop.isSuspended());
++        boolean alive = thread.isAlive();
++        loop.shutdownGracefully(0, 0, TimeUnit.SECONDS);
++        assertFalse(alive, "Suspended loop thread still alive");
++    }
++
+     @Disabled("This test is flaky and will often stall the build")
+     @Test
+     void testSuspendingWhileRegistrationActive() throws Exception {

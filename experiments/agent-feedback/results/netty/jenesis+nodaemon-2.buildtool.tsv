@@ -1,0 +1,14 @@
+jenesis	1795837136.121	11.298	1	1742	-Djenesis.make.mode=compiled -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795837151.654	2.154	1	2495	-Djenesis.make.mode=compiled -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.print.tests=true -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795837158.642	1.321	0	7537	-Djenesis.make.mode=compiled build/jenesis/Make.java skill/target
+jenesis	1795837172.757	1.241	0	3860	-Djenesis.make.mode=compiled build/jenesis/Make.java skill/settings
+jenesis	1795837176.965	1.223	0	3860	-Djenesis.make.mode=compiled build/jenesis/Make.java skill/settings
+jenesis	1795837178.216	1.285	0	72149	-Djenesis.make.mode=compiled build/jenesis/Make.java configuration
+jenesis	1795837183.283	3.956	1	2374	-Djenesis.make.mode=compiled -Djenesis.process.directory=. -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795837201.552	6.010	0	117	-Djenesis.make.mode=compiled -Djenesis.process.directory=. -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795837212.297	17.319	1	2425	-Djenesis.make.mode=compiled -Djenesis.process.directory=. -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795837234.075	103.672	1	5673	-Djenesis.make.mode=compiled -Djenesis.process.directory=. -Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java
+jenesis	1795837349.180	2.199	1	1733	-Djenesis.make.mode=compiled -Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java +common +resolver
+jenesis	1795837355.444	2.384	1	1733	-Djenesis.make.mode=compiled -Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java +common +resolver
+jenesis	1795837363.828	84.553	1	7353	-Djenesis.make.mode=compiled -Djenesis.process.directory=. -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.executor.aggregate build/jenesis/Make.java
+jenesis	1795837454.838	92.988	0	247	-Djenesis.make.mode=compiled -Djenesis.process.directory=. -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.force=true build/jenesis/Make.java +transport +testsuite-common

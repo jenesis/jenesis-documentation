@@ -1,0 +1,3 @@
+maven	1795834791.318	26.561	0	428	-o -q install -DskipTests -pl guava,guava-testlib
+maven	1795834824.836	630.781	1	2396779	-o install
+maven	1795835468.555	659.799	0	135731	-o install

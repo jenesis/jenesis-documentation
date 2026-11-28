@@ -1,0 +1,8 @@
+jenesis	1795837908.162	16.901	1	44478	-Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795837951.367	6.583	0	36042	-Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795837963.017	15.414	1	40254	-Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795837983.998	105.207	1	72443	build/jenesis/Make.java
+jenesis	1795838100.438	1.173	0	4096	build/jenesis/Make.java skill/settings
+jenesis	1795838101.640	1.219	0	2220	build/jenesis/Make.java skill/selectors
+jenesis	1795838105.887	1.202	0	4096	build/jenesis/Make.java skill/settings
+jenesis	1795838113.535	2.741	1	68768	-Djenesis.executor.aggregate build/jenesis/Make.java

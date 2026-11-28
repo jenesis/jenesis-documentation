@@ -1,0 +1,8 @@
+jenesis	1795839011.424	21.722	1	2560	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795839054.030	4.764	0	117	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795839063.289	10.385	1	267	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795839077.136	103.522	1	3411	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java
+jenesis	1795839185.743	1.087	0	4088	build/jenesis/Make.java skill/settings
+jenesis	1795839192.633	2.461	1	2916	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.executor.aggregate=true build/jenesis/Make.java
+jenesis	1795839199.411	1.411	0	0	-Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java +transport
+jenesis	1795839204.866	91.289	0	123	-Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.force=true build/jenesis/Make.java +transport
