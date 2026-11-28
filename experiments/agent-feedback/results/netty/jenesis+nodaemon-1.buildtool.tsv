@@ -1,0 +1,11 @@
+jenesis	1795865794.240	11.998	1	1742	-Djenesis.make.mode=compiled -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795865809.730	2.180	1	1742	-Djenesis.make.mode=compiled -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795865826.180	1.299	0	156571	-Djenesis.make.mode=compiled build/jenesis/Make.java skill
+jenesis	1795865830.470	1.232	0	156571	-Djenesis.make.mode=compiled build/jenesis/Make.java skill
+jenesis	1795865831.732	1.212	0	156571	-Djenesis.make.mode=compiled build/jenesis/Make.java skill
+jenesis	1795865839.337	1.374	0	156571	-Djenesis.make.mode=compiled build/jenesis/Make.java skill
+jenesis	1795865850.062	1.311	0	156571	-Djenesis.make.mode=compiled build/jenesis/Make.java skill
+jenesis	1795865855.873	1.310	0	6811	-Djenesis.make.mode=compiled build/jenesis/Make.java help
+jenesis	1795865867.549	4.049	0	117	-Djenesis.make.mode=compiled -Djenesis.process.directory=. -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795865877.398	12.521	1	2387	-Djenesis.make.mode=compiled -Djenesis.process.directory=. -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795865893.834	106.765	1	5673	-Djenesis.make.mode=compiled -Djenesis.process.directory=. -Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java

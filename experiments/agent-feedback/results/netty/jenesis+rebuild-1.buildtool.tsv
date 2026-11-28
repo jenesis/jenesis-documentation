@@ -1,0 +1,4 @@
+jenesis	1795866118.249	16.538	1	2600	-Djenesis.executor.rebuild=true -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795866171.944	8.453	0	117	-Djenesis.executor.rebuild=true -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795866180.441	12.781	1	2647	-Djenesis.executor.rebuild=true -Djenesis.print.progress=false -Djenesis.test.summary -Djenesis.test.filter=.*SingleThreadIoEventLoopTest build/jenesis/Make.java +transport
+jenesis	1795866199.274	104.578	0	613	-Djenesis.executor.rebuild=true -Djenesis.print.progress=false -Djenesis.test.summary build/jenesis/Make.java
