@@ -35,8 +35,9 @@ esac
 JUDGE="$(command -v mvn)"
 [ -f "$CACHE/checked" ] || "$HERE/prepare.sh" "$TASK"
 
-# A folder and a home of its own per run, so that no run reads what another one built or cached.
-RUN="$WORK/runs/$TASK-$LABEL-$ATTEMPT"
+# A folder and a home of its own per run, so that no run reads what another one built or cached. Its name holds no
+# plus sign, which a test decoding its own path as a URL reads as a space (Netty's HostsFileParserTest does).
+RUN="$WORK/runs/$TASK-${LABEL//+/-}-$ATTEMPT"
 rm -rf "$RUN" && mkdir -p "$RUN/bin" "$RESULTS/$TASK"
 cp -a "$BASE" "$RUN/project"
 cp -a "$CACHE/home" "$RUN/home"
