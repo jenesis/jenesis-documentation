@@ -1,0 +1,6 @@
+maven	1795831546.555	628.701	1	2643514	-o install -pl guava,guava-testlib,guava-tests
+maven	1795832196.838	28.597	0	428	-o -q install -pl guava,guava-testlib -DskipTests
+maven	1795832225.468	1.910	1	2443	-o test -pl guava-tests -Dtest=FilteredNavigableMapTest,MapsCollectionTest,ForwardingNavigableMapTest,MapsTest,TreeRangeSetTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795832229.774	1.980	1	2443	-o test -pl guava-tests -Dtest=FilteredNavigableMapTest,MapsCollectionTest,ForwardingNavigableMapTest,MapsTest,TreeRangeSetTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795832234.872	43.116	0	8140	-o test -pl guava,guava-testlib,guava-tests -Dtest=FilteredNavigableMapTest,MapsCollectionTest,ForwardingNavigableMapTest,MapsTest,TreeRangeSetTest,NavigableMapTestSuiteBuilderTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795832282.328	629.870	0	127201	-o install -pl guava,guava-testlib,guava-tests
