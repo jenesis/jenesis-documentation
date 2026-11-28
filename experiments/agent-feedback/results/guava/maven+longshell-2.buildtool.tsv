@@ -1,0 +1,3 @@
+maven	1795862755.039	34.629	0	428	-q -o install -DskipTests
+maven	1795862793.638	49.956	0	428	-o -q test -pl guava-tests -Dtest=MapsTest,ForwardingNavigableMapTest,MapsCollectionTest,FilteredSortedMapTest,TreeRangeSetTest,SynchronizedNavigableMapTest,MapsSortedTransformValuesTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795862855.316	616.543	0	111382	-o test

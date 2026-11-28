@@ -1,0 +1,4 @@
+maven	1795859929.231	21.923	0	428	-o -q -B install -DskipTests -Dmaven.javadoc.skip
+maven	1795860548.029	35.237	0	428	-o -q -B install -DskipTests
+maven	1795860583.294	33.392	1	5933	-o -B test -pl guava-tests -Dtest=MapsTest,ForwardingNavigableMapTest,MapsCollectionTest -Dsurefire.failIfNoSpecifiedTests=false
+maven	1795860627.636	630.883	0	127562	-o -B install
